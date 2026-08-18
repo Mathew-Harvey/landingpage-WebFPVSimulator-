@@ -39,6 +39,7 @@ import * as THREE from 'three';
 import { createStage } from './stage.js';
 import { buildDrone, CAMERA_MOUNT_FORWARD, CAMERA_MOUNT_UP } from './drone.js';
 import { buildCourse, GATE_COUNT, GATE_CENTRE_Y } from './course.js';
+import { buildPetals } from './petals.js';
 import { destinations } from './config.js';
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -172,6 +173,21 @@ stage.scene.add(droneRig);
 const course = buildCourse();
 stage.scene.add(course.group);
 
+const petals = buildPetals();
+stage.scene.add(petals.mesh);
+
+/*
+ * A handle on the scene, but only when the timeline is pinned.
+ *
+ * ?t= already exists so a frame can be named; this is the other half of the
+ * same affordance, so a frame can be interrogated. Without it, working out
+ * why a horizon has a line across it means reading three shaders and
+ * guessing, which is exactly how an afternoon goes. No ?t=, no global.
+ */
+if (PIN !== null) {
+  window.__wf = { stage, course, drone, petals };
+}
+
 /*
  * Where each gate sits along the racing line, as an arc length fraction.
  * Measured off the curve rather than assumed from the control point index,
@@ -293,6 +309,7 @@ const el = {
   osdThrottle: document.getElementById('osd-throttle'),
   osdBatt: document.getElementById('osd-batt'),
   beats: document.getElementById('beats'),
+  progress: document.querySelector('#progress i'),
   cards: document.getElementById('cards'),
   foot: document.getElementById('foot'),
 };
@@ -700,6 +717,7 @@ function frame(ms) {
   const world = REDUCED ? 1 : ease(T, 1.97, 2.19);
   course.setWorld(world);
   stage.setRegime(scale, world);
+  course.setFog(stage.scene.fog);
   /*
    * Three lenses, and the page changes between them rather than crossfading
    * one long one into one wide one.
@@ -857,6 +875,33 @@ function frame(ms) {
 
   stage.camera.position.copy(camPos);
   stage.camera.quaternion.copy(camQuat);
+  /* The backdrop rides with the lens. It is a ten metre dome drawn before
+   * everything with no depth test, so it has to be centred on the camera or
+   * the horizon slides as the camera moves. */
+  course.sky.position.copy(camPos);
+
+  /*
+   * Sakura, sized to whatever the act is looking at. A 1.6 m box in the
+   * studio puts a few petals drifting past a 155 mm airframe; a 44 m box in
+   * the flight streaks them past the lens at racing speed. They thin right
+   * out over the plan view, which is a diagram and should not have weather.
+   */
+  if (T < 1.02) {
+    /* A real blossom petal is about 15 mm. It is worth keeping it there:
+     * against a 155 mm airframe the size is the thing that says how close
+     * the lens is, and a petal drawn at 50 mm quietly shrinks the quad. */
+    petals.update(dt, camPos, 0.85, 1.35, 0.017);
+  } else if (T < 1.98) {
+    /* Nearly off over the plan. A diagram should not have weather. */
+    petals.update(dt, camPos, 0.10, 9, 0.02);
+  } else if (T < 3.0) {
+    /* A tight box in the flight, so most of them are NEAR the lens and
+     * streak past it. Spread over 44 m they were all in the distance,
+     * which is a still field rather than a fast one. */
+    petals.update(dt, camPos, 0.6, 14, 0.022);
+  } else {
+    petals.update(dt, camPos, 0.45, 18, 0.024);
+  }
 
   /* The one shadow the page draws follows the subject. */
   if (T < 1.02) {
@@ -928,7 +973,10 @@ function frame(ms) {
     el.builder.classList.toggle('on', !REDUCED && T > 1.04 && T < 2.02);
     el.osd.classList.toggle('on', !REDUCED && T > 2.12 && T < 2.95);
     el.cue.style.opacity = T > 0.35 ? '0' : '1';
-    el.veil.style.opacity = String(lerp(1, 0.55, world));
+    if (el.progress) {
+      el.progress.style.width = `${(clamp01(T / 4) * 100).toFixed(2)}%`;
+    }
+    el.veil.style.opacity = String(lerp(0.72, 0.5, world));
 
     setCopy('assemble', T > 0.04 && T < 0.90);
     setCopy('build', T > 1.06 && T < 1.90);

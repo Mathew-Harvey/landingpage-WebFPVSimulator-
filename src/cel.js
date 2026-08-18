@@ -223,11 +223,13 @@ export const PALETTE = {
   ink: 0x0c120e,
 
   /* The airframe, from the simulator's herocraft.js. */
-  /* A shade lighter than the simulator's 0x1c241e. There the airframe is
-   * seen against grass and sky; here it is seen against a near black studio,
-   * and a body the same value as its background is a silhouette. */
-  carbon: 0x232c26,
-  carbonDeep: 0x121810,
+  /* Two shades lighter than the simulator's 0x1c241e. There the airframe is
+   * seen against grass and sky; here it stands in a lit rose studio, and a
+   * body dark enough to survive a black void becomes a cut-out silhouette
+   * the moment the backdrop is lifted off the floor. Carbon still, just
+   * carbon with the light on it. */
+  carbon: 0x2e3a32,
+  carbonDeep: 0x1a221a,
   livery: 0xe8dcc0,
   brass: 0xc4b48a,
   pcb: 0x2a4a38,

@@ -30,6 +30,27 @@ Then open <http://127.0.0.1:8080/>. Any static file server will do; the only
 requirement is that it serves over http, because ES modules will not load
 from `file://`.
 
+## Colour
+
+The tokens are the simulator's and the board's, unchanged: cream, sakura,
+amber, mint, slate, forest carbon. What changed is where the light comes
+from.
+
+The studio is lit in SAKURA rather than slate. It is a graduated backdrop
+now, plum overhead where the wordmark sits and rose at the deck where the
+subject stands, because a near black airframe on a near black ground has
+nowhere to be seen and a flat backdrop is why the opening read as dark. The
+rim lamp is sakura too: it is the brightest edge on the hero for a whole act,
+so it is the highest leverage place the theme has. The sun goes down through
+rose rather than amber, and petals drift through every act, sized to a real
+15 mm blossom.
+
+Functional colour is untouched, because it is functional: gates are amber at
+rest, mint at the start and finish, neon green for the one the run wants
+next. Mint is still the only thing you press. The airframe's carbon was
+lifted two shades to survive being seen against a lit backdrop instead of a
+void.
+
 ## Phones
 
 `src/quality.js` makes one decision, once, from `(pointer: coarse)` and the
@@ -65,8 +86,11 @@ http://127.0.0.1:8080/?t=2.5
 
 `?t=` pins the timeline. `0` to `1` is the build, `1` to `2` the track, `2`
 to `3` the flight, `3` to `4` the close, so `?t=2.5` is the middle of a lap.
-Without it the page is a function of scroll position and an eight second
+Without it the page is a function of scroll position and a ten second
 autoplay, and there is no way to name a frame in a bug report or a review.
+
+With `?t=` set, `window.__wf` exposes `{ stage, course, drone, petals }` so a
+frame can be interrogated as well as named. Without it, no global.
 
 ## How it is put together
 
@@ -81,6 +105,7 @@ autoplay, and there is no way to name a frame in a bug report or a review.
 | `src/course.js` | The layout, the ground, the racing line, the dress |
 | `src/config.js` | Where the simulator and the board are |
 | `src/quality.js` | One decision about how much machine is on the other end |
+| `src/petals.js` | Sakura, one draw call, all of it in the vertex shader |
 
 Two rules hold the thing together:
 

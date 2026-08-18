@@ -34,13 +34,26 @@ import * as THREE from 'three';
 import { HORIZON, STUDIO } from './course.js';
 import { LITE } from './quality.js';
 
-/* Studio key: a warm lamp high and to the front right, which is where a
- * product photographer puts one. Studio rim: cool, low, behind, and it is
- * the light that separates a near black airframe from a near black
- * background. Without it the hero is a silhouette. */
-const STUDIO_KEY = new THREE.Color(0xffe9c4);
-const STUDIO_RIM = new THREE.Color(0x8fb8e8);
-const SUN_COLOUR = new THREE.Color(0xffd9a8);
+/*
+ * The studio's three lamps.
+ *
+ * Key: a warm lamp high and to the front right, which is where a product
+ * photographer puts one.
+ *
+ * Rim: low and behind, and it is the light that separates a near black
+ * airframe from a dark background. It used to be a cold blue, which is the
+ * default choice and the wrong one here: the rim is the brightest edge on
+ * the hero for the whole first act, so it is the single best place to put
+ * the game's own sakura. Warm rim against cool carbon also does more
+ * separating than a cool rim against a cool body did.
+ *
+ * Kick: high and behind on the opposite side, barely tinted, so the top
+ * edges of the arms read without a third hue arriving.
+ */
+const STUDIO_KEY = new THREE.Color(0xfff0d8);
+const STUDIO_RIM = new THREE.Color(0xf0aec0);
+const STUDIO_KICK = new THREE.Color(0xe6d4dc);
+const SUN_COLOUR = new THREE.Color(0xffcfb4);
 
 export function createStage(canvas) {
   const renderer = new THREE.WebGLRenderer({
@@ -70,7 +83,7 @@ export function createStage(canvas) {
 
   const camera = new THREE.PerspectiveCamera(34, 1, 0.01, 20);
 
-  const key = new THREE.DirectionalLight(STUDIO_KEY, 2.75);
+  const key = new THREE.DirectionalLight(STUDIO_KEY, 3.25);
   key.position.set(0.42, 0.70, 0.55);
   key.castShadow = !LITE;
   key.shadow.mapSize.set(1024, 1024);
@@ -81,18 +94,21 @@ export function createStage(canvas) {
   scene.add(key);
   scene.add(key.target);
 
-  const rim = new THREE.DirectionalLight(STUDIO_RIM, 1.5);
+  const rim = new THREE.DirectionalLight(STUDIO_RIM, 2.15);
   rim.position.set(-0.7, 0.28, -0.62);
   scene.add(rim);
 
   /* The kicker: high, behind, and on the opposite side to the key. It is
    * what puts a bright edge along the top of every arm, and it is the
    * difference between a product shot and a photograph of a shadow. */
-  const kick = new THREE.DirectionalLight(0xdfeaf2, 1.25);
+  const kick = new THREE.DirectionalLight(STUDIO_KICK, 1.55);
   kick.position.set(0.25, 0.82, -0.72);
   scene.add(kick);
 
-  const hemi = new THREE.HemisphereLight(0x2c4258, 0x101710, 0.72);
+  /* Rose from above, plum from below: the studio backdrop bouncing back
+   * onto the subject, which is what stops the shadowed faces going flat
+   * black on a body this dark. */
+  const hemi = new THREE.HemisphereLight(0x6a4a58, 0x2a1c22, 0.95);
   scene.add(hemi);
 
   /* The studio's floor is a pool of light, not a plane: a soft radial
@@ -105,16 +121,19 @@ export function createStage(canvas) {
     c.width = 256;
     c.height = 256;
     const ctx = c.getContext('2d');
+    /* The pool the hero stands in. Sakura, and brighter than it was: it is
+     * the warmest thing in the studio and the reason the airframe has a
+     * ground to sit against rather than a void to float in. */
     const g = ctx.createRadialGradient(128, 128, 4, 128, 128, 126);
-    g.addColorStop(0, 'rgba(112, 146, 170, 0.50)');
-    g.addColorStop(0.42, 'rgba(48, 70, 90, 0.26)');
-    g.addColorStop(1, 'rgba(14, 23, 32, 0)');
+    g.addColorStop(0, 'rgba(226, 158, 176, 0.52)');
+    g.addColorStop(0.40, 'rgba(140, 84, 102, 0.30)');
+    g.addColorStop(1, 'rgba(51, 34, 45, 0)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, 256, 256);
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
     const mesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.05, 1.05),
+      new THREE.PlaneGeometry(1.55, 1.55),
       new THREE.MeshBasicMaterial({
         map: tex, transparent: true, depthWrite: false, fog: false,
       }),
@@ -222,21 +241,28 @@ export function createStage(canvas) {
     scene.fog.color.copy(fogColour);
     scene.background.copy(fogColour);
     renderer.setClearColor(fogColour, 1);
-    /* Far enough back that a 51 m course seen from 70 m is not already half
+    /*
+     * Far enough back that a 51 m course seen from 70 m is not already half
      * dissolved. The old 22 to 175 put a 45 percent haze over the middle of
-     * the track in the closing shot and turned the whole field peach. */
-    scene.fog.near = 0.5 + s * 34;
-    scene.fog.far = 2.6 + s * 300;
+     * the track in the closing shot and turned the whole field peach.
+     *
+     * And in the STUDIO the near plane is 2.5 m, not 0.5. The hero sits
+     * 1.4 m from the lens; at 0.5 to 2.6 it was picking up a third of a
+     * fog's worth of backdrop, which is exactly the contrast the opening
+     * could least afford to give away.
+     */
+    scene.fog.near = 2.5 + s * 32;
+    scene.fog.far = 16 + s * 286;
 
     /* Studio lamps out as the sun comes up, and the shadow camera grows
      * with the subject: 4 m around a hero, 90 m around a course. */
-    key.intensity = 2.75 - w * 1.25;
+    key.intensity = 3.25 - w * 1.75;
     key.color.copy(STUDIO_KEY).lerp(SUN_COLOUR, w);
-    rim.intensity = 1.5 * (1 - w * 0.82);
-    kick.intensity = 1.25 * (1 - w * 0.72);
-    hemi.intensity = 0.72 + w * 0.45;
-    hemi.color.setHex(0x2c4258).lerp(new THREE.Color(0x9ec4e8), w);
-    hemi.groundColor.setHex(0x101710).lerp(new THREE.Color(0x3f5b3a), w);
+    rim.intensity = 2.15 * (1 - w * 0.86);
+    kick.intensity = 1.55 * (1 - w * 0.78);
+    hemi.intensity = 0.95 + w * 0.28;
+    hemi.color.setHex(0x6a4a58).lerp(new THREE.Color(0x9ec4e8), w);
+    hemi.groundColor.setHex(0x2a1c22).lerp(new THREE.Color(0x3f5b3a), w);
 
     pool.material.opacity = 1 - s;
     pool.visible = s < 0.98;

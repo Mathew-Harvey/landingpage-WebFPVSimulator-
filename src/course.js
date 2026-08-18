@@ -70,34 +70,81 @@ export const GATE_CENTRE_Y = CLEAR_H * 0.5;
  * colour has no horizon and a course with no horizon has no scale. Golden
  * hour: a warm band on the deck, a deep dusk overhead. It stays dark enough
  * overall for cream type to sit on top of it, which a noon sky does not. */
-const SKY_TOP = new THREE.Color(0x2d5c88);
-const SKY_MID = new THREE.Color(0x8fb0c6);
-const SKY_LOW = new THREE.Color(0xe8b98a);
-export const HORIZON = new THREE.Color(0xdca77e);
+/*
+ * Golden hour, pulled toward the blossom.
+ *
+ * The band on the deck used to be a sand orange. Sakura is the game's own
+ * motif, so the sun goes down through rose rather than through amber, and
+ * the top of the sky keeps its blue so the two ends of the gradient still
+ * read as sky rather than as a wash.
+ */
+const SKY_TOP = new THREE.Color(0x2f5d8a);
+const SKY_MID = new THREE.Color(0x9aacc2);
+const SKY_LOW = new THREE.Color(0xefaea6);
+export const HORIZON = new THREE.Color(0xdf9d94);
 
 /*
- * The studio is BLUE black, where the page's chrome is green black.
+ * THE STUDIO, as three colours rather than one.
  *
- * That is deliberate and it is borrowed from the track builder, whose CSS is
- * forest carbon and whose 3D viewport is a blue slate. The airframe is a
- * green black object: sat on the page's own #141c16 it disappears into it,
- * and the first act of this page is a five inch quad against a background it
- * has to be seen against.
+ * It was a flat blue black, and a flat anything is why the opening read as
+ * dark: a near black airframe on a near black ground has nowhere to be seen.
+ * A product shot is not lit like that. It is lit with a graduated backdrop,
+ * dark where the type goes and warm where the subject stands, and the
+ * subject reads against the difference.
+ *
+ * So the backdrop is a plum that lifts to a rose at the deck, and it is
+ * sakura rather than slate because that is the game's own colour. The
+ * airframe is a GREEN black object, so a rose ground separates it by hue as
+ * well as by value, which is worth more than either alone.
  */
-export const STUDIO = new THREE.Color(0x0e1720);
+export const STUDIO_TOP = new THREE.Color(0x38293a);
+export const STUDIO_MID = new THREE.Color(0x5b3a4e);
+export const STUDIO_LOW = new THREE.Color(0x835464);
 
+/*
+ * The value that backdrop resolves to AT THE HORIZON, computed once by hand
+ * from the mix below and then written down.
+ *
+ * This is the fog colour, the clear colour, and what the ground plane fades
+ * to at its far edge, and all three have to be the same thing or there is a
+ * hard line across the frame where the deck stops and the dome starts. That
+ * line was there: the fog was the middle of the gradient and the sky at the
+ * horizon was the warm end of it, so the plan view had a seam through it.
+ */
+export const STUDIO = new THREE.Color(0x7a4e5e);
+
+/* The plan grid's own ground stays dark, and separately: the seam colour is
+ * where the deck ENDS, not what a track builder's diagram is drawn on. */
+const DECK = new THREE.Color(0x2a1c26);
+
+/*
+ * The dome is SMALL and it does not test depth.
+ *
+ * It used to be a 420 m sphere, which is the obvious way to build a sky and
+ * is wrong the moment the far plane moves: the studio act clips at 22 m, so
+ * the whole dome fell outside the frustum and the studio's backdrop was
+ * never drawn at all. What showed instead was the flat clear colour, which
+ * is why a carefully graduated backdrop looked like a flat one.
+ *
+ * Ten metres, drawn first, with the depth test off and following the camera.
+ * That is a backdrop rather than an object: it is always behind everything
+ * because it is painted before everything, not because it is far away.
+ */
 function skyDome() {
-  const geo = new THREE.SphereGeometry(420, SEG.sky, Math.round(SEG.sky * 0.68));
+  const geo = new THREE.SphereGeometry(10, SEG.sky, Math.round(SEG.sky * 0.68));
   const mat = new THREE.ShaderMaterial({
     side: THREE.BackSide,
     depthWrite: false,
+    depthTest: false,
     fog: false,
     uniforms: {
       uTop: { value: SKY_TOP.clone() },
       uMid: { value: SKY_MID.clone() },
       uLow: { value: SKY_LOW.clone() },
       uWorld: { value: 0 },
-      uStudio: { value: STUDIO.clone() },
+      uStudioTop: { value: STUDIO_TOP.clone() },
+      uStudioMid: { value: STUDIO_MID.clone() },
+      uStudioLow: { value: STUDIO_LOW.clone() },
     },
     vertexShader: `
       varying vec3 vPos;
@@ -110,21 +157,35 @@ function skyDome() {
       uniform vec3 uTop;
       uniform vec3 uMid;
       uniform vec3 uLow;
-      uniform vec3 uStudio;
+      uniform vec3 uStudioTop;
+      uniform vec3 uStudioMid;
+      uniform vec3 uStudioLow;
       uniform float uWorld;
       void main() {
         float h = normalize(vPos).y;
         vec3 sky = mix(uLow, uMid, smoothstep(-0.02, 0.20, h));
         sky = mix(sky, uTop, smoothstep(0.18, 0.72, h));
-        /* Below the deck the dome is the studio's own dark, so the world
-           reveal reads as light arriving rather than as a lid lifting. */
-        sky = mix(sky, uStudio * 1.15, smoothstep(0.0, -0.16, h));
-        gl_FragColor = vec4(mix(uStudio, sky, uWorld), 1.0);
+
+        /* The studio backdrop: dark overhead where the wordmark sits, warm
+           at the deck where the subject stands. The band is tight around
+           the horizon so it reads as a lit sweep behind the hero rather
+           than as a second sunset. */
+        vec3 studio = mix(uStudioMid, uStudioTop, smoothstep(0.05, 0.60, h));
+        /* A WIDE band. Over 0.16 to -0.10 the rose came and went inside
+           nine degrees, which does not read as a lit backdrop, it reads as
+           a stripe with an edge on it. Spread over most of the lower sky it
+           becomes the sweep a photographer actually gets. */
+        studio = mix(studio, uStudioLow, smoothstep(0.42, -0.15, h));
+
+        /* Below the deck the world's dome keeps the studio's own dark, so
+           the reveal reads as light arriving rather than a lid lifting. */
+        sky = mix(sky, uStudioMid * 1.1, smoothstep(0.0, -0.16, h));
+        gl_FragColor = vec4(mix(studio, sky, uWorld), 1.0);
       }`,
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.frustumCulled = false;
-  mesh.renderOrder = -1;
+  mesh.renderOrder = -1000;
   return mesh;
 }
 
@@ -141,18 +202,17 @@ function ground() {
   const geo = new THREE.PlaneGeometry(700, 700, 1, 1);
   geo.rotateX(-Math.PI * 0.5);
   const mat = new THREE.ShaderMaterial({
-    fog: true,
     uniforms: {
       uWorld: { value: 0 },
       uReveal: { value: 0 },
-      uGrid: { value: new THREE.Color(0x2b3d4d) },
+      uGrid: { value: new THREE.Color(0x5c4152) },
       uGridHot: { value: new THREE.Color(P.sakura) },
-      /* EXACTLY the studio's own colour, not a shade above it. The deck
-         beyond the grid's fade is only ever partly fogged, so a lighter
-         value left a hard horizontal step where the plane's far edge met
-         the sky: a seam across the whole frame in the plan act. All the
-         lift the plan needs comes from the grid lines themselves. */
-      uDeck: { value: STUDIO.clone() },
+      /* EXACTLY the fog's own colour, not a shade above it. The deck beyond
+         the grid's fade is only ever partly fogged, so a lighter value left
+         a hard horizontal step where the plane's far edge met the sky: a
+         seam across the whole frame in the plan act. All the lift the plan
+         needs comes from the grid lines themselves. */
+      uDeck: { value: DECK.clone() },
       /* The simulator's own turf, taken down a stop and warmed. Its
          0x4c8b38 and 0x63a949 are lit by a noon sun; under this page's low
          one they read as a fluorescent lawn under a sunset, which is the
@@ -161,25 +221,33 @@ function ground() {
       uGrassCut: { value: new THREE.Color(0x53853c) },
       uDirt: { value: new THREE.Color(0x7d7a4e) },
       uSun: { value: new THREE.Color(0xffd0a0) },
-      ...THREE.UniformsLib.fog,
+      /*
+       * The ground's fog is OURS, not the renderer's.
+       *
+       * Spreading THREE.UniformsLib.fog hands the material the library's
+       * shared uniform objects and trusts the renderer to refresh them. It
+       * does refresh the distances, but the colour that arrived did not
+       * match the one on scene.fog: it held the raw sRGB numbers where the
+       * scene held them converted, which is a whole stop of difference on
+       * the exact value the horizon has to match. Rather than depend on
+       * renderer internals for the one colour that has to agree with the
+       * sky, the fog is passed in explicitly.
+       */
+      uFogColor: { value: new THREE.Color(0xffffff) },
+      uFogNear: { value: 1 },
+      uFogFar: { value: 2000 },
     },
     vertexShader: `
-      #include <fog_pars_vertex>
       varying vec3 vWorld;
       void main() {
-        /* Named mvPosition and not anything clearer, because the stock
-         * <fog_vertex> chunk spliced in below reads that exact identifier.
-         * Calling it mv cost an afternoon: the shader fails to compile, the
-         * ground silently does not draw, and the page looks like it simply
-         * has no floor. */
-        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
         vWorld = (modelMatrix * vec4(position, 1.0)).xyz;
-        gl_Position = projectionMatrix * mvPosition;
-        #include <fog_vertex>
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }`,
     fragmentShader: `
-      #include <fog_pars_fragment>
       varying vec3 vWorld;
+      uniform vec3 uFogColor;
+      uniform float uFogNear;
+      uniform float uFogFar;
       uniform float uWorld;
       uniform float uReveal;
       uniform vec3 uGrid;
@@ -218,8 +286,15 @@ function ground() {
         vec3 plan = uDeck;
         plan = mix(plan, uGrid, (fine + major) * within);
         plan = mix(plan, uGridHot, axis * 0.22 * within);
-        /* Falls away into the dark so the plane has no visible edge. */
-        plan = mix(plan, uDeck, smoothstep(72.0, 175.0, r));
+        /*
+         * No radius fade here. There used to be one, mixing the deck toward
+         * the horizon colour between 72 and 175 m from the origin, and it
+         * was a workaround for the broken vertex fog above. It made its own
+         * seam: a hundred metres of radius compresses into a few pixels
+         * near the horizon, so the "soft" fade landed as a hard line across
+         * the frame. Distance from the CAMERA is what should fade a ground
+         * plane out, and the fog below does exactly that, correctly.
+         */
 
         /* The pitch. Mown stripes at 6 m, a scuffed apron beyond the
            marked area, nothing regular enough to read as a texture. */
@@ -234,8 +309,22 @@ function ground() {
         turf *= mix(vec3(1.0), uSun, 0.30 - smoothstep(20.0, 120.0, r) * 0.20);
 
         vec3 c = mix(plan, turf, uWorld);
+
+        /*
+         * Fog computed PER FRAGMENT from the world position, not from the
+         * stock chunk's interpolated vertex depth.
+         *
+         * This plane is one quad, 700 m on a side, so its fog depth is
+         * interpolated from four corners across the entire visible world.
+         * That is not an approximation, it is nonsense: the horizon sits in
+         * the middle of an edge and gets whatever the linear blend of two
+         * corner distances happens to be, so the far ground stayed unfogged
+         * and left a hard line where it met the sky. Subdividing the plane
+         * would fix it too and cost vertices; this costs one length().
+         */
+        float fogD = length(vWorld - cameraPosition);
+        c = mix(c, uFogColor, smoothstep(uFogNear, uFogFar, fogD));
         gl_FragColor = vec4(c, 1.0);
-        #include <fog_fragment>
       }`,
   });
   const mesh = new THREE.Mesh(geo, mat);
@@ -445,8 +534,12 @@ export function buildCourse() {
   const poleGeo = new THREE.CylinderGeometry(0.026, 0.030, 3.15, SEG.tube);
   const poleMat = celMaterial({ color: 0xb8bcc0, rim: 0.26, spec: 0.4 });
   const footGeo = new THREE.CylinderGeometry(0.16, 0.20, 0.09, SEG.round);
+  /* Navy, red and sakura. The first two are the simulator's own flag
+   * accents; the third is the product's, and having it in the run down the
+   * course is what stops the theme stopping at the chrome. */
   const sailMats = [
     celMaterial({ color: 0xffffff, map: sailTexture('#1e3566'), rim: 0.20, side: THREE.DoubleSide }),
+    celMaterial({ color: 0xffffff, map: sailTexture('#c4677f'), rim: 0.20, side: THREE.DoubleSide }),
     celMaterial({ color: 0xffffff, map: sailTexture('#b8332c'), rim: 0.20, side: THREE.DoubleSide }),
   ];
 
@@ -473,7 +566,7 @@ export function buildCourse() {
     const foot = new THREE.Mesh(footGeo, poleMat);
     foot.position.y = 0.045;
     flag.add(foot);
-    const sail = new THREE.Mesh(sailGeo, sailMats[i % 2]);
+    const sail = new THREE.Mesh(sailGeo, sailMats[i % 3]);
     sail.position.set(0.02, 0.62, 0);
     sail.rotation.y = Math.PI * 0.5;
     sail.castShadow = true;
@@ -671,6 +764,14 @@ export function buildCourse() {
     return v;
   }
 
+  /* The renderer's fog, handed to the ground shader verbatim, so the deck's
+   * far edge and the dome behind it resolve to the same value. */
+  function setFog(fog) {
+    deck.material.uniforms.uFogColor.value.copy(fog.color);
+    deck.material.uniforms.uFogNear.value = fog.near;
+    deck.material.uniforms.uFogFar.value = fog.far;
+  }
+
   /* Which gate the run wants next, lit the way the simulator lights it. */
   function setRun(nextIndex, pulse) {
     for (let i = 0; i < gateGroups.length; i += 1) {
@@ -697,6 +798,7 @@ export function buildCourse() {
     planLength,
     setBuild,
     setWorld,
+    setFog,
     setRun,
     hideLines,
     deck,

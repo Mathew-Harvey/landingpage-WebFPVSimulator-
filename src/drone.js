@@ -370,7 +370,15 @@ export function buildDrone() {
   const group = new THREE.Group();
   group.name = 'drone';
 
-  const cel = (o) => celMaterial(o);
+  /*
+   * Every material on the airframe takes a SAKURA rim unless it says
+   * otherwise. The rim is the edge light that describes a shape against its
+   * background, so on the one object the page stares at for a whole act it
+   * is the highest leverage place the theme has. Cel's own default is a cold
+   * sky blue, which is right for a gate standing in daylight and wrong for a
+   * hero in a rose lit studio.
+   */
+  const cel = (o) => celMaterial({ rimColor: 0xf0b0c2, ...o });
   const mat = {
     carbon: cel({ color: P.carbon, rim: 0.30, spec: 0.24, specWidth: 0.012 }),
     carbonDeep: cel({ color: P.carbonDeep, rim: 0.18, spec: 0.12 }),

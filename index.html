@@ -98,6 +98,28 @@
          The stage. One fixed canvas behind everything, for the whole page.
          ------------------------------------------------------------------ */
 
+      /*
+       * How far through the film you are, in sakura, immediately under the
+       * chequer. A page whose whole content is one continuous scroll owes
+       * the reader that, and it is the cheapest place on the page to put the
+       * theme where it is doing a job rather than decorating.
+       */
+      #progress {
+        position: fixed;
+        top: 5px; left: 0; right: 0;
+        z-index: 30;
+        height: 2px;
+        background: rgba(232, 168, 184, 0.14);
+        pointer-events: none;
+      }
+      #progress i {
+        display: block;
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--sakura), var(--cream));
+        transform-origin: left;
+      }
+
       /* The one racing motif on the page, and it appears exactly here. */
       .chequer {
         position: fixed;
@@ -126,8 +148,11 @@
         inset: 0;
         z-index: 1;
         pointer-events: none;
+        /* Gentler, and with a wider clear centre. At 0.55 from 38 percent
+           out it was taking half the value off a backdrop that had just
+           been lit on purpose: the vignette was undoing the relight. */
         background:
-          radial-gradient(120% 90% at 50% 42%, transparent 38%, rgba(8, 12, 9, 0.55) 100%);
+          radial-gradient(125% 95% at 50% 44%, transparent 48%, rgba(8, 12, 9, 0.38) 100%);
         mix-blend-mode: multiply;
         transition: opacity 0.6s var(--ease);
       }
@@ -973,6 +998,7 @@
 
   <body>
     <div class="chequer" aria-hidden="true"></div>
+    <div id="progress" aria-hidden="true"><i></i></div>
     <canvas id="stage"></canvas>
     <div id="veil"></div>
     <div id="grain"></div>
