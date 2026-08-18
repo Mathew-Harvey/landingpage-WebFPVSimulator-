@@ -25,7 +25,7 @@
  * seven stages, in the order a person actually assembles a quad, and carries
  * the offset it flies in FROM and the delay it waits for:
  *
- *   0 frame    bottom plate, arms, side plates, standoffs. LEFT OPEN: the
+ *   0 frame    bottom plate, arms, camera deck, standoffs. LEFT OPEN: the
  *              top plate is the lid of the stack and cannot go on yet
  *   1 esc      the 4-in-1 board and its capacitor, first into the stack
  *   2 fc       the flight controller, then the video transmitter, then the
@@ -79,8 +79,8 @@ export const PROP_SPIN = [-1, 1, 1, -1];
  * glitch. Seven stages sharing the timeline equally gives the frame the same
  * 1.2 seconds as the flight controller, and the frame is thirty five parts
  * where the controller is one: two plates, four arms, sixteen motor bolts,
- * two side plates, four standoffs, a top plate and its bolts all arrived
- * inside a single second and the eye read a flicker rather than a build.
+ * four standoffs, a top plate and its bolts all arrived inside a single
+ * second and the eye read a flicker rather than a build.
  *
  * The frame now takes a third of the whole sequence, on its own, part by
  * part, which is what was asked for and is also how long it takes in real
@@ -463,10 +463,10 @@ export function buildDrone() {
   }
 
   /* ================================================================ 0 FRAME
-   * Bottom plate down, arms out along their own diagonals, motor pads bolted
-   * on, side plates up, standoffs in, top plate last. Reading order, and
-   * also build order: this is the sequence that says "carbon" before it says
-   * "electronics".
+   * Bottom plate down, arms out along their own diagonals, motor pads
+   * bolted on, camera deck at the nose, standoffs in. Reading order, and
+   * also build order: this is the sequence that says "carbon" before it
+   * says "electronics". The top plate is NOT here, see stage 2.
    */
 
   const bottom = mesh(
@@ -501,20 +501,13 @@ export function buildDrone() {
     }
   }
 
-  /* The two vertical side plates that make a modern frame a box rather than
-   * a sandwich. */
-  for (const sx of [-1, 1]) {
-    const side = mesh(
-      plate(roundedRect(0.062, 0.030, 0.006), 0.0026, 0.0004, 6),
-      mat.carbon, sx * 0.0268, 0.0158, 0.004, 1.05,
-    );
-    side.rotation.set(Math.PI * 0.5, 0, -Math.PI * 0.5);
-    side.updateMatrix();
-    add(0, side, {
-      from: new THREE.Vector3(sx * 0.05, 0.02, 0),
-      delay: 0.86 + (sx > 0 ? 0 : 0.045),
-    });
-  }
+  /*
+   * No side plates. A race quad is a TRUE X: a bottom plate, four arms,
+   * four standoffs and a top plate, and nothing standing up between them.
+   * The vertical walls that were here belong on a cinewhoop or an old H
+   * frame, and putting them on a 5 inch racer is the kind of detail that
+   * only ever gets noticed by the people the page is for.
+   */
 
   /* The camera deck. Without it the camera hangs 40 mm off the front of the
    * frame on nothing at all, which is the sort of thing nobody consciously
@@ -531,7 +524,7 @@ export function buildDrone() {
     add(0, mesh(standGeo, mat.brass, sx, Y.armT * 0.5 + Y.standoffH * 0.5 - 0.0005, sz), {
       from: new THREE.Vector3(0, 0.07, 0),
       spin: new THREE.Euler(0, Math.PI * 1.6, 0),
-      delay: 0.98 + i * 0.045,
+      delay: 0.84 + i * 0.045,
     });
   });
 
