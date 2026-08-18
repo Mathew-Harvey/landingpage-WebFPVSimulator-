@@ -114,8 +114,13 @@ const STAGE_AT = (() => {
  * meant the first part of a stage drifted in over the whole stage and the
  * last one snapped in over a tenth of it. Parts moving at visibly different
  * speeds inside the same shot is most of what "glitchy" means.
+ *
+ * Shorter than it was, which makes each part snap into place rather than
+ * drift into it. It also buys the delays more room, since a part cannot
+ * start later than 1 minus this, so the cascade spreads as the individual
+ * moves tighten: the sequence reads quicker at both ends.
  */
-const PART_SPAN = 0.34;
+const PART_SPAN = 0.28;
 
 const MOTORS = [
   [MOTOR_ARM, MOTOR_ARM],

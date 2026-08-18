@@ -43,6 +43,9 @@ import { destinations } from './config.js';
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/* How long the opening assembly takes to play itself, in seconds. */
+const BUILD_SECONDS = 10;
+
 /*
  * ?t=<number> pins the timeline. 0 to 1 is the build, 1 to 2 the track, 2 to
  * 3 the flight, 3 to 4 the close, so ?t=2.5 is the middle of a lap.
@@ -672,10 +675,15 @@ function frame(ms) {
   /* ---------------------------------------------------------------- build */
   /* Pinned, the build is the pin's business alone: an autoplay would race
    * the parameter and the frame would not be reproducible. */
-  /* Thirteen and a half seconds, not eight. The frame alone is a third of
-   * the sequence and thirty five parts; at the old pace it went by in about
-   * a second and read as a flicker rather than as a build. */
-  autoBuild = PIN !== null ? 0 : Math.min(1, autoBuild + dt / 13.5);
+  /*
+   * BUILD_SECONDS is the one number to turn if the opening feels wrong.
+   *
+   * It has been both ends of wrong already. At 8.2 the frame's thirty five
+   * parts went by in about a second and read as a flicker; at 13.5 the whole
+   * thing dawdled. Ten is brisk enough to hold attention and slow enough
+   * that an arm and its four bolts are separate events.
+   */
+  autoBuild = PIN !== null ? 0 : Math.min(1, autoBuild + dt / BUILD_SECONDS);
   const scrubBuild = ease(T, 0.015, 0.80);
   const built = REDUCED ? 1 : Math.max(autoBuild, scrubBuild);
   /* The scrubber reports a fractional stage index, because the stages are no
