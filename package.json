@@ -1,0 +1,14 @@
+{
+  "name": "webfpv-landing",
+  "version": "0.1.0",
+  "description": "Landing page for WebFPVSimulator. Client side only, three.js, no build step.",
+  "license": "GPL-3.0-or-later",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "serve": "node scripts/serve.js"
+  }
+}

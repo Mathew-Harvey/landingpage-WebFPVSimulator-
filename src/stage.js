@@ -1,0 +1,340 @@
+/*
+ * stage.js: the renderer, the light and the frame loop. Nothing that knows
+ * what is being drawn.
+ *
+ * Two lighting rigs live here and the page crossfades between them, because
+ * the page is two places: a dark studio where a machine is built, and a
+ * field at golden hour where it is flown. Doing that with one sun whose
+ * colour and intensity move, plus a rim that only exists in the studio, is
+ * cheaper and steadier than swapping scenes, and it means the quad that
+ * leaves the studio is literally the same object that arrives at the track.
+ *
+ * The near and far planes MOVE. A studio shot frames a 0.155 m airframe from
+ * 0.4 m away and a race shot frames a 60 m course; one clip range that
+ * covers both is a depth buffer with nothing left for either. So the caller
+ * says which regime it is in and this file sets the planes to suit.
+ *
+ * This file is part of the WebFPVSimulator landing page.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at
+ * your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY, without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+import * as THREE from 'three';
+import { HORIZON, STUDIO } from './course.js';
+import { LITE } from './quality.js';
+
+/* Studio key: a warm lamp high and to the front right, which is where a
+ * product photographer puts one. Studio rim: cool, low, behind, and it is
+ * the light that separates a near black airframe from a near black
+ * background. Without it the hero is a silhouette. */
+const STUDIO_KEY = new THREE.Color(0xffe9c4);
+const STUDIO_RIM = new THREE.Color(0x8fb8e8);
+const SUN_COLOUR = new THREE.Color(0xffd9a8);
+
+export function createStage(canvas) {
+  const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: true,
+    powerPreference: 'high-performance',
+    alpha: false,
+  });
+  renderer.setClearColor(STUDIO, 1);
+  /*
+   * No shadow map on a phone. It is the single most expensive thing here:
+   * the drone alone is around 180 casters, and a shadow pass draws all of
+   * them a second time before a single lit pixel exists. The painted blob
+   * below covers the two shots where the quad's own shadow is actually seen,
+   * and nothing else in the scene casts one worth the pass.
+   */
+  renderer.shadowMap.enabled = !LITE;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  /* Two is enough on a retina panel and four is a phone catching fire for
+   * no visible gain. A phone gets 1.5: at 3x the fill rate alone is most of
+   * the frame budget. */
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, LITE ? 1.5 : 2));
+
+  const scene = new THREE.Scene();
+  scene.background = STUDIO.clone();
+  scene.fog = new THREE.Fog(STUDIO.clone(), 0.5, 2.6);
+
+  const camera = new THREE.PerspectiveCamera(34, 1, 0.01, 20);
+
+  const key = new THREE.DirectionalLight(STUDIO_KEY, 2.75);
+  key.position.set(0.42, 0.70, 0.55);
+  key.castShadow = !LITE;
+  key.shadow.mapSize.set(1024, 1024);
+  key.shadow.camera.near = 0.02;
+  key.shadow.camera.far = 4;
+  key.shadow.bias = -0.0009;
+  key.shadow.normalBias = 0.004;
+  scene.add(key);
+  scene.add(key.target);
+
+  const rim = new THREE.DirectionalLight(STUDIO_RIM, 1.5);
+  rim.position.set(-0.7, 0.28, -0.62);
+  scene.add(rim);
+
+  /* The kicker: high, behind, and on the opposite side to the key. It is
+   * what puts a bright edge along the top of every arm, and it is the
+   * difference between a product shot and a photograph of a shadow. */
+  const kick = new THREE.DirectionalLight(0xdfeaf2, 1.25);
+  kick.position.set(0.25, 0.82, -0.72);
+  scene.add(kick);
+
+  const hemi = new THREE.HemisphereLight(0x2c4258, 0x101710, 0.72);
+  scene.add(hemi);
+
+  /* The studio's floor is a pool of light, not a plane: a soft radial
+   * gradient under the hero so it has something to stand on. It is a
+   * texture rather than geometry-plus-shadow because the shadow of a
+   * 5 inch quad at this scale is a smudge, and a smudge on nothing reads
+   * as a bug. */
+  const pool = (() => {
+    const c = document.createElement('canvas');
+    c.width = 256;
+    c.height = 256;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(128, 128, 4, 128, 128, 126);
+    g.addColorStop(0, 'rgba(112, 146, 170, 0.50)');
+    g.addColorStop(0.42, 'rgba(48, 70, 90, 0.26)');
+    g.addColorStop(1, 'rgba(14, 23, 32, 0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 256, 256);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.05, 1.05),
+      new THREE.MeshBasicMaterial({
+        map: tex, transparent: true, depthWrite: false, fog: false,
+      }),
+    );
+    mesh.rotation.x = -Math.PI * 0.5;
+    mesh.position.y = 0.0022;
+    mesh.renderOrder = -1;
+    scene.add(mesh);
+    return mesh;
+  })();
+
+  /* The floor the shadow lands on. A ShadowMaterial draws the shadow and
+   * nothing else, so the studio keeps its void and the hero still has
+   * weight under it. Without this the quad is a cutout. */
+  const shadowCatcher = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.4, 1.4),
+    new THREE.ShadowMaterial({ opacity: 0.42 }),
+  );
+  shadowCatcher.rotation.x = -Math.PI * 0.5;
+  /* A hair above the world's own ground plane. Co-planar with it they
+   * z-fight, and a flickering floor is worse than no floor. */
+  shadowCatcher.position.y = 0.0012;
+  shadowCatcher.receiveShadow = true;
+  shadowCatcher.visible = !LITE;
+  scene.add(shadowCatcher);
+
+  /*
+   * A blob shadow for the world acts.
+   *
+   * The ground out there is a raw ShaderMaterial, and teaching a custom
+   * shader to receive Three's shadow map is a lot of plumbing for a shadow
+   * that is only ever seen in two shots: the union and the close. For the
+   * rest of the flight the quad IS the camera. So it gets a painted blob,
+   * sized and faded by how high it is off the deck, which is what the shadow
+   * of a hovering quad looks like anyway.
+   */
+  const blob = (() => {
+    const c = document.createElement('canvas');
+    c.width = 128;
+    c.height = 128;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(64, 64, 2, 64, 64, 62);
+    g.addColorStop(0, 'rgba(8, 14, 8, 0.62)');
+    g.addColorStop(0.55, 'rgba(8, 14, 8, 0.26)');
+    g.addColorStop(1, 'rgba(8, 14, 8, 0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 128, 128);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(1, 1),
+      new THREE.MeshBasicMaterial({
+        map: tex, transparent: true, depthWrite: false, fog: true,
+      }),
+    );
+    mesh.rotation.x = -Math.PI * 0.5;
+    mesh.position.y = 0.02;
+    mesh.visible = false;
+    scene.add(mesh);
+    return mesh;
+  })();
+
+  function aimBlob(at, strength, baseRadius) {
+    if (strength <= 0.01) {
+      blob.visible = false;
+      return;
+    }
+    /* Wider and weaker the higher it is, which is the only thing a soft
+     * shadow does that says how far off the ground something is. */
+    const alt = Math.max(0.04, at.y);
+    blob.visible = true;
+    blob.position.set(at.x, 0.02, at.z);
+    blob.scale.setScalar(baseRadius * (1 + alt * 0.75));
+    blob.material.opacity = Math.min(1, strength) * Math.max(0.12, 1 - alt * 0.18);
+  }
+
+  let width = 1;
+  let height = 1;
+
+  function resize() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    renderer.setSize(width, height, false);
+    camera.aspect = width / Math.max(1, height);
+    applyFov();
+  }
+  window.addEventListener('resize', resize, { passive: true });
+
+  /*
+   * `scale` is 0 for the studio and 1 for the field: it moves the clip
+   * planes, the fog distances and the shadow frustum together, because they
+   * are one decision. `world` is how much daylight has arrived, and it only
+   * moves colour.
+   */
+  const fogColour = new THREE.Color();
+  function setRegime(scale, world) {
+    const s = Math.max(0, Math.min(1, scale));
+    const w = Math.max(0, Math.min(1, world));
+
+    camera.near = 0.02 + s * 0.06;
+    camera.far = 22 + s * 780;
+    camera.updateProjectionMatrix();
+
+    fogColour.copy(STUDIO).lerp(HORIZON, w * 0.92);
+    scene.fog.color.copy(fogColour);
+    scene.background.copy(fogColour);
+    renderer.setClearColor(fogColour, 1);
+    /* Far enough back that a 51 m course seen from 70 m is not already half
+     * dissolved. The old 22 to 175 put a 45 percent haze over the middle of
+     * the track in the closing shot and turned the whole field peach. */
+    scene.fog.near = 0.5 + s * 34;
+    scene.fog.far = 2.6 + s * 300;
+
+    /* Studio lamps out as the sun comes up, and the shadow camera grows
+     * with the subject: 4 m around a hero, 90 m around a course. */
+    key.intensity = 2.75 - w * 1.25;
+    key.color.copy(STUDIO_KEY).lerp(SUN_COLOUR, w);
+    rim.intensity = 1.5 * (1 - w * 0.82);
+    kick.intensity = 1.25 * (1 - w * 0.72);
+    hemi.intensity = 0.72 + w * 0.45;
+    hemi.color.setHex(0x2c4258).lerp(new THREE.Color(0x9ec4e8), w);
+    hemi.groundColor.setHex(0x101710).lerp(new THREE.Color(0x3f5b3a), w);
+
+    pool.material.opacity = 1 - s;
+    pool.visible = s < 0.98;
+    shadowCatcher.visible = !LITE && s < 0.98;
+  }
+
+  /* The key light follows the subject, so the one shadow the page can
+   * afford always lands under the thing being looked at. */
+  const keyOffset = new THREE.Vector3(0.42, 0.70, 0.55);
+  const rimOffset = new THREE.Vector3(-0.7, 0.28, -0.62);
+  const kickOffset = new THREE.Vector3(0.25, 0.82, -0.72);
+  function aimLight(at, radius) {
+    key.target.position.copy(at);
+    key.position.copy(at).addScaledVector(keyOffset, radius * 2.4);
+    rim.position.copy(at).addScaledVector(rimOffset, radius * 2.4);
+    kick.position.copy(at).addScaledVector(kickOffset, radius * 2.4);
+    const half = Math.max(0.35, radius * 1.35);
+    key.shadow.camera.left = -half;
+    key.shadow.camera.right = half;
+    key.shadow.camera.top = half;
+    key.shadow.camera.bottom = -half;
+    key.shadow.camera.near = Math.max(0.02, radius * 0.2);
+    key.shadow.camera.far = radius * 8 + 2;
+    key.shadow.camera.updateProjectionMatrix();
+  }
+  aimLight(new THREE.Vector3(0, 0, 0), 0.22);
+
+  /*
+   * FOV is specified HORIZONTALLY and converted, because the page is framed
+   * on the width of things. Three's `fov` is vertical, so on a tall narrow
+   * window a vertical angle that framed the quad nicely at 16:9 crops it off
+   * both sides: measured at 1092 by 1109, a 34 degree vertical lens put a
+   * 0.347 m airframe across 95 percent of the frame. Locking the horizontal
+   * angle keeps the composition the same shape on every window.
+   */
+  /*
+   * ...but the VERTICAL angle is still capped, because a lock in one axis is
+   * a runaway in the other. On a portrait phone at 0.46 aspect, the flight
+   * act's 104 degree horizontal lens converts to 140 degrees vertical, which
+   * is not a wide angle, it is a fisheye with the horizon bent round it.
+   * Above the cap the horizontal angle gives way instead.
+   */
+  const MAX_V_FOV = 112;
+  let hFov = 30;
+  function applyFov() {
+    const aspect = width / Math.max(1, height);
+    const v = 2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(hFov) * 0.5) / aspect);
+    camera.fov = Math.min(MAX_V_FOV, THREE.MathUtils.radToDeg(v));
+    camera.updateProjectionMatrix();
+  }
+  function setFov(fov) {
+    if (Math.abs(hFov - fov) > 0.01) {
+      hFov = fov;
+      applyFov();
+    }
+  }
+
+  /*
+   * Where the subject sits relative to the centre of frame, as two camera
+   * rotations in radians. Read by the poses in main.js.
+   *
+   * A wide window puts the copy down the left, so the hero yaws right out of
+   * its way. A square or tall window has no room to do that: the copy is as
+   * wide as the frame and the headline lands straight across the airframe.
+   * There the hero drops instead, and the copy takes the top of the frame.
+   * Both at once is what makes the layout survive being 1535 by 1559.
+   */
+  const bias = { yaw: 0, pitch: 0 };
+  function composeBias() {
+    const aspect = width / Math.max(1, height);
+    bias.yaw = THREE.MathUtils.clamp((aspect - 1.12) * 0.20, 0, 0.15);
+    bias.pitch = THREE.MathUtils.clamp((1.42 - aspect) * 0.20, 0, 0.15);
+    return bias;
+  }
+
+  resize();
+
+  function render() {
+    renderer.render(scene, camera);
+  }
+
+  return {
+    renderer,
+    scene,
+    camera,
+    key,
+    rim,
+    hemi,
+    setRegime,
+    setFov,
+    composeBias,
+    aimLight,
+    aimBlob,
+    shadowsOn: !LITE,
+    render,
+    resize,
+    get size() {
+      return { width, height };
+    },
+  };
+}

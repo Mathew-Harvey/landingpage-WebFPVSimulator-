@@ -1,0 +1,1183 @@
+<!doctype html>
+<!--
+  The WebFPV landing page. One canvas, one scroll, four acts.
+
+  Everything here is client side. The page owns no data and calls no API:
+  the three launch buttons are links, and the origins they point at live in
+  src/config.js.
+
+  Colour rule, borrowed from the simulator and the track builder so all
+  three read as one product: light is warm, shadow is cool. Cream for lit
+  type, sakura for chrome, amber for an instrument, mint for something
+  good, slate for type that should recede.
+
+  This file is part of the WebFPVSimulator landing page.
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or (at
+  your option) any later version.
+
+  This program is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY, without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WebFPV, a browser FPV racing simulator</title>
+    <meta
+      name="description"
+      content="Build the quad, draw the course, fly the line. A browser FPV racing simulator running Betaflight compiled to WebAssembly."
+    />
+    <meta name="theme-color" content="#141c16" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23141c16'/%3E%3Cpath d='M9 9h5v5H9zM18 9h5v5h-5zM9 18h5v5H9zM18 18h5v5h-5z' fill='%23e8a8b8'/%3E%3C/svg%3E" />
+
+    <style>
+      :root {
+        --cream: #f3ead4;
+        --sakura: #e8a8b8;
+        --amber: #ffd45c;
+        --mint: #7dffb4;
+        --slate: #9db3c8;
+        --dim: #8a9a86;
+        --deep: #141c16;
+        --panel: #1a241c;
+        --panel-2: #121a14;
+        --ink: #0c120e;
+        --line: rgba(244, 236, 214, 0.12);
+        --line-2: rgba(244, 236, 214, 0.06);
+        /* The 2 px rule along the top of every panel, and the panel fill.
+           Both are the leaderboard's, so a visitor arriving here from the
+           board is looking at the same furniture. */
+        --edge: rgba(232, 168, 184, 0.28);
+        --panel-fill: rgba(16, 22, 17, 0.88);
+
+        --ui-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+        /* One tracking scale, so every eyebrow in the page is the same
+           eyebrow. Lifted off the simulator's title screen. */
+        --track-eyebrow: 0.28em;
+        --track-label: 0.16em;
+
+        --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+        --gutter: clamp(20px, 5vw, 72px);
+      }
+
+      * { box-sizing: border-box; }
+
+      html {
+        /* The scroll IS the timeline, so it must not be hijacked by a
+           smooth-scroll polyfill or by the browser's own smoothing: the
+           damping lives in main.js where it can be tuned against the
+           camera. */
+        scroll-behavior: auto;
+      }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: radial-gradient(120% 90% at 50% 6%, #1e2a20, #101610 60%) fixed;
+        color: var(--cream);
+        font-family: var(--ui-font);
+        font-variant-numeric: tabular-nums;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body { overflow-x: hidden; }
+
+      a { color: inherit; }
+
+      /* ------------------------------------------------------------------
+         The stage. One fixed canvas behind everything, for the whole page.
+         ------------------------------------------------------------------ */
+
+      /* The one racing motif on the page, and it appears exactly here. */
+      .chequer {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 30;
+        height: 5px;
+        background: repeating-linear-gradient(90deg, #23272f 0 14px, #eae6dd 14px 28px);
+        opacity: 0.9;
+      }
+      #topbar { padding-top: 22px; }
+
+      #stage {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        z-index: 0;
+        background: var(--deep);
+      }
+
+      /* Vignette and a very fine grain. Both are CSS, both are free, and
+         together they stop a large flat dark canvas from banding. */
+      #veil {
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        background:
+          radial-gradient(120% 90% at 50% 42%, transparent 38%, rgba(8, 12, 9, 0.55) 100%);
+        mix-blend-mode: multiply;
+        transition: opacity 0.6s var(--ease);
+      }
+      #grain {
+        position: fixed;
+        inset: -50%;
+        z-index: 2;
+        pointer-events: none;
+        opacity: 0.05;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+
+      /* ------------------------------------------------------------------
+         Chrome: the top bar and the scroll cue.
+         ------------------------------------------------------------------ */
+
+      #topbar {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px var(--gutter);
+        pointer-events: none;
+      }
+      #topbar > * { pointer-events: auto; }
+
+      .mark {
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        color: var(--cream);
+        text-decoration: none;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+      }
+      .mark .fpv { color: var(--sakura); }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .nav a {
+        padding: 8px 13px;
+        border-radius: 3px;
+        font-size: 12px;
+        letter-spacing: var(--track-label);
+        text-transform: uppercase;
+        color: rgba(243, 234, 212, 0.72);
+        text-decoration: none;
+        transition: color 0.18s var(--ease), background 0.18s var(--ease);
+      }
+      .nav a:hover { color: var(--cream); background: rgba(243, 234, 212, 0.07); }
+      .nav a.is-primary {
+        color: var(--deep);
+        background: var(--mint);
+        font-weight: 700;
+      }
+      .nav a.is-primary:hover { background: #9dffc7; color: var(--deep); }
+      @media (max-width: 720px) {
+        .nav a:not(.is-primary) { display: none; }
+      }
+
+      /* Act ledger down the left edge: which act you are in, and how far
+         through the whole timeline you are. CollectUI's chrome is a thin
+         persistent frame around loud content; this is that frame. */
+      #ledger {
+        position: fixed;
+        left: var(--gutter);
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        pointer-events: none;
+      }
+      .ledger-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 10px;
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: rgba(157, 179, 200, 0.5);
+        transition: color 0.4s var(--ease);
+        /* The ledger sits over a sunset sky for a third of the page, and
+           slate on blue at 10px is not type, it is a rumour. */
+        text-shadow: 0 1px 6px rgba(8, 12, 9, 0.9);
+      }
+      .ledger-tick {
+        width: 18px;
+        height: 1px;
+        background: rgba(157, 179, 200, 0.35);
+        transition: width 0.4s var(--ease), background 0.4s var(--ease);
+      }
+      .ledger-row.on { color: var(--cream); }
+      .ledger-row.on .ledger-tick { width: 34px; background: var(--sakura); }
+      @media (max-width: 900px) { #ledger { display: none; } }
+
+      #cue {
+        position: fixed;
+        left: 50%;
+        bottom: 26px;
+        transform: translateX(-50%);
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 9px;
+        font-size: 10px;
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: rgba(157, 179, 200, 0.75);
+        pointer-events: none;
+        transition: opacity 0.5s var(--ease);
+      }
+      #cue .rail {
+        width: 1px;
+        height: 34px;
+        background: linear-gradient(180deg, rgba(232, 168, 184, 0.9), transparent);
+        animation: cue-fall 1.9s var(--ease) infinite;
+      }
+      @keyframes cue-fall {
+        0%   { transform: scaleY(0); transform-origin: top; opacity: 0; }
+        30%  { transform: scaleY(1); transform-origin: top; opacity: 1; }
+        70%  { transform: scaleY(1); transform-origin: bottom; opacity: 1; }
+        100% { transform: scaleY(0); transform-origin: bottom; opacity: 0; }
+      }
+
+      /* ------------------------------------------------------------------
+         Acts. Each is a full-height stop in the flow; the canvas behind
+         them is what actually changes. Copy fades on its own scroll range,
+         driven from main.js, so the timing matches the camera rather than
+         matching an IntersectionObserver's idea of halfway.
+         ------------------------------------------------------------------ */
+
+      #flow { position: relative; z-index: 10; }
+
+      /*
+       * BLOCK, not flex. A sticky child of a flex container that centres its
+       * items gets its static position centred first and then sticks from
+       * there, so on a 300vh act the pinned copy started 100vh below the
+       * fold and was never seen at the top of the section. The pin does its
+       * own centring; the act just provides the scroll length.
+       */
+      .act {
+        position: relative;
+        min-height: 100vh;
+        min-height: 100svh;
+        padding: 0 var(--gutter);
+        pointer-events: none;
+      }
+      /* The ledger lives at the left gutter, so above the width where it is
+         shown the copy has to start inboard of it. Without this the act
+         titles print straight over "Build / Track / Fly / Practise". */
+      @media (min-width: 901px) {
+        .act { padding-left: calc(var(--gutter) + 116px); }
+      }
+      .act > * { pointer-events: auto; }
+
+      /* The pinned copy inside a tall act: it holds still while the act's
+         scroll length runs past it. */
+      /* svh, not vh. On iOS the URL bar retracts as you scroll and vh is
+         the LARGE viewport, so a 100vh pin is taller than the screen for the
+         first swipe of every act and the copy sits half off the bottom. svh
+         is the small viewport and does not move. */
+      .pin {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        height: 100svh;
+        display: flex;
+        align-items: center;
+        width: 100%;
+      }
+
+      .copy {
+        width: min(30em, 46vw);
+        max-width: 100%;
+        opacity: 0;
+        transform: translateY(18px);
+        transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+      }
+      .copy.on { opacity: 1; transform: none; }
+      /* The flight act's copy is a short interjection over a moving scene,
+         so it takes a narrower column than the other two. As a class, not an
+         inline width: inline styles beat the media query, and on a phone
+         that left "Now fly it." wrapping inside a 133 px gutter. */
+      .copy-tight { width: min(26em, 34vw); }
+      @media (max-width: 900px) { .copy-tight { width: 100%; } }
+      @media (max-width: 900px) {
+        .copy { width: 100%; }
+      }
+
+      .eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0 0 18px;
+        font-size: clamp(10px, 1.1vw, 12px);
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: var(--slate);
+        text-shadow: 0 1px 8px rgba(8, 12, 9, 0.8);
+      }
+      .eyebrow::before {
+        content: "";
+        width: 34px;
+        height: 2px;
+        flex: 0 0 auto;
+        background: var(--sakura);
+      }
+
+      /* Over a sunset the slate eyebrow is invisible. This one is cream. */
+      .eyebrow-lit { color: rgba(243, 234, 212, 0.9); }
+
+      h1.wordmark {
+        margin: 0;
+        font-size: clamp(52px, 10vw, 132px);
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        line-height: 0.88;
+        color: var(--cream);
+        text-shadow: 3px 3px 0 rgba(20, 28, 20, 0.72), 0 14px 40px rgba(0, 0, 0, 0.45);
+      }
+      h1.wordmark .fpv { color: var(--sakura); }
+
+      h2 {
+        margin: 0 0 20px;
+        font-size: clamp(30px, 4.4vw, 60px);
+        font-weight: 750;
+        letter-spacing: 0.005em;
+        line-height: 1.02;
+        color: var(--cream);
+        text-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+      }
+      h2 em { font-style: normal; color: var(--sakura); }
+
+      .lede {
+        margin: 0;
+        max-width: 30em;
+        font-size: clamp(15px, 1.55vw, 18px);
+        line-height: 1.62;
+        color: rgba(243, 234, 212, 0.78);
+      }
+      .lede + .lede { margin-top: 14px; }
+      .lede strong { color: var(--cream); font-weight: 600; }
+
+      .rule {
+        width: 100%;
+        height: 1px;
+        margin: 26px 0;
+        background: var(--line);
+      }
+
+      /* A specification list, the way a parts page prints one. Two columns
+         of small type with a hairline between: it is the densest way to say
+         "this is engineered" without a paragraph claiming it. */
+      .specs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1px;
+        margin: 0;
+        background: var(--line-2);
+        border: 1px solid var(--line-2);
+      }
+      .specs > div {
+        background: rgba(16, 22, 17, 0.88);
+        padding: 13px 15px;
+      }
+      .specs dt {
+        margin: 0 0 5px;
+        font-size: 9.5px;
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: var(--slate);
+      }
+      .specs dd {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--cream);
+      }
+      .specs dd .unit { color: var(--dim); font-weight: 400; font-size: 12px; }
+
+      /* ------------------------------------------------------------------
+         Act 1 instrument: the build ticker. Each stage lights as its parts
+         land, so the copy and the model are saying the same thing at the
+         same moment.
+         ------------------------------------------------------------------ */
+
+      #ticker {
+        position: fixed;
+        right: var(--gutter);
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 15;
+        width: 218px;
+        padding: 13px 15px 15px;
+        background: var(--panel-fill);
+        border: 1px solid var(--line);
+        border-top: 2px solid var(--edge);
+        opacity: 0;
+        transition: opacity 0.5s var(--ease);
+        pointer-events: none;
+      }
+      #ticker.on { opacity: 1; }
+      .tick-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 12px;
+        font-size: 10px;
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: var(--slate);
+      }
+      .tick-head b { color: var(--amber); font-weight: 600; letter-spacing: 0.08em; }
+      .tick-row {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 6px 0;
+        font-size: 11.5px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: rgba(157, 179, 200, 0.42);
+        transition: color 0.35s var(--ease);
+      }
+      .tick-dot {
+        width: 6px; height: 6px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        background: rgba(157, 179, 200, 0.28);
+        transition: background 0.35s var(--ease), box-shadow 0.35s var(--ease);
+      }
+      .tick-row.live { color: var(--amber); }
+      .tick-row.live .tick-dot { background: var(--amber); box-shadow: 0 0 0 4px rgba(255, 212, 92, 0.16); }
+      .tick-row.done { color: rgba(243, 234, 212, 0.8); }
+      .tick-row.done .tick-dot { background: var(--mint); }
+      .tick-rail {
+        height: 2px;
+        margin-top: 14px;
+        background: rgba(157, 179, 200, 0.16);
+        overflow: hidden;
+      }
+      .tick-fill { height: 100%; width: 0%; background: var(--sakura); }
+      @media (max-width: 1100px) { #ticker { display: none; } }
+
+      /* ------------------------------------------------------------------
+         Act 2 instrument: a stylised slice of the real track builder's
+         chrome, so the page shows the tool rather than describing it.
+         ------------------------------------------------------------------ */
+
+      #builder {
+        position: fixed;
+        inset: 0;
+        z-index: 12;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.55s var(--ease);
+        font-size: 12px;
+      }
+      #builder.on { opacity: 1; }
+
+      .tb-bar {
+        position: absolute;
+        top: 74px; left: var(--gutter); right: var(--gutter);
+        display: flex; align-items: center; gap: 14px;
+        padding: 8px 12px;
+        background: var(--panel-fill);
+        border: 1px solid var(--line);
+        border-top: 2px solid var(--edge);
+      }
+      .tb-name { font-weight: 650; letter-spacing: 0.04em; color: var(--cream); }
+      .tb-name span { color: var(--dim); font-weight: 400; }
+      .tb-chips { display: flex; gap: 6px; margin-left: auto; }
+      .tb-chip {
+        padding: 5px 10px;
+        font-size: 10.5px;
+        letter-spacing: var(--track-label);
+        text-transform: uppercase;
+        color: rgba(243, 234, 212, 0.62);
+        border: 1px solid var(--line);
+      }
+      .tb-chip.on { color: var(--deep); background: var(--amber); border-color: var(--amber); font-weight: 700; }
+
+      .tb-palette {
+        position: absolute;
+        left: var(--gutter); top: 128px;
+        width: 176px;
+        padding: 12px;
+        background: var(--panel-fill);
+        border: 1px solid var(--line);
+        border-top: 2px solid var(--edge);
+      }
+      .tb-h {
+        margin: 0 0 10px;
+        font-size: 9.5px;
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: var(--sakura);
+      }
+      .tb-item {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 7px 8px;
+        color: rgba(243, 234, 212, 0.66);
+        border-left: 2px solid transparent;
+      }
+      .tb-item .k { font: 10px/1 var(--mono); color: var(--dim); }
+      .tb-item.on {
+        color: var(--cream);
+        background: rgba(232, 168, 184, 0.1);
+        border-left-color: var(--sakura);
+      }
+
+      .tb-side {
+        position: absolute;
+        right: var(--gutter); top: 128px;
+        width: 208px;
+        background: var(--panel-fill);
+        border: 1px solid var(--line);
+        border-top: 2px solid var(--edge);
+      }
+      .tb-sec { padding: 12px; border-bottom: 1px solid var(--line-2); }
+      .tb-sec:last-child { border-bottom: 0; }
+      .tb-kv { display: flex; justify-content: space-between; padding: 4px 0; color: rgba(243, 234, 212, 0.72); }
+      .tb-kv b { color: var(--cream); font-weight: 650; }
+      .tb-kv.good b { color: var(--mint); }
+      .tb-seq { display: flex; flex-wrap: wrap; gap: 4px; }
+      .tb-node {
+        width: 26px; height: 22px;
+        display: grid; place-items: center;
+        font: 10px/1 var(--mono);
+        color: rgba(157, 179, 200, 0.5);
+        border: 1px solid var(--line);
+        transition: color 0.3s var(--ease), border-color 0.3s var(--ease), background 0.3s var(--ease);
+      }
+      .tb-node.on { color: var(--deep); background: var(--mint); border-color: var(--mint); font-weight: 700; }
+
+      .tb-status {
+        position: absolute;
+        left: var(--gutter); bottom: 22px;
+        display: flex; gap: 18px;
+        font: 11px/1 var(--mono);
+        color: var(--dim);
+      }
+      .tb-status b { color: var(--amber); font-weight: 400; }
+      @media (max-width: 900px) { .tb-palette, .tb-side { display: none; } }
+
+      /* ------------------------------------------------------------------
+         Act 3 instrument: the OSD. Same shapes as the simulator's flight
+         display, because it is the same aircraft.
+         ------------------------------------------------------------------ */
+
+      #osd {
+        position: fixed;
+        inset: 0;
+        z-index: 14;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.5s var(--ease);
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+      }
+      #osd.on { opacity: 1; }
+
+      .osd-top {
+        position: absolute;
+        top: 84px; left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+      }
+      .osd-label {
+        font-size: 10px;
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: var(--slate);
+        margin-bottom: 4px;
+      }
+      .osd-timer {
+        font-size: clamp(34px, 4.6vw, 54px);
+        font-weight: 600;
+        line-height: 1;
+        letter-spacing: 0.02em;
+      }
+      .osd-gate {
+        margin-top: 8px;
+        font-size: 13px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--amber);
+      }
+
+      .osd-corner {
+        position: absolute;
+        bottom: 26px;
+        width: 190px;
+      }
+      .osd-left { left: var(--gutter); }
+      .osd-right { right: var(--gutter); text-align: right; }
+      .osd-value { font-size: 22px; font-weight: 600; }
+      .osd-sub {
+        font-size: 10px;
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: var(--slate);
+      }
+      .osd-bar {
+        height: 4px;
+        margin-top: 8px;
+        background: rgba(12, 22, 34, 0.6);
+        box-shadow: inset 0 0 0 1px rgba(157, 179, 200, 0.3);
+        overflow: hidden;
+      }
+      .osd-fill { height: 100%; width: 0%; background: var(--mint); }
+      .osd-fill.warm { background: var(--amber); }
+
+      /* A beat of copy that rides one gate, then hands over to the next. */
+      #beats {
+        position: fixed;
+        left: 50%;
+        bottom: 21vh;
+        transform: translateX(-50%);
+        z-index: 16;
+        width: min(30em, 82vw);
+        text-align: center;
+        pointer-events: none;
+      }
+      .beat {
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        opacity: 0;
+        transform: translateY(12px);
+        transition: opacity 0.45s var(--ease), transform 0.45s var(--ease);
+      }
+      .beat.on { opacity: 1; transform: none; }
+      .beat-k {
+        font-size: 10px;
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: var(--sakura);
+        margin-bottom: 9px;
+      }
+      .beat-t {
+        font-size: clamp(19px, 2.5vw, 30px);
+        font-weight: 650;
+        line-height: 1.24;
+        color: var(--cream);
+        text-shadow: 0 4px 22px rgba(0, 0, 0, 0.75);
+      }
+
+      /* ------------------------------------------------------------------
+         The close. The one thing the page is for.
+         ------------------------------------------------------------------ */
+
+      #close {
+        position: relative;
+        z-index: 10;
+        min-height: 100vh;
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: clamp(30px, 6vh, 64px);
+        padding: clamp(90px, 14vh, 170px) var(--gutter) 0;
+      }
+      /* Not 22em. An em on this element is the PARENT's 16px, not the
+         104px the headline inside it is set at, so 22em was a 352 px column
+         holding a 104 px display face and the closing line broke over six
+         lines. Sized in px against the display size instead. */
+      .close-copy { text-align: center; max-width: min(920px, 94vw); margin: 0 auto; }
+      .shout {
+        margin: 0;
+        font-size: clamp(38px, 7.4vw, 104px);
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        line-height: 0.94;
+        color: var(--cream);
+        text-shadow: 0 12px 44px rgba(0, 0, 0, 0.6);
+      }
+      .shout .hash { color: var(--sakura); }
+      .shout .practice { display: block; margin-top: 0.18em; color: var(--mint); }
+
+      .close-sub {
+        margin: 22px auto 0;
+        max-width: 34em;
+        font-size: clamp(14px, 1.5vw, 17px);
+        line-height: 1.62;
+        color: rgba(243, 234, 212, 0.86);
+        text-shadow: 0 2px 14px rgba(8, 12, 9, 0.85);
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(248px, 1fr));
+        gap: 14px;
+        width: min(1080px, 100%);
+        margin: 0 auto;
+      }
+      .card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-height: 194px;
+        padding: 20px;
+        text-decoration: none;
+        color: var(--cream);
+        background: var(--panel-fill);
+        border: 1px solid var(--line);
+        border-top: 2px solid var(--edge);
+        overflow: hidden;
+        transition: transform 0.3s var(--ease), border-color 0.3s var(--ease), background 0.3s var(--ease);
+      }
+      .card::after {
+        content: "";
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        height: 2px;
+        background: var(--accent, var(--sakura));
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.4s var(--ease);
+      }
+      .card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(244, 236, 214, 0.24);
+        background: rgba(22, 32, 24, 0.9);
+      }
+      .card:hover::after { transform: scaleX(1); }
+      .card:focus-visible { outline: 2px solid var(--sakura); outline-offset: 2px; }
+      .card-n {
+        font: 10px/1 var(--mono);
+        letter-spacing: 0.16em;
+        color: var(--accent, var(--sakura));
+        margin-bottom: 14px;
+      }
+      .card-t {
+        font-size: 21px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        margin-bottom: 8px;
+      }
+      .card-d {
+        font-size: 13px;
+        line-height: 1.55;
+        color: rgba(243, 234, 212, 0.66);
+      }
+      .card-go {
+        margin-top: auto;
+        padding-top: 16px;
+        font-size: 11px;
+        letter-spacing: var(--track-label);
+        text-transform: uppercase;
+        color: var(--accent, var(--sakura));
+      }
+      .card-go::after { content: " \2192"; }
+
+      footer {
+        position: relative;
+        z-index: 10;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 26px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 30px var(--gutter) 34px;
+        margin-top: 12vh;
+        border-top: 1px solid var(--line-2);
+        font-size: 11.5px;
+        letter-spacing: 0.03em;
+        color: rgba(157, 179, 200, 0.62);
+        background: linear-gradient(180deg, transparent, rgba(12, 18, 14, 0.72));
+      }
+      footer a { color: rgba(243, 234, 212, 0.78); text-decoration: none; }
+      footer a:hover { color: var(--sakura); }
+      .foot-links { display: flex; flex-wrap: wrap; gap: 18px; }
+
+      /* ------------------------------------------------------------------
+         Boot and fallbacks.
+         ------------------------------------------------------------------ */
+
+      #boot {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        display: grid;
+        place-content: center;
+        gap: 16px;
+        justify-items: center;
+        background: var(--deep);
+        transition: opacity 0.7s var(--ease);
+      }
+      #boot.gone { opacity: 0; pointer-events: none; }
+      .boot-mark {
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.3em;
+        color: var(--cream);
+      }
+      .boot-mark .fpv { color: var(--sakura); }
+      .boot-rail { width: 148px; height: 2px; background: rgba(157, 179, 200, 0.2); overflow: hidden; }
+      .boot-fill { height: 100%; width: 12%; background: var(--sakura); transition: width 0.3s var(--ease); }
+      .boot-note {
+        font-size: 10px;
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: var(--slate);
+      }
+
+      #nowebgl {
+        position: fixed;
+        inset: 0;
+        z-index: 41;
+        display: none;
+        place-content: center;
+        text-align: center;
+        padding: var(--gutter);
+        background: var(--deep);
+      }
+      #nowebgl.on { display: grid; }
+
+      /* ------------------------------------------------------------------
+         Narrow screens.
+
+         The scene keeps the lower two thirds and the copy takes the top,
+         which is why the camera's composition bias tilts DOWN below an
+         aspect of 1.42 (src/stage.js). The two have to agree: type centred
+         over a subject that is also centred is type printed on the subject.
+         ------------------------------------------------------------------ */
+
+      @media (max-width: 900px) {
+        .pin { align-items: flex-start; }
+        /*
+         * Clear of the builder's own title bar, which sits at 58 px in act
+         * two and is 34 px tall. At 64 px the act two heading printed
+         * straight through it.
+         */
+        .copy {
+          position: relative;
+          padding-top: calc(106px + env(safe-area-inset-top, 0px));
+          width: 100%;
+        }
+        /* A scrim, so cream type over a lit canvas is type and not a
+           suggestion. Behind the copy only, and it fades out below it. */
+        .copy::before {
+          content: "";
+          position: absolute;
+          inset: -40vh calc(var(--gutter) * -1) -8% calc(var(--gutter) * -1);
+          z-index: -1;
+          background: linear-gradient(180deg,
+            rgba(10, 15, 11, 0.86) 0%,
+            rgba(10, 15, 11, 0.78) 72%,
+            rgba(10, 15, 11, 0) 100%);
+          pointer-events: none;
+        }
+        h1.wordmark { font-size: clamp(46px, 15vw, 92px); }
+        h2 { font-size: clamp(27px, 8.2vw, 44px); }
+        .lede { font-size: 15px; max-width: 26em; }
+        .rule { margin: 18px 0; }
+        .specs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .specs > div { padding: 10px 12px; }
+
+        /* The builder keeps its title bar and its readout. The palette and
+           the inspector are gone with the width, so the bar carries the
+           gate count itself rather than reporting on a panel nobody can
+           see. */
+        .tb-bar { top: calc(58px + env(safe-area-inset-top, 0px)); padding: 7px 10px; }
+        .tb-chips { gap: 4px; }
+        .tb-chip { padding: 4px 7px; font-size: 9.5px; }
+        .tb-status { font-size: 10px; gap: 12px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+
+        /* Two 190 px OSD corners plus two gutters do not fit in 375. */
+        .osd-corner { width: 44vw; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
+        .osd-value { font-size: 17px; }
+        .osd-sub { font-size: 9px; letter-spacing: 0.18em; }
+        .osd-top { top: calc(62px + env(safe-area-inset-top, 0px)); }
+        .osd-timer { font-size: clamp(28px, 9vw, 40px); }
+        .osd-gate { font-size: 11px; }
+
+        #beats { bottom: 26vh; width: 88vw; }
+        .beat-t { font-size: clamp(17px, 5vw, 24px); }
+
+        /* flex-start, not centre. The closing act is a headline, a
+           paragraph and three stacked cards, which on a phone is taller
+           than the viewport: centring overflowing content pushes it out of
+           BOTH ends, and the eyebrow ended up printed across the nav. */
+        #close {
+          gap: 24px;
+          min-height: auto;
+          justify-content: flex-start;
+          padding-top: calc(104px + env(safe-area-inset-top, 0px));
+          padding-bottom: 8vh;
+        }
+        .shout { font-size: clamp(34px, 11.5vw, 62px); }
+        .close-sub { font-size: 15px; }
+        .card { min-height: auto; padding: 17px; }
+        .card-t { font-size: 19px; }
+        footer { margin-top: 8vh; padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px)); }
+        #cue { bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+      }
+
+      /* Short landscape phones: the pin is 100svh of not very much, so the
+         copy has to give up its lede rather than overflow it. */
+      @media (max-height: 460px) and (orientation: landscape) {
+        .copy { padding-top: 52px; }
+        .lede + .lede { display: none; }
+        .specs { display: none; }
+        h1.wordmark { font-size: clamp(38px, 7vw, 64px); }
+      }
+
+      /*
+       * A pilot who has asked the system for less motion gets the page
+       * without the ride: every act's copy is already visible, the canvas
+       * holds one composed frame, and the instruments that only make sense
+       * against a moving scene are gone.
+       *
+       * Nothing that carries meaning is hidden. The ticker, the builder
+       * chrome and the OSD are all readouts OF the animation; with the
+       * animation stilled they would be four fixed panels stacked over a
+       * scrolling document, reporting on a film that is not playing.
+       */
+      @media (prefers-reduced-motion: reduce) {
+        .copy { opacity: 1; transform: none; transition: none; }
+        #cue, #ticker, #builder, #osd, #beats { display: none; }
+        .act { min-height: auto !important; padding-top: 12vh; padding-bottom: 12vh; }
+        .pin { position: static; height: auto; }
+        #veil { opacity: 0.5 !important; }
+      }
+    </style>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+
+  <body>
+    <div class="chequer" aria-hidden="true"></div>
+    <canvas id="stage"></canvas>
+    <div id="veil"></div>
+    <div id="grain"></div>
+
+    <header id="topbar">
+      <a class="mark" href="#top">WEB<span class="fpv">FPV</span></a>
+      <nav class="nav" id="nav">
+        <a href="https://webfpvsimulator.onrender.com/src/trackbuilder/index.html" data-dest="builder">Track builder</a>
+        <a href="https://webfpv-board.onrender.com/" data-dest="board">Leaderboard</a>
+        <a href="https://github.com/Mathew-Harvey/WebFPVSimulator" rel="noreferrer">Source</a>
+        <a class="is-primary" href="https://webfpvsimulator.onrender.com/?map=field" data-dest="sim">Fly now</a>
+      </nav>
+    </header>
+
+    <div id="ledger"></div>
+
+    <div id="cue">
+      <div class="rail"></div>
+      <span>Scroll</span>
+    </div>
+
+    <!-- Act 1 instrument -->
+    <aside id="ticker">
+      <div class="tick-head"><span>Build order</span><b id="tick-count">0 / 7</b></div>
+      <div id="tick-rows"></div>
+      <div class="tick-rail"><div class="tick-fill" id="tick-fill"></div></div>
+    </aside>
+
+    <!-- Act 2 instrument -->
+    <div id="builder">
+      <div class="tb-bar">
+        <span class="tb-name">Untitled course <span>&#183; local</span></span>
+        <div class="tb-chips">
+          <span class="tb-chip on">Plan</span>
+          <span class="tb-chip">3D</span>
+          <span class="tb-chip">Publish</span>
+        </div>
+      </div>
+      <div class="tb-palette">
+        <h4 class="tb-h">Elements</h4>
+        <div class="tb-item on"><span>Standard gate</span><span class="k">1</span></div>
+        <div class="tb-item"><span>Timing gate</span><span class="k">2</span></div>
+        <div class="tb-item"><span>Dive gate</span><span class="k">3</span></div>
+        <div class="tb-item"><span>Flag</span><span class="k">4</span></div>
+        <div class="tb-item"><span>Hurdle</span><span class="k">5</span></div>
+      </div>
+      <div class="tb-side">
+        <div class="tb-sec">
+          <h4 class="tb-h">Course</h4>
+          <div class="tb-kv"><span>Gates</span><b id="tb-gates">0</b></div>
+          <div class="tb-kv"><span>Length</span><b id="tb-len">0 m</b></div>
+          <div class="tb-kv good"><span>Warnings</span><b id="tb-warn">none</b></div>
+        </div>
+        <div class="tb-sec">
+          <h4 class="tb-h">Sequence</h4>
+          <div class="tb-seq" id="tb-seq"></div>
+        </div>
+      </div>
+      <div class="tb-status">
+        <span id="tb-xy">0.00, 0.00 m</span>
+        <span>SNAP <b>0.5 m</b></span>
+        <span>GRID <b>5 m</b></span>
+      </div>
+    </div>
+
+    <!-- Act 3 instrument -->
+    <div id="osd">
+      <div class="osd-top">
+        <div class="osd-label">Lap</div>
+        <div class="osd-timer" id="osd-timer">0.00</div>
+        <div class="osd-gate" id="osd-gate">Gate 1 of 7</div>
+      </div>
+      <div class="osd-corner osd-left">
+        <div class="osd-value" id="osd-speed">0 km/h</div>
+        <div class="osd-sub">Ground speed</div>
+        <div class="osd-bar"><div class="osd-fill warm" id="osd-throttle"></div></div>
+      </div>
+      <div class="osd-corner osd-right">
+        <div class="osd-value" id="osd-volts">16.4 V</div>
+        <div class="osd-sub">4S pack &#183; Acro</div>
+        <div class="osd-bar"><div class="osd-fill" id="osd-batt"></div></div>
+      </div>
+    </div>
+
+    <div id="beats"></div>
+
+    <main id="flow">
+      <!-- ACT 1: the build -->
+      <section class="act" id="top" data-act="assemble" style="min-height: 300vh">
+        <div class="pin">
+          <div class="copy" data-copy="assemble">
+            <p class="eyebrow">01 &#183; The machine</p>
+            <h1 class="wordmark">WEB<span class="fpv">FPV</span></h1>
+            <div class="rule"></div>
+            <p class="lede">
+              A five inch racing quad, built in front of you. Frame, stack,
+              motors, loom, camera, props.
+            </p>
+            <p class="lede">
+              Then it flies on <strong>Betaflight 4.5.1</strong>, compiled to
+              WebAssembly and running the real control loop at 1&#8239;kHz.
+              Not an approximation of one.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ACT 2: the course -->
+      <section class="act" data-act="build" style="min-height: 300vh">
+        <div class="pin">
+          <div class="copy" data-copy="build">
+            <p class="eyebrow">02 &#183; The course</p>
+            <h2>Draw a track.<br /><em>Watch it stand up.</em></h2>
+            <p class="lede">
+              The track builder is a plan view and a snap grid. Drop gates,
+              drag the line, and the course rises in 3D beside you at
+              published MultiGP dimensions.
+            </p>
+            <div class="rule"></div>
+            <dl class="specs">
+              <div><dt>Standard gate</dt><dd>1.75 <span class="unit">m opening</span></dd></div>
+              <div><dt>Frame tube</dt><dd>38 <span class="unit">mm PVC</span></dd></div>
+              <div><dt>Snap</dt><dd>0.5 <span class="unit">m</span></dd></div>
+              <div><dt>Stored</dt><dd>In your browser</dd></div>
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      <!-- ACT 3: the flight -->
+      <section class="act" data-act="fly" style="min-height: 780vh">
+        <div class="pin">
+          <div class="copy copy-tight" data-copy="fly">
+            <p class="eyebrow">03 &#183; The line</p>
+            <h2>Now fly it.</h2>
+            <p class="lede">
+              Camera on the airframe, thirty degrees up, eighty five degree
+              lens. Every gate is a decision made three gates early.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ACT 4: the close -->
+    <section id="close">
+      <div class="close-copy">
+        <p class="eyebrow eyebrow-lit" style="justify-content: center">04 &#183; The point</p>
+        <h1 class="shout">
+          Don&#8217;t be a<br />Sh<span class="hash">#</span>t pilot.
+          <span class="practice">You must practice.</span>
+        </h1>
+        <p class="close-sub">
+          Nobody gets smooth by reading about it. Free, in the browser, no
+          install, no account. Bring a radio or fly it on the keyboard.
+        </p>
+      </div>
+      <div class="cards" id="cards">
+        <a class="card" href="https://webfpvsimulator.onrender.com/?map=field" data-dest="sim" style="--accent: var(--mint)">
+          <span class="card-n">01</span>
+          <span class="card-t">Launch the simulator</span>
+          <span class="card-d">The MultiGP race field. Radio, gamepad or keyboard. Nothing to install.</span>
+          <span class="card-go">Fly now</span>
+        </a>
+        <a class="card" href="https://webfpvsimulator.onrender.com/src/trackbuilder/index.html" data-dest="builder" style="--accent: var(--sakura)">
+          <span class="card-n">02</span>
+          <span class="card-t">Track builder</span>
+          <span class="card-d">Draw a course on a snap grid, watch it stand up in 3D, then fly it.</span>
+          <span class="card-go">Build a course</span>
+        </a>
+        <a class="card" href="https://webfpv-board.onrender.com/" data-dest="board" style="--accent: var(--amber)">
+          <span class="card-n">03</span>
+          <span class="card-t">Leaderboard</span>
+          <span class="card-d">Every published course, and the times flown on it. Post yours.</span>
+          <span class="card-go">See the times</span>
+        </a>
+      </div>
+    </section>
+
+    <footer>
+      <span>GPLv3 &#183; Betaflight 4.5.1 compiled to WebAssembly</span>
+      <div class="foot-links" id="foot">
+        <a href="https://github.com/Mathew-Harvey/WebFPVSimulator" rel="noreferrer">Simulator repo</a>
+        <a href="https://github.com/Mathew-Harvey/WebFPVSimulator-LeaderBoard" rel="noreferrer">Leaderboard repo</a>
+        <a href="https://betaflight.com" rel="noreferrer">Betaflight</a>
+        <a href="https://www.gnu.org/licenses/gpl-3.0.html" rel="noreferrer">GPLv3</a>
+      </div>
+    </footer>
+
+    <div id="boot">
+      <div class="boot-mark">WEB<span class="fpv">FPV</span></div>
+      <div class="boot-rail"><div class="boot-fill" id="boot-fill"></div></div>
+      <div class="boot-note" id="boot-note">Torquing the arms</div>
+    </div>
+
+    <div id="nowebgl">
+      <div>
+        <h2>This page needs WebGL.</h2>
+        <p class="lede" style="margin: 0 auto">
+          The simulator itself needs it too. Try a current Chrome, Edge,
+          Firefox or Safari with hardware acceleration on.
+        </p>
+      </div>
+    </div>
+
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>
