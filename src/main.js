@@ -3,10 +3,11 @@
  * and who gets told about it.
  *
  * ONE clock drives everything. `T` is a continuous number over the whole
- * page: 0 to 1 is the build, 1 to 2 is the track, 2 to 3 is the flight, 3 to
- * 4 is the close. It is measured off the sections' real offsets rather than
- * assumed from their CSS heights, so changing a section's length in the
- * stylesheet re-times the film instead of desynchronising it.
+ * page: 0 to 1 is the build, 1 to 2 is the track, 2 to 3 is the flight, and
+ * 3 to 4 is the reason and the close together. It is measured off the
+ * sections' real offsets rather than assumed from their CSS heights, so
+ * changing a section's length in the stylesheet re-times the film instead
+ * of desynchronising it.
  *
  * Every visual is a pure function of T. That is the rule the whole file
  * obeys, and it is what makes the page scrubbable: drag the scrollbar
@@ -341,7 +342,13 @@ const el = {
 };
 
 const ACTS = [...document.querySelectorAll('[data-act]')];
-const CLOSE = document.getElementById('close');
+/*
+ * Where the last stretch of the timeline begins. NOT the close: the reason
+ * section sits above it, and if T only started moving at the close then the
+ * camera held one still frame for the whole of the reading. It is the same
+ * pull-out either way, just given the scroll length it always wanted.
+ */
+const FINAL = document.getElementById('why') || document.getElementById('close');
 const COPIES = new Map();
 for (const c of document.querySelectorAll('[data-copy]')) {
   COPIES.set(c.dataset.copy, c);
@@ -423,7 +430,7 @@ function measure() {
     top: node.offsetTop,
     height: node.offsetHeight,
   }));
-  const closeTop = CLOSE.offsetTop;
+  const closeTop = FINAL.offsetTop;
   const docEnd = Math.max(
     closeTop + vh,
     document.documentElement.scrollHeight - vh,

@@ -14,8 +14,12 @@ that is one more barrier on a pile that was already too tall.
 
 This one takes barriers off the pile instead. It runs in a browser tab,
 costs nothing, installs nothing, and asks for no account. An Xbox controller
-and a computer you already have in front of you is the whole kit list. The
-page says that on the `#why` panel between the flight and the close.
+and a computer you already have in front of you is the whole kit list.
+
+The page says that in about eighty words, in `#why`, between the flight and
+the close. It is deliberately short. Everything else here says its piece in
+a headline and two lines over a moving camera, and an argument made in three
+paragraphs and a comparison table read as a slide deck stapled to a film.
 
 ```
 Act 1  A five inch racing quad assembles in a dark studio, part by part,
@@ -32,10 +36,19 @@ Act 3  Daylight arrives, the quad drops onto the racing line, and the rest
 Act 4  Don't be a Sh#t pilot. You must practice.
 ```
 
-Between act 3 and the close sits `#why`, which is not an act: it is outside
-`<main>`, the timeline holds at T = 3 through it, and the golden hour course
-is parked behind the type rather than sliding under it. The one section of
-the page that asks to be read is the one section that is not moving.
+Between act 3 and the close sits `#why`, which is not an act: nothing
+assembles or draws itself there, the copy is simply on the page. It is
+sized and placed like one all the same, at the act gutter and in the act
+copy's column, so the reason lands in the exact place the flight's copy
+just left.
+
+The camera does not stop for it. The last stretch of the timeline begins at
+`#why` rather than at the close, so 3 to 4 covers the reason and the close
+together and the hero pull-out plays across the reading: the course falls
+away behind the type and lands under the invitation. That stretch is also
+the only place the pull-out ever had room to finish. Measured from the
+close alone it had about a fifth of a screen of scroll and played a quarter
+of its arc.
 
 Client side only. No build step, no bundler, no framework, no dependencies
 to install, no API. Three.js comes from a CDN import map, the same version
