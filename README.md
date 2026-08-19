@@ -12,7 +12,9 @@ Act 1  A five inch racing quad assembles in a dark studio, part by part,
 Act 2  The camera pulls out. The studio floor turns out to be a track
        builder's plan grid, and a seven gate course draws itself on it.
 Act 3  Daylight arrives, the quad drops onto the racing line, and the rest
-       of the page is one FPV lap through the gates.
+       of the page is one FPV lap through the gates. Scroll back up and it
+       does not reverse: it yaws around, banked, seen from outside for the
+       half second the turn takes, and flies home nose first.
 Act 4  Don't be a Sh#t pilot. You must practice.
 ```
 
@@ -90,7 +92,12 @@ Without it the page is a function of scroll position and a ten second
 autoplay, and there is no way to name a frame in a bug report or a review.
 
 With `?t=` set, `window.__wf` exposes `{ stage, course, drone, petals }` so a
-frame can be interrogated as well as named. Without it, no global.
+frame can be interrogated as well as named. `?debug=1` exposes the same
+handle without pinning, which is what the turn around needs: the heading is
+a half second of animation that only happens while somebody is scrolling the
+other way, and a pinned frame is exactly the state that cannot be in. It adds
+`flight(s, flip)` to pose the aircraft and read the numbers back,
+`heading()`, and `setHeading()` to force one. On a clean URL, no global.
 
 ## How it is put together
 
@@ -109,7 +116,11 @@ frame can be interrogated as well as named. Without it, no global.
 
 Two rules hold the thing together:
 
-**Every visual is a pure function of `T`.** `T` is measured off the sections'
+**Every visual is a pure function of `T`**, with one deliberate exception:
+which way the quad is pointing. That has to be hysteretic, because it depends
+on the DIRECTION of travel rather than the position, and a turn once started
+has to finish. It lives in one function with a deadband, so the damping
+settling by a hundredth after a flick cannot spin the aircraft round. `T` is measured off the sections'
 real offsets rather than assumed from their CSS heights, so changing a
 section's length in the stylesheet re-times the film instead of
 desynchronising it. Nothing accumulates between frames except the scroll
