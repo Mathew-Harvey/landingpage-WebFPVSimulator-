@@ -541,31 +541,15 @@ function poseChase(pos, quat, back, high, outPos, outQuat) {
 }
 
 /*
- * The turn camera: off the side of the line, close, looking back at the
- * aircraft.
+ * The lap is FPV and stays FPV, including through the turn.
  *
- * Anchored to the LINE's frame and not to the body's, which is the whole
- * trick. A camera parented to a yawing quad yaws with it and shows a
- * perfectly steady aircraft against a world that spins, which is the one
- * thing this shot must not do. Held still in the world, the quad pivots in
- * the middle of the frame and you can see it bank.
- */
-function poseTurn(pos, s, outPos, outQuat) {
-  const u = ((s % 1) + 1) % 1;
-  course.line.getTangentAt(u, vTmp);
-  /* Right of the line, and a little behind and above it. */
-  vTmp2.set(-vTmp.z, 0, vTmp.x);
-  outPos.copy(pos)
-    .addScaledVector(vTmp2, 1.25)
-    .addScaledVector(vTmp, -0.62);
-  /* Nearly level with it, not above it. Looking down puts the quad on a
-   * lawn; looking across puts it against the sunset, which is the whole
-   * reason for leaving the goggles. */
-  outPos.y += 0.10;
-  lookQuat(outPos, pos, outQuat);
-}
-
-/*
+ * There was a third person shot here that cut outside for the half second
+ * the aircraft took to come round. It looked like a replay, and a replay is
+ * the one thing this page is not: the whole argument of the flight act is
+ * that this is what you see from the goggles. Leaving them to admire the
+ * aircraft breaks it. The turn now happens where the pilot is, so what sells
+ * it is the sweep of the horizon rather than a view of the airframe.
+ *
  * FPV. The camera sits where the camera sits: 80 mm forward of the airframe
  * centre and 18 mm up, tilted 30 degrees up from the airframe, which are the
  * simulator's own mount and its default angle. The airframe is pitched nose
@@ -734,7 +718,15 @@ function flightPose(s, outPos, outQuat, bobPhase, flip = 0, turnBank = 0) {
  * after a flick does not spin the aircraft round; and once a turn starts it
  * finishes, because a real one does.
  */
-const TURN_SECONDS = 0.55;
+/*
+ * Longer than it was, and eased, because it is now flown from inside.
+ *
+ * Half a second was fine watched from outside. Through a 104 degree lens
+ * with your eye at the camera it is a whip pan: the horizon crosses the
+ * frame faster than it can be read and it lands as a glitch rather than as a
+ * manoeuvre. At 1.3 s, eased in and out, the world sweeps past.
+ */
+const TURN_SECONDS = 1.3;
 const TURN_DEADBAND = 0.05;
 /* How hard it lays over mid turn. 0.42 rad is 24 degrees, which is a quad
  * whipping round rather than a quad pirouetting on the spot. */
@@ -766,9 +758,19 @@ function updateHeading(flying, dt, active) {
   if (Math.abs(flyWant - flyFlip) > 1e-4) {
     flyDir = flyWant > flyFlip ? 1 : -1;
   }
+  /* NB the value returned below is the eased one, and everything downstream
+   * uses it: the bank has to lean on the same curve the nose swings on, or
+   * the quad rolls before it turns. */
   const step = dt / TURN_SECONDS;
   flyFlip += THREE.MathUtils.clamp(flyWant - flyFlip, -step, step);
-  return flyFlip;
+  /*
+   * Eased, not linear. The driver above ramps at a constant rate, which
+   * means the yaw starts and stops instantly: from the goggles that is two
+   * jolts with a smooth bit in between. Smoothstep takes the angular
+   * velocity to zero at both ends, so the aircraft rolls into the turn,
+   * sweeps, and settles out of it.
+   */
+  return flyFlip * flyFlip * (3 - 2 * flyFlip);
 }
 
 /* The extra roll a turn puts on, zero at either heading and hardest through
@@ -810,7 +812,13 @@ function frame(ms) {
   scrollTarget = window.scrollY || window.pageYOffset || 0;
   /* Critically damped enough to feel like film and not like syrup. A raw
    * scroll value makes a 3D camera judder on every wheel notch. */
-  scrollNow += (scrollTarget - scrollNow) * Math.min(1, dt * 9.5);
+  /*
+   * Softer than it was. A wheel does not deliver scroll, it delivers steps,
+   * and at 9.5 each notch arrived at the camera almost intact: the flight
+   * act twitched a gate at a time. At 6.5 the notches are smeared into a
+   * move, which is what a camera does.
+   */
+  scrollNow += (scrollTarget - scrollNow) * Math.min(1, dt * 6.5);
   if (Math.abs(scrollTarget - scrollNow) < 0.4) {
     scrollNow = scrollTarget;
   }
@@ -866,14 +874,6 @@ function frame(ms) {
   const flip = updateHeading(flying, dt, T >= 2.0 && T < 3.0);
   /* How far outside the aircraft the camera is: nothing at either heading,
    * everything at the half way point of a turn. */
-  /*
-   * Steeper than a plain sine. sin() alone leaves the camera creeping out of
-   * the airframe for the first fifth of the turn, which is a tenth of a
-   * second spent inside the quad with the near plane eating it. Multiplied
-   * and clamped, it is outside by the time the quad is 30 degrees round,
-   * holds there for most of the turn, and is back in as it settles.
-   */
-  const turnView = Math.min(1, Math.sin(flip * Math.PI) * 1.9);
   const turnBank = turnBankNow(flip);
 
   /*
@@ -889,14 +889,12 @@ function frame(ms) {
    *
    * The contrast between the first and the last is the payoff of the piece.
    */
-  const baseFov = T < 1.0 ? 24
-    : T < 1.98 ? lerp(24, 46, ease(T, 1.0, 1.34))
-      : T < 2.9 ? lerp(46, 104, ease(T, 1.98, 2.24))
-        : lerp(104, 58, ease(T, 2.92, 3.20));
-  /* 104 degrees is an FPV lens. Pointed at the aircraft from a metre and a
-   * half away it is a fisheye, and the quad ends up a speck in the middle of
-   * a bent horizon, so the turn shot takes a normal one. */
-  stage.setFov(lerp(baseFov, 58, turnView));
+  stage.setFov(
+    T < 1.0 ? 24
+      : T < 1.98 ? lerp(24, 46, ease(T, 1.0, 1.34))
+        : T < 2.9 ? lerp(46, 104, ease(T, 1.98, 2.24))
+          : lerp(104, 58, ease(T, 2.92, 3.20)),
+  );
 
   if (T < 1.02 && !REDUCED) {
     /* Studio: on the turntable, a shade nose down so it reads as a machine
@@ -964,21 +962,6 @@ function frame(ms) {
     camPos.lerp(pos2, toFpv);
     camQuat.slerp(quat2, toFpv);
 
-    /*
-     * Out of the goggles for the turn, and back in when it is done.
-     *
-     * sin(flip * PI) is zero at both headings and one exactly half way
-     * between them, which is the shape this wants without a second piece of
-     * state to track: the camera leaves the airframe as the quad starts to
-     * come round, is fully outside at the moment it is pointing sideways,
-     * and is back inside by the time it is facing home. Hold a heading and
-     * it is zero, so ordinary flight in either direction is FPV.
-     */
-    if (turnView > 0.001) {
-      poseTurn(dronePos, s, pos2, quat2);
-      camPos.lerp(pos2, turnView);
-      camQuat.slerp(quat2, turnView);
-    }
 
     /* Out of the airframe again for the close, so the last thing seen from
      * inside the quad is the finish gate. */

@@ -1084,7 +1084,22 @@ export function buildDrone() {
       discs[m].visible = rotorBuilt[m] && throttle > 0.30;
       if (discs[m].visible) {
         discs[m].material.opacity = Math.min(0.92, Math.max(0, (throttle - 0.30) * 1.9));
-        discs[m].rotation.y = spinPhase * 0.11 * PROP_SPIN[m];
+        /*
+         * The disc does NOT get spun, and that is a fix rather than an
+         * omission.
+         *
+         * It was being turned with rotation.y. The disc is a plane laid flat
+         * by rotation.x = -PI/2, and Three composes Euler XYZ as Rx.Ry.Rz,
+         * so a y term is applied BEFORE the plate is laid down: it tilted
+         * the disc up onto its edge instead of turning it in its own plane.
+         * Four blur discs standing vertically beside the motors is exactly
+         * what "the props are spinning on the wrong axis" looks like.
+         *
+         * The correct axis here would be z, which spins the plane before it
+         * is laid flat. But the texture is a radial gradient and is
+         * symmetric about its own centre, so turning it is invisible work.
+         * The disc stays still and stays flat.
+         */
       }
     }
   }

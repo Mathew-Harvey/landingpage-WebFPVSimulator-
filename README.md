@@ -13,8 +13,8 @@ Act 2  The camera pulls out. The studio floor turns out to be a track
        builder's plan grid, and a seven gate course draws itself on it.
 Act 3  Daylight arrives, the quad drops onto the racing line, and the rest
        of the page is one FPV lap through the gates. Scroll back up and it
-       does not reverse: it yaws around, banked, seen from outside for the
-       half second the turn takes, and flies home nose first.
+       does not reverse: it yaws around, banked, and flies home nose first.
+       The turn is flown from inside the goggles like everything else.
 Act 4  Don't be a Sh#t pilot. You must practice.
 ```
 
@@ -115,6 +115,12 @@ other way, and a pinned frame is exactly the state that cannot be in. It adds
 | `src/petals.js` | Sakura, one draw call, all of it in the vertex shader |
 
 Two rules hold the thing together:
+
+The flight act's height is the GEARING between the wheel and the aircraft.
+A wheel delivers steps, not scroll, so how far one notch moves the quad is
+set by how tall that section is, and the scroll damping decides how much of
+a notch survives to the camera. They are tuned together: 1000vh and a 6.5
+lerp puts about one and a quarter gates on a screen.
 
 **Every visual is a pure function of `T`**, with one deliberate exception:
 which way the quad is pointing. That has to be hysteretic, because it depends
