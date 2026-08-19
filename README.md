@@ -1,7 +1,21 @@
 # WebFPV landing page
 
 The front door for [WebFPVSimulator](https://github.com/Mathew-Harvey/WebFPVSimulator).
-One canvas, one scroll, four acts, and three links out.
+One canvas, one scroll, four acts, a reason, and three links out.
+
+## Why it exists
+
+FPV has a steep learning curve and it charges the fee up front: a quad, a
+radio, goggles, batteries, a charger, and a first week spent mostly
+repairing what you bought. The existing simulators are the right answer to
+that and the good ones are genuinely good, but they are also a purchase, a
+download and an install on a machine that can run them. For a lot of people
+that is one more barrier on a pile that was already too tall.
+
+This one takes barriers off the pile instead. It runs in a browser tab,
+costs nothing, installs nothing, and asks for no account. An Xbox controller
+and a computer you already have in front of you is the whole kit list. The
+page says that on the `#why` panel between the flight and the close.
 
 ```
 Act 1  A five inch racing quad assembles in a dark studio, part by part,
@@ -17,6 +31,11 @@ Act 3  Daylight arrives, the quad drops onto the racing line, and the rest
        The turn is flown from inside the goggles like everything else.
 Act 4  Don't be a Sh#t pilot. You must practice.
 ```
+
+Between act 3 and the close sits `#why`, which is not an act: it is outside
+`<main>`, the timeline holds at T = 3 through it, and the golden hour course
+is parked behind the type rather than sliding under it. The one section of
+the page that asks to be read is the one section that is not moving.
 
 Client side only. No build step, no bundler, no framework, no dependencies
 to install, no API. Three.js comes from a CDN import map, the same version

@@ -33,7 +33,7 @@
     <title>WebFPV, a browser FPV racing simulator</title>
     <meta
       name="description"
-      content="Build the quad, draw the course, fly the line. A browser FPV racing simulator running Betaflight compiled to WebAssembly."
+      content="Build the quad, draw the course, fly the line. A free browser FPV racing simulator running Betaflight compiled to WebAssembly. No install, no account: a gamepad and a browser is the whole kit list."
     />
     <meta name="theme-color" content="#141c16" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23141c16'/%3E%3Cpath d='M9 9h5v5H9zM18 9h5v5h-5zM9 18h5v5H9zM18 18h5v5h-5z' fill='%23e8a8b8'/%3E%3C/svg%3E" />
@@ -708,6 +708,100 @@
       }
 
       /* ------------------------------------------------------------------
+         The reason. One plain page between the flight and the close, where
+         the film stops and the page says why it was built at all.
+
+         It sits OUTSIDE the acts on purpose. The timeline holds at T = 3
+         through it, so the golden hour course is parked behind the type
+         rather than sliding under it, and the one section that asks to be
+         read is the one section that is not moving.
+         ------------------------------------------------------------------ */
+
+      #why {
+        position: relative;
+        z-index: 10;
+        padding: clamp(96px, 17vh, 190px) var(--gutter) clamp(30px, 6vh, 70px);
+      }
+      .why-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+        gap: clamp(30px, 5vw, 68px);
+        align-items: start;
+        width: min(1080px, 100%);
+        margin: 0 auto;
+      }
+      /* The scene behind this section is the course at golden hour, which
+         is the brightest frame the page draws. Cream at 0.78 over a lit sky
+         is not readable, so the prose here carries the same shadow the
+         closing line does. */
+      .why-copy .lede {
+        max-width: 34em;
+        color: rgba(243, 234, 212, 0.88);
+        text-shadow: 0 2px 14px rgba(8, 12, 9, 0.85);
+      }
+      /* Smaller than an act headline, and deliberately. This section is a
+         column of prose to be read, not a title card over a moving scene;
+         at the act size the first line broke and left "into." on its own. */
+      .why-copy h2 {
+        max-width: 14em;
+        margin-bottom: 22px;
+        font-size: clamp(27px, 3.5vw, 44px);
+      }
+
+      /* The barrier, itemised. Small mono figures in a column, because the
+         cost of starting FPV is a receipt and should read like one. */
+      .why-panel {
+        background: var(--panel-fill);
+        border: 1px solid var(--line);
+        border-top: 2px solid var(--edge);
+        padding: 18px 20px 20px;
+      }
+      .why-h {
+        margin: 0 0 14px;
+        font-size: 9.5px;
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: var(--slate);
+      }
+      .why-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 9px 0;
+        border-bottom: 1px solid var(--line-2);
+        font-size: 14px;
+        color: rgba(243, 234, 212, 0.82);
+      }
+      .why-row:last-child { border-bottom: 0; }
+      .why-row b {
+        font: 12px/1 var(--mono);
+        letter-spacing: 0.04em;
+        font-weight: 500;
+        color: var(--dim);
+        white-space: nowrap;
+      }
+      /* The second panel is the same furniture with the numbers taken out,
+         which is the whole argument in one glance. */
+      .why-panel.is-free { border-top-color: rgba(125, 255, 180, 0.4); }
+      .why-panel.is-free .why-row b { color: var(--mint); }
+      .why-panel + .why-panel { margin-top: 14px; }
+
+      .why-sign {
+        margin: 26px 0 0;
+        font-size: clamp(15px, 1.6vw, 18px);
+        line-height: 1.55;
+        color: var(--cream);
+        text-shadow: 0 2px 14px rgba(8, 12, 9, 0.85);
+      }
+      .why-sign em { font-style: normal; color: var(--sakura); }
+
+      @media (max-width: 900px) {
+        .why-grid { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+        #why { padding-top: clamp(70px, 12vh, 120px); }
+      }
+
+      /* ------------------------------------------------------------------
          The close. The one thing the page is for.
          ------------------------------------------------------------------ */
 
@@ -1148,24 +1242,82 @@
       </section>
     </main>
 
+    <!--
+      The reason. Deliberately outside <main>'s acts: it is a page to read,
+      not a frame to scroll, and the timeline parks the camera on the course
+      at golden hour behind it while it is being read.
+    -->
+    <section id="why">
+      <div class="why-grid">
+        <div class="why-copy">
+          <p class="eyebrow eyebrow-lit">04 &#183; Why this exists</p>
+          <h2>FPV is hard to get into.<br /><em>Trying it shouldn&#8217;t be.</em></h2>
+          <p class="lede">
+            The learning curve is steep and the entry fee is paid up front.
+            A quad, a radio, goggles, a pile of batteries, a charger. Hundreds
+            of dollars and a couple of evenings of setup before you have
+            hovered once, and the first week of a real quad is mostly spent
+            repairing it.
+          </p>
+          <p class="lede">
+            Simulators are the honest answer to that, and the good ones are
+            genuinely good. They are also a purchase, a download and an
+            install, on a machine that can run them. For a lot of people that
+            is one more barrier on a pile that was already too tall, and the
+            quad never gets bought at all.
+          </p>
+          <p class="lede">
+            So this one is built to take barriers off the pile rather than
+            add to it. It runs in a browser tab. Nothing to buy, nothing to
+            install, no account, no email. <strong>An Xbox controller and a
+            computer you already have in front of you is the whole kit
+            list.</strong>
+          </p>
+          <p class="why-sign">
+            Learn the sticks here for nothing.
+            <em>Then go and spend the money, if you still want to.</em>
+          </p>
+        </div>
+
+        <div class="why-panels">
+          <div class="why-panel">
+            <h4 class="why-h">Before you fly, usually</h4>
+            <div class="why-row"><span>Airframe, spares, a soldering iron</span><b>up front</b></div>
+            <div class="why-row"><span>Radio, goggles, batteries, charger</span><b>up front</b></div>
+            <div class="why-row"><span>A simulator to practise in</span><b>licence</b></div>
+            <div class="why-row"><span>A PC that will run it</span><b>required</b></div>
+            <div class="why-row"><span>An evening of installing things</span><b>before lap 1</b></div>
+          </div>
+          <div class="why-panel is-free">
+            <h4 class="why-h">Before you fly, here</h4>
+            <div class="why-row"><span>A browser tab</span><b>free</b></div>
+            <div class="why-row"><span>An Xbox pad, or your own radio</span><b>plug in</b></div>
+            <div class="why-row"><span>Download</span><b>none</b></div>
+            <div class="why-row"><span>Account, email, card</span><b>none</b></div>
+            <div class="why-row"><span>This page to your first lap</span><b>one click</b></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ACT 4: the close -->
     <section id="close">
       <div class="close-copy">
-        <p class="eyebrow eyebrow-lit" style="justify-content: center">04 &#183; The point</p>
+        <p class="eyebrow eyebrow-lit" style="justify-content: center">05 &#183; The point</p>
         <h1 class="shout">
           Don&#8217;t be a<br />Sh<span class="hash">#</span>t pilot.
           <span class="practice">You must practice.</span>
         </h1>
         <p class="close-sub">
           Nobody gets smooth by reading about it. Free, in the browser, no
-          install, no account. Bring a radio or a gamepad.
+          install, no account. Plug in the Xbox pad and take a lap.
         </p>
       </div>
       <div class="cards" id="cards">
         <a class="card" href="https://webfpvsimulator.onrender.com/?map=field" data-dest="sim" style="--accent: var(--mint)">
           <span class="card-n">01</span>
           <span class="card-t">Launch the simulator</span>
-          <span class="card-d">The MultiGP race field. Bring a radio or a gamepad. Nothing to install.</span>
+          <span class="card-d">The MultiGP race field. Plug in an Xbox pad or a radio. Free, nothing to install.</span>
           <span class="card-go">Fly now</span>
         </a>
         <a class="card" href="https://webfpvsimulator.onrender.com/src/trackbuilder/index.html" data-dest="builder" style="--accent: var(--sakura)">
