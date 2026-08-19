@@ -104,7 +104,7 @@ const BEATS = [
   {
     at: 0.64,
     k: 'Sticks',
-    t: 'Plug in a radio in joystick mode, or fly it on the keyboard until one turns up.',
+    t: 'Plug in a radio in joystick mode, or a gamepad. Sticks are the skill, and a keyboard has none.',
   },
   {
     at: 0.84,

@@ -59,37 +59,23 @@ export function boardOrigin() {
  * page inside the simulator's static site rather than a service of its
  * own, which is why its path is spelled out; `map=field` is the simulator's
  * built in MultiGP circuit and is what a first visit should land on.
+ *
+ * IDS AND ADDRESSES ONLY. No titles, no wording, no accents.
+ *
+ * There used to be a full copy of every card in here, and the page has not
+ * read it since the launch links moved into the static markup: index.html
+ * is what a visitor sees. So it was three paragraphs of unreachable prose
+ * quietly disagreeing with the three the page actually renders, which is
+ * how one of them ended up still recommending a keyboard after the others
+ * had stopped. The words live in the HTML. This file knows where things
+ * are, and that is all it knows.
  */
 export function destinations() {
   const sim = simOrigin();
   const board = boardOrigin();
   return [
-    {
-      id: 'sim',
-      n: '01',
-      title: 'Launch the simulator',
-      note: 'The MultiGP race field. Radio, gamepad or keyboard. Nothing to install.',
-      href: `${sim}/?map=field`,
-      accent: 'var(--mint)',
-      cta: 'Fly now',
-    },
-    {
-      id: 'builder',
-      n: '02',
-      title: 'Track builder',
-      note: 'Draw a course on a snap grid, watch it stand up in 3D, then fly it.',
-      href: `${sim}/src/trackbuilder/index.html`,
-      accent: 'var(--sakura)',
-      cta: 'Build a course',
-    },
-    {
-      id: 'board',
-      n: '03',
-      title: 'Leaderboard',
-      note: 'Every published course, and the times flown on it. Post yours.',
-      href: `${board}/`,
-      accent: 'var(--amber)',
-      cta: 'See the times',
-    },
+    { id: 'sim', href: `${sim}/?map=field` },
+    { id: 'builder', href: `${sim}/src/trackbuilder/index.html` },
+    { id: 'board', href: `${board}/` },
   ];
 }
