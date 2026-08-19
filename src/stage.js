@@ -210,15 +210,49 @@ export function createStage(canvas) {
     blob.material.opacity = Math.min(1, strength) * Math.max(0.12, 1 - alt * 0.18);
   }
 
-  let width = 1;
-  let height = 1;
+  /* 0 is "never sized". It has to be a value the measurement below cannot
+     produce, or the first call short circuits and the canvas keeps the
+     300 by 150 the HTML spec gives it. Its fallback bottoms out at 1. */
+  let width = 0;
+  let height = 0;
 
+  /*
+   * The canvas's OWN box, not the window's.
+   *
+   * `window.innerWidth` includes the classic scrollbar; the canvas is
+   * `position: fixed; inset: 0`, so its box is the layout viewport and does
+   * not. On Windows that is a 15 px disagreement, and it costs twice: the
+   * drawing buffer is rendered 15 px wider than the box it is displayed in,
+   * so the whole frame is squeezed horizontally, and `camera.aspect` and the
+   * composition bias are both computed for a frame that is not the one on
+   * screen. Measuring the element settles it by construction, whatever the
+   * platform puts around it.
+   *
+   * The fallback matters: a display:none or not yet laid out canvas reports
+   * zero, and a zero width camera is a NaN projection and a black page.
+   */
+  /*
+   * Cheap enough to call every frame, and it is: sizing once and waiting for
+   * a resize event is how the stage ended up rendering for a frame that was
+   * not on screen. The event does not fire when a scrollbar appears, and it
+   * does not fire when a viewport that measured zero at module evaluation
+   * later gets a size. Both leave a camera composed for the wrong frame with
+   * nothing to correct it. Comparing two integers per frame does.
+   *
+   * Returns whether anything moved, so the caller can re-measure with it.
+   */
   function resize() {
-    width = window.innerWidth;
-    height = window.innerHeight;
+    const w = canvas.clientWidth || window.innerWidth || 1;
+    const h = canvas.clientHeight || window.innerHeight || 1;
+    if (w === width && h === height) {
+      return false;
+    }
+    width = w;
+    height = h;
     renderer.setSize(width, height, false);
     camera.aspect = width / Math.max(1, height);
     applyFov();
+    return true;
   }
   window.addEventListener('resize', resize, { passive: true });
 

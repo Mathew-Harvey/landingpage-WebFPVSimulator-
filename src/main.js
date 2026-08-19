@@ -492,14 +492,63 @@ function lookQuat(from, to, out) {
  */
 const STUDIO_Y = 0.105;
 
+/*
+ * Act one's composition, in one place, because the lens, the orbit and the
+ * bias are one decision and were previously three.
+ *
+ * The shot has to share a 16:9 frame with a copy column that owns the left
+ * 52 percent of it. That is the constraint everything here answers to: a
+ * subject filling 79 percent of the frame width CANNOT also sit clear of
+ * that column, and the old orbit closed to exactly that. Pushed right by a
+ * bias that knew about the window's aspect but nothing about the subject's
+ * size, the quad ran off the right hand edge for the whole act, by 5 percent
+ * of the frame at the top of the page and 18 percent by the bottom of it.
+ *
+ * So the orbit backs off and the lens opens a little. The MOVE is unchanged:
+ * the camera still closes on the hero by the same ratio over the act, and
+ * the subject still grows. It grows from 29 to 46 percent of the frame
+ * instead of from 50 to 79, which is the room the layout was always asking
+ * for.
+ *
+ * SUBJECT_R is half the airframe's horizontal diagonal, props included. It
+ * is the worst case: the quad turns on its axis through the act, so its
+ * projected width is this only at the corners of the spin.
+ */
+const STUDIO_FOV = 30;
+const STUDIO_HALF = THREE.MathUtils.degToRad(STUDIO_FOV) * 0.5;
+const STUDIO_R = [2.44, 1.78];
+const STUDIO_H = [1.10, 0.55];
+const SUBJECT_R = 0.225;
+/* How much of the half frame stays clear at the edge, as a fraction. */
+const FRAME_EDGE = 0.05;
+
+/*
+ * The most the camera may yaw before the subject falls off the edge.
+ *
+ * The bias is what the LAYOUT wants; this is what the FRAME can give. It is
+ * a function of the orbit radius because the subject's angular size is, and
+ * that is precisely what the bias on its own does not know: the same offset
+ * that reads as a composition at 2.44 m is a crop at 1.78 m.
+ *
+ * Computed against the studio's OWN lens angle rather than the live one.
+ * The live angle is mid lerp to 46 degrees for the whole of act two, and
+ * heldOffset() measures the act two hand over against poseStudio(1): a cap
+ * that moved with the lens would make that reference drift and the held
+ * quad would slide across the frame while the track drew itself.
+ */
+function studioYawCap(r) {
+  const subject = Math.atan(SUBJECT_R / Math.max(0.01, r));
+  return Math.max(0, STUDIO_HALF * (1 - FRAME_EDGE) - subject);
+}
+
 function poseStudio(t, outPos, outQuat) {
   const az = lerp(-1.25, 0.42, smooth(t));
-  const r = lerp(1.78, 1.30, smooth(clamp01(t * 1.08)));
-  const h = STUDIO_Y + lerp(0.80, 0.40, smooth(t));
+  const r = lerp(STUDIO_R[0], STUDIO_R[1], smooth(clamp01(t * 1.08)));
+  const h = STUDIO_Y + lerp(STUDIO_H[0], STUDIO_H[1], smooth(t));
   outPos.set(Math.sin(az) * r, h, Math.cos(az) * r);
   at.set(0, STUDIO_Y + lerp(0.012, 0.020, t), 0);
   lookQuat(outPos, at, outQuat);
-  applyBias(outQuat);
+  applyBias(outQuat, 1, 1, studioYawCap(r));
 }
 
 /*
@@ -507,9 +556,9 @@ function poseStudio(t, outPos, outQuat) {
  * slides the subject down. Both are applied in the camera's LOCAL frame, so
  * they compose with whatever the pose already decided to look at.
  */
-function applyBias(q, yawScale = 1, pitchScale = 1) {
+function applyBias(q, yawScale = 1, pitchScale = 1, yawCap = Infinity) {
   const b = stage.composeBias();
-  const yaw = b.yaw * yawScale;
+  const yaw = Math.min(b.yaw * yawScale, yawCap);
   const pitch = b.pitch * pitchScale;
   if (yaw) {
     qBias.setFromAxisAngle(AXIS_Y, yaw);
@@ -623,7 +672,7 @@ const eul = new THREE.Euler(0, 0, 0, 'YXZ');
  * a 31 m course.
  *
  * HELD_IN is deliberately the exact spot the quad already occupies when the
- * studio orbit ends, which is 0.395 m straight down the lens. Blending from
+ * studio orbit ends, wherever that is. Blending from
  * there to HELD_OUT means the hero never jumps: it simply drifts into the
  * corner of frame as the camera pulls away from it.
  */
@@ -634,7 +683,7 @@ const eul = new THREE.Euler(0, 0, 0, 'YXZ');
  * about a fifth of the frame's width: foreground, clearly nearer than the
  * course, and not competing with it. It has to be measured against THAT
  * lens rather than the hero's, or the same offset that reads as foreground
- * at 24 degrees reads as a bug sitting on the track at 46.
+ * at 30 degrees reads as a bug sitting on the track at 46.
  */
 const HELD_OUT = new THREE.Vector3(0.46, -0.50, -2.2);
 const held = new THREE.Vector3();
@@ -816,6 +865,14 @@ function frame(ms) {
   const dt = Math.min(0.05, now - clock || 0.016);
   clock = now;
 
+  /* The frame the stage is drawing for, checked against the frame on
+   * screen. It almost never changes; when it does, the timeline has to be
+   * re-measured with it, because every act's length is in vh. */
+  if (stage.resize()) {
+    measure();
+    lastT = -1;
+  }
+
   scrollTarget = window.scrollY || window.pageYOffset || 0;
   /* Critically damped enough to feel like film and not like syrup. A raw
    * scroll value makes a 3D camera judder on every wheel notch. */
@@ -887,18 +944,20 @@ function frame(ms) {
    * Three lenses, and the page changes between them rather than crossfading
    * one long one into one wide one.
    *
-   *   24 deg  the hero. A long lens makes a 0.35 m machine read as a
-   *           machine; a wide one makes it a toy on a table.
-   *   46 deg  the plan. A 31 m course does not fit in a telephoto: at 24
-   *           degrees and 46 m out the frame is 19.6 m across and two thirds
+   *   30 deg  the hero. A long lens makes a 0.35 m machine read as a
+   *           machine; a wide one makes it a toy on a table. It was 24, and
+   *           24 was too long to share a frame with the copy: see
+   *           STUDIO_FOV.
+   *   46 deg  the plan. A 31 m course does not fit in a telephoto: at 30
+   *           degrees and 46 m out the frame is 24.6 m across and a fifth
    *           of the track is off the sides of it.
    *   104 deg the lap, which is what an FPV camera actually is.
    *
    * The contrast between the first and the last is the payoff of the piece.
    */
   stage.setFov(
-    T < 1.0 ? 24
-      : T < 1.98 ? lerp(24, 46, ease(T, 1.0, 1.34))
+    T < 1.0 ? STUDIO_FOV
+      : T < 1.98 ? lerp(STUDIO_FOV, 46, ease(T, 1.0, 1.34))
         : T < 2.9 ? lerp(46, 104, ease(T, 1.98, 2.24))
           : lerp(104, 58, ease(T, 2.92, 3.20)),
   );
@@ -1196,3 +1255,4 @@ window.addEventListener('load', measure);
 }
 
 requestAnimationFrame(frame);
+
