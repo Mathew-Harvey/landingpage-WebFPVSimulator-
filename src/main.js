@@ -430,6 +430,7 @@ function measure() {
     top: node.offsetTop,
     height: node.offsetHeight,
   }));
+  composeLayout();
   const closeTop = FINAL.offsetTop;
   const docEnd = Math.max(
     closeTop + vh,
@@ -552,14 +553,57 @@ function poseStudio(t, outPos, outQuat) {
 }
 
 /*
+ * Where the hero belongs across the frame, as a camera yaw in radians.
+ *
+ * This was a curve fitted to the window's aspect, and a curve fitted to the
+ * aspect cannot know where the copy actually is. It also saturated: past
+ * about 1.87 it pinned at its ceiling, so EVERY window wider than that
+ * composed the shot identically. The copy column stayed the 30 em the
+ * stylesheet gives it, the frame kept growing, and the hero stayed clamped
+ * against the right hand edge with all the new width opening up as a hole in
+ * the middle. Measured at 1280, 1920 and 2560 the copy ended at 52, 35 and
+ * 26 percent of the frame while the quad sat at 74, 78 and 78.
+ *
+ * Dragging a window wider is exactly when that reads as broken, because
+ * everything else on the page re-flows and the quad does not.
+ *
+ * So it is measured off the layout instead: the hero is centred in whatever
+ * the copy column leaves it. That is one DOM read per actual size change,
+ * not per frame, because measure() is the only caller.
+ *
+ * The ramp is for the narrow end. Below about 900 px the stylesheet gives
+ * the copy the full width, and there is no beside to be centred in: the
+ * midpoint of what is left would jam the quad into the right margin. As the
+ * free space closes the offset fades out with it and the shot centres, which
+ * is where composePitch() takes over and drops the hero under the type.
+ */
+const HERO_ROOM = [0.34, 0.44];
+let heroYaw = 0;
+
+function composeLayout() {
+  const w = stage.size.width;
+  const copy = COPIES.get('assemble');
+  if (!copy || w < 2) {
+    heroYaw = 0;
+    return;
+  }
+  const right = copy.getBoundingClientRect().right;
+  const room = clamp01(1 - right / w);
+  /* The middle of the free space, as a signed fraction of the half frame,
+   * then through the studio lens into an angle. */
+  const ndc = clamp01(((right + w) * 0.5 / w) * 2 - 1);
+  const want = Math.atan(ndc * Math.tan(STUDIO_HALF));
+  heroYaw = want * clamp01((room - HERO_ROOM[0]) / (HERO_ROOM[1] - HERO_ROOM[0]));
+}
+
+/*
  * Turning the camera to its own left slides the subject right; tilting it up
  * slides the subject down. Both are applied in the camera's LOCAL frame, so
  * they compose with whatever the pose already decided to look at.
  */
 function applyBias(q, yawScale = 1, pitchScale = 1, yawCap = Infinity) {
-  const b = stage.composeBias();
-  const yaw = Math.min(b.yaw * yawScale, yawCap);
-  const pitch = b.pitch * pitchScale;
+  const yaw = Math.min(heroYaw * yawScale, yawCap);
+  const pitch = stage.composePitch() * pitchScale;
   if (yaw) {
     qBias.setFromAxisAngle(AXIS_Y, yaw);
     q.multiply(qBias);
@@ -1255,4 +1299,5 @@ window.addEventListener('load', measure);
 }
 
 requestAnimationFrame(frame);
+
 

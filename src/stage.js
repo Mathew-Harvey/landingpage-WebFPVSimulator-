@@ -355,21 +355,22 @@ export function createStage(canvas) {
   }
 
   /*
-   * Where the subject sits relative to the centre of frame, as two camera
-   * rotations in radians. Read by the poses in main.js.
+   * How far the subject drops below the centre of frame, as a camera
+   * rotation in radians. Read by the poses in main.js.
    *
-   * A wide window puts the copy down the left, so the hero yaws right out of
-   * its way. A square or tall window has no room to do that: the copy is as
-   * wide as the frame and the headline lands straight across the airframe.
-   * There the hero drops instead, and the copy takes the top of the frame.
-   * Both at once is what makes the layout survive being 1535 by 1559.
+   * A square or tall window has no room to put the copy beside anything: it
+   * is as wide as the frame and the headline lands straight across the
+   * airframe. So the hero drops, and the copy takes the top of the frame.
+   *
+   * The sideways half of this pair used to live here too, as the same kind
+   * of curve fitted to the aspect. It has moved to main.js, because where
+   * the hero goes across the frame is a question about where the copy
+   * column ends, and the aspect ratio cannot answer that one. See
+   * composeLayout().
    */
-  const bias = { yaw: 0, pitch: 0 };
-  function composeBias() {
+  function composePitch() {
     const aspect = width / Math.max(1, height);
-    bias.yaw = THREE.MathUtils.clamp((aspect - 1.12) * 0.20, 0, 0.15);
-    bias.pitch = THREE.MathUtils.clamp((1.42 - aspect) * 0.20, 0, 0.15);
-    return bias;
+    return THREE.MathUtils.clamp((1.42 - aspect) * 0.20, 0, 0.15);
   }
 
   resize();
@@ -387,7 +388,7 @@ export function createStage(canvas) {
     hemi,
     setRegime,
     setFov,
-    composeBias,
+    composePitch,
     aimLight,
     aimBlob,
     shadowsOn: !LITE,
