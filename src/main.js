@@ -94,8 +94,12 @@ const BEATS = [
   },
   {
     at: 0.24,
-    k: 'Your tune',
-    t: 'Drop your own Betaflight CLI diff on the page and fly your rates, your PIDs, your filters.',
+    k: 'Your rates',
+    /* This used to promise a CLI diff dropped on the page, editing your own
+     * PIDs and filters. The simulator took that out: it offers two tunes and
+     * lets you set your rates, so the copy says that instead. Marketing a
+     * screen that is not there is the one bug this page can ship. */
+    t: 'Two tunes, stock Betaflight or a 6S race setup. Set your rates and fly the curve your sticks will actually follow.',
   },
   {
     at: 0.44,
