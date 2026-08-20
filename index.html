@@ -35,8 +35,26 @@
       name="description"
       content="Build the quad, draw the course, fly the line. A free browser FPV racing simulator running Betaflight compiled to WebAssembly. No install, no account: a gamepad and a browser is the whole kit list."
     />
+    <!--
+      The page's own background is the radial gradient below, not this colour,
+      but a browser chrome tint has to be one value and #141c16 is what the
+      gradient sits closest to at the top of the page.
+    -->
     <meta name="theme-color" content="#141c16" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23141c16'/%3E%3Cpath d='M9 9h5v5H9zM18 9h5v5h-5zM9 18h5v5H9zM18 18h5v5h-5z' fill='%23e8a8b8'/%3E%3C/svg%3E" />
+
+    <!--
+      The mark used to live here as a data URI drawing four squares, which is
+      a quad's four motors and nothing else. It is now a file, with the frame
+      and the stack drawn in as well, and it comes in four accents so that the
+      landing page, the simulator, the builder and the board are four
+      different tabs rather than four copies of one. This is the cream one:
+      the front door owns no single product's accent, and cream is the other
+      half of the wordmark. scripts/icons.js in the simulator's repository
+      draws all four, and DEPLOY.md there lists the command for this one.
+    -->
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 
     <style>
       :root {
@@ -899,14 +917,17 @@
       }
       .card-go::after { content: " \2192"; }
 
+      /*
+       * TWO ROWS NOW, so the footer is a grid and the licence line keeps the
+       * flex row it always had. The other sites go above the licence rather
+       * than beside it: they are an invitation, the licence is a fact, and
+       * putting them in one row made the eye read them as one sentence.
+       */
       footer {
         position: relative;
         z-index: 10;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px 26px;
-        align-items: center;
-        justify-content: space-between;
+        display: grid;
+        gap: 26px;
         padding: 30px var(--gutter) 34px;
         margin-top: 12vh;
         border-top: 1px solid var(--line-2);
@@ -917,7 +938,86 @@
       }
       footer a { color: rgba(243, 234, 212, 0.78); text-decoration: none; }
       footer a:hover { color: var(--sakura); }
+      footer a:focus-visible { outline: 2px solid var(--sakura); outline-offset: 3px; }
+
+      .foot-legal {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 26px;
+        align-items: center;
+        justify-content: space-between;
+      }
       .foot-links { display: flex; flex-wrap: wrap; gap: 18px; }
+
+      /* ------------------------------------------------------------------
+         Also by Mat Harvey. The other three sites, in their own marks.
+         ------------------------------------------------------------------ */
+
+      /*
+       * WHY THE MARKS AND NOT A LIST OF NAMES. A row of four more text links
+       * under a row of four text links is a link farm, and nobody clicks a
+       * link farm. These are three separate products with three separate
+       * identities, so each one arrives as itself: the two that have a logo
+       * bring it, and Winmarchy, which is a wordmark rather than a picture,
+       * is set as one.
+       *
+       * The logos are drawn light, for the dark sites they belong to, which
+       * is also this page, so they need no filter. They are held back to 70%
+       * and come up to full on hover, because at full strength three foreign
+       * brands under the close shout louder than the thing the page is
+       * actually for.
+       */
+      .also {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 14px clamp(24px, 4vw, 46px);
+      }
+      .also-label {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 10.5px;
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: rgba(157, 179, 200, 0.72);
+      }
+      .also-label::after {
+        content: "";
+        width: 26px;
+        height: 1px;
+        flex: 0 0 auto;
+        background: var(--line);
+      }
+      .also-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 16px clamp(24px, 3.5vw, 40px);
+      }
+      .also-row a {
+        display: flex;
+        align-items: center;
+        opacity: 0.7;
+        transition: opacity 0.3s var(--ease);
+      }
+      .also-row a:hover { opacity: 1; }
+      /* The two logos are different shapes, so height is what makes them one
+         row. 32 px, because AppHub's mark carries its own name under the
+         chevron and below about 30 px that word stops being a word. */
+      .also-row img { display: block; height: 32px; width: auto; }
+      .also-mark {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--cream);
+      }
+      /* Winmarchy's own accent, so the wordmark is that site's and not this
+         page's. It is the one colour here that is not in the palette above,
+         and it is borrowed on purpose. */
+      .also-mark span { color: #9ece6a; }
+      .also-row a:hover .also-mark { color: var(--cream); }
 
       /* ------------------------------------------------------------------
          Boot and fallbacks.
@@ -1299,12 +1399,43 @@
     </section>
 
     <footer>
-      <span>GPLv3 &#183; Betaflight 4.5.1 compiled to WebAssembly</span>
-      <div class="foot-links" id="foot">
-        <a href="https://github.com/Mathew-Harvey/WebFPVSimulator" rel="noreferrer">Simulator repo</a>
-        <a href="https://github.com/Mathew-Harvey/WebFPVSimulator-LeaderBoard" rel="noreferrer">Leaderboard repo</a>
-        <a href="https://betaflight.com" rel="noreferrer">Betaflight</a>
-        <a href="https://www.gnu.org/licenses/gpl-3.0.html" rel="noreferrer">GPLv3</a>
+      <div class="also">
+        <span class="also-label">Also by Mat Harvey</span>
+        <div class="also-row">
+          <a href="https://thebodyweightgym.org/" rel="noreferrer">
+            <img
+              src="assets/also-by/the-bodyweight-gym.png"
+              width="268"
+              height="72"
+              alt="The Bodyweight Gym"
+              loading="lazy"
+              decoding="async"
+            />
+          </a>
+          <a href="https://my-app-hub.com/" rel="noreferrer">
+            <img
+              src="assets/also-by/apphub.png"
+              width="98"
+              height="66"
+              alt="AppHub"
+              loading="lazy"
+              decoding="async"
+            />
+          </a>
+          <a href="https://winmarchy.org/" rel="noreferrer">
+            <span class="also-mark">win<span>marchy</span></span>
+          </a>
+        </div>
+      </div>
+
+      <div class="foot-legal">
+        <span>GPLv3 &#183; Betaflight 4.5.1 compiled to WebAssembly</span>
+        <div class="foot-links" id="foot">
+          <a href="https://github.com/Mathew-Harvey/WebFPVSimulator" rel="noreferrer">Simulator repo</a>
+          <a href="https://github.com/Mathew-Harvey/WebFPVSimulator-LeaderBoard" rel="noreferrer">Leaderboard repo</a>
+          <a href="https://betaflight.com" rel="noreferrer">Betaflight</a>
+          <a href="https://www.gnu.org/licenses/gpl-3.0.html" rel="noreferrer">GPLv3</a>
+        </div>
       </div>
     </footer>
 
