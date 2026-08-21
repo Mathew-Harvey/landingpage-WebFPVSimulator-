@@ -36,6 +36,34 @@
       content="Build the quad, draw the course, fly the line. A free browser FPV racing simulator running Betaflight compiled to WebAssembly. No install, no account: a gamepad and a browser is the whole kit list."
     />
     <!--
+      A link to this page posted anywhere renders a 1200 by 630 card, and
+      og.png is a frame of the real shell rather than a drawing of one, so it
+      cannot disagree with the thing it advertises. scripts/og.js in the
+      simulator's repository regenerates it, and the URL is absolute because a
+      crawler does not resolve a relative one.
+
+      No animated card. Facebook, Messenger, X, LinkedIn, WhatsApp and iMessage
+      all flatten a link preview to one still frame; Discord is the only place
+      that would animate it, which is not worth a second asset.
+    -->
+    <link rel="canonical" href="https://webfpv.org/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="WebFPV" />
+    <meta property="og:url" content="https://webfpv.org/" />
+    <meta property="og:title" content="WebFPV, a browser FPV racing simulator" />
+    <meta property="og:description" content="Build the quad, draw the course, fly the line. Betaflight compiled to WebAssembly, running in a tab. No install, no account." />
+    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="The race field in the WebFPV simulator: a lit start gate on mown grass, a five inch quad parked beside it, flags and course markers running away under a low sun." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="WebFPV, a browser FPV racing simulator" />
+    <meta name="twitter:description" content="Build the quad, draw the course, fly the line. Betaflight compiled to WebAssembly, running in a tab. No install, no account." />
+    <meta name="twitter:image" content="https://webfpv.org/og.png" />
+    <meta name="twitter:image:alt" content="The race field in the WebFPV simulator: a lit start gate on mown grass, a five inch quad parked beside it, flags and course markers running away under a low sun." />
+
+    <!--
       The page's own background is the radial gradient below, not this colour,
       but a browser chrome tint has to be one value and #141c16 is what the
       gradient sits closest to at the top of the page.
