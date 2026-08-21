@@ -3,9 +3,9 @@
  *
  * This page is a static site of its own, so it cannot reach the simulator
  * or the board with a relative path. Those origins are typed here, once,
- * and everything else in the page asks this file. The same three constants
- * appear in the simulator's DEPLOY.md; if a Render service is renamed, this
- * is the file that changes.
+ * and everything else in the page asks this file. The routing behind them
+ * lives in the simulator's edge/router.js and is written up in its DEPLOY.md;
+ * if a mount point moves, this is the file that changes.
  *
  * Local development is detected rather than configured. Serving all three
  * repos on a laptop gives you the simulator on 8000 and the board on 3100,
@@ -29,8 +29,20 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-export const PRODUCTION_SIM_ORIGIN = 'https://webfpvsimulator.onrender.com';
-export const PRODUCTION_BOARD_ORIGIN = 'https://webfpv-board.onrender.com';
+/*
+ * These are mount points on webfpv.org, not Render hostnames, and the trailing
+ * path is the point. A Cloudflare Worker owns webfpv.org and hands /sim to the
+ * simulator's Render static site and /board to the board's Render service,
+ * taking the prefix off on the way. So the two services are still where they
+ * always were; this page just stops naming them out loud, and a visitor who
+ * clicks through stays on one domain from the front door to a lap time.
+ *
+ * Everything downstream treats these as a PREFIX and concatenates, which is
+ * why a path on the end is safe here: `${sim}/?map=field` and
+ * `${sim}/src/trackbuilder/index.html` both come out right.
+ */
+export const PRODUCTION_SIM_ORIGIN = 'https://webfpv.org/sim';
+export const PRODUCTION_BOARD_ORIGIN = 'https://webfpv.org/board';
 
 export const LOCAL_SIM_ORIGIN = 'http://127.0.0.1:8000';
 export const LOCAL_BOARD_ORIGIN = 'http://127.0.0.1:3100';
