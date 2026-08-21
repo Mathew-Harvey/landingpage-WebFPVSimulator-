@@ -33,7 +33,7 @@ Act 3  Daylight arrives, the quad drops onto the racing line, and the rest
        of the page is one FPV lap through the gates. Scroll back up and it
        does not reverse: it yaws around, banked, and flies home nose first.
        The turn is flown from inside the goggles like everything else.
-Act 4  Don't be a Sh#t pilot. You must practice.
+Act 4  You must practice.
 ```
 
 Between act 3 and the close sits `#why`, which is not an act: nothing
