@@ -1,7 +1,8 @@
 # WebFPV landing page
 
 The front door for [WebFPVSimulator](https://github.com/Mathew-Harvey/WebFPVSimulator).
-One canvas, one scroll, four acts, a reason, and three links out.
+One canvas, one scroll, four acts, a reason, three links out, and a wiki
+at `wiki/` that is not part of the film.
 
 ## Why it exists
 
@@ -60,9 +61,23 @@ the simulator uses.
 npm run serve
 ```
 
-Then open <http://127.0.0.1:8080/>. Any static file server will do; the only
-requirement is that it serves over http, because ES modules will not load
-from `file://`.
+Then open <http://127.0.0.1:8080/>. The wiki is <http://127.0.0.1:8080/wiki/>.
+Any static file server will do; the only requirement is that it serves over
+http, because ES modules will not load from `file://`.
+
+`npm run lint:wiki` checks that every catalog key still has a page, and that
+LIVE / GATED / APPLIED_INERT keys still have authored copy.
+
+## The wiki
+
+The FPV wiki is a second page on this site, not a screen inside the
+simulator. `https://webfpv.org/wiki/` is the public address. Hash links
+are `#wiki/<id>`, so `wiki/#wiki/physics-vrs` is Vortex ring state.
+
+`src/fc/catalog.js` and `src/fc/catalog-data.js` are copies of the
+simulator catalog so this static site can name every key without calling
+the sim. If they disagree, the simulator wins, and the copies should be
+replaced from that repo.
 
 ## Colour
 
@@ -136,6 +151,9 @@ other way, and a pinned frame is exactly the state that cannot be in. It adds
 | File | What it owns |
 | --- | --- |
 | `index.html` | The page, its CSS, and every launch link as static markup |
+| `wiki/index.html` | The FPV wiki. No canvas. Deep links are `#wiki/<id>` |
+| `src/wiki/` | Articles, CLI pages, figures, and the wiki shell |
+| `src/fc/` | Snapshot of the simulator catalog. Recopy when that catalog changes |
 | `src/main.js` | The timeline. One scalar `T` drives everything |
 | `src/stage.js` | Renderer, lights, fog, clip planes, lens |
 | `src/cel.js` | The simulator's cel shading, ported |

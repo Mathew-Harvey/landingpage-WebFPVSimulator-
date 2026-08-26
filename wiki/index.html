@@ -1,0 +1,389 @@
+<!doctype html>
+<!--
+  The FPV wiki. A document on the landing site, not a screen inside the
+  simulator. Same chrome as the film at /, no canvas, no physics.
+
+  Deep links are #wiki/<id>. The catalog in src/fc is a snapshot of the
+  simulator's catalog; if they disagree, the simulator wins.
+
+  This file is part of the WebFPVSimulator landing page.
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or (at
+  your option) any later version.
+
+  This program is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FPV wiki, WebFPV</title>
+    <meta
+      name="description"
+      content="The plant, the compiled Betaflight 4.5.1 controller, and every catalog key in the WebFPV simulator. For curious pilots and for people who want the equation."
+    />
+    <meta name="theme-color" content="#141c16" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23141c16'/%3E%3Cpath d='M9 9h5v5H9zM18 9h5v5h-5zM9 18h5v5H9zM18 18h5v5h-5z' fill='%23e8a8b8'/%3E%3C/svg%3E" />
+    <style>
+      :root {
+        --cream: #f3ead4;
+        --sakura: #e8a8b8;
+        --amber: #ffd45c;
+        --mint: #7dffb4;
+        --slate: #9db3c8;
+        --dim: #8a9a86;
+        --deep: #141c16;
+        --ink: #0c120e;
+        --line: rgba(244, 236, 214, 0.12);
+        --line-2: rgba(244, 236, 214, 0.06);
+        --edge: rgba(232, 168, 184, 0.28);
+        --panel-fill: rgba(16, 22, 17, 0.88);
+        --ui-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        --track-eyebrow: 0.28em;
+        --track-label: 0.16em;
+        --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+        --gutter: clamp(20px, 5vw, 72px);
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: radial-gradient(120% 90% at 50% 6%, #1e2a20, #101610 60%) fixed;
+        color: var(--cream);
+        font-family: var(--ui-font);
+        font-variant-numeric: tabular-nums;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body {
+        overflow: hidden;
+      }
+
+      a { color: inherit; }
+
+      button {
+        font-family: inherit;
+      }
+
+      .chequer {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 30;
+        height: 5px;
+        background: repeating-linear-gradient(90deg, #23272f 0 14px, #eae6dd 14px 28px);
+        opacity: 0.9;
+      }
+
+      #topbar {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 22px var(--gutter) 12px;
+      }
+
+      .mark {
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        color: var(--cream);
+        text-decoration: none;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+      }
+      .mark .fpv { color: var(--sakura); }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .nav a {
+        padding: 8px 13px;
+        border-radius: 3px;
+        font-size: 12px;
+        letter-spacing: var(--track-label);
+        text-transform: uppercase;
+        color: rgba(243, 234, 212, 0.72);
+        text-decoration: none;
+        transition: color 0.18s var(--ease), background 0.18s var(--ease);
+      }
+      .nav a:hover { color: var(--cream); background: rgba(243, 234, 212, 0.07); }
+      .nav a.is-current {
+        color: var(--cream);
+        box-shadow: inset 0 -2px 0 var(--sakura);
+      }
+      .nav a.is-primary {
+        color: var(--deep);
+        background: var(--mint);
+        font-weight: 700;
+      }
+      .nav a.is-primary:hover { background: #9dffc7; color: var(--deep); }
+      @media (max-width: 720px) {
+        .nav a:not(.is-primary):not(.is-wiki) { display: none; }
+      }
+
+      #wiki {
+        position: fixed;
+        top: 62px;
+        left: 0;
+        right: 0;
+        bottom: 42px;
+        z-index: 10;
+      }
+
+      .wiki-host, .wiki-shell {
+        display: flex;
+        height: 100%;
+        min-height: 0;
+        width: 100%;
+      }
+      .wiki-shell {
+        display: grid;
+        grid-template-columns: minmax(13em, 18em) minmax(0, 1fr);
+      }
+      .wiki-rail {
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 18px 10px 24px 16px;
+        border-right: 1px solid var(--line);
+        background: rgba(12, 18, 14, 0.55);
+        scrollbar-width: thin;
+        scrollbar-color: rgba(232, 168, 184, 0.45) rgba(16, 22, 17, 0.55);
+      }
+      .wiki-rail-block { margin-bottom: 18px; }
+      .wiki-rail-kicker {
+        font-size: 11px; font-weight: 700; letter-spacing: 0.16em;
+        text-transform: uppercase; color: var(--sakura); margin-bottom: 6px;
+      }
+      .wiki-rail-note {
+        margin: 0 0 8px; color: var(--slate); font-size: 12px; line-height: 1.4;
+      }
+      .wiki-rail-link {
+        display: block; width: 100%; box-sizing: border-box;
+        appearance: none; border: 0; background: transparent;
+        color: rgba(238, 232, 216, 0.78); font: inherit;
+        font-size: 13px; text-align: left; padding: 5px 10px 5px 12px;
+        border-left: 3px solid transparent; cursor: pointer; border-radius: 0 3px 3px 0;
+      }
+      .wiki-rail-link:hover { color: var(--cream); background: rgba(232, 168, 184, 0.08); }
+      .wiki-rail-link.on {
+        color: var(--cream); border-left-color: var(--sakura);
+        background: linear-gradient(90deg, rgba(232, 168, 184, 0.14), rgba(232, 168, 184, 0) 70%);
+        font-weight: 650;
+      }
+      .wiki-rail-sub { font-size: 12px; color: var(--slate); padding-left: 18px; }
+      .wiki-main {
+        overflow-y: auto; overscroll-behavior: contain; min-width: 0;
+        padding: 18px 28px 28px; scrollbar-width: thin;
+        scrollbar-color: rgba(232, 168, 184, 0.45) rgba(16, 22, 17, 0.55);
+      }
+      .wiki-tools { margin-bottom: 12px; }
+      .wiki-search {
+        display: block; width: min(100%, 42em); box-sizing: border-box;
+        padding: 9px 12px; border-radius: 4px;
+        border: 1px solid rgba(244, 236, 214, 0.18);
+        background: rgba(16, 22, 17, 0.72); color: var(--cream);
+        font: inherit; font-size: 15px;
+      }
+      .wiki-search:focus { outline: none; border-color: var(--sakura); }
+      .wiki-results { display: flex; flex-direction: column; gap: 4px; }
+      .wiki-results[hidden], .wiki-article[hidden] { display: none !important; }
+      .wiki-results-cap { color: var(--slate); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+      .wiki-hit, .wiki-cli-row {
+        display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        appearance: none; border: 0; border-radius: 3px;
+        background: rgba(16, 22, 17, 0.55); color: var(--cream);
+        font: inherit; text-align: left; padding: 8px 12px; cursor: pointer;
+      }
+      .wiki-hit:hover, .wiki-cli-row:hover { background: rgba(232, 168, 184, 0.12); }
+      .wiki-hit-title { font-weight: 650; }
+      .wiki-hit-id, .wiki-cli-key {
+        font-family: var(--mono);
+        font-size: 12px; color: var(--slate);
+      }
+      .wiki-cli-key { color: var(--cream); font-size: 13px; }
+      .wiki-article { max-width: 78em; }
+      .wiki-kicker {
+        display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        font-size: 11px; font-weight: 700; letter-spacing: 0.16em;
+        text-transform: uppercase; color: var(--sakura); margin-bottom: 8px;
+      }
+      .wiki-article h2 {
+        margin: 0 0 10px; font-size: clamp(26px, 3.6vw, 42px);
+        font-weight: 750; letter-spacing: 0.02em; color: var(--cream);
+      }
+      .wiki-key { margin: 0 0 10px; }
+      .wiki-key code {
+        font-family: var(--mono);
+        font-size: 14px; color: var(--amber);
+        background: rgba(16, 22, 17, 0.6); padding: 3px 8px; border-radius: 3px;
+      }
+      .wiki-lede {
+        max-width: 52em; margin: 0 0 16px; color: rgba(235, 230, 215, 0.82);
+        font-size: 16px; line-height: 1.6;
+      }
+      .wiki-figure {
+        margin: 0 0 22px; padding: 12px 14px 10px;
+        background: rgba(16, 22, 17, 0.62); border-radius: 4px;
+        border-top: 2px solid rgba(232, 168, 184, 0.35);
+        box-shadow: inset 0 0 0 1px rgba(244, 236, 214, 0.08);
+      }
+      .wiki-svg { display: block; width: 100%; height: auto; max-height: 280px; }
+      .wiki-figure figcaption {
+        margin-top: 8px; color: var(--slate); font-size: 13px; line-height: 1.45;
+      }
+      .wiki-pair {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 16px;
+      }
+      .wiki-col {
+        padding: 14px 16px 8px; border-radius: 4px;
+        background: rgba(16, 22, 17, 0.55);
+        box-shadow: inset 0 0 0 1px rgba(244, 236, 214, 0.08);
+      }
+      .wiki-col h3, .wiki-sec h3 {
+        margin: 0 0 8px; font-size: 12px; font-weight: 700;
+        letter-spacing: 0.14em; text-transform: uppercase;
+      }
+      .wiki-col-air h3 { color: var(--mint); }
+      .wiki-col-lab h3 { color: var(--amber); }
+      .wiki-sec h3 { color: var(--sakura); }
+      .wiki-article p {
+        margin: 0 0 10px; color: rgba(235, 230, 215, 0.86);
+        font-size: 14.5px; line-height: 1.6;
+      }
+      .wiki-sec {
+        margin: 0 0 12px; padding: 12px 16px 4px; border-radius: 4px;
+        background: rgba(16, 22, 17, 0.4);
+      }
+      .wiki-sec-sim { box-shadow: inset 3px 0 0 var(--sakura); }
+      .wiki-reason { color: var(--slate) !important; font-size: 13px !important; }
+      .wiki-chip {
+        display: inline-block; padding: 2px 8px; border-radius: 999px;
+        font-size: 10px; font-weight: 800; letter-spacing: 0.08em;
+      }
+      .wiki-chip-live { background: rgba(125, 255, 180, 0.18); color: var(--mint); }
+      .wiki-chip-gated { background: rgba(255, 212, 92, 0.18); color: var(--amber); }
+      .wiki-chip-applied-inert { background: rgba(157, 179, 200, 0.18); color: var(--slate); }
+      .wiki-chip-inert { background: rgba(157, 179, 200, 0.10); color: var(--slate); }
+      .wiki-chip-absent { background: rgba(232, 168, 184, 0.12); color: var(--sakura); }
+      .wiki-filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+      .wiki-filter {
+        appearance: none; border: 0; border-radius: 3px;
+        background: rgba(16, 22, 17, 0.72); color: rgba(238, 232, 216, 0.72);
+        font: inherit; font-size: 12px; font-weight: 650;
+        letter-spacing: 0.06em; padding: 5px 10px; cursor: pointer;
+        box-shadow: inset 0 0 0 1px rgba(244, 236, 214, 0.14);
+      }
+      .wiki-filter.on { color: var(--cream); box-shadow: inset 0 0 0 1px var(--sakura); background: rgba(232, 168, 184, 0.16); }
+      .wiki-cli-list { display: flex; flex-direction: column; gap: 3px; margin-bottom: 16px; }
+      .wiki-related { margin: 18px 0 8px; }
+      .wiki-related-row { display: flex; flex-wrap: wrap; gap: 8px; }
+      .wiki-related-link, .wiki-fc-link {
+        appearance: none; border: 0; border-radius: 3px;
+        background: rgba(232, 168, 184, 0.14); color: var(--cream);
+        font: inherit; font-size: 13px; font-weight: 650;
+        padding: 7px 12px; cursor: pointer; text-decoration: none;
+        display: inline-block;
+      }
+      .wiki-fc-link { background: var(--mint); color: var(--deep); margin: 8px 0 12px; }
+      .wiki-fc-link:hover { background: #9dffc7; color: var(--deep); }
+      .wiki-related-link:hover { background: rgba(232, 168, 184, 0.28); }
+      .wiki-source { color: rgba(157, 179, 200, 0.7) !important; font-size: 12px !important; }
+      .wiki-counts { color: var(--slate) !important; font-size: 13px !important; }
+      .wiki-journey-nav {
+        display: flex; flex-wrap: wrap; justify-content: space-between;
+        gap: 10px; margin: 22px 0 8px;
+      }
+      .wiki-journey-next { margin-left: auto; }
+      @keyframes wiki-spin { to { transform: rotate(360deg); } }
+      @keyframes wiki-spin-rev { to { transform: rotate(-360deg); } }
+      @keyframes wiki-flow { to { stroke-dashoffset: -48; } }
+      @keyframes wiki-bob { 50% { transform: translateY(6px); } }
+      @keyframes wiki-shake {
+        0%, 100% { transform: translate(0, 0); }
+        25% { transform: translate(1.5px, -1px); }
+        75% { transform: translate(-1.5px, 1px); }
+      }
+      .wiki-spin { transform-origin: center; animation: wiki-spin 4.5s linear infinite; }
+      .wiki-spin-rev { transform-origin: center; animation: wiki-spin-rev 4.5s linear infinite; }
+      .wiki-flow { animation: wiki-flow 1.6s linear infinite; }
+      .wiki-bob { animation: wiki-bob 1.8s ease-in-out infinite; }
+      .wiki-dash { animation: wiki-flow 2.4s linear infinite; }
+      .wiki-shake { animation: wiki-shake 0.28s linear infinite; }
+      @media (prefers-reduced-motion: reduce) {
+        .wiki-spin, .wiki-spin-rev, .wiki-flow, .wiki-bob, .wiki-dash, .wiki-shake { animation: none; }
+      }
+      @media (max-width: 860px) {
+        .wiki-shell { grid-template-columns: 1fr; grid-template-rows: minmax(7em, 28vh) 1fr; }
+        .wiki-rail {
+          border-right: 0; border-bottom: 1px solid var(--line);
+          padding: 10px 12px;
+        }
+        .wiki-pair { grid-template-columns: 1fr; }
+        .wiki-main { padding: 12px 14px 18px; }
+        .wiki-svg { max-height: 220px; }
+      }
+
+      footer {
+        position: fixed;
+        left: 0; right: 0; bottom: 0;
+        z-index: 20;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 26px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px var(--gutter) 12px;
+        border-top: 1px solid var(--line-2);
+        font-size: 11.5px;
+        letter-spacing: 0.03em;
+        color: rgba(157, 179, 200, 0.62);
+        background: rgba(12, 18, 14, 0.92);
+      }
+      footer a { color: rgba(243, 234, 212, 0.78); text-decoration: none; }
+      footer a:hover { color: var(--sakura); }
+      .foot-links { display: flex; flex-wrap: wrap; gap: 18px; }
+    </style>
+  </head>
+  <body>
+    <div class="chequer" aria-hidden="true"></div>
+    <header id="topbar">
+      <a class="mark" href="../">WEB<span class="fpv">FPV</span></a>
+      <nav class="nav">
+        <a class="is-wiki is-current" href="./">Wiki</a>
+        <a href="https://webfpv.org/sim/src/trackbuilder/index.html" data-dest="builder">Track builder</a>
+        <a href="https://webfpv.org/board/" data-dest="board">Leaderboard</a>
+        <a href="https://github.com/Mathew-Harvey/WebFPVSimulator" rel="noreferrer">Source</a>
+        <a class="is-primary" href="https://webfpv.org/sim/?map=field" data-dest="sim">Fly now</a>
+      </nav>
+    </header>
+
+    <div id="wiki"></div>
+
+    <footer>
+      <span>GPLv3 &#183; catalog snapshot from the simulator</span>
+      <div class="foot-links">
+        <a href="../">The film</a>
+        <a href="https://github.com/Mathew-Harvey/WebFPVSimulator" rel="noreferrer">Simulator repo</a>
+        <a href="https://www.gnu.org/licenses/gpl-3.0.html" rel="noreferrer">GPLv3</a>
+      </div>
+    </footer>
+
+    <script type="module" src="../src/wiki/boot.js"></script>
+  </body>
+</html>

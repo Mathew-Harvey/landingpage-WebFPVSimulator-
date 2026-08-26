@@ -261,7 +261,7 @@
       }
       .nav a.is-primary:hover { background: #9dffc7; color: var(--deep); }
       @media (max-width: 720px) {
-        .nav a:not(.is-primary) { display: none; }
+        .nav a:not(.is-primary):not(.is-wiki) { display: none; }
       }
 
       /* Act ledger down the left edge: which act you are in, and how far
@@ -1218,6 +1218,7 @@
     <header id="topbar">
       <a class="mark" href="#top">WEB<span class="fpv">FPV</span></a>
       <nav class="nav" id="nav">
+        <a class="is-wiki" href="wiki/">Wiki</a>
         <a href="https://webfpv.org/sim/src/trackbuilder/index.html" data-dest="builder">Track builder</a>
         <a href="https://webfpv.org/board/" data-dest="board">Leaderboard</a>
         <a href="https://github.com/Mathew-Harvey/WebFPVSimulator" rel="noreferrer">Source</a>
@@ -1454,6 +1455,7 @@
       <div class="foot-legal">
         <span>GPLv3 &#183; Betaflight 4.5.1 compiled to WebAssembly</span>
         <div class="foot-links" id="foot">
+          <a href="wiki/">FPV wiki</a>
           <a href="https://github.com/Mathew-Harvey/WebFPVSimulator" rel="noreferrer">Simulator repo</a>
           <a href="https://github.com/Mathew-Harvey/WebFPVSimulator-LeaderBoard" rel="noreferrer">Leaderboard repo</a>
           <a href="https://betaflight.com" rel="noreferrer">Betaflight</a>
