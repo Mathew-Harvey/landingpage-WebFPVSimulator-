@@ -1931,7 +1931,7 @@ export function cliIndexPage() {
         id: 'air',
         title: 'In the air',
         paras: [
-          'If you flew a real 5 inch last weekend, this list is the same firmware you already know. LIVE rows change this aircraft. Grey rows are named so a dump is not a lie. Open any key. You will get the field, then life, then this sim, then raise and lower.',
+          'This is every setting the real flight controller has, all 696 of them, and it is the same list a pilot sees in the real configurator. Green rows change how this aircraft flies. Grey rows are settings for hardware this simulator does not have, like a video transmitter or GPS, and they are shown rather than hidden so that pasting in a real settings file never silently loses anything. Open any key and you get what it does, what raising it feels like, and whether it does anything here.',
         ],
       },
       {

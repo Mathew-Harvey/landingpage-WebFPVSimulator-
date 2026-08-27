@@ -30,8 +30,8 @@
  */
 
 export const CHAPTERS = [
-  { id: 'start', title: 'The journey', note: 'What FPV is, and why this sim is a compiled controller plus a plant.' },
-  { id: 'physics', title: 'The plant', note: 'Everything the airframe model actually computes.' },
+  { id: 'start', title: 'The journey', note: 'What FPV is, what the four motors are actually doing, and what this simulator computes.' },
+  { id: 'physics', title: 'The aircraft', note: 'Everything the airframe itself does, before the computer gets involved.' },
   { id: 'control', title: 'The controller', note: 'Betaflight 4.5.1, compiled, not rewritten.' },
   { id: 'cli', title: 'Every setting', note: 'One page per Betaflight 4.5.1 catalog key, including the grey ones.' },
 ];
@@ -61,7 +61,7 @@ export const ARTICLES = [
   page({
     id: 'start-welcome',
     chapter: 'start',
-    title: 'Simulating FPV, for nerds',
+    title: 'How a racing drone actually flies',
     kicker: 'Start here',
     lede: 'A racing quad is a small rigid body with four spinning discs, a radio, and a computer that tries 1,000 times a second to make the body rotate at the rate you asked for. This wiki is the map of that loop as the simulator actually builds it.',
     figure: 'loop',
