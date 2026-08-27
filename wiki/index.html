@@ -1,10 +1,21 @@
 <!doctype html>
 <!--
   The FPV wiki. A document on the landing site, not a screen inside the
-  simulator. Same chrome as the film at /, no canvas, no physics.
+  simulator. Same chrome as the film at /, no canvas of its own, no physics.
 
   Deep links are #wiki/<id>. The catalog in src/fc is a snapshot of the
   simulator's catalog; if they disagree, the simulator wins.
+
+  Layout note. This page used to position the header, the panes and the
+  footer independently, which meant the footer printed on top of whatever
+  the reader had scrolled to. It is one grid now: header, body, footer, in
+  three rows of the viewport, and only the two panes inside the body scroll.
+  Nothing overlaps because nothing is free to.
+
+  Reduced motion is honoured in two places that have to agree: the block at
+  the foot of this stylesheet and REDUCED in src/wiki/anim.js. A figure that
+  would have animated holds its most informative frame, and every control on
+  it still works, because the control is where the meaning is.
 
   This file is part of the WebFPVSimulator landing page.
 
@@ -28,10 +39,10 @@
     <title>FPV wiki, WebFPV</title>
     <meta
       name="description"
-      content="The plant, the compiled Betaflight 4.5.1 controller, and every catalog key in the WebFPV simulator. For curious pilots and for people who want the equation."
+      content="How a racing quad actually flies, and how this simulator computes it. Thirty five illustrated pages plus every Betaflight 4.5.1 setting, with figures you can drive."
     />
     <meta name="theme-color" content="#141c16" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23141c16'/%3E%3Cpath d='M9 9h5v5H9zM18 9h5v5h-5zM9 18h5v5H9zM18 18h5v5h-5z' fill='%23e8a8b8'/%3E%3C/svg%3E" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23141c16'/%3E%3Cpath d='M9 9h5v5H9zM18 9h5v5h-5zM9 18h5v5H9zM18 18h5v5H9z' fill='%23e8a8b8'/%3E%3C/svg%3E" />
     <style>
       :root {
         --cream: #f3ead4;
@@ -52,6 +63,7 @@
         --track-label: 0.16em;
         --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
         --gutter: clamp(20px, 5vw, 72px);
+        --rail: clamp(14em, 21vw, 20em);
       }
 
       * { box-sizing: border-box; }
@@ -59,7 +71,6 @@
       html, body {
         margin: 0;
         padding: 0;
-        height: 100%;
         background: radial-gradient(120% 90% at 50% 6%, #1e2a20, #101610 60%) fixed;
         color: var(--cream);
         font-family: var(--ui-font);
@@ -67,15 +78,22 @@
         -webkit-font-smoothing: antialiased;
       }
 
+      /*
+       * Three rows: the header, the body, the footer. The body is the only
+       * one that is allowed to be short of space, and the two panes inside
+       * it are the only things that scroll. svh rather than vh so an iOS
+       * URL bar sliding away does not resize the whole document.
+       */
       body {
+        height: 100svh;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto;
         overflow: hidden;
       }
 
       a { color: inherit; }
-
-      button {
-        font-family: inherit;
-      }
+      button { font-family: inherit; }
+      ::selection { background: rgba(232, 168, 184, 0.28); }
 
       .chequer {
         position: fixed;
@@ -84,17 +102,16 @@
         height: 5px;
         background: repeating-linear-gradient(90deg, #23272f 0 14px, #eae6dd 14px 28px);
         opacity: 0.9;
+        pointer-events: none;
       }
 
       #topbar {
-        position: fixed;
-        top: 0; left: 0; right: 0;
-        z-index: 20;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 16px;
-        padding: 22px var(--gutter) 12px;
+        padding: 20px var(--gutter) 12px;
+        border-bottom: 1px solid var(--line-2);
       }
 
       .mark {
@@ -107,11 +124,7 @@
       }
       .mark .fpv { color: var(--sakura); }
 
-      .nav {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-      }
+      .nav { display: flex; align-items: center; gap: 4px; }
       .nav a {
         padding: 8px 13px;
         border-radius: 3px;
@@ -123,155 +136,329 @@
         transition: color 0.18s var(--ease), background 0.18s var(--ease);
       }
       .nav a:hover { color: var(--cream); background: rgba(243, 234, 212, 0.07); }
-      .nav a.is-current {
-        color: var(--cream);
-        box-shadow: inset 0 -2px 0 var(--sakura);
-      }
-      .nav a.is-primary {
-        color: var(--deep);
-        background: var(--mint);
-        font-weight: 700;
-      }
+      .nav a.is-current { color: var(--cream); box-shadow: inset 0 -2px 0 var(--sakura); }
+      .nav a.is-primary { color: var(--deep); background: var(--mint); font-weight: 700; }
       .nav a.is-primary:hover { background: #9dffc7; color: var(--deep); }
-      @media (max-width: 720px) {
-        .nav a:not(.is-primary):not(.is-wiki) { display: none; }
+      @media (max-width: 760px) {
+        .nav a:not(.is-primary) { display: none; }
+        #topbar { padding: 16px var(--gutter) 10px; }
       }
 
-      #wiki {
-        position: fixed;
-        top: 62px;
-        left: 0;
-        right: 0;
-        bottom: 42px;
-        z-index: 10;
-      }
+      #wiki { min-height: 0; }
 
-      .wiki-host, .wiki-shell {
-        display: flex;
-        height: 100%;
-        min-height: 0;
-        width: 100%;
-      }
+      .wiki-host { display: block; height: 100%; min-height: 0; }
       .wiki-shell {
         display: grid;
-        grid-template-columns: minmax(13em, 18em) minmax(0, 1fr);
+        grid-template-columns: var(--rail) minmax(0, 1fr);
+        height: 100%;
+        min-height: 0;
       }
+
+      /* ---- The rail ---- */
+
       .wiki-rail {
         overflow-y: auto;
         overscroll-behavior: contain;
-        padding: 18px 10px 24px 16px;
+        padding: 20px 12px 32px var(--gutter);
         border-right: 1px solid var(--line);
-        background: rgba(12, 18, 14, 0.55);
+        background: rgba(12, 18, 14, 0.5);
         scrollbar-width: thin;
-        scrollbar-color: rgba(232, 168, 184, 0.45) rgba(16, 22, 17, 0.55);
+        scrollbar-color: rgba(232, 168, 184, 0.4) transparent;
       }
-      .wiki-rail-block { margin-bottom: 18px; }
+      .wiki-rail-head { margin-bottom: 22px; }
+      .wiki-rail-block { margin-bottom: 22px; }
       .wiki-rail-kicker {
-        font-size: 11px; font-weight: 700; letter-spacing: 0.16em;
+        font-size: 10.5px; font-weight: 700; letter-spacing: 0.16em;
         text-transform: uppercase; color: var(--sakura); margin-bottom: 6px;
       }
       .wiki-rail-note {
-        margin: 0 0 8px; color: var(--slate); font-size: 12px; line-height: 1.4;
+        margin: 0 0 10px; color: var(--slate); font-size: 12px; line-height: 1.45;
+        max-width: 26em;
       }
+      .wiki-progress {
+        height: 3px; border-radius: 2px; overflow: hidden;
+        background: rgba(244, 236, 214, 0.1); margin-bottom: 6px;
+      }
+      .wiki-progress-fill {
+        height: 100%; background: var(--sakura);
+        transition: width 0.35s var(--ease);
+      }
+      .wiki-progress-label { font-size: 11px; color: var(--slate); }
+
       .wiki-rail-link {
-        display: block; width: 100%; box-sizing: border-box;
-        appearance: none; border: 0; background: transparent;
-        color: rgba(238, 232, 216, 0.78); font: inherit;
-        font-size: 13px; text-align: left; padding: 5px 10px 5px 12px;
-        border-left: 3px solid transparent; cursor: pointer; border-radius: 0 3px 3px 0;
+        display: flex; align-items: baseline; gap: 8px;
+        width: 100%; appearance: none; border: 0; background: transparent;
+        color: rgba(238, 232, 216, 0.76); font: inherit;
+        font-size: 13px; line-height: 1.35; text-align: left;
+        padding: 6px 10px 6px 11px;
+        border-left: 3px solid transparent; cursor: pointer;
+        border-radius: 0 3px 3px 0;
+        transition: color 0.14s var(--ease), background 0.14s var(--ease);
       }
       .wiki-rail-link:hover { color: var(--cream); background: rgba(232, 168, 184, 0.08); }
       .wiki-rail-link.on {
         color: var(--cream); border-left-color: var(--sakura);
-        background: linear-gradient(90deg, rgba(232, 168, 184, 0.14), rgba(232, 168, 184, 0) 70%);
+        background: linear-gradient(90deg, rgba(232, 168, 184, 0.15), rgba(232, 168, 184, 0) 70%);
         font-weight: 650;
       }
-      .wiki-rail-sub { font-size: 12px; color: var(--slate); padding-left: 18px; }
+      /* A page on the reading path carries its step number rather than
+         being listed a second time in a block of its own. */
+      .wiki-rail-step {
+        flex: 0 0 auto;
+        min-width: 17px; height: 17px; padding: 0 3px;
+        border-radius: 3px;
+        background: rgba(232, 168, 184, 0.16);
+        color: var(--sakura);
+        font-size: 10px; font-weight: 700; line-height: 17px; text-align: center;
+        font-variant-numeric: tabular-nums;
+      }
+      .wiki-rail-link.on .wiki-rail-step { background: var(--sakura); color: var(--ink); }
+      .wiki-rail-link:not(.is-path) { padding-left: 36px; }
+      .wiki-rail-subs { margin-top: 2px; }
+      .wiki-rail-sub { font-size: 12px; color: var(--slate); padding-left: 36px !important; }
+      .wiki-rail-toggle { display: none; }
+
+      /* ---- The article pane ---- */
+
       .wiki-main {
         overflow-y: auto; overscroll-behavior: contain; min-width: 0;
-        padding: 18px 28px 28px; scrollbar-width: thin;
-        scrollbar-color: rgba(232, 168, 184, 0.45) rgba(16, 22, 17, 0.55);
+        padding: 18px var(--gutter) 64px 30px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(232, 168, 184, 0.4) transparent;
+        scroll-behavior: smooth;
       }
-      .wiki-tools { margin-bottom: 12px; }
+      .wiki-tools {
+        position: sticky; top: -18px; z-index: 5;
+        display: flex; align-items: center; gap: 10px;
+        margin: 0 0 18px; padding: 12px 0 10px;
+        background: linear-gradient(#131b15 72%, rgba(19, 27, 21, 0));
+      }
       .wiki-search {
-        display: block; width: min(100%, 42em); box-sizing: border-box;
-        padding: 9px 12px; border-radius: 4px;
-        border: 1px solid rgba(244, 236, 214, 0.18);
-        background: rgba(16, 22, 17, 0.72); color: var(--cream);
+        flex: 1 1 auto; min-width: 0; max-width: 44em;
+        padding: 10px 13px; border-radius: 4px;
+        border: 1px solid rgba(244, 236, 214, 0.16);
+        background: rgba(10, 15, 11, 0.75); color: var(--cream);
         font: inherit; font-size: 15px;
       }
+      .wiki-search::placeholder { color: rgba(157, 179, 200, 0.6); }
       .wiki-search:focus { outline: none; border-color: var(--sakura); }
-      .wiki-results { display: flex; flex-direction: column; gap: 4px; }
+      .wiki-search-hint {
+        flex: 0 0 auto;
+        padding: 3px 8px; border-radius: 3px; font-family: var(--mono); font-size: 11px;
+        color: var(--slate); background: rgba(244, 236, 214, 0.06);
+        border: 1px solid var(--line-2);
+      }
+      .wiki-search:focus + .wiki-search-hint { opacity: 0; }
+
+      .wiki-results { display: flex; flex-direction: column; gap: 5px; max-width: 62em; }
       .wiki-results[hidden], .wiki-article[hidden] { display: none !important; }
-      .wiki-results-cap { color: var(--slate); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
-      .wiki-hit, .wiki-cli-row {
+      .wiki-results-cap {
+        color: var(--slate); font-size: 11.5px; letter-spacing: 0.08em;
+        text-transform: uppercase; margin: 0 0 4px;
+      }
+      .wiki-hit {
+        display: flex; flex-direction: column; gap: 4px;
+        appearance: none; border: 0; border-radius: 4px;
+        background: rgba(16, 22, 17, 0.55); color: var(--cream);
+        font: inherit; text-align: left; padding: 10px 13px; cursor: pointer;
+        box-shadow: inset 0 0 0 1px var(--line-2);
+      }
+      .wiki-hit:hover { background: rgba(232, 168, 184, 0.12); }
+      .wiki-hit-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+      .wiki-hit-title { font-weight: 650; }
+      .wiki-hit-snip {
+        color: rgba(157, 179, 200, 0.85); font-size: 12px; line-height: 1.45;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .wiki-hit mark { background: rgba(255, 212, 92, 0.26); color: var(--amber); border-radius: 2px; }
+      .wiki-hit-id, .wiki-cli-key { font-family: var(--mono); font-size: 12px; color: var(--slate); }
+      .wiki-cli-key { color: var(--cream); font-size: 13px; }
+      .wiki-cli-row {
         display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
         appearance: none; border: 0; border-radius: 3px;
-        background: rgba(16, 22, 17, 0.55); color: var(--cream);
+        background: rgba(16, 22, 17, 0.5); color: var(--cream);
         font: inherit; text-align: left; padding: 8px 12px; cursor: pointer;
       }
-      .wiki-hit:hover, .wiki-cli-row:hover { background: rgba(232, 168, 184, 0.12); }
-      .wiki-hit-title { font-weight: 650; }
-      .wiki-hit-id, .wiki-cli-key {
-        font-family: var(--mono);
-        font-size: 12px; color: var(--slate);
-      }
-      .wiki-cli-key { color: var(--cream); font-size: 13px; }
-      .wiki-article { max-width: 78em; }
+      .wiki-cli-row:hover { background: rgba(232, 168, 184, 0.12); }
+
+      .wiki-article { max-width: 74em; }
       .wiki-kicker {
         display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-        font-size: 11px; font-weight: 700; letter-spacing: 0.16em;
-        text-transform: uppercase; color: var(--sakura); margin-bottom: 8px;
+        font-size: 10.5px; font-weight: 700; letter-spacing: 0.16em;
+        text-transform: uppercase; color: var(--sakura); margin-bottom: 10px;
+      }
+      .wiki-step-tag {
+        color: var(--slate); letter-spacing: 0.1em; font-weight: 600;
+        padding-left: 10px; border-left: 1px solid var(--line);
       }
       .wiki-article h2 {
-        margin: 0 0 10px; font-size: clamp(26px, 3.6vw, 42px);
-        font-weight: 750; letter-spacing: 0.02em; color: var(--cream);
+        margin: 0 0 12px; font-size: clamp(28px, 3.4vw, 44px);
+        font-weight: 750; letter-spacing: -0.01em; line-height: 1.05;
+        color: var(--cream);
       }
-      .wiki-key { margin: 0 0 10px; }
+      .wiki-key { margin: 0 0 12px; }
       .wiki-key code {
-        font-family: var(--mono);
-        font-size: 14px; color: var(--amber);
+        font-family: var(--mono); font-size: 14px; color: var(--amber);
         background: rgba(16, 22, 17, 0.6); padding: 3px 8px; border-radius: 3px;
       }
       .wiki-lede {
-        max-width: 52em; margin: 0 0 16px; color: rgba(235, 230, 215, 0.82);
-        font-size: 16px; line-height: 1.6;
+        max-width: 42em; margin: 0 0 22px; color: rgba(240, 234, 218, 0.9);
+        font-size: clamp(16px, 1.5vw, 18.5px); line-height: 1.55;
       }
+
+      /* ---- Figures ---- */
+
       .wiki-figure {
-        margin: 0 0 22px; padding: 12px 14px 10px;
-        background: rgba(16, 22, 17, 0.62); border-radius: 4px;
-        border-top: 2px solid rgba(232, 168, 184, 0.35);
-        box-shadow: inset 0 0 0 1px rgba(244, 236, 214, 0.08);
+        margin: 0 0 26px; padding: 14px 16px 12px;
+        background: rgba(12, 17, 13, 0.62); border-radius: 5px;
+        border-top: 2px solid rgba(232, 168, 184, 0.38);
+        box-shadow: inset 0 0 0 1px rgba(244, 236, 214, 0.07);
+        max-width: 62em;
       }
-      .wiki-svg { display: block; width: 100%; height: auto; max-height: 280px; }
+      .wiki-fig-eyebrow {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.18em;
+        text-transform: uppercase; color: var(--sakura); margin-bottom: 8px;
+      }
+      .wiki-fig-stage { width: 100%; }
+      .wiki-fig-canvas { display: block; width: 100%; height: auto; }
+      /*
+       * A figure is drawn for a wide frame and its labels are sized for one.
+       * Squeezing that into a phone makes every number in it unreadable, so
+       * below the breakpoint the figure keeps a legible width and the reader
+       * pans it instead. The page body still never scrolls sideways.
+       */
+      @media (max-width: 700px) {
+        .wiki-fig-stage {
+          overflow-x: auto;
+          overscroll-behavior-x: contain;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(232, 168, 184, 0.4) transparent;
+        }
+        .wiki-fig-canvas { min-width: 540px; }
+        .wiki-fig-stage::after {
+          content: 'swipe the figure sideways';
+          display: block; padding-top: 4px;
+          font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+          color: rgba(157, 179, 200, 0.55);
+        }
+      }
       .wiki-figure figcaption {
-        margin-top: 8px; color: var(--slate); font-size: 13px; line-height: 1.45;
+        margin-top: 10px; padding-top: 10px;
+        border-top: 1px solid var(--line-2);
+        color: rgba(157, 179, 200, 0.92); font-size: 13px; line-height: 1.55;
+        max-width: 48em;
       }
+
+      .wiki-fig-controls {
+        display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 20px;
+        margin-top: 10px; padding-top: 12px;
+        border-top: 1px solid var(--line-2);
+      }
+      .wiki-ctl {
+        display: flex; flex-direction: column; gap: 5px;
+        flex: 1 1 150px; max-width: 240px; min-width: 128px;
+      }
+      .wiki-ctl.is-toggle, .wiki-ctl-is-pick { flex: 0 0 auto; max-width: none; }
+      .wiki-ctl-head {
+        display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+      }
+      .wiki-ctl-label {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+        text-transform: uppercase; color: var(--slate); white-space: nowrap;
+      }
+      .wiki-ctl-value {
+        font-family: var(--mono); font-size: 12.5px; font-weight: 700;
+        color: var(--amber); white-space: nowrap;
+      }
+      .wiki-ctl-value.is-on { color: var(--mint); }
+
+      .wiki-ctl-range {
+        appearance: none; -webkit-appearance: none;
+        width: 100%; height: 18px; background: transparent; cursor: pointer; margin: 0;
+      }
+      .wiki-ctl-range::-webkit-slider-runnable-track {
+        height: 3px; border-radius: 2px; background: rgba(244, 236, 214, 0.16);
+      }
+      .wiki-ctl-range::-moz-range-track {
+        height: 3px; border-radius: 2px; background: rgba(244, 236, 214, 0.16);
+      }
+      .wiki-ctl-range::-webkit-slider-thumb {
+        appearance: none; -webkit-appearance: none;
+        width: 14px; height: 14px; margin-top: -5.5px; border-radius: 50%;
+        background: var(--sakura); border: 0; cursor: grab;
+        box-shadow: 0 0 0 3px rgba(232, 168, 184, 0.16);
+      }
+      .wiki-ctl-range::-moz-range-thumb {
+        width: 14px; height: 14px; border-radius: 50%;
+        background: var(--sakura); border: 0; cursor: grab;
+        box-shadow: 0 0 0 3px rgba(232, 168, 184, 0.16);
+      }
+      .wiki-ctl-range:focus-visible { outline: 2px solid var(--sakura); outline-offset: 4px; }
+
+      .wiki-ctl-check {
+        appearance: none; -webkit-appearance: none;
+        width: 38px; height: 20px; margin: 0; border-radius: 10px; cursor: pointer;
+        background: rgba(244, 236, 214, 0.14);
+        box-shadow: inset 0 0 0 1px var(--line-2);
+        position: relative; transition: background 0.16s var(--ease);
+      }
+      .wiki-ctl-check::after {
+        content: ''; position: absolute; top: 3px; left: 3px;
+        width: 14px; height: 14px; border-radius: 50%;
+        background: var(--slate); transition: transform 0.16s var(--ease), background 0.16s var(--ease);
+      }
+      .wiki-ctl-check:checked { background: rgba(125, 255, 180, 0.22); }
+      .wiki-ctl-check:checked::after { transform: translateX(18px); background: var(--mint); }
+
+      .wiki-ctl-picks { display: flex; flex-wrap: wrap; gap: 4px; }
+      .wiki-ctl-pick {
+        appearance: none; border: 0; border-radius: 3px; cursor: pointer;
+        background: rgba(16, 22, 17, 0.7); color: rgba(238, 232, 216, 0.72);
+        font: inherit; font-size: 11.5px; font-weight: 650; padding: 5px 10px;
+        box-shadow: inset 0 0 0 1px rgba(244, 236, 214, 0.12);
+      }
+      .wiki-ctl-pick:hover { color: var(--cream); }
+      .wiki-ctl-pick.on {
+        color: var(--ink); background: var(--sakura); box-shadow: none;
+      }
+      .wiki-fig-play {
+        margin-left: auto; appearance: none; border: 0; border-radius: 3px;
+        background: rgba(16, 22, 17, 0.7); color: var(--slate);
+        font: inherit; font-size: 11.5px; font-weight: 650; padding: 6px 12px;
+        cursor: pointer; box-shadow: inset 0 0 0 1px rgba(244, 236, 214, 0.12);
+      }
+      .wiki-fig-play:hover { color: var(--cream); }
+
+      /* ---- Sections ---- */
+
       .wiki-pair {
         display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 16px;
+        max-width: 74em;
       }
       .wiki-col {
-        padding: 14px 16px 8px; border-radius: 4px;
-        background: rgba(16, 22, 17, 0.55);
-        box-shadow: inset 0 0 0 1px rgba(244, 236, 214, 0.08);
+        padding: 15px 17px 9px; border-radius: 4px;
+        background: rgba(16, 22, 17, 0.5);
+        box-shadow: inset 0 0 0 1px rgba(244, 236, 214, 0.07);
       }
       .wiki-col h3, .wiki-sec h3 {
-        margin: 0 0 8px; font-size: 12px; font-weight: 700;
-        letter-spacing: 0.14em; text-transform: uppercase;
+        margin: 0 0 9px; font-size: 11px; font-weight: 700;
+        letter-spacing: 0.16em; text-transform: uppercase;
       }
       .wiki-col-air h3 { color: var(--mint); }
       .wiki-col-lab h3 { color: var(--amber); }
       .wiki-sec h3 { color: var(--sakura); }
       .wiki-article p {
-        margin: 0 0 10px; color: rgba(235, 230, 215, 0.86);
-        font-size: 14.5px; line-height: 1.6;
+        margin: 0 0 11px; color: rgba(238, 233, 218, 0.87);
+        font-size: 14.5px; line-height: 1.62; max-width: 42em;
       }
       .wiki-sec {
-        margin: 0 0 12px; padding: 12px 16px 4px; border-radius: 4px;
-        background: rgba(16, 22, 17, 0.4);
+        margin: 0 0 14px; padding: 13px 17px 4px; border-radius: 4px;
+        background: rgba(16, 22, 17, 0.36); max-width: 74em;
       }
       .wiki-sec-sim { box-shadow: inset 3px 0 0 var(--sakura); }
       .wiki-reason { color: var(--slate) !important; font-size: 13px !important; }
+
       .wiki-chip {
         display: inline-block; padding: 2px 8px; border-radius: 999px;
         font-size: 10px; font-weight: 800; letter-spacing: 0.08em;
@@ -279,73 +466,121 @@
       .wiki-chip-live { background: rgba(125, 255, 180, 0.18); color: var(--mint); }
       .wiki-chip-gated { background: rgba(255, 212, 92, 0.18); color: var(--amber); }
       .wiki-chip-applied-inert { background: rgba(157, 179, 200, 0.18); color: var(--slate); }
-      .wiki-chip-inert { background: rgba(157, 179, 200, 0.10); color: var(--slate); }
+      .wiki-chip-inert { background: rgba(157, 179, 200, 0.1); color: var(--slate); }
       .wiki-chip-absent { background: rgba(232, 168, 184, 0.12); color: var(--sakura); }
-      .wiki-filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
-      .wiki-filter {
-        appearance: none; border: 0; border-radius: 3px;
-        background: rgba(16, 22, 17, 0.72); color: rgba(238, 232, 216, 0.72);
-        font: inherit; font-size: 12px; font-weight: 650;
-        letter-spacing: 0.06em; padding: 5px 10px; cursor: pointer;
-        box-shadow: inset 0 0 0 1px rgba(244, 236, 214, 0.14);
+
+      .wiki-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 10px 0; }
+      .wiki-filter-label {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+        text-transform: uppercase; color: var(--slate); margin-right: 4px;
       }
-      .wiki-filter.on { color: var(--cream); box-shadow: inset 0 0 0 1px var(--sakura); background: rgba(232, 168, 184, 0.16); }
+      .wiki-filter {
+        display: inline-flex; align-items: center; gap: 6px;
+        appearance: none; border: 0; border-radius: 3px;
+        background: rgba(16, 22, 17, 0.7); color: rgba(238, 232, 216, 0.72);
+        font: inherit; font-size: 12px; font-weight: 650;
+        letter-spacing: 0.04em; padding: 5px 10px; cursor: pointer;
+        box-shadow: inset 0 0 0 1px rgba(244, 236, 214, 0.13);
+      }
+      .wiki-filter:hover { color: var(--cream); }
+      .wiki-filter.on {
+        color: var(--cream); box-shadow: inset 0 0 0 1px var(--sakura);
+        background: rgba(232, 168, 184, 0.16);
+      }
+      .wiki-filter-n { font-family: var(--mono); font-size: 11px; color: var(--slate); }
+      .wiki-filter.on .wiki-filter-n { color: var(--sakura); }
       .wiki-cli-list { display: flex; flex-direction: column; gap: 3px; margin-bottom: 16px; }
-      .wiki-related { margin: 18px 0 8px; }
+
+      .wiki-related { margin: 24px 0 8px; }
       .wiki-related-row { display: flex; flex-wrap: wrap; gap: 8px; }
       .wiki-related-link, .wiki-fc-link {
         appearance: none; border: 0; border-radius: 3px;
         background: rgba(232, 168, 184, 0.14); color: var(--cream);
         font: inherit; font-size: 13px; font-weight: 650;
-        padding: 7px 12px; cursor: pointer; text-decoration: none;
+        padding: 8px 13px; cursor: pointer; text-decoration: none;
         display: inline-block;
       }
       .wiki-fc-link { background: var(--mint); color: var(--deep); margin: 8px 0 12px; }
       .wiki-fc-link:hover { background: #9dffc7; color: var(--deep); }
       .wiki-related-link:hover { background: rgba(232, 168, 184, 0.28); }
-      .wiki-source { color: rgba(157, 179, 200, 0.7) !important; font-size: 12px !important; }
-      .wiki-counts { color: var(--slate) !important; font-size: 13px !important; }
+      .wiki-source {
+        color: rgba(157, 179, 200, 0.7) !important; font-size: 12px !important;
+        font-family: var(--mono);
+      }
+
       .wiki-journey-nav {
-        display: flex; flex-wrap: wrap; justify-content: space-between;
-        gap: 10px; margin: 22px 0 8px;
+        display: flex; flex-wrap: wrap; gap: 10px;
+        margin: 26px 0 8px; padding-top: 18px;
+        border-top: 1px solid var(--line-2);
       }
-      .wiki-journey-next { margin-left: auto; }
-      @keyframes wiki-spin { to { transform: rotate(360deg); } }
-      @keyframes wiki-spin-rev { to { transform: rotate(-360deg); } }
-      @keyframes wiki-flow { to { stroke-dashoffset: -48; } }
-      @keyframes wiki-bob { 50% { transform: translateY(6px); } }
-      @keyframes wiki-shake {
-        0%, 100% { transform: translate(0, 0); }
-        25% { transform: translate(1.5px, -1px); }
-        75% { transform: translate(-1.5px, 1px); }
+      .wiki-journey-link {
+        display: flex; flex-direction: column; gap: 3px;
+        appearance: none; border: 0; border-radius: 4px;
+        background: rgba(16, 22, 17, 0.55); color: var(--cream);
+        box-shadow: inset 0 0 0 1px var(--line-2);
+        font: inherit; text-align: left; padding: 11px 15px; cursor: pointer;
+        min-width: 12em;
       }
-      .wiki-spin { transform-origin: center; animation: wiki-spin 4.5s linear infinite; }
-      .wiki-spin-rev { transform-origin: center; animation: wiki-spin-rev 4.5s linear infinite; }
-      .wiki-flow { animation: wiki-flow 1.6s linear infinite; }
-      .wiki-bob { animation: wiki-bob 1.8s ease-in-out infinite; }
-      .wiki-dash { animation: wiki-flow 2.4s linear infinite; }
-      .wiki-shake { animation: wiki-shake 0.28s linear infinite; }
-      @media (prefers-reduced-motion: reduce) {
-        .wiki-spin, .wiki-spin-rev, .wiki-flow, .wiki-bob, .wiki-dash, .wiki-shake { animation: none; }
+      .wiki-journey-link:hover { background: rgba(232, 168, 184, 0.12); }
+      .wiki-journey-link.is-next { margin-left: auto; text-align: right; }
+      .wiki-journey-dir {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+        text-transform: uppercase; color: var(--sakura);
       }
-      @media (max-width: 860px) {
-        .wiki-shell { grid-template-columns: 1fr; grid-template-rows: minmax(7em, 28vh) 1fr; }
-        .wiki-rail {
-          border-right: 0; border-bottom: 1px solid var(--line);
-          padding: 10px 12px;
-        }
+      .wiki-journey-title { font-size: 14px; font-weight: 650; }
+
+      /* ---- Narrow ---- */
+
+      @media (max-width: 1000px) {
         .wiki-pair { grid-template-columns: 1fr; }
-        .wiki-main { padding: 12px 14px 18px; }
-        .wiki-svg { max-height: 220px; }
+      }
+
+      /*
+       * Below 900 px the rail is a drawer rather than a band across the top
+       * of the screen. A phone should open on the article, not on a list of
+       * links it did not ask for.
+       */
+      @media (max-width: 900px) {
+        .wiki-shell { grid-template-columns: minmax(0, 1fr); }
+        .wiki-rail {
+          position: fixed; z-index: 25;
+          top: 0; bottom: 0; left: 0; width: min(20em, 86vw);
+          padding: 22px 16px 40px;
+          background: #101710;
+          border-right: 1px solid var(--line);
+          box-shadow: 12px 0 40px rgba(0, 0, 0, 0.5);
+          transform: translateX(-102%);
+          transition: transform 0.24s var(--ease);
+          visibility: hidden;
+        }
+        .rail-open .wiki-rail { transform: translateX(0); visibility: visible; }
+        .wiki-rail-toggle {
+          display: inline-flex; align-items: center; gap: 7px;
+          flex: 0 0 auto; appearance: none; border: 0; border-radius: 4px;
+          background: rgba(16, 22, 17, 0.8); color: var(--cream);
+          box-shadow: inset 0 0 0 1px rgba(244, 236, 214, 0.16);
+          font: inherit; font-size: 12.5px; font-weight: 650;
+          padding: 10px 13px; cursor: pointer;
+        }
+        .wiki-rail-toggle::before {
+          content: ''; width: 13px; height: 9px;
+          border-top: 2px solid var(--sakura);
+          border-bottom: 2px solid var(--sakura);
+          box-shadow: inset 0 3.5px 0 -1px var(--sakura);
+        }
+        .wiki-main { padding: 12px var(--gutter) 40px; }
+        .wiki-search-hint { display: none; }
+        .wiki-figure { padding: 12px 12px 10px; }
+        .wiki-ctl { max-width: none; flex-basis: 100%; }
+        .wiki-fig-play { margin-left: 0; }
+        .wiki-journey-link.is-next { margin-left: 0; }
+        .wiki-journey-link { flex: 1 1 100%; }
       }
 
       footer {
-        position: fixed;
-        left: 0; right: 0; bottom: 0;
-        z-index: 20;
         display: flex;
         flex-wrap: wrap;
-        gap: 10px 26px;
+        gap: 8px 26px;
         align-items: center;
         justify-content: space-between;
         padding: 10px var(--gutter) 12px;
@@ -358,6 +593,25 @@
       footer a { color: rgba(243, 234, 212, 0.78); text-decoration: none; }
       footer a:hover { color: var(--sakura); }
       .foot-links { display: flex; flex-wrap: wrap; gap: 18px; }
+      @media (max-width: 620px) {
+        footer { font-size: 11px; padding: 8px var(--gutter) 10px; }
+        .foot-note { display: none; }
+      }
+
+      /*
+       * Reduced motion. This block and REDUCED in src/wiki/anim.js are the
+       * two places that have to agree. Figures stop moving; they do not stop
+       * meaning anything, because every one of them keeps its controls and
+       * holds a frame chosen to be the informative one.
+       */
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        .wiki-main { scroll-behavior: auto; }
+        .wiki-rail, .wiki-progress-fill, .wiki-rail-link,
+        .wiki-ctl-check, .wiki-ctl-check::after {
+          transition: none !important;
+        }
+      }
     </style>
   </head>
   <body>
@@ -376,7 +630,7 @@
     <div id="wiki"></div>
 
     <footer>
-      <span>GPLv3 &#183; catalog snapshot from the simulator</span>
+      <span class="foot-note">GPLv3 &#183; figures computed from the plant&#8217;s own constants &#183; catalog snapshot from the simulator</span>
       <div class="foot-links">
         <a href="../">The film</a>
         <a href="https://github.com/Mathew-Harvey/WebFPVSimulator" rel="noreferrer">Simulator repo</a>

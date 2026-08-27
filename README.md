@@ -2,7 +2,9 @@
 
 The front door for [WebFPVSimulator](https://github.com/Mathew-Harvey/WebFPVSimulator).
 One canvas, one scroll, four acts, a reason, three links out, and a wiki
-at `wiki/` that is not part of the film.
+at `wiki/` that is not part of the film: thirty five illustrated pages on
+how a quad actually flies, plus every Betaflight setting, with figures you
+can drive.
 
 ## Why it exists
 
@@ -65,8 +67,12 @@ Then open <http://127.0.0.1:8080/>. The wiki is <http://127.0.0.1:8080/wiki/>.
 Any static file server will do; the only requirement is that it serves over
 http, because ES modules will not load from `file://`.
 
-`npm run lint:wiki` checks that every catalog key still has a page, and that
-LIVE / GATED / APPLIED_INERT keys still have authored copy.
+`npm run lint:wiki` checks that every catalog key still has a page, that
+LIVE / GATED / APPLIED_INERT keys still have authored copy, that every
+article carries a figure and every figure is reached by something, that
+each figure has a caption saying what it argues and a label for anyone who
+cannot see it, and that both halves of the reduced motion contract are
+still in place.
 
 ## The wiki
 
@@ -74,10 +80,63 @@ The FPV wiki is a second page on this site, not a screen inside the
 simulator. `https://webfpv.org/wiki/` is the public address. Hash links
 are `#wiki/<id>`, so `wiki/#wiki/physics-vrs` is Vortex ring state.
 
+Thirty five written pages, a numbered reading path of thirteen that make
+the argument in order, and one page for every one of the 696 Betaflight
+4.5.1 catalog keys. The rail is one list: a page on the path carries its
+step number rather than being printed a second time in a block of its own.
+Left and right arrows walk the path, and `/` focuses the search.
+
 `src/fc/catalog.js` and `src/fc/catalog-data.js` are copies of the
 simulator catalog so this static site can name every key without calling
 the sim. If they disagree, the simulator wins, and the copies should be
 replaced from that repo.
+
+### The figures
+
+Every article carries one, and the lint fails if one does not.
+
+A figure here is not decoration. It is the smallest machine that can be
+wrong. `src/wiki/model.js` holds the plant's own constants, snapshotted
+from the comment block at the top of `plant.c` the same way `src/fc`
+snapshots the catalog, and the figures solve with them rather than drawing
+a shape from memory. The thrust curve is the plant's thrust curve. The sag
+figure runs the same implicit solve the plant runs. The PID figure is
+Betaflight's own scale factors on gains a pilot types, driving this
+airframe's real inertia and its real rotor lag, so taking D to zero makes
+it ring for the reason a real quad rings.
+
+That is checkable, and it is the point: the model reproduces the numbers
+the articles publish. Thrust to weight comes out at 9.21 against a measured
+9.2. The rotor time constant lands between 21 and 30 ms against a check
+that asks for 10 to 30. If a figure and its article disagree, one of them
+is a bug rather than a matter of taste.
+
+So nearly every figure has a knob, every knob has a readout, and the
+caption says what moving it proves. Where a constant is somebody's
+judgement about feel rather than a physical result, the caption says that
+too.
+
+| File | What it owns |
+| --- | --- |
+| `src/wiki/model.js` | The plant's constants and the closed forms a figure needs |
+| `src/wiki/draw.js` | Canvas primitives, axes, and the palette |
+| `src/wiki/anim.js` | The runtime: one rAF loop, controls, reduced motion, teardown |
+| `src/wiki/figures.js` | The thirty four figures and the argument each one makes |
+
+Three things the runtime enforces. Nothing animates off screen: one
+`requestAnimationFrame` loop drives every visible figure and an
+`IntersectionObserver` takes the rest out of it. Figures are torn down
+before the article is replaced, because each one owns a canvas, an rAF
+slot and two observers. And reduced motion is honoured in two places that
+have to agree, `REDUCED` in `anim.js` and the media query at the foot of
+`wiki/index.html`: a figure that would have animated holds its most
+informative frame and every control on it still works, because the control
+is where the meaning is.
+
+That last one is why the figures that show a simulated trace solve the
+whole trace in one pass rather than building it up frame by frame. A
+reader who has asked for reduced motion gets one frame, and one frame of a
+curve being drawn is not a curve.
 
 ## Colour
 
@@ -151,7 +210,7 @@ other way, and a pinned frame is exactly the state that cannot be in. It adds
 | File | What it owns |
 | --- | --- |
 | `index.html` | The page, its CSS, and every launch link as static markup |
-| `wiki/index.html` | The FPV wiki. No canvas. Deep links are `#wiki/<id>` |
+| `wiki/index.html` | The FPV wiki's page, its CSS, and its layout grid |
 | `src/wiki/` | Articles, CLI pages, figures, and the wiki shell |
 | `src/fc/` | Snapshot of the simulator catalog. Recopy when that catalog changes |
 | `src/main.js` | The timeline. One scalar `T` drives everything |

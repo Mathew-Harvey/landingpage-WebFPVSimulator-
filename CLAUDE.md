@@ -18,7 +18,9 @@ The three repositories are one product. `Mathew-Harvey/WebFPVSimulator` holds th
 
 **The palette is the simulator's.** Light is warm, shadow is cool. Cream for lit type, sakura for chrome, amber for an instrument, mint for something good, slate for type that should recede. The panel fill and the two pixel edge rule are the board's, so a visitor arriving from the board is looking at the same furniture.
 
-**Reduced motion is honoured in two places that agree.** The CSS block at the foot of the stylesheet and `REDUCED` in `main.js`. Anything that animates on scroll needs an entry in both. Nothing that carries meaning is hidden.
+**Reduced motion is honoured in two places that agree.** The CSS block at the foot of the stylesheet and `REDUCED` in `main.js`. Anything that animates on scroll needs an entry in both. Nothing that carries meaning is hidden. The wiki has its own pair of the same contract, the block at the foot of `wiki/index.html` and `REDUCED` in `src/wiki/anim.js`, and `npm run lint:wiki` fails if either half goes missing.
+
+**A wiki figure computes, it does not illustrate.** `src/wiki/model.js` holds the plant's constants, snapshotted from `plant.c` the way `src/fc` snapshots the catalog, and the figures solve with them rather than drawing a shape from memory. If a figure and its article disagree about a number, one of them is a bug. Do not put a number in a caption the figure does not compute, and do not draw a curve the plant does not have: name the absence instead. Every article carries a figure, every figure has a knob with a readout, and the caption says what moving the knob proves.
 
 **The site icon comes from the simulator's `scripts/icons.js`.** `icon.svg`, `favicon.ico` and `apple-touch-icon.png` are generated output, in cream, because the front door owns no product's accent. Regenerate, do not edit: `node scripts/icons.js cream ../landingpage-WebFPVSimulator-` from a checkout of the simulator beside this one.
 
@@ -33,7 +35,8 @@ The three repositories are one product. `Mathew-Harvey/WebFPVSimulator` holds th
 
 ## Working rules
 
-- There is no test suite here. `npm run serve` and look at the page, at a wide width and at 430 px, and at the 900 px breakpoint where the ledger and the instruments drop out.
+- There is no test suite here. `npm run serve` and look at the page, at a wide width and at 430 px, and at the 900 px breakpoint where the ledger and the instruments drop out. The wiki has the same breakpoint, where its rail becomes a drawer.
+- `npm run lint:wiki` before handing the wiki over. It is cheap, and it catches the things that stay invisible until somebody scrolls to the one page that has them.
 - Never report a check as passing without having run it in the same turn. If a check was not run, say so, say why, and say what was done instead.
 - The simulator's `npm run verify` is expensive and does not cover this repository. Do not reach for it here.
 
