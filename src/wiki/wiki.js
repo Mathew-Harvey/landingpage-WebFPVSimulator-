@@ -64,22 +64,38 @@ const CLI_BY_ID = new Map(CLI_PAGES.map((p) => [p.id, p]));
 const INDEX = cliIndexPage();
 
 /*
- * The reading path. Thirteen pages that make an argument in order, out of
- * seven hundred that are a reference. Everything else is reachable and
- * nothing else is compulsory.
+ * The reading path: the pages that make an argument in order, out of seven
+ * hundred that are a reference. Everything else stays reachable from the
+ * rail and from search, and nothing else is compulsory.
+ *
+ * Two rules decided this order, and both were broken before.
+ *
+ * A step may not depend on a page that comes later, or on one that is not
+ * on the path at all. Vortex ring state used to sit at step eight while the
+ * page defining the quantity it is measured in was not on the route at any
+ * point; the PID page came before the mixer that its output feeds; the
+ * filter page came before the noise it exists to remove.
+ *
+ * And the route may not stop to talk about the project. Steps four and five
+ * used to be how the firmware is vendored and what the four catalog
+ * statuses mean, which is onboarding for a contributor, arriving before the
+ * reader has been told anything about how a quadcopter flies. Both pages
+ * are still in the rail for whoever wants them.
  */
 const JOURNEY = [
   'start-welcome',
+  'start-whyacomputer',
   'start-nowings',
   'start-loop',
-  'start-compiled',
-  'start-honesty',
   'physics-airframe',
   'physics-motor',
+  'physics-advance',
   'physics-vrs',
-  'physics-wash',
   'physics-hforce',
+  'control-rates',
+  'control-mixer',
   'control-pid',
+  'physics-gyro',
   'control-filters',
   'cli-index',
 ];
@@ -349,7 +365,7 @@ export class WikiView {
 
     const head = el('div', 'wiki-rail-head');
     head.append(el('div', 'wiki-rail-kicker', 'The reading path'));
-    head.append(el('p', 'wiki-rail-note', 'Thirteen pages, in order, that make the whole argument. Everything else is reference you can reach from search.'));
+    head.append(el('p', 'wiki-rail-note', 'Fifteen pages, in order, that make the whole argument. Everything else is reference you can reach from the list below or from search.'));
     const bar = el('div', 'wiki-progress');
     const fill = el('div', 'wiki-progress-fill');
     fill.style.width = `${((here || 0) / JOURNEY.length) * 100}%`;

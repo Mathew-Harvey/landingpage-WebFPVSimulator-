@@ -133,13 +133,29 @@ class Figure {
       root.append(el('div', 'wiki-fig-eyebrow', spec.eyebrow));
     }
     const stage = el('div', 'wiki-fig-stage');
-    stage.style.aspectRatio = `${this.w} / ${this.h}`;
     this.canvas = el('canvas', 'wiki-fig-canvas');
+    /* On the canvas, so a forced minimum width still gets the right height. */
+    this.canvas.style.aspectRatio = `${this.w} / ${this.h}`;
     this.canvas.setAttribute('role', 'img');
     this.canvas.setAttribute('aria-label', spec.label || spec.caption || spec.id);
     stage.append(this.canvas);
     root.append(stage);
+    root.append(el('div', 'wiki-fig-hint', 'swipe the figure sideways to see all of it'));
     this.ctx = this.canvas.getContext('2d');
+
+    /*
+     * A question, asked before the reader touches anything. A figure that
+     * tells you what the knob will do and then lets you turn it is a
+     * demonstration; a figure that asks you to commit to an answer first is
+     * a test you gave yourself, and people remember those. It goes above the
+     * controls because it has to be read before they are used.
+     */
+    if (spec.ask) {
+      const ask = el('div', 'wiki-fig-ask');
+      ask.append(el('span', 'wiki-fig-ask-tag', 'Predict'));
+      ask.append(el('span', null, spec.ask));
+      root.append(ask);
+    }
 
     const controls = spec.controls || [];
     if (controls.length || this.autoplay) {

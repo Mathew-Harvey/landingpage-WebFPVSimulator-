@@ -84,6 +84,32 @@ export const ARTICLES = [
   }),
 
   page({
+    id: 'start-whyacomputer',
+    chapter: 'start',
+    title: 'Why it needs a computer',
+    kicker: 'The journey',
+    lede: 'Let go of a paper plane and it glides. Let go of a quadcopter and it tips over. Everything else on this site follows from that one difference.',
+    figure: 'unstable',
+    air: [
+      'An aeroplane mostly wants to fly straight. Its wings are angled slightly upwards from the body, its tail is a long way behind the wing, and if a gust knocks it sideways all of that geometry quietly pushes it back. You can throw a paper plane across a room and it will sort itself out on the way.',
+      'A quadcopter has none of that. It is four motors on the ends of four arms, and when all four push equally there is nothing at all trying to keep it level. Tip it ten degrees and it stays at ten degrees, then tips further, because no real aircraft is perfectly balanced: one motor sits a fraction of a degree crooked, one propeller weighs a fraction of a gram more, and those tiny differences are a steady push in one direction.',
+      'So something has to be watching, all the time, and pushing back. Move the slider in the figure to see how fast that something needs to be. A very good human, reacting to something they can see, manages about five corrections a second. It is nowhere near enough: the aircraft is upside down before you have finished noticing. The flight controller does it a thousand times a second, and that is the only reason a quadcopter can be flown at all.',
+      'This is worth sitting with, because it changes what the rest of this site is about. You are never really flying the aircraft. You are telling a computer what you would like, a thousand times a second, and the computer is flying the aircraft.',
+    ],
+    lab: [
+      'A multirotor in hover is not statically stable in attitude. With equal rotor thrusts the net moment about the centre of gravity is zero at every orientation, so attitude is a double integrator driven by whatever residual torque exists: there is no restoring term, unlike the dihedral and tailplane contributions that give a fixed wing positive static stability. Any bias, build tolerance cant, prop mass imbalance, or an unmodelled gust, integrates twice into a divergent attitude.',
+      'The figure runs a sample and hold PD loop on attitude against a constant 1.5 mN m bias, using this airframe\'s real roll inertia of 0.0035 kg m^2 and its real torque per unit of mixer output. The instability it shows as the update rate falls is genuine discrete time behaviour, not a fudge: hold a control output constant for longer than the closed loop wants to respond and the phase lost across the hold eats the margin. The transition sits between 50 and 100 Hz for these gains, which is why a 1 kHz loop is comfortable and a 5 Hz one is not.',
+      'The position states are worse than the attitude states. Attitude at least stays where it is put in the absence of a bias; horizontal position cannot, because a tilt of theta commands a horizontal acceleration of g tan(theta), so a small attitude error becomes a growing velocity and then a growing displacement whatever the pilot does about it afterwards.',
+    ],
+    sim: [
+      'The plant in this simulator contains no stabilising term of any kind, because a real airframe has none either. Every bit of the steadiness you feel when you fly the sim is being produced by the compiled Betaflight loop, at 1 kHz, out of gyro readings. Turn the gains down far enough on the PID page and you can watch this page happen to you.',
+      'The steady push the figure uses is the motor cant table, which is a modelled build tolerance rather than a measurement. See Motor cant and roll-to-yaw coupling for what it is and why it is there.',
+    ],
+    related: ['start-loop', 'control-pid', 'physics-cant', 'control-angle'],
+    source: 'src/native/plant.c, and the absence of any restoring moment in it',
+  }),
+
+  page({
     id: 'start-nowings',
     chapter: 'start',
     title: 'A quad has no wings',

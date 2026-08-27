@@ -218,6 +218,126 @@ const FIGURES = {
   }),
 
   /*
+   * The keystone. A quadcopter has no natural tendency to return to level:
+   * with all four motors equal there is no restoring moment at all, and the
+   * small persistent torques every real frame carries will tip it over and
+   * keep tipping it. What stops that happening is somebody correcting, and
+   * the whole argument of this wiki is about how fast they have to be.
+   *
+   * The knob is corrections per second. A human is at the far left and
+   * always loses. That is the point of the page.
+   */
+  unstable: () => makeFigure({
+    id: 'unstable',
+    label: 'Tilt against time, for a controller correcting at different rates',
+    eyebrow: 'How fast do you have to be',
+    w: 680,
+    h: 356,
+    still: 2.4,
+    ask: 'A small nudge tips the aircraft. How many corrections a second do you think it takes to hold it level? Guess before you drag.',
+    controls: [
+      {
+        key: 'hz',
+        label: 'Corrections per second',
+        type: 'pick',
+        value: 5,
+        options: [
+          { label: 'You, 5', value: 5 },
+          { label: '20', value: 20 },
+          { label: '50', value: 50 },
+          { label: '200', value: 200 },
+          { label: '1000, the real one', value: 1000 },
+        ],
+      },
+    ],
+    caption: 'An aeroplane left alone tends to fly straight, because its wings and tail pull it back. A quadcopter has nothing that does that. With all four motors equal there is no force returning it to level, and every real frame carries small crooked pushes that tip it slowly over. Something has to notice and correct, and the whole question is how fast. A very good human manages about five corrections a second, which is the left hand setting, and it is not close. The flight controller does a thousand.',
+    reset: (s, sc) => {
+      /* Sample and hold PD on attitude, against the sort of steady bias a
+         slightly canted motor leaves. Same airframe constants as the rest. */
+      const w0 = HOVER_W;
+      const dwdd = packOpenCircuit() / (P.ke + 2 * ((P.kq * P.rMotor) / P.ke) * w0);
+      const torquePerDuty = 4 * P.arm * (2 * P.kt * w0 * dwdd);
+      const dt = 0.0005;
+      const period = 1 / s.hz;
+      const kp = 6;
+      const kd = 0.9;
+      const bias = 0.0015;
+      let th = 0.02;
+      let om = 0;
+      let u = 0;
+      let since = 1e9;
+      sc.tr = [];
+      sc.t45 = null;
+      sc.flipped = false;
+      for (let i = 0; i * dt <= 4; i += 1) {
+        const t = i * dt;
+        since += dt;
+        if (since >= period) {
+          since = 0;
+          u = Math.max(-1, Math.min(1, -(kp * th + kd * om)));
+        }
+        om += ((torquePerDuty * u + bias) / P.inertia.roll) * dt;
+        th += om * dt;
+        if (sc.t45 == null && Math.abs(th) > Math.PI / 4) { sc.t45 = t; }
+        /* Clamp at inverted and keep drawing, rather than stopping and
+           leaving three quarters of the axis blank. Upside down is a state
+           the aircraft stays in, and the trace should say so. */
+        if (Math.abs(th) > Math.PI) { sc.flipped = true; th = Math.sign(th) * Math.PI; om = 0; u = 0; }
+        sc.tr.push([t, (th * 180) / Math.PI]);
+      }
+      sc.settled = sc.tr[sc.tr.length - 1][1];
+    },
+    draw(ctx, W, H, s, t, sc) {
+      const span = 4;
+      const cursor = (t * 0.5) % span;
+      const at = Math.min(sc.tr.length - 1, Math.round(cursor / 0.0005));
+      const tilt = (sc.tr[at][1] * Math.PI) / 180;
+
+      /* The aircraft, doing whatever the trace says it is doing. */
+      const cx = 122;
+      const cy = 150;
+      line(ctx, cx - 92, cy, cx + 92, cy, alpha(C.cream, 0.10), 1.4, [3, 5]);
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(-tilt);
+      line(ctx, -56, 0, 56, 0, Math.abs(tilt) > Math.PI / 4 ? C.sakura : C.slate, 7);
+      rotor(ctx, -56, -7, 26, 0.6, { load: 0.5, squash: 0.26 });
+      rotor(ctx, 56, -7, 26, 2.0, { load: 0.5, squash: 0.26 });
+      roundRect(ctx, -12, -8, 24, 16, 3, C.deep, C.amber, 1.5);
+      ctx.restore();
+      text(ctx, `${f0(Math.abs((tilt * 180) / Math.PI))} deg`, cx, cy + 52, {
+        fill: Math.abs(tilt) > Math.PI / 4 ? C.sakura : C.cream, size: 15, weight: 700,
+        align: 'center', mono: true,
+      });
+      if (Math.abs(tilt) > Math.PI * 0.94) {
+        text(ctx, 'upside down', cx, cy + 70, { fill: C.sakura, size: 11.5, align: 'center', weight: 700 });
+      }
+
+      const ax = new Axes(ctx, {
+        x: 250, y: 54, w: W - 280, h: 172, xmin: 0, xmax: span, ymin: -190, ymax: 190,
+        xlabel: 'seconds after the nudge', ylabel: 'how far it has tipped, degrees',
+      });
+      ax.frame({ xticks: [0, 1, 2, 3, 4], yticks: [-180, -45, 0, 45, 180], fmtX: f0, fmtY: f0 });
+      ax.hline(45, alpha(C.sakura, 0.4), [4, 4], 'past here you are not flying, you are falling', 0.02);
+      ax.hline(-45, alpha(C.sakura, 0.4), [4, 4]);
+      ax.series(sc.tr, sc.t45 == null ? C.mint : C.sakura, 2.6);
+      if (at < sc.tr.length) {
+        ax.mark(sc.tr[at][0], sc.tr[at][1], C.cream, 4.5);
+      }
+
+      const good = sc.t45 == null;
+      text(ctx, good ? 'Still flying.' : `Out of control after ${f1(sc.t45)} seconds.`, 250, 276, {
+        fill: good ? C.mint : C.sakura, size: 14, weight: 700,
+      });
+      wrapText(ctx, good
+        ? 'Corrections arrive faster than the aircraft can tip, so the nudge never becomes anything.'
+        : 'Between one correction and the next the aircraft tips further than the next correction can undo.',
+      250, 296, W - 280, { fill: C.slate, size: 11.5, lead: 15 });
+      note(ctx, 24, H - 11, 'the same airframe, and a steady crooked push of the size a slightly canted motor leaves');
+    },
+  }),
+
+  /*
    * The single most useful thing to understand about a quad, and it is one
    * triangle: tilt is the only way to go anywhere, and tilt costs thrust.
    */
@@ -618,7 +738,7 @@ const FIGURES = {
       const bx = 372;
       panel(ctx, bx, 44, W - bx - 24, 250, C.sakura);
       const heads = {
-        hover: ['Hover', 'All four the same. Every clockwise prop is balanced by a counter clockwise one, so the frame feels no net twist and holds a heading on its own.'],
+        hover: ['Hover', 'All four the same. Every clockwise prop is balanced by a counter clockwise one, so on a perfectly built frame the twists cancel. Nothing here is holding it level, though: cancel is not the same as correct, and that is what the flight controller is for.'],
         roll: ['Roll right', 'The two left motors speed up, the two right ones slow down. Each side holds one clockwise and one counter clockwise prop, so a roll produces no yaw at this modelling order.'],
         pitch: ['Nose up', 'The front pair slows and the rear pair speeds up. Same story as roll: the spin directions inside each pair are opposed, so nothing leaks into yaw.'],
         yaw: ['Nose right', 'The two counter clockwise props speed up and the clockwise pair slows. The frame turns because it is absorbing the reaction to that change, and because it is paid in prop drag it is weaker than roll or pitch.'],
@@ -814,7 +934,7 @@ const FIGURES = {
     controls: [
       { key: 'w', label: 'Rotor speed', min: 200, max: 3000, step: 10, value: HOVER_W, fmt: (v) => `${f0(rpm(v))} rpm` },
     ],
-    caption: 'Thrust is kt times speed squared and shaft torque is kq times speed squared, so their ratio never moves however hard you drive the prop. Scale the torque curve by that ratio and it lies exactly on top of the thrust curve, which is the whole claim in one picture. That ratio is the figure of merit, and a real five inch lives between 0.4 and 0.6. An early version of this plant had kt and kq chosen separately and landed at 2.01, which is a prop that produces more useful power than it consumes. The constants are now locked together so that cannot happen again.',
+    caption: 'Drag the speed from one end to the other. Thrust changes by a factor of two hundred and the power by a factor of three thousand, and the number at the bottom right does not move at all. That number is the figure of merit: how much of the power you put into the shaft comes back as useful thrust. A real five inch manages between 0.4 and 0.6, and the gap you can see between the two power curves is everything the prop wastes. An early version of this aircraft had its two constants picked separately and scored 2.01, which is a propeller returning more power than it is given.',
     draw(ctx, W, H, s) {
       const w = s.w;
       const T = P.kt * w * w;
@@ -824,26 +944,51 @@ const FIGURES = {
       const fm = pIdeal / pShaft;
 
       /*
-       * Scale torque by kt/kq and it lands exactly on the thrust curve,
-       * everywhere, at every speed. That coincidence is what a fixed figure
-       * of merit means, and it is a far better argument than two curves
-       * that merely both go up.
+       * An earlier version of this figure drew torque scaled by kt/kq and
+       * pointed at the two curves lying on top of each other. That proves
+       * nothing: any two quadratics coincide when one is scaled by the
+       * ratio of their coefficients, whatever the coefficients are. It also
+       * called kt/kq the figure of merit, which it is not; kt/kq is 70.71
+       * and the figure of merit is 0.565.
+       *
+       * What is actually worth showing is the gap. Shaft power is what the
+       * battery pays for and ideal induced power is what the air receives,
+       * so the space between them is the loss, and the ratio of the two is
+       * flat at every speed. That flatness is the real claim.
        */
-      const RATIO = P.kt / P.kq;
+      const shaftP = (x) => P.kq * x * x * x;
+      const idealP = (x) => ((P.kt * x * x) ** 1.5) / Math.sqrt(2 * P.rho * P.discA);
       const ax = new Axes(ctx, {
-        x: 54, y: 56, w: W * 0.52, h: 178, xmin: 0, xmax: 3000, ymin: 0, ymax: 20,
-        xlabel: 'rotor speed, rad/s', ylabel: 'newtons',
+        x: 54, y: 56, w: W * 0.52, h: 178, xmin: 0, xmax: 3000, ymin: 0, ymax: 800,
+        xlabel: 'rotor speed, rad/s', ylabel: 'watts',
       });
-      ax.frame({ xticks: [0, 1000, 2000, 3000], yticks: [0, 5, 10, 15, 20], fmtY: f0, fmtX: f0 });
-      ax.fn((x) => P.kt * x * x, C.mint, 4);
-      ax.fn((x) => P.kq * x * x * RATIO, C.sakura, 2, 200, [7, 6]);
-      ax.fn((x) => (P.kq * x * x * x) / 40, alpha(C.amber, 0.85), 2.2);
+      ax.frame({ xticks: [0, 1000, 2000, 3000], yticks: [0, 400, 800], fmtY: f0, fmtX: f0 });
+      /* The wasted power, as the area it actually is. */
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(ax.px(0), ax.py(0));
+      for (let i = 0; i <= 60; i += 1) {
+        const x = (3000 * i) / 60;
+        ctx.lineTo(ax.px(x), ax.py(Math.min(800, shaftP(x))));
+      }
+      for (let i = 60; i >= 0; i -= 1) {
+        const x = (3000 * i) / 60;
+        ctx.lineTo(ax.px(x), ax.py(Math.min(800, idealP(x))));
+      }
+      ctx.closePath();
+      ctx.clip();
+      ctx.fillStyle = alpha(C.sakura, 0.16);
+      ctx.fillRect(ax.x, ax.y, ax.w, ax.h);
+      ctx.restore();
+      ax.fn(shaftP, C.amber, 2.8);
+      ax.fn(idealP, C.mint, 2.8);
       ax.vline(HOVER_W, alpha(C.cream, 0.22), [3, 4], 'hover', C.slate);
       ax.vline(FULL.w, alpha(C.cream, 0.22), [3, 4], 'full stick', C.slate);
-      ax.mark(w, P.kt * w * w, C.cream, 5);
-      ax.key([['thrust', C.mint], ['torque x 70.7', C.sakura], ['power / 40', alpha(C.amber, 0.85)]]);
-      text(ctx, 'the dashed line is torque, and it is the same curve',
-        ax.x + 10, ax.py(17), { fill: C.sakura, size: 11 });
+      ax.mark(w, Math.min(800, shaftP(w)), C.cream, 5);
+      ax.key([['power the battery pays for', C.amber], ['power the air receives', C.mint]]);
+      text(ctx, 'everything in here is wasted', ax.px(1500), ax.py(330), {
+        fill: C.sakura, size: 11, align: 'center',
+      });
 
       const bx = ax.x + ax.w + 34;
       panel(ctx, bx - 16, 56, W - bx + 4, 178, C.amber);
@@ -1017,7 +1162,7 @@ const FIGURES = {
     h: 340,
     still: 3,
     controls: [
-      { key: 'sink', label: 'Descent rate', min: 0, max: 16, step: 0.2, value: 0, fmt: (v) => `${f1(v)} m/s` },
+      { key: 'sink', label: 'Descent rate', min: 0, max: 22, step: 0.2, value: 0, fmt: (v) => `${f1(v)} m/s, ${f0(v * 3.6)} km/h` },
     ],
     caption: 'A hovering rotor throws air down and flies away from it. Descend and you begin to follow that air instead, until the wake has nowhere to go and folds back over the disc as a closed ring. Nothing about the motors changes. The prop is turning at the same speed the whole way through, and thrust still falls by a quarter, which is why the recovery is to move sideways into clean air rather than to add power.',
     draw(ctx, W, H, s, t) {
@@ -1107,11 +1252,21 @@ const FIGURES = {
         text(ctx, v, W - 40, y, { fill: c, size: 15, weight: 700, mono: true, align: 'right' });
         line(ctx, bx + 18, y + 12, W - 40, y + 12, alpha(C.cream, 0.06), 1);
       });
-      /* A tolerance, because a hover is exactly break even and floating
-         point will otherwise report the hover case as sinking. */
-      const short = HOVER_T * 4 * factor - P.weight < -0.02;
-      text(ctx, short ? 'Short of a hover. It sinks.' : 'Holding, or better.', bx + 18, 288, {
-        fill: short ? C.sakura : C.mint, size: 12, weight: 700,
+      /*
+       * The dangerous thing is not the thrust level, it is the slope. On the
+       * way in, descending faster buys you MORE thrust, so the aircraft feels
+       * fine and the instinct it teaches is wrong. Past the onset that slope
+       * reverses and descending faster costs thrust, so the same instinct now
+       * digs the hole. Reporting a green "holding" while the wake is folding
+       * over the disc told the reader the opposite of the lesson.
+       */
+      const dF = axialFactor(-(s.sink + 0.25) / vp) - factor;
+      const worsening = dF < -1e-4;
+      const verdict = worsening
+        ? 'Descend faster now and thrust FALLS. This is the trap.'
+        : 'Descend faster and thrust still rises. This is the bait.';
+      wrapText(ctx, verdict, bx + 18, 286, W - bx - 40, {
+        fill: worsening ? C.sakura : C.amber, size: 12, weight: 700, lead: 15,
       });
       note(ctx, 24, H - 11, 'onset at mu = -0.30, floor 0.75, from plant_vrs in plant.c');
     },
@@ -1594,7 +1749,15 @@ const FIGURES = {
         x: 56, y: 54, w: W * 0.58, h: 190, xmin: 0.1, xmax: 1, ymin: 0, ymax: Math.max(0.09, ideal(0.5, 0.3) * 1.2),
         xlabel: 'throttle', ylabel: 'yaw torque, N m',
       });
-      ax.frame({ xticks: [0.25, 0.5, 0.75, 1], yticks: [0, 0.03, 0.06, 0.09], fmtX: (v) => `${f0(v * 100)}%`, fmtY: (v) => v.toFixed(2) });
+      /* Ticks derived from the axis, because ymax is computed and a
+         hardcoded list left the curve in unlabelled space. */
+      const yTop = ax.ymax;
+      ax.frame({
+        xticks: [0.25, 0.5, 0.75, 1],
+        yticks: [0, yTop / 3, (2 * yTop) / 3, yTop],
+        fmtX: (v) => `${f0(v * 100)}%`,
+        fmtY: (v) => v.toFixed(2),
+      });
       ax.fn((x) => ideal(x, s.yaw), alpha(C.slate, 0.55), 2, 120, [5, 4]);
       ax.fn((x) => net(x, s.yaw), C.mint, 2.8, 120);
       ax.mark(s.throttle, now, C.cream, 5);
