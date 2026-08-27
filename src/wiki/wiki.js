@@ -282,14 +282,36 @@ export class WikiView {
     shell.append(this.rail, this.main);
     this.host.append(shell);
 
-    /* Arrow keys walk the path, the way a book does. */
+    /*
+     * Arrow keys walk the path, the way a book does, but only when the
+     * reader is not standing on something that wants them. Guarding just the
+     * search box meant an arrow press on a focused figure slider navigated
+     * the whole page away and dropped focus on the body, which made every
+     * figure on every journey page impossible to operate from a keyboard.
+     */
     document.addEventListener('keydown', (e) => {
-      if (e.target === this.search || e.metaKey || e.ctrlKey || e.altKey) {
+      if (e.metaKey || e.ctrlKey || e.altKey) {
         return;
+      }
+      const t = e.target;
+      if (e.key === 'Escape' && this.host.classList.contains('rail-open')) {
+        this.toggleRail(false);
+        return;
+      }
+      if (t && t !== document.body) {
+        const tag = (t.tagName || '').toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'button'
+          || t.isContentEditable || (t.closest && t.closest('.wiki-figure'))) {
+          return;
+        }
       }
       if (e.key === '/') {
         e.preventDefault();
         this.search.focus();
+        return;
+      }
+      if (e.key === 'Escape' && this.host.classList.contains('rail-open')) {
+        this.toggleRail(false);
         return;
       }
       const i = JOURNEY.indexOf(this.pageId);
@@ -304,6 +326,8 @@ export class WikiView {
       }
     });
 
+    window.addEventListener('popstate', () => this.openDefault({ fromHistory: true }));
+
     this.renderRail();
     this.render();
   }
@@ -312,6 +336,20 @@ export class WikiView {
     const open = force == null ? !this.host.classList.contains('rail-open') : force;
     this.host.classList.toggle('rail-open', open);
     this.railToggle.setAttribute('aria-expanded', String(open));
+    this.rail.setAttribute('aria-hidden', String(!open && this.isDrawer()));
+    /* Somewhere to land, and somewhere to come back to. */
+    if (open) {
+      const first = this.rail.querySelector('.wiki-rail-link');
+      if (first) {
+        first.focus();
+      }
+    } else if (this.isDrawer() && this.rail.contains(document.activeElement)) {
+      this.railToggle.focus();
+    }
+  }
+
+  isDrawer() {
+    return window.matchMedia('(max-width: 900px)').matches;
   }
 
   typing() {
@@ -334,24 +372,48 @@ export class WikiView {
     if (!opts.silentHash) {
       const url = new URL(window.location.href);
       url.hash = `wiki/${id}`;
-      history.replaceState(null, '', url);
+      /*
+       * push, not replace. Replacing meant the browser's back button left
+       * the wiki altogether however many pages deep the reader had gone,
+       * which is not what back means anywhere else. pushState does not fire
+       * hashchange, so popstate is wired up in build() to re-read the hash.
+       */
+      if (opts.replace) {
+        history.replaceState(null, '', url);
+      } else {
+        history.pushState(null, '', url);
+      }
     }
     this.main.scrollTop = 0;
     return true;
   }
 
-  openDefault() {
+  openDefault(opts = {}) {
     const hash = (window.location.hash || '').replace(/^#/, '');
+    /*
+     * A hash can contain anything a person can type, and a lone percent sign
+     * makes decodeURIComponent throw. That used to escape openDefault, which
+     * is called once during boot, so the hashchange listener on the line
+     * after it was never registered and every later link on the page
+     * silently did nothing for the rest of the session.
+     */
+    const safeDecode = (str) => {
+      try {
+        return decodeURIComponent(str);
+      } catch {
+        return str;
+      }
+    };
     let id = '';
     if (hash.startsWith('wiki/')) {
-      id = decodeURIComponent(hash.slice(5));
+      id = safeDecode(hash.slice(5));
     } else if (hash) {
-      id = decodeURIComponent(hash);
+      id = safeDecode(hash);
     }
     if (id && this.open(id, { silentHash: true })) {
       return;
     }
-    this.open('start-welcome', { silentHash: false });
+    this.open('start-welcome', { silentHash: opts.fromHistory === true, replace: true });
   }
 
   /*
@@ -402,6 +464,9 @@ export class WikiView {
 
   railLink(page, id) {
     const b = btn(this.pageId === id ? 'wiki-rail-link on' : 'wiki-rail-link');
+    if (this.pageId === id) {
+      b.setAttribute('aria-current', 'page');
+    }
     const step = JOURNEY_STEP.get(id);
     if (step) {
       b.append(el('span', 'wiki-rail-step', String(step)));
@@ -585,6 +650,7 @@ export class WikiView {
     for (const id of ['all', 'LIVE', 'GATED', 'APPLIED_INERT', 'INERT', 'ABSENT']) {
       const n = id === 'all' ? FIELDS.length : FIELDS.filter((f) => f.status === id).length;
       const b = btn(this.filter === id ? 'wiki-filter on' : 'wiki-filter');
+      b.setAttribute('aria-pressed', String(this.filter === id));
       b.append(el('span', null, id === 'all' ? 'All' : id.replace(/_/g, ' ')));
       b.append(el('span', 'wiki-filter-n', String(n)));
       b.addEventListener('click', () => {
@@ -636,9 +702,12 @@ export class WikiView {
     [...filters.querySelectorAll('.wiki-filter')].forEach((b, i) => {
       const id = ['all', 'LIVE', 'GATED', 'APPLIED_INERT', 'INERT', 'ABSENT'][i];
       b.classList.toggle('on', this.filter === id);
+      b.setAttribute('aria-pressed', String(this.filter === id));
     });
     for (const b of tabs.querySelectorAll('.wiki-filter')) {
-      b.classList.toggle('on', (b.dataset.tab || '') === this.cliTab);
+      const on = (b.dataset.tab || '') === this.cliTab;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
     }
   }
 

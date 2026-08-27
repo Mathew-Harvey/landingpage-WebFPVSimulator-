@@ -2440,7 +2440,16 @@ const FIGURES = {
     ],
     caption: 'ACTUAL rates are the curve whose two ends mean what they say: centre sensitivity is degrees per second per unit of stick right at the middle, and max rate is what full stick gives. Expo bends the middle down without touching either end, which is how you aim precisely and still keep the top. The dot is a stick sweeping; watch how much of the travel lives in the calm part as expo comes up.',
     draw(ctx, W, H, s, t) {
-      const maxR = s.sr * 10;
+      /*
+       * Betaflight's ACTUAL curve takes stickMovement as max(0, srate*10 -
+       * centre), so once centre exceeds max the expo term is multiplied by
+       * zero and the curve is a straight line whose end is the centre
+       * sensitivity, not the max rate. Plotting against s.sr in that regime
+       * put the curve outside the frame and printed an end value the formula
+       * never returns.
+       */
+      const maxR = Math.max(s.sr * 10, s.rc * 10);
+      const degenerate = s.rc * 10 > s.sr * 10;
       const ax = new Axes(ctx, {
         x: 56, y: 54, w: W - 86, h: 200, xmin: -1, xmax: 1, ymin: -maxR * 1.06, ymax: maxR * 1.06,
         xlabel: 'stick', ylabel: 'deg/s asked for',
@@ -2455,6 +2464,10 @@ const FIGURES = {
       const stick = Math.sin(t * 1.1);
       ax.mark(stick, actualRate(stick, s.rc, s.sr, s.expo), C.cream, 5.5);
       ax.key([['this curve', C.mint], ['4.5.1 default, 670 max', alpha(C.slate, 0.4)]]);
+      if (degenerate) {
+        text(ctx, 'Centre sensitivity is above max rate, so the curve is a straight line and expo does nothing.',
+          ax.x, ax.y + ax.h + 44, { fill: C.sakura, size: 11.5, weight: 700 });
+      }
       /* The centre tangent, which is what the first number literally means. */
       const c = s.rc * 10;
       line(ctx, ax.px(-0.3), ax.py(-0.3 * c), ax.px(0.3), ax.py(0.3 * c), alpha(C.amber, 0.6), 1.6, [4, 4]);
@@ -2463,7 +2476,7 @@ const FIGURES = {
       const cells = [
         ['Stick right now', f2(stick), C.slate],
         ['Asking for', `${f0(actualRate(stick, s.rc, s.sr, s.expo))} deg/s`, C.cream],
-        ['At full stick', `${f0(maxR)} deg/s`, C.mint],
+        ['At full stick', `${f0(actualRate(1, s.rc, s.sr, s.expo))} deg/s`, C.mint],
         ['Half stick gives', `${f0(actualRate(0.5, s.rc, s.sr, s.expo))} deg/s`, C.amber],
       ];
       cells.forEach(([k, v, col], i) => {
@@ -2557,13 +2570,13 @@ const FIGURES = {
       text(ctx, 'one whole loop iteration.', bx, 248, { fill: C.slate, size: 11 });
 
       const ax3 = new Axes(ctx, {
-        x: 54, y: 306, w: W - 84, h: 40, xmin: 0, xmax: 500, ymin: 0, ymax: 1.05,
+        x: 54, y: 300, w: W - 84, h: 34, xmin: 0, xmax: 500, ymin: 0, ymax: 1.05,
         ylabel: 'what the filter does to each frequency, hertz across',
       });
       ax3.frame({ xticks: [0, 100, 200, 300, 400, 500], yticks: [], fmtX: f0 });
       ax3.fn((hz) => (1 / Math.sqrt(1 + (hz / s.hz) ** 2)) ** s.order, C.amber, 2);
       ax3.vline(s.hz, alpha(C.amber, 0.4), [3, 4]);
-      note(ctx, 24, H - 11, 'lower hertz is quieter and later. the dynamic notch will not arm at 1 khz');
+      note(ctx, 24, H - 8, 'lower hertz is quieter and later. the dynamic notch will not arm at 1 khz');
     },
   }),
 
@@ -2702,7 +2715,7 @@ const FIGURES = {
     label: 'Throttle plus three PID sums, resolved into four motor duties',
     eyebrow: 'Four numbers, live',
     w: 680,
-    h: 340,
+    h: 356,
     animated: false,
     controls: [
       { key: 'thr', label: 'Throttle', min: 0, max: 1, step: 0.01, value: 0.45, fmt: (v) => `${f0(v * 100)}%` },
@@ -2737,11 +2750,22 @@ const FIGURES = {
        * a segment that runs backwards has to look like it is taking
        * something away, or the picture says the opposite of the arithmetic.
        */
+      /*
+       * Bars are clipped to the rails, because a waterfall whose running
+       * total is unclamped will happily run a segment hundreds of pixels
+       * past the frame when several demands are at their extremes at once.
+       * Text is drawn afterwards, outside the clip, or the duty column
+       * disappears with it.
+       */
+      const rowY = (i) => 68 + i * 52;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x0 - 6, 40, bw + 12, 252);
+      ctx.clip();
       M.forEach((m, i) => {
-        const y = 68 + i * 52;
-        text(ctx, m.tag, bx, y + 15, { fill: C.cream, size: 12, weight: 700, mono: true });
+        const y = rowY(i);
         let run = 0;
-        const seg = (v, col, label) => {
+        const seg = (v, col) => {
           if (Math.abs(v) < 1e-9) { return; }
           const a = x0 + run * bw;
           const bpx = x0 + (run + v) * bw;
@@ -2754,20 +2778,29 @@ const FIGURES = {
             roundRect(ctx, lo, y + 3, w, 20, 2, alpha(col, 0.13), alpha(col, 0.85), 1.2);
             line(ctx, lo + 3, y + 20, lo + w - 3, y + 6, alpha(col, 0.65), 1.2);
           }
-          if (w > 32) {
-            text(ctx, label, lo + w / 2, y + 17, {
-              fill: v >= 0 ? C.ink : col, size: 9.5, align: 'center', weight: 700,
-            });
-          }
+          /*
+           * No label inside the bar. In a waterfall the signed segments
+           * backtrack over each other, so roll, pitch and yaw can all land
+           * in the same band and print three words on one spot. The colour
+           * legend above the rows does this job without the collision.
+           */
           run += v;
         };
-        seg(s.thr, C.amber, 'thr');
-        seg(m.roll * s.roll, C.sakura, 'roll');
-        seg(m.pitch * s.pitch, C.mint, 'pitch');
-        seg(m.yaw * s.yaw, C.slate, 'yaw');
+        seg(s.thr, C.amber);
+        seg(m.roll * s.roll, C.sakura);
+        seg(m.pitch * s.pitch, C.mint);
+        seg(m.yaw * s.yaw, C.slate);
         const endX = x0 + clipped[i] * bw;
         line(ctx, endX, y - 1, endX, y + 27, C.cream, 2.2);
+        line(ctx, x0, y + 32, x0 + bw, y + 32, alpha(C.cream, 0.05), 1);
+      });
+      ctx.restore();
+
+      /* Names and the duty column, unclipped. */
+      M.forEach((m, i) => {
+        const y = rowY(i);
         const off = Math.abs(raw[i] - clipped[i]) > 1e-6;
+        text(ctx, m.tag, bx, y + 15, { fill: C.cream, size: 12, weight: 700, mono: true });
         text(ctx, f2(clipped[i]), W - 24, y + 13, {
           fill: off ? C.sakura : C.cream, size: 13, mono: true, weight: 700, align: 'right',
         });
@@ -2776,8 +2809,8 @@ const FIGURES = {
             fill: C.sakura, size: 9.5, align: 'right', weight: 700,
           });
         }
-        line(ctx, x0, y + 32, x0 + bw, y + 32, alpha(C.cream, 0.05), 1);
       });
+
       /* One legend, so the colours read without hovering a bar. */
       let lx = x0;
       for (const [label, col] of [['throttle', C.amber], ['roll', C.sakura], ['pitch', C.mint], ['yaw', C.slate]]) {
@@ -2797,9 +2830,9 @@ const FIGURES = {
         fill: anyClip ? C.sakura : C.mint, size: 13, weight: 700,
       });
       text(ctx, anyClip
-        ? 'What comes out is no longer the rotation the PID asked for.'
+        ? 'What comes out is not the rotation that was asked for.'
         : 'What comes out is the rotation that was asked for.',
-      bx + 200, 312, { fill: C.slate, size: 11.5 });
+      bx, 330, { fill: C.slate, size: 11.5 });
       text(ctx, `spread ${f2(Math.max(...clipped) - Math.min(...clipped))}`, W - 24, 312, {
         fill: C.cream, size: 12.5, mono: true, weight: 700, align: 'right',
       });

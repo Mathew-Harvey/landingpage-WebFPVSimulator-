@@ -196,25 +196,62 @@ for (const id of FIGURE_IDS) {
 }
 
 /*
- * A figure has to say what it is arguing, and it has to be described for
- * somebody who cannot see it. Both are one line each and both get skipped
- * under deadline, so both are checked.
+ * A figure has to say what it is arguing, describe itself for somebody who
+ * cannot see it, and give the reader something to move.
+ *
+ * This used to read a fixed 4000 character window after each id, which for
+ * two thirds of the figures ran past the end of that figure and into the
+ * next one, so a figure could pass on its neighbour's caption. It now cuts
+ * each figure out at its real brace boundary, and it looks for the caption
+ * and label at the top level of the spec rather than anywhere in the block,
+ * because a control's own `label:` was satisfying the aria check.
  */
 const figSrc = readFileSync(join(root, 'src/wiki/figures.js'), 'utf8');
-for (const id of FIGURE_IDS) {
-  const at = figSrc.indexOf(`id: '${id}'`);
+
+function figureBlock(id) {
+  const at = figSrc.indexOf(`id: '${id}',`);
   if (at < 0) {
-    fail(`figure ${id} has no id field`);
+    return null;
+  }
+  /* Walk back to the makeFigure({ that opens this spec, then brace match. */
+  const open = figSrc.lastIndexOf('makeFigure({', at);
+  if (open < 0) {
+    return null;
+  }
+  let i = figSrc.indexOf('{', open);
+  let depth = 0;
+  for (; i < figSrc.length; i += 1) {
+    const c = figSrc[i];
+    if (c === '{') { depth += 1; }
+    if (c === '}') {
+      depth -= 1;
+      if (depth === 0) { break; }
+    }
+  }
+  return figSrc.slice(open, i + 1);
+}
+
+for (const id of FIGURE_IDS) {
+  const block = figureBlock(id);
+  if (!block) {
+    fail(`figure ${id} could not be located in figures.js`);
     continue;
   }
-  const block = figSrc.slice(at, at + 4000);
-  /* Captions are single quoted and may carry escaped apostrophes. */
-  const caption = /caption: '((?:[^'\\]|\\.)*)'/.exec(block);
+  const caption = /^\s{4}caption: '((?:[^'\\]|\\.)*)'/m.exec(block);
   if (!caption || caption[1].length < 80) {
     fail(`figure ${id} has no caption, or one too short to be an argument`);
   }
-  if (!/\blabel: '/.test(block)) {
-    fail(`figure ${id} has no aria label`);
+  if (!/^\s{4}label: '/m.test(block)) {
+    fail(`figure ${id} has no aria label of its own`);
+  }
+  /*
+   * CLAUDE.md says every figure has a knob with a readout. Two are allowed
+   * to be still, and they are named here so that adding a third is a
+   * decision somebody has to make on purpose rather than an omission.
+   */
+  const STILL = new Set(['boundary', 'missing']);
+  if (!/^\s{4}controls: \[/m.test(block) && !STILL.has(id)) {
+    fail(`figure ${id} has no controls, and is not in the list of figures allowed to be still`);
   }
 }
 

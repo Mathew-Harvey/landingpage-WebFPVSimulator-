@@ -40,5 +40,10 @@ if (!host) {
 
 const wiki = mountWiki(host);
 wiki.simHref = `${simOrigin()}/?map=field`;
-wiki.openDefault();
+/*
+ * Listener first. It used to be registered after the initial openDefault(),
+ * so anything that threw on the way in took deep linking down with it for
+ * the rest of the session, and did it silently.
+ */
 window.addEventListener('hashchange', () => wiki.openDefault());
+wiki.openDefault();

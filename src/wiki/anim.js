@@ -225,13 +225,16 @@ class Figure {
       out.textContent = '';
       const paint = () => {
         for (const b of row.children) {
-          b.classList.toggle('on', b.dataset.v === String(this.state[c.key]));
+          const on = b.dataset.v === String(this.state[c.key]);
+          b.classList.toggle('on', on);
+          b.setAttribute('aria-pressed', String(on));
         }
       };
       for (const opt of c.options) {
         const b = el('button', 'wiki-ctl-pick', opt.label);
         b.type = 'button';
         b.dataset.v = String(opt.value);
+        b.setAttribute('aria-pressed', String(this.state[c.key] === opt.value));
         b.addEventListener('click', () => {
           this.state[c.key] = opt.value;
           paint();
@@ -253,7 +256,9 @@ class Figure {
     input.setAttribute('aria-label', c.label);
     const fmt = c.fmt || ((v) => String(v));
     const paint = () => {
-      out.textContent = fmt(this.state[c.key]);
+      const shown = fmt(this.state[c.key]);
+      out.textContent = shown;
+      input.setAttribute('aria-valuetext', `${c.label}, ${shown}`);
     };
     input.addEventListener('input', () => {
       this.state[c.key] = Number(input.value);
