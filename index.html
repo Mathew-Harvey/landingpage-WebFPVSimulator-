@@ -33,7 +33,7 @@
     <title>WebFPV, a browser FPV racing simulator</title>
     <meta
       name="description"
-      content="Build the quad, draw the course, fly the line. A free browser FPV racing simulator running Betaflight compiled to WebAssembly. No install, no account: a gamepad and a browser is the whole kit list."
+      content="Build the quad, draw the track, fly the line. A free browser FPV racing simulator running Betaflight compiled to WebAssembly. No install, no account: a gamepad and a browser is the whole kit list."
     />
     <!--
       A link to this page posted anywhere renders a 1200 by 630 card, and
@@ -51,17 +51,17 @@
     <meta property="og:site_name" content="WebFPV" />
     <meta property="og:url" content="https://webfpv.org/" />
     <meta property="og:title" content="WebFPV, a browser FPV racing simulator" />
-    <meta property="og:description" content="Build the quad, draw the course, fly the line. Betaflight compiled to WebAssembly, running in a tab. No install, no account." />
+    <meta property="og:description" content="Build the quad, draw the track, fly the line. Betaflight compiled to WebAssembly, running in a tab. No install, no account." />
     <meta property="og:image" content="https://webfpv.org/og.png" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="The race field in the WebFPV simulator: a lit start gate on mown grass, a five inch quad parked beside it, flags and course markers running away under a low sun." />
+    <meta property="og:image:alt" content="The race field in the WebFPV simulator: a lit start gate on mown grass, a five inch quad parked beside it, flags and track markers running away under a low sun." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="WebFPV, a browser FPV racing simulator" />
-    <meta name="twitter:description" content="Build the quad, draw the course, fly the line. Betaflight compiled to WebAssembly, running in a tab. No install, no account." />
+    <meta name="twitter:description" content="Build the quad, draw the track, fly the line. Betaflight compiled to WebAssembly, running in a tab. No install, no account." />
     <meta name="twitter:image" content="https://webfpv.org/og.png" />
-    <meta name="twitter:image:alt" content="The race field in the WebFPV simulator: a lit start gate on mown grass, a five inch quad parked beside it, flags and course markers running away under a low sun." />
+    <meta name="twitter:image:alt" content="The race field in the WebFPV simulator: a lit start gate on mown grass, a five inch quad parked beside it, flags and track markers running away under a low sun." />
 
     <!--
       The page's own background is the radial gradient below, not this colour,
@@ -767,7 +767,7 @@
          left column, so the copy sits in the exact column the flight's copy
          just left. The camera does not stop for it either. The final stretch
          of the timeline now begins HERE rather than at the close, which
-         means the hero pull-out plays across the reading: the course falls
+         means the hero pull-out plays across the reading: the track falls
          away behind the type and lands under the invitation.
          ------------------------------------------------------------------ */
 
@@ -794,7 +794,7 @@
         margin-bottom: 18px;
         font-size: clamp(27px, 3.4vw, 42px);
       }
-      /* The scene behind is the course at golden hour, the brightest frame
+      /* The scene behind is the track at golden hour, the brightest frame
          the page draws. Cream at 0.78 over a lit sky is not readable, so
          the copy here carries the shadow the closing line does. */
       .why-copy .lede {
@@ -1243,7 +1243,7 @@
     <!-- Act 2 instrument -->
     <div id="builder">
       <div class="tb-bar">
-        <span class="tb-name">Untitled course <span>&#183; local</span></span>
+        <span class="tb-name">Untitled track <span>&#183; local</span></span>
         <div class="tb-chips">
           <span class="tb-chip on">Plan</span>
           <span class="tb-chip">3D</span>
@@ -1260,7 +1260,7 @@
       </div>
       <div class="tb-side">
         <div class="tb-sec">
-          <h4 class="tb-h">Course</h4>
+          <h4 class="tb-h">Track</h4>
           <div class="tb-kv"><span>Gates</span><b id="tb-gates">0</b></div>
           <div class="tb-kv"><span>Length</span><b id="tb-len">0 m</b></div>
           <div class="tb-kv good"><span>Warnings</span><b id="tb-warn">none</b></div>
@@ -1319,15 +1319,15 @@
         </div>
       </section>
 
-      <!-- ACT 2: the course -->
+      <!-- ACT 2: the track -->
       <section class="act" data-act="build" style="min-height: 300vh">
         <div class="pin">
           <div class="copy" data-copy="build">
-            <p class="eyebrow">02 &#183; The course</p>
+            <p class="eyebrow">02 &#183; The track</p>
             <h2>Draw a track.<br /><em>Watch it stand up.</em></h2>
             <p class="lede">
               The track builder is a plan view and a snap grid. Drop gates,
-              drag the line, and the course rises in 3D beside you at
+              drag the line, and the track rises in 3D beside you at
               published MultiGP dimensions.
             </p>
             <div class="rule"></div>
@@ -1410,13 +1410,13 @@
         <a class="card" href="https://webfpv.org/sim/src/trackbuilder/index.html" data-dest="builder" style="--accent: var(--sakura)">
           <span class="card-n">02</span>
           <span class="card-t">Track builder</span>
-          <span class="card-d">Draw a course on a snap grid, watch it stand up in 3D, then fly it.</span>
-          <span class="card-go">Build a course</span>
+          <span class="card-d">Draw a track on a snap grid, watch it stand up in 3D, then fly it.</span>
+          <span class="card-go">Build a track</span>
         </a>
         <a class="card" href="https://webfpv.org/board/" data-dest="board" style="--accent: var(--amber)">
           <span class="card-n">03</span>
           <span class="card-t">Leaderboard</span>
-          <span class="card-d">Every published course, and the times flown on it. Post yours.</span>
+          <span class="card-d">Every published track, and the times flown on it. Post yours.</span>
           <span class="card-go">See the times</span>
         </a>
       </div>

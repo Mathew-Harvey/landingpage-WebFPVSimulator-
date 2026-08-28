@@ -114,7 +114,7 @@ const BEATS = [
   {
     at: 0.84,
     k: 'The board',
-    t: 'Publish the course, post the lap, and let somebody else try to take it off you.',
+    t: 'Publish the track, post the lap, and let somebody else try to take it off you.',
   },
 ];
 
@@ -259,7 +259,7 @@ const LAP_START = 0.955;
  * straight to seven on the first frame of the flight, because gate 1 is at
  * 0.02 and the lap starts at 0.955.
  *
- * NOT sorted. The index into this array is the index into the course's gate
+ * NOT sorted. The index into this array is the index into the track's gate
  * meshes, and re-ordering it would light the wrong gate.
  */
 const GATE_LAP = GATE_S.map((g) => (g < LAP_START ? g + 1 : g));
@@ -628,7 +628,7 @@ function poseBuilder(t, outPos, outQuat) {
   at.set(0, lerp(4.0, 1.6, smooth(t)), -1);
   lookQuat(outPos, at, outQuat);
   /* Only a touch of it here. The hero shot can afford to sit the subject in
-   * a corner; a 31 m course framed to one side just falls off the screen. */
+   * a corner; a 31 m track framed to one side just falls off the screen. */
   applyBias(outQuat, 0.55, 0.30);
 }
 
@@ -669,7 +669,7 @@ function poseFPV(pos, quat, outPos, outQuat) {
 }
 
 /*
- * The close. The machine hovering over its own start gate with the course
+ * The close. The machine hovering over its own start gate with the track
  * and the low sun behind it, pulling back and up as the headline arrives.
  *
  * It orbits the PARKED QUAD rather than the world origin, which is the whole
@@ -678,7 +678,7 @@ function poseFPV(pos, quat, outPos, outQuat) {
  * off to the left.
  */
 /*
- * The close: the whole course at golden hour, seen from high and behind,
+ * The close: the whole track at golden hour, seen from high and behind,
  * pulling further out as the headline lands.
  *
  * It frames the COURSE, not the quad, and that is a decision the layout
@@ -705,7 +705,7 @@ const droneQuat = new THREE.Quaternion();
 const parked = new THREE.Vector3();
 
 /* Where the quad ends up for the close: over the start and finish gate,
- * a little above its opening, turned across the course. */
+ * a little above its opening, turned across the track. */
 const PARK = new THREE.Vector3(
   course.gates[0].pos.x,
   GATE_CENTRE_Y + 1.15,
@@ -717,7 +717,7 @@ const eul = new THREE.Euler(0, 0, 0, 'YXZ');
 /*
  * Where the quad is while the track is being drawn: held in camera space as
  * a foreground object, so a 155 mm airframe stays readable in a shot framing
- * a 31 m course.
+ * a 31 m track.
  *
  * HELD_IN is deliberately the exact spot the quad already occupies when the
  * studio orbit ends, wherever that is. Blending from
@@ -729,7 +729,7 @@ const eul = new THREE.Euler(0, 0, 0, 'YXZ');
  * and the builder's inspector owns the top right, so this is the corner that
  * is actually free. 2.2 m at the plan view's 46 degree lens makes the quad
  * about a fifth of the frame's width: foreground, clearly nearer than the
- * course, and not competing with it. It has to be measured against THAT
+ * track, and not competing with it. It has to be measured against THAT
  * lens rather than the hero's, or the same offset that reads as foreground
  * at 30 degrees reads as a bug sitting on the track at 46.
  */
@@ -812,7 +812,7 @@ function flightPose(s, outPos, outQuat, bobPhase, flip = 0, turnBank = 0) {
  * WHICH WAY THE QUAD IS POINTING, and the only state on the page that is not
  * a pure function of T.
  *
- * Scrolling back up used to fly the quad down the course backwards, still
+ * Scrolling back up used to fly the quad down the track backwards, still
  * facing forwards, like a car in reverse. A quad does not do that. It yaws
  * around and flies home nose first, and the turn itself is most of what
  * makes it read as an aircraft rather than a camera on a rail.
@@ -996,7 +996,7 @@ function frame(ms) {
    *           machine; a wide one makes it a toy on a table. It was 24, and
    *           24 was too long to share a frame with the copy: see
    *           STUDIO_FOV.
-   *   46 deg  the plan. A 31 m course does not fit in a telephoto: at 30
+   *   46 deg  the plan. A 31 m track does not fit in a telephoto: at 30
    *           degrees and 46 m out the frame is 24.6 m across and a fifth
    *           of the track is off the sides of it.
    *   104 deg the lap, which is what an FPV camera actually is.
@@ -1035,7 +1035,7 @@ function frame(ms) {
     camPos.lerp(pos2, k);
     camQuat.slerp(quat2, k);
     /* Held in shot: the quad rides the camera so it stays readable while a
-     * 31 m course draws itself behind it. Its offset starts exactly where
+     * 31 m track draws itself behind it. Its offset starts exactly where
      * the studio left it, so the handover has no jump in it. */
     heldOffset(ease(T, 1.0, 1.30), held).applyQuaternion(camQuat);
     dronePos.copy(camPos).add(held);
@@ -1089,7 +1089,7 @@ function frame(ms) {
     const t = clamp01(T - 3);
     /*
      * Parked over the start and finish gate, hovering, nose across the
-     * course so the shot has the track running away behind it.
+     * track so the shot has the track running away behind it.
      *
      * Eased into from wherever the lap ended rather than snapped to. The lap
      * finishes at the gate 1 plane, 1.15 m below this and pointing down the
