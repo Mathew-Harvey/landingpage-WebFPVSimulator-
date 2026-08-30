@@ -106,15 +106,27 @@ export const CITY_ORIGIN = new THREE.Vector3(0, 0, -460);
  * level children, 4,306 meshes and 799,000 triangles, and it drops nothing
  * the camera can reach.
  *
- * THE BOX IS GENEROUS ON PURPOSE and it is not the flight corridor. The
- * closing shot sees a long way, so what is kept is everything the CLOSE can
- * see, which is a good deal more than the line touches. Tightening it to the
- * street saves a little more and puts a hard edge across the last frame of
- * the page, which is exactly the thing the closing shot was tuned to avoid.
+ * THE BOX IS THE CLOSING SHOT'S FRAME, measured rather than guessed, and it
+ * is not the flight corridor: the close sees a great deal more than the line
+ * touches, so the line is never what bounds this.
+ *
+ * At the last frame the camera is about 156 m from the town's heart through a
+ * 58 degree lens, which is 173 m of frame width where the town is. Round that
+ * up and centre it and you get roughly 110 m either side, which is what is
+ * kept. Everything beyond it is off the edge of every frame the page has.
+ *
+ * It was almost twice this, and that was the single biggest thing wrong with
+ * the town's cost: measured, the closing shot was submitting 4,597 draw calls,
+ * most of them for district the lens cannot reach.
+ *
+ * The town's landform and its hills survive whatever this says, because
+ * pruning is by a child's bounding box CENTRE and those meshes are one piece
+ * spanning the district. That is what keeps a horizon behind the town rather
+ * than a cliff edge.
  */
 const KEEP = {
-  x: [-190, 190],
-  z: [-215, 175],
+  x: [-105, 118],
+  z: [-125, 102],
 };
 
 /*
@@ -771,8 +783,17 @@ export function buildCity({ onReady = null } = {}) {
     /* The town's own knob, which only reaches its hill tufts, moss, rocks and
      * lake reeds. Cheap, and worth having, but it is not the planting. */
     thinFoliage(world.root, { keep: LITE ? 0.35 : 0.55 });
+    /*
+     * chunkInstanced is NOT run. It splits each instanced set into per cell
+     * sets so distant cells cull, which is the right trade for a player
+     * walking a district and the wrong one here: measured with and without,
+     * it cost a hundred and twenty draw calls at the close and a hundred on
+     * the main street, and saved seventy five in the corridor. The camera is
+     * never inside enough of this town for the culling to pay for the meshes
+     * it makes.
+     */
 
-    chunkInstanced(world.root, { cell: 40 });
+    /* CHUNK OFF FOR TEST */
 
     let meshes = 0;
     let tris = 0;
