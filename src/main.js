@@ -178,12 +178,28 @@ const CITY_BEATS = [
     t: 'The same aircraft, the same control loop, somewhere with walls. A gate tells you where to go. A town does not.',
   },
   {
-    at: 0.40,
+    at: 0.42,
     k: 'The city',
     t: 'A Japanese railway town, drawn to its own dimensions. Six metre shopping street, a level crossing, and a cable web at head height.',
   },
   {
-    at: 0.74,
+    at: 0.64,
+    /*
+     * ...and this one says when it LEAVES, which the others do not need to.
+     *
+     * A beat normally runs until the next one is due. This is the last, so
+     * it would run to the end of the act, and the end of the act is the
+     * climb out: twenty metres of empty air over the north end of the
+     * street with the district behind the aircraft and nothing in frame but
+     * trees. Three lines of copy about flying close, over a photograph of
+     * nothing to be close to.
+     *
+     * So it stops at 0.82, and the last fifth of the act carries no type at
+     * all. That is not a gap, it is the shot: the town opening out as the
+     * camera leaves the airframe, which is the thing the closing act then
+     * arrives on.
+     */
+    until: 0.82,
     k: 'Proximity',
     t: 'Nothing here is scored. Fly the line you can see, at the height you dare, and put it back on the roof you started from.',
   },
@@ -250,21 +266,20 @@ const course = buildCourse();
 stage.scene.add(course.group);
 
 /*
- * The town, and it is built at start up even though nothing sees it for two
- * whole acts.
+ * The town, which is the simulator's own and is therefore expensive.
  *
- * Building it lazily is the obvious economy and it is the wrong one. It is
- * about a fifth of a second of geometry and canvas painting, and the only
- * two places to spend that are here, behind a boot screen that is already
- * up, or in the middle of the scroll, where it lands as a stall on the exact
- * frame the page transitions between its two worlds. A visitor who never
- * scrolls that far has paid a fifth of a second they did not need; a visitor
- * who does has been shown a stutter at the payoff. The first is cheaper.
- *
- * It is not DRAWN until the field arrives, which is the part that actually
- * costs per frame. See setShown below.
+ * It builds itself after the first paint rather than at import: see the
+ * comment on buildCity. Until it is ready its group is empty and invisible,
+ * and every act before the fourth is unaffected, which is the whole point.
+ * The page does not wait for it and does not break without it.
  */
-const city = buildCity();
+const city = buildCity({
+  onReady: (stats) => {
+    if (DEBUG) {
+      console.info('city:', JSON.stringify(stats));
+    }
+  },
+});
 stage.scene.add(city.group);
 
 const petals = buildPetals();
@@ -300,35 +315,72 @@ if (DEBUG) {
       return { pos: p.toArray(), pitch: e.x, yaw: e.y, roll: e.z };
     },
     heading: () => flyFlip,
-    /* Every tree in the town, so a line through it can be checked as
-     * clearance rather than watched for a frame where the lens fills with
-     * bark. */
-    trees: () => {
-      const out = [];
-      const m = new THREE.Matrix4();
+    /*
+     * THE TOWN'S OWN COLLIDERS, and its own ground.
+     *
+     * The freestyle line was drawn against a hand built portrait of this
+     * town and then the real one replaced it, so "does the line still fit"
+     * is the question the whole port turns on. It is not answered by
+     * looking at screenshots: a 104 degree lens fills with a wall about a
+     * metre before it hits one, and a near miss and a hit look the same in
+     * a still.
+     *
+     * world.colliders is the list the SIMULATOR flies against, axis aligned
+     * boxes with a top and an optional bottom, and world.heightAt is the
+     * ground under a point. Checking the line against those two is checking
+     * it against the same thing the game checks a quad against.
+     */
+    solids: () => {
+      const w = city.ready ? city.stats : null;
+      if (!city.ready) {
+        return null;
+      }
+      return { stats: w, count: city.world().colliders.length };
+    },
+    /* Minimum clearance along the whole line, in metres, against the town's
+     * own colliders, plus the lowest the line ever gets over its ground. */
+    clearance: (samples = 900) => {
+      if (!city.ready) {
+        return null;
+      }
+      const world = city.world();
       const p = new THREE.Vector3();
-      const q = new THREE.Quaternion();
-      const v = new THREE.Vector3();
-      for (const [kind, mesh] of [['blossom', city.green.blobs], ['cedar', city.green.cedars]]) {
-        for (let i = 0; i < mesh.count; i += 1) {
-          mesh.getMatrixAt(i, m);
-          m.decompose(p, q, v);
-          out.push({
-            kind,
-            x: p.x + city.origin.x,
-            y: p.y + city.origin.y,
-            z: p.z + city.origin.z,
-            /* The cedar lathe is a unit cone about its own base; a blossom
-             * lump is a unit sphere about its centre. Both are bounded by
-             * the largest of their horizontal scales, which is what a
-             * clearance test wants to be conservative about. */
-            r: Math.max(v.x, v.z) * 0.5,
-            h: v.y,
-            base: kind === 'cedar',
-          });
+      let worstBox = Infinity;
+      let worstBoxAt = null;
+      let worstGround = Infinity;
+      let worstGroundAt = null;
+      for (let i = 0; i <= samples; i += 1) {
+        const roam = i / samples;
+        cityLine.getPointAt(cityAt(roam), p);
+        const x = p.x - CITY_ORIGIN.x;
+        const y = p.y - CITY_ORIGIN.y;
+        const z = p.z - CITY_ORIGIN.z;
+        const over = y - world.heightAt(x, z);
+        if (over < worstGround) {
+          worstGround = over;
+          worstGroundAt = roam;
+        }
+        for (const c of world.colliders) {
+          /* Only boxes the line is inside vertically can be hit at all. */
+          const bottom = c.bottom === undefined ? -1e9 : c.bottom;
+          if (y > c.top || y < bottom) {
+            continue;
+          }
+          const dx = Math.max(c.x0 - x, 0, x - c.x1);
+          const dz = Math.max(c.z0 - z, 0, z - c.z1);
+          const d = Math.hypot(dx, dz);
+          if (d < worstBox) {
+            worstBox = d;
+            worstBoxAt = roam;
+          }
         }
       }
-      return out;
+      return {
+        minSolid: +worstBox.toFixed(2),
+        minSolidAt: worstBoxAt,
+        minGround: +worstGround.toFixed(2),
+        minGroundAt: worstGroundAt,
+      };
     },
     /*
      * The freestyle line, as numbers. Same affordance as flight() above and
@@ -524,34 +576,6 @@ const CITY_S = (() => {
   return out;
 })();
 
-/*
- * Where on the act the aircraft reaches the level crossing.
- *
- * Found by searching the line rather than typed, because it is the thing two
- * independent moving objects have to agree about: the quad hops the barriers
- * and the train goes under it, and if the number is written down then moving
- * a single waypoint desynchronises them silently. Nobody would notice for
- * weeks and then the best moment in the act would just be a train somewhere
- * else.
- */
-const CITY_CROSS_U = (() => {
-  const N = 600;
-  let best = 0;
-  let bestD = Infinity;
-  const p = new THREE.Vector3();
-  for (let i = 0; i <= N; i += 1) {
-    cityLine.getPointAt(i / N, p);
-    /* Nearest to the crossing itself: on the tracks, and on the road rather
-     * than a hundred metres along the line from it. */
-    const d = Math.abs(p.z - CITY_ORIGIN.z) + Math.abs(p.x - CITY_ORIGIN.x) * 0.6;
-    if (d < bestD) {
-      bestD = d;
-      best = i / N;
-    }
-  }
-  return best;
-})();
-
 function cityAt(p) {
   const N = CITY_S.length - 1;
   const f = clamp01(p) * N;
@@ -585,23 +609,6 @@ function cityAt(p) {
  * the street, and 25 km/h is a quad being flown by somebody nervous.
  */
 const CITY_SECONDS = 16;
-/*
- * cityAt run backwards: which act progress puts the aircraft at a given
- * point on the line. The table is monotonic, so this is a walk rather than a
- * solve.
- */
-function cityFrom(u) {
-  const N = CITY_S.length - 1;
-  for (let i = 1; i <= N; i += 1) {
-    if (CITY_S[i] >= u) {
-      const span = CITY_S[i] - CITY_S[i - 1] || 1e-6;
-      return (i - 1 + (u - CITY_S[i - 1]) / span) / N;
-    }
-  }
-  return 1;
-}
-const CITY_CROSS_AT = cityFrom(CITY_CROSS_U);
-
 function citySpeed(p) {
   const d = 0.004;
   const a = cityAt(Math.max(0, p - d));
@@ -977,13 +984,22 @@ function poseFPV(pos, quat, outPos, outQuat) {
  * The close: the whole town at golden hour, seen from the south east, pulling
  * further out and further up as the headline lands.
  *
- * IT FRAMES THE DISTRICT, NOT THE QUAD, and that is a decision the layout
- * forces. The closing line is centred and the three launch cards span most of
- * the width beneath it, so the only clear areas are the sky and the margins:
- * a 0.35 m airframe placed in either is a speck or a crop. What the last
- * frame of the page should say is "here is the thing you get", and the thing
- * you get is a place to fly. The quad is still there, hovering over the
- * roofs, as the detail that tells you the scale of the rest.
+ * IT FRAMES THE DISTRICT, AND ONLY THE DISTRICT. The closing line is centred
+ * and the three launch cards span most of the width beneath it, so the only
+ * clear areas are the sky and the margins. What the last frame of the page
+ * should say is "here is the thing you get", and the thing you get is a
+ * place to fly.
+ *
+ * The quad is not in it, and saying so is the honest version of a comment
+ * that used to claim it was "the detail that tells you the scale". At 150 m
+ * through a 58 degree lens a 0.35 m airframe is about two pixels. That was
+ * true of the old close, which framed a 51 m track from 72 m and had the
+ * machine hovering over its own start gate at a readable size; it is not
+ * true of this one. The aircraft is still parked where the freestyle line
+ * left it, over the roofs, because it has to be somewhere and that is the
+ * only place it could honestly be. It is simply too far away to see, and a
+ * composition that pretended otherwise would be one that had never been
+ * looked at.
  *
  * HOW FAR IT MAY GO IS A MEASURED NUMBER. The brief on this shot was that it
  * must not pull back so far that the colour runs out of the city, and that is
@@ -1438,6 +1454,14 @@ function frame(ms) {
    */
   city.setShown(world > 0.02);
   /*
+   * The town's own clock: the train, the crossing sequence that lowers the
+   * barriers for it, and the blossom coming off its trees. Only while it is
+   * on screen, because a level crossing cycling behind a studio backdrop is
+   * work nobody can see. See update() in city.js for why this one thing is
+   * on a clock when the rest of the page is on a scrollbar.
+   */
+  city.update(dt);
+  /*
    * How far the air is clear. The field wants its haze close so the
    * treeline dissolves; the town wants it far so the district keeps its
    * colour. It opens up across the dash between the two, which is the one
@@ -1678,21 +1702,13 @@ function frame(ms) {
   droneRig.quaternion.copy(droneQuat);
 
   /*
-   * The train, timed off the act rather than off a clock.
-   *
-   * setTrain's own 0.5 puts the middle car on the road, and CITY_CROSS_AT is
-   * where the act puts the aircraft over it, so offsetting one by the other
-   * lines them up: the quad hops the barriers with a train actually going
-   * under it. It is the one moment in the district where two moving things
-   * are in the same frame, and it is worth the arithmetic.
-   *
-   * Before the act it is held where that offset would have put it rather
-   * than hidden, because the district is visible from the field for the whole
-   * of the lap and a town whose train pops into existence has a bug in it.
-   * After the act setTrain clamps, so it settles clear of the road with its
-   * tail still by the barriers, which is what the lowered booms are for.
+   * The train is the town's own and runs on the town's own sequence, so
+   * there is nothing to drive here any more. It used to be posed from the
+   * act's parameter so that it met the aircraft at the crossing; the real
+   * town has a crossing sequence that lowers its barriers, rings, passes a
+   * train and lifts them again, and driving that from a scrollbar would run
+   * it backwards the moment somebody scrolled up. See city.update above.
    */
-  city.setTrain(T < 3.0 ? 0.5 - CITY_CROSS_AT : 0.5 + (roaming - CITY_CROSS_AT));
 
   /* Props: still while it is being built, spooling as it arms, working once
    * it is flying. */
@@ -1892,7 +1908,8 @@ function frame(ms) {
     for (let i = 0; i < cityBeatEls.length; i += 1) {
       const b = CITY_BEATS[i];
       const nextAt = i + 1 < CITY_BEATS.length ? CITY_BEATS[i + 1].at : 1.02;
-      const on = inCity && T < 3.92 && roaming >= b.at && roaming < nextAt - 0.03;
+      const until = b.until ?? nextAt - 0.03;
+      const on = inCity && roaming >= b.at && roaming < until;
       cityBeatEls[i].classList.toggle('on', on);
     }
   }

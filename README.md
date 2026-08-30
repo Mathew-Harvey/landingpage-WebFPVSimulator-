@@ -59,15 +59,22 @@ only place the pull-out ever had room to finish. Measured from the close
 alone it had about a fifth of a screen of scroll and played a quarter of
 its arc.
 
-The town is not the simulator's town. The simulator's freestyle map is
-sixty four thousand lines of vendored geometry and none of it can come
-here, because this page has no build step and one CDN import. `src/city.js`
-is a portrait of it instead, built in this page's own idiom, with every
-dimension copied from the simulator's source and the file it came from
-named beside it: a 6.3 m carriageway, a 1.55 m footway, shopfronts 3.2 m
-under 2.7 m, poles at 9.2 m, wires at 4.88 and 5.95, and a crossing that
-can only be cleared at 6.9. If the town and the portrait ever disagree
-about a number, one of them is a bug and it will be this one.
+The town IS the simulator's town, not a drawing of one. `src/city/vendored/`
+is sakura-crossing, copied from the simulator's `src/maps/city/vendored/`
+where it is the copy of record, and `src/city.js` is only a join: where the
+town stands in the race field's coordinates, which parts of it are built, and
+the line flown through it. A visitor sees the same streets here that they
+will fly when they click through, because it is the same source drawing them.
+
+It costs what a whole town costs. Measured: it builds about eleven and a half
+thousand meshes and paints every sign and fascia with Canvas2D as it goes, and
+after the simulator's own merge passes it settles at about two thousand meshes
+and 1.1 M triangles. The build is seconds rather than milliseconds, so it does
+not happen at import: the page draws its studio first and the town is built in
+an idle slot after the first paint, which is tens of seconds of scrolling
+before the act that needs it. Until it lands its group is empty and invisible,
+and a visitor who scrolls faster than it builds gets the field, the lap and the
+close with no error.
 
 The district is sakura-crossing, by Kenton Wang, MIT, which the simulator
 vendors and credits in its `NOTICE`. No code from it is here and none of it

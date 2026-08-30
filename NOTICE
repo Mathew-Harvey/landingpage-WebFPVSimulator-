@@ -1,0 +1,41 @@
+# NOTICE
+
+The WebFPV landing page as a whole is distributed under the GNU General
+Public License version 3 or later. See LICENSE.
+
+This file records third party material incorporated into the combined work,
+the licence it arrived under, and where it came from. MIT into GPLv3 is a one
+way fit: the MIT material may be incorporated, the combined work ships under
+GPLv3, and the MIT copyright notice and permission notice travel with the
+copied files. Nothing here is relicensed, and no MIT file has had a GPLv3
+header pasted onto it.
+
+## sakura-crossing
+
+    Upstream    https://github.com/kenton-gmi/sakura-crossing
+    Licence     MIT, Copyright (c) 2026 Kenton Wang
+    Vendored at src/city/vendored/
+    Files       59 JavaScript source files
+    Licence text travels with them at src/city/vendored/LICENSE
+
+This is the freestyle city the fourth act flies, and it is the same town the
+simulator flies rather than a drawing of one. The files are copied from
+`Mathew-Harvey/WebFPVSimulator` at `src/maps/city/vendored/`, which is the
+copy of record; that repository's own NOTICE records the upstream commit and
+the three patches applied to the tree. Recopy from there rather than editing
+here, and recopy the whole directory rather than a file, so the two can never
+drift a file at a time.
+
+The three `PATCH-*.diff` files in `src/city/vendored/` travel with the source
+because they describe what was changed and why. They are not applied here:
+the tree is already patched.
+
+## three.js
+
+    Upstream    https://github.com/mrdoob/three.js
+    Licence     MIT, Copyright (c) 2010-2024 three.js authors
+
+Not vendored. It arrives from a CDN import map at the version pinned in
+`index.html`, along with two modules from its `examples/jsm` tree that the
+town's own source imports: `utils/BufferGeometryUtils.js` and, only if the
+post pipeline is ever used here, `postprocessing/Pass.js`.
