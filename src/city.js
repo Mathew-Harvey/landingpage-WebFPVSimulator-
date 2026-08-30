@@ -63,12 +63,17 @@ export { centerX, groundY };
 /*
  * Where the town stands, in the race field's own coordinates.
  *
- * NORTH OF THE FIELD, AND FAR ENOUGH TO BE A JOURNEY. The race field's
- * treeline stands in a ring 66 to 144 m out (course.js), so a town closer
- * than that would have the field's own wood growing through its streets, and
- * a town much further would be a transit rather than a transition. At 138 m
- * the wood between them is real, the flight over it takes a few seconds, and
- * the town is inside the fog's reach with its colour intact.
+ * NORTH OF THE FIELD, AND CLOSE. It was at 138 m, chosen so the field's own
+ * treeline had room to stand between the two. That treeline is thinner now
+ * and has a gap cut in it facing this way, which frees the ground, and 138 m
+ * bought a transit rather than a transition: forty seconds of scroll spent
+ * over a wood, at two and a half times the pace of everything either side of
+ * it, because there was nothing out there to look at.
+ *
+ * At 96 m the aircraft leaves the last gate, climbs, and the town is already
+ * arriving. The whole crossing is about forty metres of line instead of a
+ * hundred and forty, which is a beat rather than a leg, and it is the beat
+ * the act actually wanted: the moment the field runs out.
  *
  * IT IS ON THE SIDE THE CLOSING SHOT ALREADY LOOKED AT. The close orbits
  * from the south east looking roughly north, so putting the town there makes
@@ -81,7 +86,7 @@ export { centerX, groundY };
  * a rotated town would put every one of the town's own functions, centerX and
  * groundY included, in a frame that does not match the world.
  */
-export const CITY_ORIGIN = new THREE.Vector3(0, 0, -138);
+export const CITY_ORIGIN = new THREE.Vector3(0, 0, -96);
 
 /*
  * HOW MUCH OF THE TOWN IS BUILT.
@@ -120,6 +125,168 @@ const KEEP = {
 export const BUILT_R = 60;
 export const TREE_R = 190;
 export const ROAD_HALF = 3.15;
+
+/* ------------------------------------------------------------- the foliage */
+
+/*
+ * THINNING THE TOWN'S PLANTING, AND WHY IT IS NOT ONE LINE.
+ *
+ * The town is planted for a walker at ground level, where a dense canopy is
+ * depth. Seen from a quad at twenty metres it is a duvet: the district reads
+ * as blossom with some roofs in it, and the roofs are the thing the act is
+ * about. So the planting comes down hard.
+ *
+ * `thinFoliage` in bake.js does not do this. Its FOLIAGE list is hill tufts,
+ * moss, rocks and lake reeds, and it never touches a tree, so the keep
+ * fraction that was being passed to it was doing nothing at all.
+ *
+ * THE HARD PART IS THAT A TREE IS TWO OBJECTS. Every species builds its
+ * trunks and branches as ONE merged mesh for the whole town, and its canopy
+ * as instanced blobs or cones. Dropping canopy instances is easy and gives
+ * you a wood full of bare sticks; dropping the wood gives you blossom
+ * floating in the air. Neither is a thinner town, they are both a broken one.
+ *
+ * So this drops whole trees. Canopy instances are bucketed into cells, each
+ * cell gets one keep-or-drop decision from a hash of its own coordinates, and
+ * then the WOOD is filtered against the same decisions: every triangle in the
+ * merged trunk mesh is looked up by its own position and collapsed to a point
+ * if the tree it belongs to has gone. A collapsed triangle has no area and
+ * draws nothing, which is how you delete part of a merged mesh without
+ * rebuilding it.
+ *
+ * The cell is deliberately coarse. Trees in this town stand five to eight
+ * metres apart and a canopy blob sits up to three metres off its own trunk,
+ * so a cell has to be big enough that a tree's blobs and its trunk land in
+ * the same one. At four metres neighbouring trees sometimes share a decision,
+ * which costs granularity and buys the thing actually working.
+ *
+ * Deterministic, because it hashes position rather than calling random: the
+ * same town thins to the same town on every load, so a screenshot taken to
+ * argue about a composition is an argument about a town that still exists.
+ */
+const CELL = 4;
+
+function cellKey(x, z) {
+  return `${Math.round(x / CELL)},${Math.round(z / CELL)}`;
+}
+
+/* FNV-1a over the cell's own name, to 0..1. */
+function hash01(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i += 1) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0) / 4294967295;
+}
+
+function thinTrees(root, plan) {
+  const m = new THREE.Matrix4();
+  const v = new THREE.Vector3();
+  const colour = new THREE.Color();
+  const out = {};
+
+  for (const spec of plan) {
+    if (spec.keep >= 1) {
+      continue;
+    }
+    const canopies = [];
+    const woods = [];
+    root.traverse((o) => {
+      if (!o.isMesh) {
+        return;
+      }
+      if (o.isInstancedMesh && spec.canopy.test(o.name || '')) {
+        canopies.push(o);
+      } else if (spec.wood.test(o.name || '')) {
+        woods.push(o);
+      }
+    });
+
+    /* One decision per cell, taken the first time a canopy blob lands in it. */
+    const decide = new Map();
+    let before = 0;
+    let after = 0;
+    for (const c of canopies) {
+      before += c.count;
+      let k = 0;
+      for (let i = 0; i < c.count; i += 1) {
+        c.getMatrixAt(i, m);
+        v.setFromMatrixPosition(m);
+        const key = cellKey(v.x, v.z);
+        let live = decide.get(key);
+        if (live === undefined) {
+          live = hash01(key) < spec.keep;
+          decide.set(key, live);
+        }
+        if (!live) {
+          continue;
+        }
+        if (k !== i) {
+          c.setMatrixAt(k, m);
+          if (c.instanceColor) {
+            c.getColorAt(i, colour);
+            c.setColorAt(k, colour);
+          }
+        }
+        k += 1;
+      }
+      /* Never to nothing: a set thinned to zero is a grove that vanished, and
+       * three.js draws an InstancedMesh with count 0 as nothing at all, which
+       * is fine, but a species that disappears entirely is a bug that looks
+       * like a decision. */
+      c.count = k;
+      after += k;
+      c.instanceMatrix.needsUpdate = true;
+      if (c.instanceColor) {
+        c.instanceColor.needsUpdate = true;
+      }
+      c.computeBoundingSphere();
+    }
+
+    /* Now the trunks, against the same decisions. */
+    let collapsed = 0;
+    let kept = 0;
+    for (const wood of woods) {
+      const geo = wood.geometry;
+      const pos = geo.getAttribute('position');
+      const index = geo.getIndex();
+      if (!pos) {
+        continue;
+      }
+      const tri = index ? index.count / 3 : pos.count / 3;
+      for (let t = 0; t < tri; t += 1) {
+        const a = index ? index.getX(t * 3) : t * 3;
+        const b = index ? index.getX(t * 3 + 1) : t * 3 + 1;
+        const c2 = index ? index.getX(t * 3 + 2) : t * 3 + 2;
+        const cx = (pos.getX(a) + pos.getX(b) + pos.getX(c2)) / 3;
+        const cz = (pos.getZ(a) + pos.getZ(b) + pos.getZ(c2)) / 3;
+        const live = decide.get(cellKey(cx, cz));
+        /* Unknown cells are KEPT. A trunk whose canopy never registered a
+         * decision is a tree this pass does not understand, and leaving it
+         * standing is the safe way to be wrong. */
+        if (live === false) {
+          /* Collapse to the first vertex: zero area, nothing rasterised, and
+           * no need to touch the index buffer or the attribute counts. */
+          const x = pos.getX(a);
+          const y = pos.getY(a);
+          const z = pos.getZ(a);
+          pos.setXYZ(b, x, y, z);
+          pos.setXYZ(c2, x, y, z);
+          collapsed += 1;
+        } else {
+          kept += 1;
+        }
+      }
+      pos.needsUpdate = true;
+      geo.computeBoundingSphere();
+    }
+    out[spec.name] = {
+      canopies: canopies.length, before, after, collapsed, kept,
+    };
+  }
+  return out;
+}
 
 /* --------------------------------------------------------------- the build */
 
@@ -194,9 +361,146 @@ export function buildCity({ onReady = null } = {}) {
       const cz = (box.min.z + box.max.z) * 0.5;
       if (cx < KEEP.x[0] || cx > KEEP.x[1] || cz < KEEP.z[0] || cz > KEEP.z[1]) {
         world.root.remove(child);
+        /*
+         * DISPOSED, not just detached, and it matters more than it looks.
+         *
+         * Removing a child drops the reference and leaves several thousand
+         * geometries and their buffers for the collector to find later.
+         * Later turned out to be about three seconds after the boot screen
+         * lifted, as a major collection in the middle of the track act:
+         * measured as a four second frame on a page that had just promised
+         * to be smooth. Freeing them here spends the same work inside the
+         * loading screen, where there is nothing to interrupt.
+         *
+         * Materials are NOT disposed. The town caches and shares them across
+         * the whole district, so a material on a pruned child is almost
+         * always still in use by one that was kept, and disposing it would
+         * take the texture with it.
+         */
+        child.traverse((o) => {
+          if (o.geometry) {
+            o.geometry.dispose();
+          }
+        });
         pruned += 1;
       }
     }
+
+    /*
+     * THE GROUND IS MEASURED BEFORE THE MERGE TOO, and for the same reason
+     * the planting is thinned before it: bakeCity merges by material across
+     * the whole town, so afterwards there is no mesh called hillSun or
+     * lakeBed to find. Measured after it, this box was the union of whatever
+     * happened to keep a matching name through the merge, which came out
+     * three hundred metres adrift on one axis and was quietly cutting the
+     * deck away from the wrong rectangle.
+     */
+    /*
+     * WHERE THE TOWN'S OWN GROUND REACHES, measured off the geometry that was
+     * just built rather than written down.
+     *
+     * The race field's deck has to be cut out from under it or the two are
+     * coplanar at y = 0 across three hundred metres and z-fight. What the
+     * cut needs is the extent of the town's GROUND, not of the town: a
+     * utility pole nine metres up does not put ground under itself, and a
+     * rectangle drawn round every mesh in the district would cut the deck
+     * away from under thin air.
+     *
+     * So it is the union of the things that ARE ground, found by name off
+     * the town's own builders: its landform and hills, its lake bed, its
+     * school ground and its paved surfaces. Then inset, so the town's ground
+     * overhangs the hole on every side and the cut edge is never visible.
+     */
+    const groundBox = new THREE.Box3();
+    const rawGround = new THREE.Box3();
+    const one = new THREE.Box3();
+    world.root.traverse((o) => {
+      if (!o.isMesh) {
+        return;
+      }
+      const name = `${o.name || ''}|${(o.parent && o.parent.name) || ''}`;
+      if (!/ground|land|terrain|hill|turf|grass|lake|road|street|pad/i.test(name)) {
+        return;
+      }
+      one.setFromObject(o);
+      if (!one.isEmpty()) {
+        groundBox.union(one);
+      }
+    });
+    rawGround.copy(groundBox);
+    if (!groundBox.isEmpty()) {
+      const INSET = 9;
+      groundBox.min.x += INSET;
+      groundBox.max.x -= INSET;
+      groundBox.min.z += INSET;
+      groundBox.max.z -= INSET;
+      /* Into the race field's frame, which is where the deck lives. */
+      groundBox.min.add(CITY_ORIGIN);
+      groundBox.max.add(CITY_ORIGIN);
+    }
+
+
+    /*
+     * THE PLANTING IS THINNED BEFORE THE MERGE, and the order is not a
+     * preference.
+     *
+     * bakeCity merges by material across the whole town, so after it runs
+     * there is no mesh called sakuraWood any more: its triangles are inside a
+     * combined buffer with a different name and a different frame. Run
+     * afterwards, thinTrees found the canopies (bakeCity leaves instanced
+     * meshes alone) and none of the trunks, and what that looked like was a
+     * hillside of bare sticks with the blossom gone off them. Thinning first
+     * means the wood is still the wood.
+     */
+    /*
+     * THE PLANTING, and these four numbers are the whole look of the act.
+     *
+     * The town is planted for somebody walking through it. From a quad it is
+     * a duvet: at full density the district reads as blossom and conifer with
+     * a few roofs showing, and the roofs are what the act is about.
+     *
+     * Blossom comes down hardest. It is the loudest thing in the palette, it
+     * is the only pink, and there is a second blossom system on top of it
+     * (the town's falling petals, and this page's own) so the frame gets its
+     * cherry from the air as well as from the trees. A tenth of the trees
+     * still reads as a town with cherry in it.
+     *
+     * The dark conifer is the other one: at full density the cedar and the
+     * grove close the district in from every side and the closing shot is a
+     * forest with a village in it. A third of them keeps the hillside wooded
+     * without burying the town.
+     *
+     * Bamboo and shrub are left alone. There is little of either, neither is
+     * ever the subject, and both are what a plot boundary looks like.
+     */
+    const thinned = thinTrees(world.root, [
+      { name: 'sakura', canopy: /^sakuraCanopy/, wood: /^sakuraWood/, keep: LITE ? 0.08 : 0.10 },
+      { name: 'cedar', canopy: /^cedarCanopy/, wood: /^cedarWood/, keep: LITE ? 0.22 : 0.30 },
+      { name: 'grove', canopy: /^groveCanopy/, wood: /^groveWood/, keep: LITE ? 0.26 : 0.34 },
+    ]);
+
+    /*
+     * The petals, which are two more instanced sets and are most of the pink
+     * in any frame the aircraft is actually in. This page has its own petal
+     * system drifting past the lens already, so the town's is turned right
+     * down rather than off: what is wanted is a few coming off the trees, not
+     * a snowstorm.
+     */
+    let petalsBefore = 0;
+    let petalsAfter = 0;
+    world.root.traverse((o) => {
+      if (!o.isInstancedMesh) {
+        return;
+      }
+      if (o.name === 'petalField' || o.name === 'fallenPetal') {
+        petalsBefore += o.count;
+        o.count = Math.max(1, Math.round(o.count * (LITE ? 0.06 : 0.10)));
+        petalsAfter += o.count;
+        o.instanceMatrix.needsUpdate = true;
+        o.computeBoundingSphere();
+      }
+    });
+
 
     /*
      * The simulator's own merge passes, with its own numbers.
@@ -217,52 +521,11 @@ export function buildCity({ onReady = null } = {}) {
       releaseStillRigs: true,
       shadowProxyCell: 0,
     });
-    /* Half the foliage on a phone. It is the town's own knob and it is the
-     * single cheapest thing that moves the number. */
-    thinFoliage(world.root, { keep: LITE ? 0.45 : 0.72 });
-    chunkInstanced(world.root, { cell: 40 });
+    /* The town's own knob, which only reaches its hill tufts, moss, rocks and
+     * lake reeds. Cheap, and worth having, but it is not the planting. */
+    thinFoliage(world.root, { keep: LITE ? 0.35 : 0.55 });
 
-    /*
-     * WHERE THE TOWN'S OWN GROUND REACHES, measured off the geometry that was
-     * just built rather than written down.
-     *
-     * The race field's deck has to be cut out from under it or the two are
-     * coplanar at y = 0 across three hundred metres and z-fight. What the
-     * cut needs is the extent of the town's GROUND, not of the town: a
-     * utility pole nine metres up does not put ground under itself, and a
-     * rectangle drawn round every mesh in the district would cut the deck
-     * away from under thin air.
-     *
-     * So it is the union of the things that ARE ground, found by name off
-     * the town's own builders: its landform and hills, its lake bed, its
-     * school ground and its paved surfaces. Then inset, so the town's ground
-     * overhangs the hole on every side and the cut edge is never visible.
-     */
-    const groundBox = new THREE.Box3();
-    const one = new THREE.Box3();
-    world.root.traverse((o) => {
-      if (!o.isMesh) {
-        return;
-      }
-      const name = `${o.name || ''}|${(o.parent && o.parent.name) || ''}`;
-      if (!/ground|land|terrain|hill|turf|grass|lake|road|street|pad/i.test(name)) {
-        return;
-      }
-      one.setFromObject(o);
-      if (!one.isEmpty()) {
-        groundBox.union(one);
-      }
-    });
-    if (!groundBox.isEmpty()) {
-      const INSET = 9;
-      groundBox.min.x += INSET;
-      groundBox.max.x -= INSET;
-      groundBox.min.z += INSET;
-      groundBox.max.z -= INSET;
-      /* Into the race field's frame, which is where the deck lives. */
-      groundBox.min.add(CITY_ORIGIN);
-      groundBox.max.add(CITY_ORIGIN);
-    }
+    chunkInstanced(world.root, { cell: 40 });
 
     let meshes = 0;
     let tris = 0;
@@ -285,9 +548,17 @@ export function buildCity({ onReady = null } = {}) {
     state.ground = groundBox.isEmpty() ? null : groundBox;
     state.stats = {
       pruned,
+      thinned,
+      petals: { before: petalsBefore, after: petalsAfter },
       ground: groundBox.isEmpty() ? null : {
-        min: groundBox.min.toArray().map((v) => Math.round(v)),
-        max: groundBox.max.toArray().map((v) => Math.round(v)),
+        world: {
+          min: groundBox.min.toArray().map((v) => Math.round(v)),
+          max: groundBox.max.toArray().map((v) => Math.round(v)),
+        },
+        local: {
+          min: rawGround.min.toArray().map((v) => Math.round(v)),
+          max: rawGround.max.toArray().map((v) => Math.round(v)),
+        },
       },
       meshes,
       triangles: Math.round(tris),
@@ -301,25 +572,34 @@ export function buildCity({ onReady = null } = {}) {
   }
 
   /*
-   * After the first paint, and after a beat.
+   * WHEN IT RUNS IS THE CALLER'S DECISION NOW, and that is the whole fix for
+   * the hitch.
    *
-   * requestIdleCallback is the right primitive and Safari did not have it for
-   * years, so there is a timeout fallback. The 1200 ms is not a guess about
-   * machines, it is a guess about ATTENTION: the studio act's assembly runs
-   * for nine seconds and its first two are the part somebody actually
-   * watches. The town lands after those and before anybody has scrolled far.
+   * It used to start itself on an idle callback a second after load, which
+   * put a two to four second block of synchronous work into a page that was
+   * already up and being scrolled. There is no polite way to spend that:
+   * requestIdleCallback gets you a slot, and then buildWorld holds it for as
+   * long as it takes. What the visitor saw was the page freezing a moment
+   * after it arrived.
+   *
+   * So the page decides instead, and it decides to do it while the boot
+   * screen is still up. A loading screen is the one place on a page where
+   * seconds of work are honest and expected. See start() below and its one
+   * caller in main.js.
    */
-  const start = () => {
-    if (typeof window.requestIdleCallback === 'function') {
-      window.requestIdleCallback(make, { timeout: 4000 });
-    } else {
-      setTimeout(make, 0);
+  let started = false;
+  function start() {
+    if (started) {
+      return;
     }
-  };
-  setTimeout(start, 1200);
+    started = true;
+    make();
+  }
 
   return {
     group,
+    /* Build it. Synchronous, seconds long, and safe to call twice. */
+    start,
     get ready() {
       return state.ready;
     },
@@ -453,13 +733,31 @@ export function flightLine(entry, exitDir, origin) {
   return new THREE.CatmullRomCurve3([
     /* ---- off the field ---- */
     entry.clone(),
-    new THREE.Vector3(entry.x + away.x * 17, entry.y + 7, entry.z + away.z * 17),
-    new THREE.Vector3(entry.x + away.x * 26, entry.y + 19, entry.z + away.z * 26),
+    /*
+     * IT CLIMBS HARDER THAN IT USED TO, because it has less room to.
+     *
+     * With the town at 138 m there were a hundred and forty metres of empty
+     * wood to gain height over. At 96 there are about forty, and the town's
+     * southern outskirts start almost immediately. At +7 the aircraft went
+     * straight through a canopy collider at 7 to 8.3 m, seventy metres along
+     * the town's own local z; at +12 it went through the top of the same tree
+     * at 8.1 to 10.4. It is a big cedar on the southern approach and the
+     * answer is to be over it rather than to keep clipping its crown.
+     *
+     * Checked against the town's own collider list, which is the list the
+     * simulator flies a quad against, and which is built before this file
+     * thins the planting: it therefore includes trees that are no longer
+     * drawn. Clearing a tree that is not there any more costs nothing and is
+     * the right way to be wrong.
+     */
+    new THREE.Vector3(entry.x + away.x * 17, entry.y + 16, entry.z + away.z * 17),
+    new THREE.Vector3(entry.x + away.x * 26, entry.y + 26, entry.z + away.z * 26),
 
-    /* ---- the transit, over the wood between the two places ---- */
-    at(-15, 27, 96),
-    at(-9, 31, 74),
-    at(-5, 27, 58),
+    /* ---- the crossing between the two places, which is now a beat rather
+           than a leg: three points instead of a leg's worth ---- */
+    at(-12, 29, 82),
+    at(-8, 27, 66),
+    at(-5, 22, 56),
 
     /* ---- 1. down onto the street, and north up it ---- */
     at(centerX(48) - 1.2, 13, 48),

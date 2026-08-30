@@ -230,12 +230,26 @@ function clearBoot() {
 }
 
 /*
- * The boot screen comes down on the first rendered frame, and failing that
- * after four seconds regardless. The fallback is not paranoia: a background
- * tab does not run requestAnimationFrame, so a page opened in one and read
- * later would otherwise be a permanent loading screen over a finished page.
+ * THE BOOT SCREEN COMES DOWN WHEN THE TOWN IS BUILT, not on the first frame.
+ *
+ * It used to go on the first rendered frame, which is right for a page whose
+ * whole world is a quad and a course. The freestyle act's town is the
+ * simulator's own and it is seconds of synchronous work: eleven and a half
+ * thousand meshes with every sign painted on a canvas as it goes. Built
+ * after the boot screen had gone, that work landed as a freeze on a page the
+ * visitor was already scrolling, which is exactly the hitch this replaces.
+ *
+ * A loading screen is the one place on a page where seconds are honest. So
+ * the first frame renders under the boot screen, the town is built, and only
+ * then does the screen lift, onto a page that never stalls again.
+ *
+ * The fallback is not paranoia and it is longer than it was: a background tab
+ * does not run requestAnimationFrame, so a page opened in one and read later
+ * would otherwise be a permanent loading screen over a finished page. Twelve
+ * seconds is past any machine this has been measured on and still short of a
+ * visitor deciding the page is broken.
  */
-setTimeout(clearBoot, 4000);
+setTimeout(clearBoot, 12000);
 
 function fail() {
   document.getElementById('nowebgl').classList.add('on');
@@ -382,11 +396,39 @@ if (DEBUG) {
           }
         }
       }
+      /* Every sample that is inside something, with the box it is inside, so
+       * a breach can be fixed rather than only detected. */
+      const hits = [];
+      for (let i = 0; i <= samples; i += 1) {
+        const roam = i / samples;
+        cityLine.getPointAt(cityAt(roam), p);
+        const x = p.x - CITY_ORIGIN.x;
+        const y = p.y - CITY_ORIGIN.y;
+        const z = p.z - CITY_ORIGIN.z;
+        for (const c of world.colliders) {
+          const bottom = c.bottom === undefined ? -1e9 : c.bottom;
+          if (y > c.top || y < bottom) {
+            continue;
+          }
+          if (x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1) {
+            hits.push({
+              roam: +roam.toFixed(3),
+              at: [+x.toFixed(1), +y.toFixed(1), +z.toFixed(1)],
+              box: [+c.x0.toFixed(1), +c.x1.toFixed(1), +c.z0.toFixed(1), +c.z1.toFixed(1)],
+              top: +c.top.toFixed(1),
+              bottom: c.bottom === undefined ? null : +c.bottom.toFixed(1),
+            });
+            break;
+          }
+        }
+      }
       return {
         minSolid: +worstBox.toFixed(2),
         minSolidAt: worstBoxAt,
         minGround: +worstGround.toFixed(2),
         minGroundAt: worstGroundAt,
+        hitCount: hits.length,
+        hits: hits.slice(0, 12),
       };
     },
     /*
@@ -571,7 +613,12 @@ const CITY_LENGTH = cityLine.getLength();
 const CITY_S = (() => {
   const N = 256;
   const out = new Float32Array(N + 1);
-  const pace = (t) => lerp(2.55, 1.0, smooth(clamp01((t - 0.17) / 0.24)));
+  /* The dash is shorter and gentler than it was, because the crossing is:
+   * the town moved in from 138 m to 96, so the transit is about forty metres
+   * of a hundred and ninety metre line rather than a hundred and forty of two
+   * hundred and sixty. A 2.55x dash over a third of the act was the right
+   * answer to a long empty leg and is the wrong answer to a short one. */
+  const pace = (t) => lerp(2.0, 1.0, smooth(clamp01((t - 0.06) / 0.14)));
   let sum = 0;
   for (let i = 1; i <= N; i += 1) {
     sum += pace((i - 0.5) / N);
@@ -609,13 +656,13 @@ function cityAt(p) {
  * speed, and what it is really setting is how fast the aircraft is meant to
  * be going, which is a decision about the flying rather than a measurement.
  *
- * 260 m in 16 s is 58 km/h on average, which comes out as about 40 down the
- * streets and 100 across the wood. Those are the right numbers for what is
- * on screen: 40 km/h is a quad flying a street with intent and not
- * hooning, and 100 is the dash. It was 26 s at first, which read 25 km/h in
- * the street, and 25 km/h is a quad being flown by somebody nervous.
+ * About 190 m in 15 s is 45 km/h on average, which comes out as roughly 40
+ * down the streets and 80 across the gap. Those are the right numbers for
+ * what is on screen: 40 km/h is a quad flying a street with intent and not
+ * hooning. It was 26 s at first, which read 25 km/h in the street, and
+ * 25 km/h is a quad being flown by somebody nervous.
  */
-const CITY_SECONDS = 16;
+const CITY_SECONDS = 15;
 function citySpeed(p) {
   const d = 0.004;
   const a = cityAt(Math.max(0, p - d));
@@ -1054,7 +1101,23 @@ function poseFPV(pos, quat, outPos, outQuat) {
  */
 const CLOSE_FOV = 58;
 const CLOSE_HAZE_MAX = 0.28;
-const CLOSE_WANT = 150;
+/*
+ * 145 m, and the orbit swings further EAST than it used to, which is the
+ * same decision twice.
+ *
+ * The town is 96 m from the field now rather than 138. On the old azimuth,
+ * which was nearly due south of the district, a camera 145 m out ends up
+ * behind the race field looking over it, and the last frame of the page
+ * becomes a field with a town behind it rather than a town. Pulled in to 112
+ * to stay clear of that, it was too close the other way: a photograph of
+ * rooftops rather than of a district.
+ *
+ * Swinging round to the south east buys the distance back. At 145 m on this
+ * arc the lens sits east of the town and still north of the field, so the
+ * district fills the frame with its own hills behind it and nothing of the
+ * race field in shot.
+ */
+const CLOSE_WANT = 145;
 const CLOSE_FAR = (() => {
   const fog = stage.fogFor(1, 1);
   /* smoothstep inverted: the t at which 3t^2 - 2t^3 equals CLOSE_HAZE_MAX. */
@@ -1064,10 +1127,10 @@ const CLOSE_FAR = (() => {
   return Math.min(CLOSE_WANT, byHaze, byFrame);
 })();
 
-const CLOSE_DIST = [74, CLOSE_FAR];
-const CLOSE_HIGH = [32, 66];
+const CLOSE_DIST = [78, CLOSE_FAR];
+const CLOSE_HIGH = [34, 60];
 function poseCity(t, outPos, outQuat) {
-  const az = lerp(0.44, 0.56, smooth(t));
+  const az = lerp(0.66, 1.00, smooth(t));
   const dist = lerp(CLOSE_DIST[0], CLOSE_DIST[1], smooth(t));
   const h = lerp(CLOSE_HIGH[0], CLOSE_HIGH[1], smooth(t));
   outPos.set(
@@ -1933,12 +1996,148 @@ function frame(ms) {
 
   stage.render();
 
+  /*
+   * The first frame is drawn UNDER the boot screen, then the town is built,
+   * then the screen lifts. Drawing first is not a formality: it compiles the
+   * cel shaders and uploads the airframe, so the frame the visitor is shown
+   * when the screen goes is one the GPU has already seen.
+   *
+   * The build blocks for seconds. Everything driven from JavaScript stops
+   * with it, which is why the boot bar's sweep is a CSS animation: it runs on
+   * the compositor and keeps moving through a blocked main thread.
+   */
   if (!bootDone) {
     bootDone = true;
+    city.start();
+    warmCity();
     clearBoot();
   }
 
   requestAnimationFrame(frame);
+}
+
+/*
+ * COMPILING AND UPLOADING THE TOWN BEFORE ANYBODY LOOKS AT IT.
+ *
+ * Building the geometry under the boot screen fixed the first hitch and
+ * revealed the second one. A mesh costs nothing until it is first DRAWN, and
+ * then it costs everything at once: the material's shader is compiled and
+ * linked, and its buffers are uploaded to the GPU. The town is about fifteen
+ * hundred meshes across thirty odd materials, and all of that came due on the
+ * frame it first entered the camera, which is the frame the field arrives.
+ * Measured, that was a six second stall in the middle of the lap.
+ *
+ * So it is paid here instead, while the boot screen is still up. renderer
+ * .compile walks the scene and builds every program it finds, and then a
+ * handful of real renders from a wide shot over the district force the
+ * geometry uploads that compile alone does not: a buffer is uploaded when it
+ * is first submitted, so something has to actually draw it.
+ *
+ * Three angles, not one, because a frustum test decides what gets submitted
+ * and one camera cannot see the whole of a district from inside it.
+ *
+ * The camera is put back exactly as it was found. The next frame is computed
+ * from T like every other frame, so even if it were not, nothing would carry
+ * over; restoring it is cheap and means this function has no side effects to
+ * remember.
+ */
+const warmPos = new THREE.Vector3();
+const warmQuat = new THREE.Quaternion();
+function warmCity() {
+  warmPos.copy(stage.camera.position);
+  warmQuat.copy(stage.camera.quaternion);
+  const wasShown = city.group.visible;
+  const wasFov = stage.camera.fov;
+
+  /*
+   * THE COURSE IS WARMED TOO, and leaving it out cost a three second stall
+   * in the middle of the track act.
+   *
+   * On the first frame the page is in the studio: the gates are invisible,
+   * the flags and the treeline have not grown in, and the racing line is not
+   * drawn. Invisible means never submitted, and never submitted means every
+   * one of those meshes, and every canvas texture printed for the gates, was
+   * still cold when the track stood up. Putting the course into its finished
+   * state for the warm pass costs nothing, because setBuild and setWorld are
+   * recomputed from T on the very next frame: there is no state here to put
+   * back.
+   */
+  course.setBuild(1);
+  course.setWorld(1);
+  course.hideLines(false);
+  course.setRun(0, 1);
+  city.setShown(true);
+  stage.setRegime(1, 1, 1);
+  course.setFog(stage.scene.fog);
+  stage.setFov(90);
+
+  const heart = city.heart;
+  /* Into an eight pixel scissor: everything the first draw of a mesh costs
+   * except the fill, which is the part that is worth nothing here. */
+  /*
+   * CULLING IS TURNED OFF FOR THE WARM PASS, and that is the difference
+   * between most of the stall and all of it.
+   *
+   * Three camera angles left a two second hitch behind: a frustum decides
+   * what is submitted, and whatever fell outside all three was still cold
+   * when the visitor reached it. Submitting the district unconditionally is
+   * the only way to be sure every mesh has been through the pipeline once.
+   * It is also why this is worth doing inside a scissor: with nothing culled
+   * the town is a million triangles, and none of them need to land anywhere.
+   */
+  const culled = [];
+  for (const root of [city.group, course.group, droneRig]) {
+    root.traverse((o) => {
+      if (o.isMesh && o.frustumCulled) {
+        culled.push(o);
+        o.frustumCulled = false;
+      }
+    });
+  }
+
+  stage.warm(() => {
+    /* Two over the town, one over the race field, because the two places are
+     * a hundred metres apart and a frustum that holds one loses the other. */
+    for (const [dx, dy, dz] of [[120, 90, 120], [-130, 70, -60], [-heart.x + 40, 40, -heart.z + 40]]) {
+      stage.camera.position.set(heart.x + dx, dy, heart.z + dz);
+      stage.camera.lookAt(heart);
+      stage.camera.updateMatrixWorld(true);
+      course.sky.position.copy(stage.camera.position);
+      /* compile() first, so the render below is an upload rather than a
+       * compile AND an upload. */
+      stage.renderer.compile(stage.scene, stage.camera);
+      stage.render();
+    }
+  });
+
+  for (const o of culled) {
+    o.frustumCulled = true;
+  }
+
+  /*
+   * ...and one frame at FULL SIZE, which the scissor above deliberately does
+   * not do and which turned out to be the last of the hitch.
+   *
+   * Everything before this is about getting shaders compiled and buffers
+   * uploaded, and an eight pixel scissor does all of that for a fraction of
+   * the fill. What it does not do is exercise the renderer at the size it
+   * will actually run at, and the first frame that does was measured at four
+   * seconds: reproducibly, at T = 0, immediately after the boot screen lifted.
+   * The first frame the visitor sees, in other words, which is the worst
+   * possible place for it.
+   *
+   * So the studio is drawn once, properly, before the screen goes. It is the
+   * cheapest shot on the page, which is why this costs almost nothing.
+   */
+  stage.camera.position.copy(warmPos);
+  stage.camera.quaternion.copy(warmQuat);
+  stage.camera.fov = wasFov;
+  stage.camera.updateProjectionMatrix();
+  stage.camera.updateMatrixWorld(true);
+  course.sky.position.copy(stage.camera.position);
+  stage.render();
+
+  city.setShown(wasShown);
 }
 
 /* --------------------------------------------------------------- start up */

@@ -1091,8 +1091,34 @@
         color: var(--cream);
       }
       .boot-mark .fpv { color: var(--sakura); }
-      .boot-rail { width: 148px; height: 2px; background: rgba(157, 179, 200, 0.2); overflow: hidden; }
+      .boot-rail { position: relative; width: 148px; height: 2px; background: rgba(157, 179, 200, 0.2); overflow: hidden; }
       .boot-fill { height: 100%; width: 12%; background: var(--sakura); transition: width 0.3s var(--ease); }
+      /*
+       * THE SWEEP, and it is a CSS animation for one specific reason.
+       *
+       * The last thing the boot screen waits for is the town, and building a
+       * town is seconds of synchronous JavaScript: about eleven and a half
+       * thousand meshes with every sign and fascia painted on a canvas as it
+       * goes. While that runs, the main thread is gone. Anything driven from
+       * JavaScript stops dead, and a loading bar that stops dead is worse
+       * than no loading bar, because a frozen bar is how a hung page looks.
+       *
+       * A CSS transform animation runs on the compositor, so it keeps moving
+       * through a blocked main thread. It says nothing about progress and it
+       * is not pretending to: it says the page is still alive, which during
+       * those seconds is the only true thing there is to say.
+       */
+      .boot-sweep {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent, var(--cream), transparent);
+        opacity: 0.85;
+        transform: translateX(-100%);
+        animation: bootSweep 1.15s linear infinite;
+      }
+      @keyframes bootSweep {
+        to { transform: translateX(100%); }
+      }
       .boot-note {
         font-size: 10px;
         letter-spacing: var(--track-eyebrow);
@@ -1213,6 +1239,10 @@
        * scrolling document, reporting on a film that is not playing.
        */
       @media (prefers-reduced-motion: reduce) {
+        /* The sweep is the one thing on the page that animates for its own
+           sake. Somebody who has asked for less motion gets a still bar and
+           the note under it, which still says the page is working. */
+        .boot-sweep { animation: none; opacity: 0; }
         .copy { opacity: 1; transform: none; transition: none; }
         #cue, #ticker, #builder, #osd, #beats { display: none; }
         .act { min-height: auto !important; padding-top: 12vh; padding-bottom: 12vh; }
@@ -1532,7 +1562,7 @@
 
     <div id="boot">
       <div class="boot-mark">WEB<span class="fpv">FPV</span></div>
-      <div class="boot-rail"><div class="boot-fill" id="boot-fill"></div></div>
+      <div class="boot-rail"><div class="boot-fill" id="boot-fill"></div><div class="boot-sweep"></div></div>
       <div class="boot-note" id="boot-note">Torquing the arms</div>
     </div>
 

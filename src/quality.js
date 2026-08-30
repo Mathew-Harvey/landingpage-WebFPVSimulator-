@@ -52,7 +52,11 @@ export const SEG = {
   lathe: LITE ? 10 : 18,
   round: LITE ? 8 : 12,
   tube: LITE ? 6 : 8,
-  trees: LITE ? 90 : 210,
+  /* The field's treeline. It was 90 and 210, sized when the field's wood was
+   * the whole northern horizon. The town is the horizon on that side now and
+   * the ring has a gap cut in it facing the town, so the same density over a
+   * shorter arc reads as thicker than it should. See course.js. */
+  trees: LITE ? 60 : 130,
   flags: LITE ? 11 : 18,
   planTube: LITE ? 200 : 460,
   raceTube: LITE ? 220 : 520,

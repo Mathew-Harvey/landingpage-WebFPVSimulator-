@@ -418,6 +418,36 @@ export function createStage(canvas) {
     renderer.render(scene, camera);
   }
 
+  /*
+   * Run something that has to DRAW, without paying for the pixels.
+   *
+   * A mesh's shader is compiled and its buffers uploaded the first time it is
+   * submitted, and the only way to submit it is to render it. That is why the
+   * town is drawn a few times behind the boot screen: to get those costs paid
+   * before anybody is looking. What is NOT wanted is the rasterising, which
+   * for a district of a million triangles at full resolution is the expensive
+   * half and buys nothing at all.
+   *
+   * An eight by eight scissor keeps every stage of the pipeline that matters,
+   * the culling, the program build, the buffer upload, the draw call itself,
+   * and throws away the fill. The camera's aspect is untouched, so the
+   * frustum submits exactly the same meshes it would at full size.
+   */
+  function warm(fn) {
+    const w = Math.max(1, width);
+    const h = Math.max(1, height);
+    renderer.setViewport(0, 0, 8, 8);
+    renderer.setScissor(0, 0, 8, 8);
+    renderer.setScissorTest(true);
+    try {
+      fn();
+    } finally {
+      renderer.setScissorTest(false);
+      renderer.setViewport(0, 0, w, h);
+      renderer.setScissor(0, 0, w, h);
+    }
+  }
+
   return {
     renderer,
     scene,
@@ -433,6 +463,7 @@ export function createStage(canvas) {
     aimBlob,
     shadowsOn: !LITE,
     render,
+    warm,
     resize,
     get size() {
       return { width, height };

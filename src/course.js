@@ -234,7 +234,14 @@ function ground() {
    * the fog reaches 620 m over the town, so the edge is now three hundred
    * metres past the last fragment that is not already haze coloured.
    */
-  const geo = new THREE.PlaneGeometry(1400, 1400, 1, 1);
+  /*
+   * Subdivided, which it never used to be, because the deck now has to DUCK.
+   * See uCutDrop below: the plane is lowered under the town, and a quad with
+   * four corners cannot be lowered in the middle. 120 by 120 is a cell every
+   * eleven metres, which is a gentle enough ramp that the step is invisible,
+   * and fourteen thousand vertices, which is nothing.
+   */
+  const geo = new THREE.PlaneGeometry(1400, 1400, 120, 120);
   geo.rotateX(-Math.PI * 0.5);
   const mat = new THREE.ShaderMaterial({
     uniforms: {
@@ -324,6 +331,39 @@ function ground() {
       uCutAt: { value: new THREE.Vector2(0, 0) },
       uCutHalf: { value: new THREE.Vector2(0, 0) },
       /*
+       * ...AND THE FIELD KEEPS ITS OWN GROUND WHATEVER THE TOWN SAYS.
+       *
+       * The town's terrain is a big landform and it reaches a long way south
+       * of the town itself: with the town at 96 m its skirt covers the whole
+       * race field. Cut on the town's box alone and the field has no ground
+       * under it at all, and a seven gate course stands on the sky.
+       *
+       * So the cut is the town's rectangle MINUS a disc around the field.
+       * Inside 62 m of the origin this plane always draws, which is the
+       * course out to its own treeline; outside it, and inside the town's
+       * terrain, the town has the ground and this plane gets out of the way.
+       */
+      uCutInner: { value: 62 },
+      /*
+       * HOW FAR THE DECK DUCKS, and why it ducks rather than disappears.
+       *
+       * This was a discard: inside the town's rectangle the plane drew
+       * nothing at all. That is correct wherever the town's own ground
+       * covers the hole, and the town's ground is not a rectangle. Its
+       * landform has a shape, and where the shape fell short of the box the
+       * frame had a hole in it with the sky's below-horizon colour showing
+       * through: a red wedge on the ground beside the district, in the last
+       * shot of the page.
+       *
+       * Dropping the plane three metres instead cannot leave a hole. Under
+       * the town it is below the town's ground and never seen; where the
+       * town's ground stops it is still there, three metres down, which from
+       * a hundred metres up is a line rather than a wound. And three metres
+       * is more than the metre the town's terrain dips below its own origin,
+       * so there is nothing left to z-fight with either.
+       */
+      uCutDrop: { value: 3 },
+      /*
        * The ground's fog is OURS, not the renderer's.
        *
        * Spreading THREE.UniformsLib.fog hands the material the library's
@@ -340,10 +380,25 @@ function ground() {
       uFogFar: { value: 2000 },
     },
     vertexShader: `
+      uniform vec2 uCutAt;
+      uniform vec2 uCutHalf;
+      uniform float uCutInner;
+      uniform float uCutDrop;
       varying vec3 vWorld;
       void main() {
-        vWorld = (modelMatrix * vec4(position, 1.0)).xyz;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        vec3 wp = (modelMatrix * vec4(position, 1.0)).xyz;
+        if (uCutHalf.x > 0.0) {
+          /* How far inside the town's rectangle this vertex is, in metres,
+             eased over the last twenty six so the plane bends rather than
+             steps. */
+          vec2 d = uCutHalf - abs(wp.xz - uCutAt);
+          float inside = min(d.x, d.y);
+          /* ...and never under the race field, which needs its own ground. */
+          float outField = smoothstep(uCutInner, uCutInner + 26.0, length(wp.xz));
+          wp.y -= uCutDrop * smoothstep(0.0, 26.0, inside) * outField;
+        }
+        vWorld = wp;
+        gl_Position = projectionMatrix * viewMatrix * vec4(wp, 1.0);
       }`,
     fragmentShader: `
       varying vec3 vWorld;
@@ -363,9 +418,6 @@ function ground() {
       uniform float uWildR;
       uniform vec3 uWildGrass;
       uniform vec3 uWildDry;
-      uniform vec2 uCutAt;
-      uniform vec2 uCutHalf;
-
       float lineAt(vec2 p, float spacing, float w) {
         vec2 g = abs(fract(p / spacing - 0.5) - 0.5) * spacing;
         vec2 d = fwidth(p) * w;
@@ -375,13 +427,6 @@ function ground() {
 
       void main() {
         vec2 p = vWorld.xz;
-        /* Out from under the town before anything else is computed. */
-        if (uCutHalf.x > 0.0) {
-          vec2 d = abs(p - uCutAt) - uCutHalf;
-          if (max(d.x, d.y) < 0.0) {
-            discard;
-          }
-        }
         float r = length(p);
 
         /* Builder plan. The grid is drawn out to a radius that grows with
@@ -744,7 +789,25 @@ export function buildCourse() {
    * like a hero prop instead, 240 cones with a bright sunlit face read as a
    * range of pyramids standing round the field. */
   const treeMat = new THREE.MeshBasicMaterial({ color: 0x24391f, fog: true });
+  /*
+   * FEWER, AND WITH A GAP IN THEM ON THE TOWN'S SIDE.
+   *
+   * This ring was 210 trees at 66 to 144 m, sized when the field was the only
+   * place on the page and its wood was the whole horizon. Two things changed.
+   * The town moved in to just under a hundred metres, so the northern half of
+   * the ring now stands INSIDE it, and the town is the field's northern
+   * horizon anyway: a belt of conifer between the two is a wall across the one
+   * shot that has to show both.
+   *
+   * So the ring is thinner, tighter, and open toward the town. What is left is
+   * what the field always needed the wood for, which is an edge to the south
+   * and the sides so a 51 m course has a size.
+   */
   const TREES = SEG.trees;
+  /* The corridor kept clear, in world metres: everything north of here and
+   * within this much of the centre line is the town's business. */
+  const TOWN_GAP_Z = -46;
+  const TOWN_GAP_X = 78;
   const trees = new THREE.InstancedMesh(treeGeo, treeMat, TREES);
   const treeBase = [];
   {
@@ -765,13 +828,24 @@ export function buildCourse() {
        * made of triangles, which is exactly what it is. */
       const a = (i / TREES) * Math.PI * 2 + (rnd() - 0.5) * 0.09;
       /* Far enough out to be a horizon rather than an obstacle: the nearest
-       * is 75 m from the middle of a course that is 51 m across, so nothing
+       * is 62 m from the middle of a course that is 51 m across, so nothing
        * on the racing line is ever near one. The far ones sit inside the fog
        * and dissolve, which is what gives the field its depth. */
-      const r = 66 + Math.pow(rnd(), 0.65) * 78;
+      const r = 62 + Math.pow(rnd(), 0.65) * 44;
       const hgt = 5.5 + rnd() * rnd() * 11;
       const wid = hgt * (0.44 + rnd() * 0.20);
-      pos.set(Math.cos(a) * r, -0.4, Math.sin(a) * r * 0.88);
+      const tx = Math.cos(a) * r;
+      const tz = Math.sin(a) * r * 0.88;
+      /* Nothing in the corridor the town occupies. Scaled to nothing rather
+       * than skipped, because the instance count is fixed at construction and
+       * a hole in the middle of the buffer is cheaper than rebuilding it. */
+      if (tz < TOWN_GAP_Z && Math.abs(tx) < TOWN_GAP_X) {
+        m.compose(pos.set(0, -400, 0), q.identity(), scl.set(0.001, 0.001, 0.001));
+        trees.setMatrixAt(i, m);
+        treeBase.push({ pos: pos.clone(), quat: q.clone(), scale: scl.clone() });
+        continue;
+      }
+      pos.set(tx, -0.4, tz);
       scl.set(wid, hgt, wid);
       q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rnd() * Math.PI);
       m.compose(pos, q, scl);
