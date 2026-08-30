@@ -799,15 +799,11 @@ export function buildCourse() {
    * horizon anyway: a belt of conifer between the two is a wall across the one
    * shot that has to show both.
    *
-   * So the ring is thinner, tighter, and open toward the town. What is left is
-   * what the field always needed the wood for, which is an edge to the south
-   * and the sides so a 51 m course has a size.
+   * So the ring is thinner and tighter. It is a closed ring again: it had a
+   * gap cut in it facing the town while the town stood at 96 m, and the town
+   * is 460 m away now, well past anything this wood occludes.
    */
   const TREES = SEG.trees;
-  /* The corridor kept clear, in world metres: everything north of here and
-   * within this much of the centre line is the town's business. */
-  const TOWN_GAP_Z = -46;
-  const TOWN_GAP_X = 78;
   const trees = new THREE.InstancedMesh(treeGeo, treeMat, TREES);
   const treeBase = [];
   {
@@ -834,18 +830,7 @@ export function buildCourse() {
       const r = 62 + Math.pow(rnd(), 0.65) * 44;
       const hgt = 5.5 + rnd() * rnd() * 11;
       const wid = hgt * (0.44 + rnd() * 0.20);
-      const tx = Math.cos(a) * r;
-      const tz = Math.sin(a) * r * 0.88;
-      /* Nothing in the corridor the town occupies. Scaled to nothing rather
-       * than skipped, because the instance count is fixed at construction and
-       * a hole in the middle of the buffer is cheaper than rebuilding it. */
-      if (tz < TOWN_GAP_Z && Math.abs(tx) < TOWN_GAP_X) {
-        m.compose(pos.set(0, -400, 0), q.identity(), scl.set(0.001, 0.001, 0.001));
-        trees.setMatrixAt(i, m);
-        treeBase.push({ pos: pos.clone(), quat: q.clone(), scale: scl.clone() });
-        continue;
-      }
-      pos.set(tx, -0.4, tz);
+      pos.set(Math.cos(a) * r, -0.4, Math.sin(a) * r * 0.88);
       scl.set(wid, hgt, wid);
       q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rnd() * Math.PI);
       m.compose(pos, q, scl);

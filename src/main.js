@@ -577,48 +577,46 @@ const LAP_TIME = (() => {
 /* ----------------------------------------------------------- the city line */
 
 /*
- * Where the lap ends, which is where the freestyle line begins.
- *
- * Computed rather than typed, because it is a point ON A CURVE and the curve
- * is generated from a plan loop. Type it and the first time somebody moves a
- * waypoint the quad teleports at the handover.
+ * The freestyle line. It no longer starts where the lap ends, because the
+ * page no longer flies between them: see the dissolve below. It starts at
+ * the best shot in the town instead, which is what a cut is for.
  */
-const CITY_ENTRY = course.line.getPointAt(LAP_START).clone();
-const CITY_EXIT_DIR = course.line.getTangentAt(LAP_START).clone().normalize();
-const cityLine = flightLine(CITY_ENTRY, CITY_EXIT_DIR, CITY_ORIGIN);
+const cityLine = flightLine(CITY_ORIGIN);
 const CITY_LENGTH = cityLine.getLength();
 
 /*
- * THE PACING OF THE FREESTYLE ACT, and it is not uniform.
+ * THE PACING OF THE FREESTYLE ACT.
  *
- * The line is two things end to end: about a hundred and forty metres of
- * transit over the wood between the field and the town, and about a hundred
- * and thirty metres of town. Flown at one pace they get one share of the
- * scroll each, which means half the act is spent watching trees go past at
- * the speed of a shopping street. Nobody scrolls through that twice.
- *
- * So the transit is flown at about two and a half times the pace of the
- * streets. That is not a cheat, it is what a pilot does: you get somewhere
- * fast and then you slow down for the bit with walls in it. The dash also
- * does the transition's work, because speed is what makes an arrival read as
- * an arrival.
+ * There is no dash any more, because there is nothing to dash across: the
+ * act used to open with forty metres of empty ground and had to be flown at
+ * two and a half times everything else to stop it dragging. What is left is
+ * a real difference rather than a cover up, and it is small: the shopping
+ * street is flown at about two thirds the pace of the main road, because a
+ * six metre corridor with lanterns over it is somewhere you slow down for
+ * and a carriageway is somewhere you do not.
  *
  * It is a TABLE rather than a formula, integrated once at start up, for the
  * same reason SPEED above is: the mapping has to be monotonic and smooth in
  * its derivative, and a piecewise formula that is both is harder to read
- * than the integral of an obvious one. `PACE` is speed against act progress;
+ * than the integral of an obvious one. `pace` is speed against act progress;
  * CITY_S is its normalised integral, so scrubbing anywhere lands on the
  * frame that belongs there.
  */
 const CITY_S = (() => {
   const N = 256;
   const out = new Float32Array(N + 1);
-  /* The dash is shorter and gentler than it was, because the crossing is:
-   * the town moved in from 138 m to 96, so the transit is about forty metres
-   * of a hundred and ninety metre line rather than a hundred and forty of two
-   * hundred and sixty. A 2.55x dash over a third of the act was the right
-   * answer to a long empty leg and is the wrong answer to a short one. */
-  const pace = (t) => lerp(2.0, 1.0, smooth(clamp01((t - 0.06) / 0.14)));
+  /*
+   * Slow down the shopping street, then let the road run, and the gap
+   * between them is wide on purpose.
+   *
+   * The corridor is only about a sixth of the line's length. Flown at the
+   * same rate as the rest it was over in a sixth of the act, which is a
+   * couple of seconds: the quaint bit went past before anybody could look at
+   * it. At these two rates it takes closer to a third, and the two numbers
+   * come out at about 22 km/h under the lanterns and 50 on the main road,
+   * which is the difference between picking your way and committing.
+   */
+  const pace = (t) => lerp(0.55, 1.25, smooth(clamp01((t - 0.28) / 0.12)));
   let sum = 0;
   for (let i = 1; i <= N; i += 1) {
     sum += pace((i - 0.5) / N);
@@ -656,13 +654,12 @@ function cityAt(p) {
  * speed, and what it is really setting is how fast the aircraft is meant to
  * be going, which is a decision about the flying rather than a measurement.
  *
- * About 190 m in 15 s is 45 km/h on average, which comes out as roughly 40
- * down the streets and 80 across the gap. Those are the right numbers for
- * what is on screen: 40 km/h is a quad flying a street with intent and not
- * hooning. It was 26 s at first, which read 25 km/h in the street, and
- * 25 km/h is a quad being flown by somebody nervous.
+ * About 180 m in 16 s comes out as roughly 28 km/h under the lanterns and
+ * 43 down the main road. Those are the right numbers for what is on screen:
+ * 28 is a quad picking its way along a six metre street, and 43 is one
+ * flying a carriageway with intent and not hooning.
  */
-const CITY_SECONDS = 15;
+const CITY_SECONDS = 16;
 function citySpeed(p) {
   const d = 0.004;
   const a = cityAt(Math.max(0, p - d));
@@ -678,6 +675,7 @@ const el = {
   nav: document.getElementById('nav'),
   cue: document.getElementById('cue'),
   veil: document.getElementById('veil'),
+  dissolve: document.getElementById('dissolve'),
   ticker: document.getElementById('ticker'),
   tickRows: document.getElementById('tick-rows'),
   tickCount: document.getElementById('tick-count'),
@@ -1522,7 +1520,14 @@ function frame(ms) {
    * the transition has been motivated for ten screens before it happens.
    * The cost is about thirty draw calls behind a treeline.
    */
-  city.setShown(world > 0.02);
+  /*
+   * Drawn from just before the dissolve rather than from the top of the
+   * field. It used to come on with the daylight, when the town was a hundred
+   * metres away and worth having on the horizon during the lap. At 460 m the
+   * haze has all of it, so that was thirty draw calls of nothing for ten
+   * screens of scroll.
+   */
+  city.setShown(T > 2.90);
   /*
    * The town's own clock: the train, the crossing sequence that lowers the
    * barriers for it, and the blossom coming off its trees. Only while it is
@@ -1541,9 +1546,16 @@ function frame(ms) {
   stage.setRegime(scale, world, reach);
   course.setFog(stage.scene.fog);
   /* ------------------------------------------------------------- aircraft */
-  /* Eased in off the union, then flat out to the handover: the lap does not
-   * slow down at the end of itself any more, it is overtaken by the dash. */
-  const flying = ramp(T, 2.06, 3.0, 0.16, 0);
+  /*
+   * Eased in off the union, and eased out again at the end.
+   *
+   * It used to finish at speed, because it was handing the aircraft straight
+   * to a freestyle line and a smoothstep at both ends would have stalled the
+   * quad at the boundary. There is a dissolve between them now, so the lap
+   * gets to finish rather than be overtaken: it settles into its last gate
+   * as the frame goes to haze.
+   */
+  const flying = ramp(T, 2.06, 3.0, 0.16, 0.14);
   /*
    * The lap starts SHORT of gate 1, not on it.
    *
@@ -1567,6 +1579,8 @@ function frame(ms) {
    * the train and the instrument all read `roaming`, because they are about
    * the ACT; only the aircraft reads `cityU`, because it is about the line.
    */
+  /* Already moving when the haze clears. There is no ease in: the aircraft
+   * is not starting, the page has cut to it mid flight. */
   const roaming = ramp(T, 3.0, 3.97, 0, 0.13);
   const cityU = cityAt(roaming);
   const inCity = T >= 2.995 && T < 4.0;
@@ -1699,25 +1713,12 @@ function frame(ms) {
     cityPose(cityU, dronePos, droneQuat, now * 2.1, flip, turnBank);
 
     /*
-     * The join, and it is a blend rather than a cut.
-     *
-     * The two lines meet at exactly the same point in space, because the city
-     * line's first control point IS the lap's last one, and they leave it
-     * pointing the same way, because it is handed the lap's own exit
-     * direction. What they do NOT agree about is attitude: the lap is level
-     * and nose down at 20 degrees, and the freestyle line is already climbing
-     * away at 22. Snapped, that is a 42 degree flick on one frame, through a
-     * 104 degree lens, at the exact moment the page changes acts. Blended
-     * over six hundredths it is the aircraft pulling up.
+     * No join. The two lines are a hundred metres and a dissolve apart, and
+     * blending between them would be a hundred metre lerp behind a white
+     * frame: work that cannot be seen, on a pose that is about to be
+     * replaced. The aircraft is simply somewhere else, which is what a cut
+     * means.
      */
-    const join = ease(T, 3.0, 3.06);
-    if (join < 1) {
-      flightPose(LAP_START, pos2, quat2, now * 2.1, flip, turnBank);
-      dronePos.lerp(pos2, 1 - join);
-      quat2.slerp(droneQuat, join);
-      droneQuat.copy(quat2);
-    }
-
     poseFPV(dronePos, droneQuat, camPos, camQuat);
 
     /*
@@ -1796,6 +1797,24 @@ function frame(ms) {
    * the single most animated thing on the page. */
   drone.spin(dt, REDUCED ? 0 : throttle);
 
+  /*
+   * A camera the debug handle can drive, in the town's own coordinates.
+   *
+   * Every other view on this page is a function of T, which is exactly what
+   * you want for a film and exactly what you cannot debug with: when the
+   * shopping street rendered as a set of shop banners floating over an empty
+   * field, the question was "is the aircraft in the wrong place or is the
+   * town" and no shot the timeline can produce answers it. This one can.
+   * Six numbers, position and target, and nothing reads it unless something
+   * sets it.
+   */
+  if (DEBUG && window.__camAt) {
+    const o = window.__camAt;
+    const c = city.origin;
+    camPos.set(c.x + o[0], c.y + o[1], c.z + o[2]);
+    m4.lookAt(camPos, vTmp.set(c.x + o[3], c.y + o[4], c.z + o[5]), up);
+    camQuat.setFromRotationMatrix(m4);
+  }
   stage.camera.position.copy(camPos);
   stage.camera.quaternion.copy(camQuat);
   /* The backdrop rides with the lens. It is a ten metre dome drawn before
@@ -1959,6 +1978,21 @@ function frame(ms) {
       el.progress.style.width = `${(clamp01(T / 5) * 100).toFixed(2)}%`;
     }
     el.veil.style.opacity = String(lerp(0.72, 0.5, world));
+    /*
+     * THE DISSOLVE, and it is a pure function of T like everything else.
+     *
+     * One at the act boundary and nothing at all a twelfth of an act either
+     * side of it, which at this act's height is about half a screen of
+     * scroll in each direction. The camera changes place at the peak, where
+     * the frame is entirely haze, so there is no frame in which both places
+     * are visible and none in which neither is.
+     *
+     * Symmetric on purpose. The page is scrubbable in both directions and a
+     * reader dragging the bar back up the page has to come out of the town
+     * the same way they went in.
+     */
+    const flare = 1 - clamp01(Math.abs(T - 3.0) / 0.085);
+    el.dissolve.style.opacity = (flare * flare * (3 - 2 * flare)).toFixed(3);
 
     setCopy('assemble', T > 0.04 && T < 0.90);
     setCopy('build', T > 1.06 && T < 1.90);

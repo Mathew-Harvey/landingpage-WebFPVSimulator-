@@ -52,7 +52,7 @@
 import * as THREE from 'three';
 import { buildWorld } from './city/vendored/world/index.js';
 import { centerX, groundY } from './city/vendored/world/street.js';
-import { bakeCity, thinFoliage, chunkInstanced } from './city/bake.js';
+import { findAnimated, shareMaterials, thinFoliage, chunkInstanced } from './city/bake.js';
 import { LITE } from './quality.js';
 
 /* The town's own street functions, re-exported so the flight line and
@@ -63,17 +63,21 @@ export { centerX, groundY };
 /*
  * Where the town stands, in the race field's own coordinates.
  *
- * NORTH OF THE FIELD, AND CLOSE. It was at 138 m, chosen so the field's own
- * treeline had room to stand between the two. That treeline is thinner now
- * and has a gap cut in it facing this way, which frees the ground, and 138 m
- * bought a transit rather than a transition: forty seconds of scroll spent
- * over a wood, at two and a half times the pace of everything either side of
- * it, because there was nothing out there to look at.
+ * FAR AWAY, and that is the dissolve's doing.
  *
- * At 96 m the aircraft leaves the last gate, climbs, and the town is already
- * arriving. The whole crossing is about forty metres of line instead of a
- * hundred and forty, which is a beat rather than a leg, and it is the beat
- * the act actually wanted: the moment the field runs out.
+ * While the page flew between the two places, this number was a compromise
+ * between two things it could not satisfy at once. Far enough and the flight
+ * over was a boring transit; near enough for the transit to be short and the
+ * town stood inside the field's own treeline, which had to have a gap cut in
+ * it. At 96 m it got worse than a compromise: from the roofs at the south end
+ * of the town you could see the race track fifty metres away, so the page cut
+ * from the field to a shot of the field.
+ *
+ * Nothing has to fly here now, so the distance is free, and the right value
+ * is simply FAR: 460 m is three quarters of the fog's reach, which puts the
+ * race field past the point where anything of it survives the haze, and the
+ * town's own hills are in the way besides. The two places are two places
+ * again, which is what the cut between them is for.
  *
  * IT IS ON THE SIDE THE CLOSING SHOT ALREADY LOOKED AT. The close orbits
  * from the south east looking roughly north, so putting the town there makes
@@ -86,7 +90,7 @@ export { centerX, groundY };
  * a rotated town would put every one of the town's own functions, centerX and
  * groundY included, in a frame that does not match the world.
  */
-export const CITY_ORIGIN = new THREE.Vector3(0, 0, -96);
+export const CITY_ORIGIN = new THREE.Vector3(0, 0, -460);
 
 /*
  * HOW MUCH OF THE TOWN IS BUILT.
@@ -288,6 +292,227 @@ function thinTrees(root, plan) {
   return out;
 }
 
+/* ---------------------------------------------------------------- merging */
+
+/*
+ * MERGING THE TOWN BY MATERIAL, and why this is not bake.js's bakeCity.
+ *
+ * bakeCity is the simulator's own pass and it is much cleverer than this: it
+ * shares materials, bakes colour to vertices, atlases textures, builds shadow
+ * proxies and merges by cell. It is also, called from here, wrong: it drops
+ * the shopping street's buildings. Every one of its knobs was tried, the
+ * simulator's own combination included, and the shops go every time; with the
+ * call removed they come back. The simulator does a good deal of preparation
+ * between buildWorld and bakeCity that this page does not, and chasing that
+ * down means porting most of another file to get a pass this page needs one
+ * eighth of.
+ *
+ * So the merge is done here, and it does the one thing that actually matters:
+ * eleven thousand meshes become a few dozen. Group every static mesh by its
+ * material and its attribute signature, concatenate the geometries with each
+ * mesh's world transform baked in, and put one mesh in their place.
+ *
+ * WHAT IT MUST NOT TOUCH is anything that moves. findAnimated is bake.js's
+ * own and is imported rather than reimplemented, because "which parts of this
+ * town are animated" is a question about the town and the town's own code is
+ * the authority on it. The train, the crossing booms and the petals come back
+ * from it and are left exactly where they are.
+ *
+ * Grouping by ATTRIBUTE SIGNATURE as well as material is not fussiness. A
+ * merged buffer has to have the same attributes all the way through, and this
+ * town has geometries with vertex colours and geometries without. Merge those
+ * together and the ones without get whatever was left in the buffer, which is
+ * a wall painted with somebody else's colours.
+ */
+function mergeStatics(root, animated) {
+  const groups = new Map();
+  const skip = new Set();
+  /* Everything under a moving object moves with it. */
+  for (const a of animated) {
+    a.traverse((o) => skip.add(o));
+  }
+
+  root.traverse((o) => {
+    if (!o.isMesh || o.isInstancedMesh || skip.has(o) || !o.geometry || !o.material) {
+      return;
+    }
+    if (Array.isArray(o.material)) {
+      return;
+    }
+    const attrs = Object.keys(o.geometry.attributes).sort().join(',');
+    const key = `${o.material.uuid}|${attrs}`;
+    let g = groups.get(key);
+    if (!g) {
+      g = { material: o.material, attrs: attrs.split(','), meshes: [] };
+      groups.set(key, g);
+    }
+    g.meshes.push(o);
+  });
+
+  /*
+   * INTO THE ROOT'S FRAME, NOT THE WORLD'S, and this is the whole of the one
+   * bug that made the first version of this look like a bombed town.
+   *
+   * Each source mesh's transform has to be baked into its vertices, because
+   * after the merge there is no per mesh transform left to apply. The obvious
+   * matrix to bake is matrixWorld, and it is wrong: the merged mesh is then
+   * parented under this same root, which is itself under a group standing at
+   * the town's origin, so every vertex gets that offset applied twice. At an
+   * origin of 460 m that is a town scattered half a kilometre from its own
+   * ground.
+   *
+   * So the transform baked is the mesh's position RELATIVE TO THE ROOT, and
+   * the root's own placement is left to do its job once.
+   */
+  root.updateMatrixWorld(true);
+  const toRoot = new THREE.Matrix4().copy(root.matrixWorld).invert();
+
+  let merged = 0;
+  let replaced = 0;
+  for (const g of groups.values()) {
+    if (g.meshes.length < 2) {
+      continue;
+    }
+    root.updateMatrixWorld(true);
+    const geo = concat(g.meshes, g.attrs, toRoot);
+    if (!geo) {
+      continue;
+    }
+    for (const m of g.meshes) {
+      if (m.parent) {
+        m.parent.remove(m);
+      }
+      m.geometry.dispose();
+      replaced += 1;
+    }
+    const mesh = new THREE.Mesh(geo, g.material);
+    mesh.name = 'cityMerged';
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    root.add(mesh);
+    merged += 1;
+  }
+  return { groups: groups.size, merged, replaced };
+}
+
+/*
+ * Concatenate a set of meshes into one geometry, each with its own world
+ * transform baked in. Indices are rebased; a geometry with no index gets a
+ * generated one so the output is always indexed.
+ */
+function concat(meshes, attrs, toRoot) {
+  let verts = 0;
+  let idx = 0;
+  for (const m of meshes) {
+    const pos = m.geometry.getAttribute('position');
+    if (!pos) {
+      return null;
+    }
+    verts += pos.count;
+    const index = m.geometry.getIndex();
+    idx += index ? index.count : pos.count;
+  }
+  /* 32 bit indices always: this town's merges run past 65536 vertices in the
+   * first material and guessing per group is a bug waiting for a big town. */
+  if (verts > 4294967295) {
+    return null;
+  }
+
+  const out = new THREE.BufferGeometry();
+  const arrays = {};
+  const sizes = {};
+  for (const name of attrs) {
+    const a = meshes[0].geometry.getAttribute(name);
+    if (!a) {
+      return null;
+    }
+    sizes[name] = a.itemSize;
+    arrays[name] = new Float32Array(verts * a.itemSize);
+  }
+  const index = new Uint32Array(idx);
+
+  const nm = new THREE.Matrix3();
+  const v = new THREE.Vector3();
+  const mat = new THREE.Matrix4();
+  let vo = 0;
+  let io = 0;
+  for (const m of meshes) {
+    const geo = m.geometry;
+    mat.multiplyMatrices(toRoot, m.matrixWorld);
+    nm.getNormalMatrix(mat);
+    const count = geo.getAttribute('position').count;
+    for (const name of attrs) {
+      const a = geo.getAttribute(name);
+      if (!a || a.itemSize !== sizes[name]) {
+        return null;
+      }
+      const dst = arrays[name];
+      const size = sizes[name];
+      if (name === 'position') {
+        for (let i = 0; i < count; i += 1) {
+          v.fromBufferAttribute(a, i).applyMatrix4(mat);
+          dst[(vo + i) * 3] = v.x;
+          dst[(vo + i) * 3 + 1] = v.y;
+          dst[(vo + i) * 3 + 2] = v.z;
+        }
+      } else if (name === 'normal') {
+        for (let i = 0; i < count; i += 1) {
+          v.fromBufferAttribute(a, i).applyMatrix3(nm).normalize();
+          dst[(vo + i) * 3] = v.x;
+          dst[(vo + i) * 3 + 1] = v.y;
+          dst[(vo + i) * 3 + 2] = v.z;
+        }
+      } else {
+        /*
+         * Through the accessors, not the raw array.
+         *
+         * a.array is only the flat float buffer people assume it is for the
+         * simple case. This town also has interleaved attributes, where the
+         * array is the whole interleaved block and an index into it lands in
+         * the middle of somebody else's vertex, and normalised integer
+         * attributes, where the raw value is 0 to 255 and the accessor is
+         * what divides it back down. Read raw, the merge produced a town of
+         * flattened walls and scattered fragments, which is exactly what
+         * garbage vertex data looks like. getX and friends handle both.
+         */
+        for (let i = 0; i < count; i += 1) {
+          const at = (vo + i) * size;
+          dst[at] = a.getX(i);
+          if (size > 1) {
+            dst[at + 1] = a.getY(i);
+          }
+          if (size > 2) {
+            dst[at + 2] = a.getZ(i);
+          }
+          if (size > 3) {
+            dst[at + 3] = a.getW(i);
+          }
+        }
+      }
+    }
+    const gi = geo.getIndex();
+    if (gi) {
+      for (let i = 0; i < gi.count; i += 1) {
+        index[io + i] = gi.getX(i) + vo;
+      }
+      io += gi.count;
+    } else {
+      for (let i = 0; i < count; i += 1) {
+        index[io + i] = vo + i;
+      }
+      io += count;
+    }
+    vo += count;
+  }
+
+  for (const name of attrs) {
+    out.setAttribute(name, new THREE.BufferAttribute(arrays[name], sizes[name]));
+  }
+  out.setIndex(new THREE.BufferAttribute(index, 1));
+  out.computeBoundingSphere();
+  return out;
+}
+
 /* --------------------------------------------------------------- the build */
 
 /*
@@ -349,6 +574,29 @@ export function buildCity({ onReady = null } = {}) {
     const world = buildWorld(group, { bake: false });
     const tBuilt = performance.now();
 
+    /*
+     * EVERY BOX BELOW IS MEASURED IN THE TOWN'S OWN FRAME, and getting that
+     * wrong was a bug that hid for as long as the town stood close.
+     *
+     * Box3.setFromObject reads matrixWorld, and by the time this runs the
+     * group has been through a render, so it answers in WORLD coordinates.
+     * Both the prune limits and the town's own street numbers are in LOCAL
+     * ones. While the town sat 96 m from the field the difference was small
+     * against a four hundred metre box and nothing looked wrong; moved to
+     * 460 m it pruned the entire district except the handful of children
+     * whose bounds come back empty, which is why the shopping street arrived
+     * as a set of shop banners hanging in an empty field.
+     *
+     * It also put the deck's cut rectangle out by one whole origin, because
+     * that box was measured the same way and then had the origin added to it
+     * a second time.
+     *
+     * So the transform is taken once and applied explicitly. No more
+     * guessing which frame a number is in.
+     */
+    group.updateMatrixWorld(true);
+    const toLocal = new THREE.Matrix4().copy(group.matrixWorld).invert();
+
     /* Drop what the camera cannot reach, before the merge passes look at it. */
     const box = new THREE.Box3();
     let pruned = 0;
@@ -357,6 +605,7 @@ export function buildCity({ onReady = null } = {}) {
       if (box.isEmpty()) {
         continue;
       }
+      box.applyMatrix4(toLocal);
       const cx = (box.min.x + box.max.x) * 0.5;
       const cz = (box.min.z + box.max.z) * 0.5;
       if (cx < KEEP.x[0] || cx > KEEP.x[1] || cz < KEEP.z[0] || cz > KEEP.z[1]) {
@@ -424,7 +673,7 @@ export function buildCity({ onReady = null } = {}) {
       }
       one.setFromObject(o);
       if (!one.isEmpty()) {
-        groundBox.union(one);
+        groundBox.union(one.applyMatrix4(toLocal));
       }
     });
     rawGround.copy(groundBox);
@@ -512,15 +761,13 @@ export function buildCity({ onReady = null } = {}) {
      * aircraft, so a town that casts would be paying for a second pass over
      * a thousand meshes to draw a shadow nobody is looking at.
      */
-    bakeCity(world, {
-      cell: Infinity,
-      shadowCell: 80,
-      cullCell: 40,
-      casterMinRadius: 1e9,
-      casterMinRadiusInstanced: 1e9,
-      releaseStillRigs: true,
-      shadowProxyCell: 0,
-    });
+    const { moving } = findAnimated(world, { releaseStillRigs: false });
+    /* Dedupe identical materials first: the merge groups by material, and
+     * two materials that differ only by object identity are two groups that
+     * could have been one. bake.js own pass. */
+    const shared = shareMaterials(world.root, moving);
+    const mergeStats = mergeStatics(world.root, moving);
+    mergeStats.shared = shared && shared.saved;
     /* The town's own knob, which only reaches its hill tufts, moss, rocks and
      * lake reeds. Cheap, and worth having, but it is not the planting. */
     thinFoliage(world.root, { keep: LITE ? 0.35 : 0.55 });
@@ -549,6 +796,7 @@ export function buildCity({ onReady = null } = {}) {
     state.stats = {
       pruned,
       thinned,
+      merge: mergeStats,
       petals: { before: petalsBefore, after: petalsAfter },
       ground: groundBox.isEmpty() ? null : {
         world: {
@@ -658,117 +906,83 @@ export function buildCity({ onReady = null } = {}) {
 /* --------------------------------------------------------- the flight line */
 
 /*
- * THE LINE, and it is three lines rather than one.
+ * THE LINE. A cruise, then a freestyle line, and no journey between them.
  *
- * The brief was "a few tasteful lines", and a freestyle line is not a lap: a
- * lap is a problem to be solved and a freestyle line is a place to be shown.
- * So the three are chosen for what each one shows, and they are flown in the
- * order a pilot arriving from the south would actually take them.
+ * IT USED TO OPEN WITH A TRANSIT and the transit was the weakest thing on
+ * the page. The aircraft climbed out of the last gate, crossed the ground
+ * between the race field and the town, and descended into the street: forty
+ * metres of empty air with nothing in it, flown fast to get it over with,
+ * and it still read as waiting. Every problem the act had was a problem the
+ * transit created. It needed the town placed at a particular distance, which
+ * needed a gap cut in the field's treeline; it needed a climb steep enough
+ * to clear a cedar on the approach; it needed a separate faster pace so it
+ * would not bore, and a pace change is a thing an audience notices and
+ * wonders about.
  *
- *   1. THE STREET. Down onto the carriageway at the south end of the
- *      district and north up it at three and a bit metres. The simulator's
- *      own title camera flies this stretch and its note says why: the
- *      carriageway is empty by construction, and everything at street level
- *      that is not empty stands off it. It is nine metres wide between the
- *      shopfronts and roofed by cable, which makes it a corridor, and a
- *      corridor is the one thing a race field cannot offer.
+ * The page cuts to the town now. See the dissolve in main.js. What that buys
+ * is this file: the line can start wherever the best shot is, because
+ * nothing has to fly to it.
  *
- *   2. THE CROSSING. Up to 6.9 m over the barriers and down again. That
- *      number is railway.js's and so is the argument for it: a train roof is
- *      at 3.96 m, the contact wire at 4.88 and the messenger at 5.95, so
- *      between the road and the wires there is NO height that clears a
- *      train. 6.9 clears the lot with most of a metre in hand, and the
- *      street's own poles stop short of the tracks so nothing is strung
- *      across the gap the aircraft rises through.
+ * So it starts in the SHOTENGAI, which is the best thing in the town and was
+ * previously unreachable. Six metres between the kerbs, shops hard against
+ * both of them, lanterns strung overhead, and the aircraft comes down it at
+ * walking pace under the lanterns. That is the quaint street, and it is a
+ * corridor, which is the one thing a race field cannot offer.
  *
- *   3. THE CLIMB OUT, on the last stretch of road, which is also the
- *      simulator's own decision and made for the same reason: the ground at
- *      the end of the street is trees, and there is no height out there
- *      between the tarmac and the treetops. So the climb happens over the
- *      carriageway, where nothing is, and the aircraft is already over the
- *      roofs by the time it turns.
+ * Then the freestyle line, which begins the moment the corridor runs out:
+ * up over the roofs at the south end, hard round, and down onto the main
+ * road facing north. Blade signs and a cable web at head height, the level
+ * crossing at 6.9 m with its barriers down and a train going under, and a
+ * climb out over the roofs at the far end.
  *
- * WHAT WAS TRIED AND TAKEN OUT. The first version dropped into the
- * shotengai from above, flew the six metre corridor, and cut west through
- * the alley onto the main road. The corridor pass was the best shot in the
- * act and the alley ruined it: a ninety degree turn in a six metre gap is a
- * forty five degree bank, and a forty five degree bank inside a corridor
- * points a 104 degree lens straight up a shopfront. The screenshots are a
- * photograph of a wall. The transfer needed about fifteen metres it did not
- * have, and the only ways to buy them were to widen a street the town says
- * is six metres or to spend a third of the act's scroll getting out of it.
- *
- * The shotengai is still there, and it is the town's own. It is flown OVER
- * on the way out and it is in the closing shot. The main street turned out
- * to be the better corridor anyway: it is longer, it has the crossing at the
- * end of it, and its shopfronts stand nine metres apart rather than six,
- * which is the difference between a corridor and a slot.
- *
- * EVERY HEIGHT HERE IS CHECKED AGAINST THE TOWN'S OWN GROUND, not against a
- * copy of it: `centerX` and `groundY` are imported from the town's street.js
- * at the top of this file. The line cannot drift away from the road, because
- * the road is what it is built from.
- *
- * `entry` is where the quad leaves the race field and `exitDir` is the way
- * it was pointing when it got there. The transit between the two places is
- * part of THIS curve rather than a separate one, because a join between two
- * curves is a corner however carefully it is blended, and the whole point of
- * the arrival is that it is one move.
- *
- * exitDir is why the first two points look redundant. The lap's last gate
- * faces across the field and the town is most of a right angle off that, so
- * a curve that set off toward the town from the gate would spin the aircraft
- * on the spot at the exact frame the acts change over. Instead it carries on
- * the way it was going for seventeen metres, climbing, and then banks. Which
- * is what a quad leaving a gate does anyway.
+ * THE HEIGHTS ARE THE TOWN'S. 2.8 m under the lanterns, 3.3 m down a street,
+ * 6.9 m over the crossing because railway.js says a train roof is at 3.96,
+ * the contact wire at 4.88 and the messenger at 5.95, so between the road and
+ * the wires there is no other height that clears one. The street's own poles
+ * stop short of the tracks, so nothing is strung across the gap the aircraft
+ * rises through.
  */
-export function flightLine(entry, exitDir, origin) {
+export function flightLine(origin) {
   const gy = (z) => origin.y + groundY(z);
   /* A point in the town's own frame, `y` metres over the ground there. */
   const at = (x, y, z) => new THREE.Vector3(origin.x + x, gy(z) + y, origin.z + z);
   /* The same, but on the road's centreline, which bends. */
   const road = (z, y) => at(centerX(z), y, z);
 
-  const away = exitDir.clone().setY(0).normalize();
+  /* The shopping street's own kerb lines, from shotengai.js: a six metre
+   * corridor between x 19.2 and 25.2. This flies the middle of it. */
+  const SG = 22.2;
+
   return new THREE.CatmullRomCurve3([
-    /* ---- off the field ---- */
-    entry.clone(),
-    /*
-     * IT CLIMBS HARDER THAN IT USED TO, because it has less room to.
-     *
-     * With the town at 138 m there were a hundred and forty metres of empty
-     * wood to gain height over. At 96 there are about forty, and the town's
-     * southern outskirts start almost immediately. At +7 the aircraft went
-     * straight through a canopy collider at 7 to 8.3 m, seventy metres along
-     * the town's own local z; at +12 it went through the top of the same tree
-     * at 8.1 to 10.4. It is a big cedar on the southern approach and the
-     * answer is to be over it rather than to keep clipping its crown.
-     *
-     * Checked against the town's own collider list, which is the list the
-     * simulator flies a quad against, and which is built before this file
-     * thins the planting: it therefore includes trees that are no longer
-     * drawn. Clearing a tree that is not there any more costs nothing and is
-     * the right way to be wrong.
-     */
-    new THREE.Vector3(entry.x + away.x * 17, entry.y + 16, entry.z + away.z * 17),
-    new THREE.Vector3(entry.x + away.x * 26, entry.y + 26, entry.z + away.z * 26),
+    /* ---- 1. the cruise: down the shopping street, under the lanterns ---- */
+    at(SG, 3.0, 17.5),
+    at(SG, 2.8, 23),
+    at(SG - 0.3, 2.8, 29),
+    at(SG + 0.3, 2.8, 35),
+    at(SG, 3.0, 40),
 
-    /* ---- the crossing between the two places, which is now a beat rather
-           than a leg: three points instead of a leg's worth ---- */
-    at(-12, 29, 82),
-    at(-8, 27, 66),
-    at(-5, 22, 56),
+    /* ---- 2. up over the roofs at the south end, and hard round ----
+       A hundred and eighty degrees in about twenty five metres, which is a
+       bank a race line would never ask for and is the whole point of the
+       act. It happens ABOVE the roofs, where the only thing to hit is
+       nothing: the buildings here are six to eight metres and this is at
+       twelve to fifteen. */
+    at(SG - 0.4, 6.5, 44.5),
+    at(SG - 2.5, 11.5, 48),
+    at(15.5, 14.5, 50.5),
+    at(9.0, 15.0, 50.0),
+    at(3.0, 14.0, 47.0),
 
-    /* ---- 1. down onto the street, and north up it ---- */
-    at(centerX(48) - 1.2, 13, 48),
-    road(42, 4.6),
-    road(36, 3.4),
-    road(28, 3.3),
+    /* ---- 3. down onto the main road, facing north ---- */
+    at(centerX(44) - 0.4, 8.5, 44),
+    at(centerX(39), 4.6, 39),
+    road(34, 3.4),
+    road(27, 3.3),
     road(20, 3.3),
     road(13, 3.3),
     road(7, 4.3),
 
-    /* ---- 2. over the barriers, the wires and the train ---- */
+    /* ---- 4. over the barriers, the wires and the train ---- */
     road(2, 6.5),
     road(-2, 6.7),
     road(-7, 4.8),
@@ -776,25 +990,16 @@ export function flightLine(entry, exitDir, origin) {
     road(-20, 3.3),
     road(-26, 3.5),
 
-    /* ---- 3. the climb out, on the road ---- */
+    /* ---- 5. the climb out, on the road, because the ground either side of
+           it at this end is trees and there is no height out there between
+           the tarmac and the treetops ---- */
     road(-33, 7.6),
     road(-40, 13.0),
     road(-46, 17.2),
 
-    /*
-     * ---- and away east, then BACK SOUTH over the roofs ----
-     *
-     * Turning off the road rather than back down it, for the reason the
-     * simulator's own attract loop gives: a turn that cuts inward crosses
-     * the leg it just flew, and a spline through its own path is a knot.
-     *
-     * Coming back south afterwards is this page's own addition and it is
-     * about the last five seconds of the act. Climbing away northward, the
-     * aircraft ends up over the top of the district looking at the trees
-     * beyond it, so the final stretch of the freestyle line was a wooded
-     * hillside with the town behind the camera. Swinging south puts the
-     * district back in front, which is what the closing shot then opens on.
-     */
+    /* ---- and away east, then back south over the roofs, so the last thing
+           the act does is open the district out for the shot that follows
+           it ---- */
     at(centerX(-48) + 11, 19.6, -47),
     at(centerX(-42) + 22, 21.0, -40),
     at(28, 21.8, -29),

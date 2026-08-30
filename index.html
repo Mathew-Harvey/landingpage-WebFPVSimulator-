@@ -1072,6 +1072,24 @@
          Boot and fallbacks.
          ------------------------------------------------------------------ */
 
+      /*
+       * Above the canvas and below the type, so the flare washes the world
+       * out and the copy stays legible on top of it, which is what a title
+       * over a dissolve does.
+       */
+      #dissolve {
+        position: fixed;
+        inset: 0;
+        z-index: 12;
+        opacity: 0;
+        pointer-events: none;
+        /* The horizon's own colour, lifted toward cream. At golden hour the
+           honest way to lose a frame is into the sun's haze, not into black:
+           black is a cut with the lights off, and this page has no black in
+           it anywhere else. */
+        background: radial-gradient(120% 100% at 50% 62%, #f6ded2, #e0a89a);
+      }
+
       #boot {
         position: fixed;
         inset: 0;
@@ -1243,6 +1261,11 @@
            sake. Somebody who has asked for less motion gets a still bar and
            the note under it, which still says the page is working. */
         .boot-sweep { animation: none; opacity: 0; }
+        /* The dissolve is the film's one cut and a reduced motion visitor is
+           not watching the film: the timeline is pinned to a single frame, so
+           there is no act boundary to cross and a full screen flare over a
+           still page would be a flash with nothing behind it. */
+        #dissolve { display: none; }
         .copy { opacity: 1; transform: none; transition: none; }
         #cue, #ticker, #builder, #osd, #beats { display: none; }
         .act { min-height: auto !important; padding-top: 12vh; padding-bottom: 12vh; }
@@ -1266,6 +1289,24 @@
     <div id="progress" aria-hidden="true"><i></i></div>
     <canvas id="stage"></canvas>
     <div id="veil"></div>
+    <!--
+      THE DISSOLVE. The one cut in the film, and the thing that hides it.
+
+      Every other change of place on this page is flown: the studio floor
+      becomes a plan grid, the plan grid becomes a field, and the aircraft
+      that leaves the studio is the aircraft that arrives at the track. The
+      town is the exception. It used to be flown to as well, across forty
+      metres of empty ground, and that transit was the weakest thing on the
+      page: nothing to look at, flown fast to get it over with, and it still
+      read as waiting.
+
+      So the page goes to warm haze and comes out of it in a shopping street.
+      It is a fade rather than a cut because a cut cannot be scrubbed: the
+      whole page is a pure function of scroll position and a reader dragging
+      the bar slowly across a hard cut would see it flicker. A fade has a
+      middle, and the middle is where the camera moves.
+    -->
+    <div id="dissolve" aria-hidden="true"></div>
     <div id="grain"></div>
 
     <header id="topbar">
@@ -1431,14 +1472,14 @@
       </section>
 
       <!-- ACT 4: the freestyle city -->
-      <!-- 820vh, and the number is two decisions rather than one. The first
-           third of the line is the dash over the wood between the field and
-           the town, flown at about two and a half times the pace of the rest
-           of it; the other two thirds are streets, flown at the lap's own
-           0.23 m per vh. See CITY_S in main.js, which is where the pacing
-           actually lives: this height only decides how much scroll the whole
-           thing gets. -->
-      <section class="act" data-act="city" style="min-height: 820vh">
+      <!-- 760vh. The act used to open with forty metres of transit and needed
+           820 to carry it; the page cuts to the town now, so all of this
+           height is spent on streets. About 180 m of line over 760vh is
+           0.24 m per vh, which is the lap's own gearing: the pace of the film
+           does not change when the place does. The variation inside the act,
+           a slower shopping street and a faster road, lives in CITY_S in
+           main.js. -->
+      <section class="act" data-act="city" style="min-height: 760vh">
         <div class="pin">
           <div class="copy copy-tight" data-copy="city">
             <p class="eyebrow">04 &#183; The city</p>

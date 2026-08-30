@@ -36,12 +36,11 @@ Act 3  Daylight arrives, the quad drops onto the racing line, and one FPV
        lap runs through the gates. Scroll back up and it does not reverse:
        it yaws around, banked, and flies home nose first. The turn is flown
        from inside the goggles like everything else.
-Act 4  The aircraft leaves the field. It climbs away from the last gate,
-       crosses the wood at two and a half times the pace of the lap, and
-       drops into a Japanese railway town: north up a nine metre street
-       under a cable web, over a level crossing with its barriers down and
-       a train going under, then a climb out over the roofs. Same aircraft,
-       same lens, no cut.
+Act 4  The frame goes to warm haze and comes out of it in a six metre
+       shopping street. A slow cruise under the strung lanterns, then the
+       freestyle line: up over the roofs, hard round, down onto the main
+       road, over a level crossing with its barriers down and a train going
+       under, and a climb out at the far end.
 Act 5  You must practice, over the town at golden hour.
 ```
 
@@ -51,10 +50,23 @@ sized and placed like one all the same, at the act gutter and in the act
 copy's column, so the reason lands in the exact place the flight's copy
 just left.
 
-The camera does not stop for it. The last stretch of the timeline begins at
-`#why` rather than at the close, so 4 to 5 covers the reason and the close
-together and the pull-out plays across the reading: the district falls away
-behind the type and lands under the invitation. That stretch is also the
+The one cut in the film is at the top of act 4, and it is a dissolve rather
+than a cut because the page is scrubbable: a reader dragging the bar slowly
+across a hard cut would see it flicker, and a fade has a middle to move the
+camera in. It replaced a transit. The aircraft used to fly from the field to
+the town, and that leg was the weakest thing on the page: nothing to look at,
+flown fast to get it over with, and it still read as waiting. Everything
+awkward about the act was something the transit needed, the town's distance
+included.
+
+Nothing has to fly between the two places now, so the town sits 460 m out,
+past the point where anything of the race field survives the haze. The two
+places are two places.
+
+The camera does not stop for the reason section. The last stretch of the
+timeline begins at `#why` rather than at the close, so 4 to 5 covers the
+reason and the close together and the pull-out plays across the reading: the
+district falls away behind the type and lands under the invitation. That stretch is also the
 only place the pull-out ever had room to finish. Measured from the close
 alone it had about a fifth of a screen of scroll and played a quarter of
 its arc.
@@ -68,13 +80,21 @@ will fly when they click through, because it is the same source drawing them.
 
 It costs what a whole town costs. Measured: it builds about eleven and a half
 thousand meshes and paints every sign and fascia with Canvas2D as it goes, and
-after the simulator's own merge passes it settles at about two thousand meshes
-and 1.1 M triangles. The build is seconds rather than milliseconds, so it does
-not happen at import: the page draws its studio first and the town is built in
-an idle slot after the first paint, which is tens of seconds of scrolling
-before the act that needs it. Until it lands its group is empty and invisible,
-and a visitor who scrolls faster than it builds gets the field, the lap and the
-close with no error.
+after pruning and merging it settles at about four thousand meshes and 1 M
+triangles.
+
+The merge is ours rather than the simulator's `bakeCity`. That pass is much
+cleverer, and called from here it drops the shopping street's buildings: every
+one of its options was tried, the simulator's own combination included, and the
+shops go every time; with the call removed they come back. The simulator does a
+good deal of preparation between `buildWorld` and `bakeCity` that this page does
+not. `mergeStatics` in `src/city.js` does the one thing that actually matters,
+which is turning eleven thousand meshes into a few hundred, and uses bake.js's
+own `findAnimated` for the part that must not be got wrong: which bits of the
+town move.
+
+The build is seconds rather than milliseconds, so it happens behind the boot
+screen. See below.
 
 The district is sakura-crossing, by Kenton Wang, MIT, which the simulator
 vendors and credits in its `NOTICE`. No code from it is here and none of it
