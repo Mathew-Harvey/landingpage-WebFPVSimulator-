@@ -2042,7 +2042,16 @@ function frame(ms) {
    */
   if (!bootDone) {
     bootDone = true;
-    city.start();
+    /*
+     * Not for a reduced motion visitor. The timeline is pinned to one frame
+     * for them, that frame is on the race field, and the town is never shown
+     * at all: building it would be seconds of loading screen for geometry
+     * nobody is going to see. They get the page sooner, which is the whole
+     * point of asking for less.
+     */
+    if (!REDUCED) {
+      city.start();
+    }
     warmCity();
     clearBoot();
   }
