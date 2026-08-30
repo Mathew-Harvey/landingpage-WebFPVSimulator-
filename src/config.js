@@ -87,6 +87,12 @@ export function destinations() {
   const board = boardOrigin();
   return [
     { id: 'sim', href: `${sim}/?map=field` },
+    /* The freestyle city, which the page now spends a whole act flying. A
+     * visitor who has just watched a quad go down a shopping street should
+     * not have to land on a race field to find it, so the city act carries
+     * its own link and this is the address behind it. Same simulator, same
+     * origin, different map. */
+    { id: 'city', href: `${sim}/?map=city` },
     { id: 'builder', href: `${sim}/src/trackbuilder/index.html` },
     { id: 'board', href: `${board}/` },
   ];

@@ -262,10 +262,26 @@ export function createStage(canvas) {
    * are one decision. `world` is how much daylight has arrived, and it only
    * moves colour.
    */
+  /*
+   * The fog distances for a given regime, as a function rather than as two
+   * expressions buried in setRegime.
+   *
+   * main.js has to know them: the closing shot's pull back is capped by how
+   * much haze the town may carry at the far side of it, which is a number
+   * about THIS fog. Written down twice, the cap silently stops meaning
+   * anything the first time somebody tunes the weather. Asked for, it cannot.
+   */
+  function fogFor(scale, reach) {
+    const s = Math.max(0, Math.min(1, scale));
+    const r = Math.max(0, Math.min(1, reach));
+    return { near: 2.5 + s * (32 + r * 26), far: 16 + s * (286 + r * 318) };
+  }
+
   const fogColour = new THREE.Color();
-  function setRegime(scale, world) {
+  function setRegime(scale, world, reach = 0) {
     const s = Math.max(0, Math.min(1, scale));
     const w = Math.max(0, Math.min(1, world));
+    const r = Math.max(0, Math.min(1, reach));
 
     camera.near = 0.02 + s * 0.06;
     camera.far = 22 + s * 780;
@@ -285,8 +301,31 @@ export function createStage(canvas) {
      * fog's worth of backdrop, which is exactly the contrast the opening
      * could least afford to give away.
      */
-    scene.fog.near = 2.5 + s * 32;
-    scene.fog.far = 16 + s * 286;
+    /*
+     * `reach` is HOW FAR THE AIR IS CLEAR, and it exists for exactly one
+     * shot.
+     *
+     * The field's haze is right for the field: 34 to 302 m puts a course
+     * that is 51 m across in clean air and dissolves the treeline behind
+     * it, which is what gives the field its depth. Point the same air at a
+     * town 138 m away and it is a disaster: the far side of the district is
+     * 180 m out, which is 57 percent haze, so the streets nearest the
+     * horizon lose their colour and the town reads as a memory of a town.
+     * The brief on the closing shot was precisely that the colour must not
+     * run out of the city, and this is the number that decides it.
+     *
+     * So over the town the air opens up to 620 m. At 180 m that is 11
+     * percent, which is atmosphere rather than fog: the far streets are
+     * still coloured, still readable, and still further away than the near
+     * ones. The deck's own far edge is at 700 m and stays hidden, because
+     * 620 is still well short of it.
+     *
+     * It is a number about the SUBJECT, not about the weather, which is why
+     * it is a third argument here rather than a second act.
+     */
+    const haze = fogFor(1, r);
+    scene.fog.near = 2.5 + s * (haze.near - 2.5);
+    scene.fog.far = 16 + s * (haze.far - 16);
 
     /* Studio lamps out as the sun comes up, and the shadow camera grows
      * with the subject: 4 m around a hero, 90 m around a course. */
@@ -387,6 +426,7 @@ export function createStage(canvas) {
     rim,
     hemi,
     setRegime,
+    fogFor,
     setFov,
     composePitch,
     aimLight,

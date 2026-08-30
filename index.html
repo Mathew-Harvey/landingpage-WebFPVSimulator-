@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  The WebFPV landing page. One canvas, one scroll, four acts.
+  The WebFPV landing page. One canvas, one scroll, five acts.
 
   Everything here is client side. The page owns no data and calls no API:
   the three launch buttons are links, and the origins they point at live in
@@ -944,6 +944,29 @@
       .card-go::after { content: " \2192"; }
 
       /*
+       * A link inside a copy block, which the page had never needed before:
+       * every launch link it had was a card at the bottom or an item in the
+       * top bar. The city act needs one in the prose, because the act sells
+       * a map that the closing cards do not offer and sending somebody to a
+       * race field to look for a town is the kind of small dishonesty a
+       * front door cannot afford.
+       *
+       * Styled as an underlined run of the copy rather than as a button. It
+       * is an aside in a paragraph, not a call to action competing with the
+       * three at the foot of the page.
+       */
+      .inline-go {
+        color: var(--mint);
+        text-decoration: none;
+        border-bottom: 1px solid rgba(125, 255, 180, 0.42);
+        padding-bottom: 2px;
+        transition: border-color 0.2s var(--ease), color 0.2s var(--ease);
+      }
+      .inline-go::after { content: " \2192"; }
+      .inline-go:hover,
+      .inline-go:focus-visible { border-bottom-color: var(--mint); }
+
+      /*
        * TWO ROWS NOW, so the footer is a grid and the licence line keeps the
        * flex row it always had. The other sites go above the licence rather
        * than beside it: they are an invitation, the licence is a fact, and
@@ -1277,10 +1300,19 @@
       </div>
     </div>
 
-    <!-- Act 3 instrument -->
+    <!--
+      The instrument, for both flying acts.
+
+      The label under the clock used to read "Lap", which is true for act 3
+      and a lie for act 4: a freestyle line has no laps and no gates. It is
+      driven from main.js now, along with the line under it, because the
+      clock does not reset between the two acts and should not: it is one
+      flight and the pack is one pack, which is the whole argument of the
+      join between them.
+    -->
     <div id="osd">
       <div class="osd-top">
-        <div class="osd-label">Lap</div>
+        <div class="osd-label" id="osd-label">Lap</div>
         <div class="osd-timer" id="osd-timer">0.00</div>
         <div class="osd-gate" id="osd-gate">Gate 1 of 7</div>
       </div>
@@ -1341,13 +1373,21 @@
         </div>
       </section>
 
-      <!-- ACT 3: the flight -->
-      <!-- The longest act by far, and deliberately. Its height IS the
-           gearing between the wheel and the aircraft: at 780vh a notch moved
-           the quad most of the way to the next gate, which is why the
-           flight felt twitchy. A thousand spreads the same lap over about
-           ten screens. -->
-      <section class="act" data-act="fly" style="min-height: 1000vh">
+      <!-- ACT 3: the lap -->
+      <!-- Its height IS the gearing between the wheel and the aircraft: at
+           780vh a notch moved the quad most of the way to the next gate,
+           which is why the flight felt twitchy. A thousand spread the same
+           lap over about ten screens, which was right when the lap was the
+           last thing the page flew.
+           640 now, because it is not. The freestyle act follows it and the
+           two of them together are longer than the lap alone ever was, so a
+           lap at its old length made the flying half of the page outstay its
+           welcome before the best part of it arrived. At 640 the gearing is
+           0.23 m of racing line per vh, which is the same gearing the city
+           act uses once it is down in the streets: the pace does not change
+           when the place does, which is what makes the dash between them
+           read as a dash. -->
+      <section class="act" data-act="fly" style="min-height: 640vh">
         <div class="pin">
           <div class="copy copy-tight" data-copy="fly">
             <p class="eyebrow">03 &#183; The line</p>
@@ -1355,6 +1395,32 @@
             <p class="lede">
               Camera on the airframe, thirty degrees up, eighty five degree
               lens. Every gate is a decision made three gates early.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ACT 4: the freestyle city -->
+      <!-- 820vh, and the number is two decisions rather than one. The first
+           third of the line is the dash over the wood between the field and
+           the town, flown at about two and a half times the pace of the rest
+           of it; the other two thirds are streets, flown at the lap's own
+           0.23 m per vh. See CITY_S in main.js, which is where the pacing
+           actually lives: this height only decides how much scroll the whole
+           thing gets. -->
+      <section class="act" data-act="city" style="min-height: 820vh">
+        <div class="pin">
+          <div class="copy copy-tight" data-copy="city">
+            <p class="eyebrow">04 &#183; The city</p>
+            <h2>Then leave the track.</h2>
+            <p class="lede">
+              A Japanese railway town, built to its own dimensions and flown
+              rather than walked. Nothing here is scored. There is a six metre
+              shopping street, a level crossing, and a cable web at head
+              height.
+            </p>
+            <p class="lede">
+              <a class="inline-go" href="https://webfpv.org/sim/?map=city" data-dest="city">Fly the city</a>
             </p>
           </div>
         </div>
@@ -1369,7 +1435,7 @@
     -->
     <section id="why">
       <div class="why-copy">
-        <p class="eyebrow eyebrow-lit">04 &#183; The reason</p>
+        <p class="eyebrow eyebrow-lit">05 &#183; The reason</p>
         <h2>The hard part of FPV<br /><em>is getting to the first lap.</em></h2>
         <p class="lede">
           A quad, a radio, goggles, batteries, a charger. Hundreds of dollars
@@ -1393,7 +1459,7 @@
     <!-- ACT 4: the close -->
     <section id="close">
       <div class="close-copy">
-        <p class="eyebrow eyebrow-lit" style="justify-content: center">05 &#183; The point</p>
+        <p class="eyebrow eyebrow-lit" style="justify-content: center">06 &#183; The point</p>
         <h1 class="shout">You must practice.</h1>
         <p class="close-sub">
           Nobody gets smooth by reading about it. Free, in the browser, no

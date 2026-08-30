@@ -1,7 +1,7 @@
 # WebFPV landing page
 
 The front door for [WebFPVSimulator](https://github.com/Mathew-Harvey/WebFPVSimulator).
-One canvas, one scroll, four acts, a reason, three links out, and a wiki
+One canvas, one scroll, five acts, a reason, three links out, and a wiki
 at `wiki/` that is not part of the film: thirty five illustrated pages on
 how a quad actually flies, plus every Betaflight setting, with figures you
 can drive.
@@ -32,26 +32,47 @@ Act 1  A five inch racing quad assembles in a dark studio, part by part,
        them. Motors, loom, camera, props.
 Act 2  The camera pulls out. The studio floor turns out to be a track
        builder's plan grid, and a seven gate course draws itself on it.
-Act 3  Daylight arrives, the quad drops onto the racing line, and the rest
-       of the page is one FPV lap through the gates. Scroll back up and it
-       does not reverse: it yaws around, banked, and flies home nose first.
-       The turn is flown from inside the goggles like everything else.
-Act 4  You must practice.
+Act 3  Daylight arrives, the quad drops onto the racing line, and one FPV
+       lap runs through the gates. Scroll back up and it does not reverse:
+       it yaws around, banked, and flies home nose first. The turn is flown
+       from inside the goggles like everything else.
+Act 4  The aircraft leaves the field. It climbs away from the last gate,
+       crosses the wood at two and a half times the pace of the lap, and
+       drops into a Japanese railway town: north up a nine metre street
+       under a cable web, over a level crossing with its barriers down and
+       a train going under, then a climb out over the roofs. Same aircraft,
+       same lens, no cut.
+Act 5  You must practice, over the town at golden hour.
 ```
 
-Between act 3 and the close sits `#why`, which is not an act: nothing
+Between act 4 and the close sits `#why`, which is not an act: nothing
 assembles or draws itself there, the copy is simply on the page. It is
 sized and placed like one all the same, at the act gutter and in the act
 copy's column, so the reason lands in the exact place the flight's copy
 just left.
 
 The camera does not stop for it. The last stretch of the timeline begins at
-`#why` rather than at the close, so 3 to 4 covers the reason and the close
-together and the hero pull-out plays across the reading: the course falls
-away behind the type and lands under the invitation. That stretch is also
-the only place the pull-out ever had room to finish. Measured from the
-close alone it had about a fifth of a screen of scroll and played a quarter
-of its arc.
+`#why` rather than at the close, so 4 to 5 covers the reason and the close
+together and the pull-out plays across the reading: the district falls away
+behind the type and lands under the invitation. That stretch is also the
+only place the pull-out ever had room to finish. Measured from the close
+alone it had about a fifth of a screen of scroll and played a quarter of
+its arc.
+
+The town is not the simulator's town. The simulator's freestyle map is
+sixty four thousand lines of vendored geometry and none of it can come
+here, because this page has no build step and one CDN import. `src/city.js`
+is a portrait of it instead, built in this page's own idiom, with every
+dimension copied from the simulator's source and the file it came from
+named beside it: a 6.3 m carriageway, a 1.55 m footway, shopfronts 3.2 m
+under 2.7 m, poles at 9.2 m, wires at 4.88 and 5.95, and a crossing that
+can only be cleared at 6.9. If the town and the portrait ever disagree
+about a number, one of them is a bug and it will be this one.
+
+The district is sakura-crossing, by Kenton Wang, MIT, which the simulator
+vendors and credits in its `NOTICE`. No code from it is here and none of it
+is imported. What travels is the plan, and every number in `src/city.js` is
+attributed to the file it was read from at the point it is used.
 
 Client side only. No build step, no bundler, no framework, no dependencies
 to install, no API. Three.js comes from a CDN import map, the same version
@@ -193,17 +214,24 @@ http://127.0.0.1:8080/?t=2.5
 ```
 
 `?t=` pins the timeline. `0` to `1` is the build, `1` to `2` the track, `2`
-to `3` the flight, `3` to `4` the close, so `?t=2.5` is the middle of a lap.
+to `3` the lap, `3` to `4` the freestyle city, `4` to `5` the close, so
+`?t=2.5` is the middle of a lap and `?t=3.5` is somewhere in the street.
 Without it the page is a function of scroll position and a ten second
 autoplay, and there is no way to name a frame in a bug report or a review.
 
-With `?t=` set, `window.__wf` exposes `{ stage, course, drone, petals }` so a
+With `?t=` set, `window.__wf` exposes `{ stage, course, city, drone, petals }` so a
 frame can be interrogated as well as named. `?debug=1` exposes the same
 handle without pinning, which is what the turn around needs: the heading is
 a half second of animation that only happens while somebody is scrolling the
 other way, and a pinned frame is exactly the state that cannot be in. It adds
 `flight(s, flip)` to pose the aircraft and read the numbers back,
-`heading()`, and `setHeading()` to force one. On a clean URL, no global.
+`heading()`, and `setHeading()` to force one. For the freestyle act it adds
+`cityRoam(T)`, `cityWhere(roam)`, which answers with the aircraft's position
+in the town's own coordinates and the gradient of the line there, and
+`live()`, which reports where the camera and the aircraft actually ended up
+on the last frame. Those three exist because the first version of the act
+flew the quad into a shopfront, and working out which shopfront from a
+screenshot of a wall is an afternoon. On a clean URL, no global.
 
 ## How it is put together
 
@@ -219,17 +247,36 @@ other way, and a pinned frame is exactly the state that cannot be in. It adds
 | `src/drone.js` | The airframe, and the seven stage build order |
 | `src/gate.js` | One MultiGP gate at published dimensions |
 | `src/course.js` | The layout, the ground, the racing line, the dress |
+| `src/city.js` | The freestyle town, and the line flown through it |
 | `src/config.js` | Where the simulator and the board are |
 | `src/quality.js` | One decision about how much machine is on the other end |
 | `src/petals.js` | Sakura, one draw call, all of it in the vertex shader |
 
 Two rules hold the thing together:
 
-The flight act's height is the GEARING between the wheel and the aircraft.
+A flying act's height is the GEARING between the wheel and the aircraft.
 A wheel delivers steps, not scroll, so how far one notch moves the quad is
 set by how tall that section is, and the scroll damping decides how much of
-a notch survives to the camera. They are tuned together: 1000vh and a 6.5
-lerp puts about one and a quarter gates on a screen.
+a notch survives to the camera. They are tuned together: 640vh over a 145 m
+racing line and a 6.5 lerp is about 0.23 m of line per vh, which puts a
+gate and a bit on a screen.
+
+The city act uses the same 0.23 m per vh once it is down in the streets,
+and about two and a half times that over the wood between the two places.
+That is the one deliberate change of pace in the film and it does the
+transition's work: speed is what makes an arrival read as an arrival. It is
+a table rather than a formula, integrated once at start up, because the
+mapping has to be monotonic and smooth in its derivative and the integral
+of an obvious speed curve is easier to read than a piecewise one that is
+both. See `CITY_S` in `main.js`.
+
+The two acts hand the aircraft to each other at speed. A smoothstep has
+zero slope at both ends, which is right for a camera move that starts and
+stops and wrong for a lap running into a freestyle line: the quad
+decelerated to a standstill at `T = 3`, hung there for the half screen it
+took to cross the act boundary, and set off again. `ramp()` takes the two
+ends separately, so the lap eases in and finishes at speed and the city
+line starts at speed and eases out into the close.
 
 **Every visual is a pure function of `T`**, with one deliberate exception:
 which way the quad is pointing. That has to be hysteretic, because it depends

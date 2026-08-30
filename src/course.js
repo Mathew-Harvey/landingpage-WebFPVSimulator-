@@ -145,6 +145,23 @@ function skyDome() {
       uStudioTop: { value: STUDIO_TOP.clone() },
       uStudioMid: { value: STUDIO_MID.clone() },
       uStudioLow: { value: STUDIO_LOW.clone() },
+      /*
+       * What the world's sky resolves to BELOW the horizon.
+       *
+       * The dome is a backdrop rather than a distance, so it has no fog and
+       * has to be told. Below the horizon it used to keep the studio's plum
+       * whatever act it was in, which was invisible for as long as the deck
+       * covered it: a 700 m plane seen from 25 m up over a 51 m course
+       * reaches past the frame in every direction.
+       *
+       * Then the town went in at 138 m and the closing shot backed off to
+       * frame it, and the deck's far edge came into view with a band of
+       * plum above it. A hard dark line across the horizon of the last
+       * frame of the page. So the dome is handed the fog's own colour, the
+       * same way the deck is, and the seam has nothing to be a seam
+       * between.
+       */
+      uHaze: { value: new THREE.Color(0xffffff) },
     },
     vertexShader: `
       varying vec3 vPos;
@@ -160,6 +177,7 @@ function skyDome() {
       uniform vec3 uStudioTop;
       uniform vec3 uStudioMid;
       uniform vec3 uStudioLow;
+      uniform vec3 uHaze;
       uniform float uWorld;
       void main() {
         float h = normalize(vPos).y;
@@ -177,9 +195,12 @@ function skyDome() {
            becomes the sweep a photographer actually gets. */
         studio = mix(studio, uStudioLow, smoothstep(0.42, -0.15, h));
 
-        /* Below the deck the world's dome keeps the studio's own dark, so
-           the reveal reads as light arriving rather than a lid lifting. */
-        sky = mix(sky, uStudioMid * 1.1, smoothstep(0.0, -0.16, h));
+        /* Below the deck the world's dome is the haze the ground fades to,
+           so the plane's far edge has nothing to be an edge against. In the
+           STUDIO it keeps its own dark, because there the reveal wants to
+           read as light arriving rather than as a lid lifting, and there is
+           no deck out there to disagree with it. */
+        sky = mix(sky, mix(uStudioMid * 1.1, uHaze, uWorld), smoothstep(0.0, -0.16, h));
         gl_FragColor = vec4(mix(studio, sky, uWorld), 1.0);
       }`,
   });
@@ -199,7 +220,21 @@ function skyDome() {
  * first, which is the way a fog lifts.
  */
 function ground() {
-  const geo = new THREE.PlaneGeometry(700, 700, 1, 1);
+  /*
+   * FOURTEEN HUNDRED METRES, up from seven.
+   *
+   * Seven was sized for a 51 m course seen from 72 m: its edge was 350 m
+   * from the origin and the closing camera never got within 300 m of it, so
+   * it was always behind the fog. The town sits 138 m out and the shot that
+   * frames it looks straight down the plane's long axis, which put the edge
+   * 210 m away on the far side and drew a horizon across the middle of the
+   * last frame of the page.
+   *
+   * It is one quad. Doubling it costs four vertices and nothing else, and
+   * the fog reaches 620 m over the town, so the edge is now three hundred
+   * metres past the last fragment that is not already haze coloured.
+   */
+  const geo = new THREE.PlaneGeometry(1400, 1400, 1, 1);
   geo.rotateX(-Math.PI * 0.5);
   const mat = new THREE.ShaderMaterial({
     uniforms: {
@@ -221,6 +256,32 @@ function ground() {
       uGrassCut: { value: new THREE.Color(0x53853c) },
       uDirt: { value: new THREE.Color(0x7d7a4e) },
       uSun: { value: new THREE.Color(0xffd0a0) },
+      /*
+       * The third state: the country beyond the field.
+       *
+       * It is keyed off distance from the ORIGIN rather than off distance
+       * from the town, and that is a correction rather than a shortcut. A
+       * blend centred on the town has to be small enough to leave the race
+       * pitch alone, which leaves the ground on the far side of the town
+       * still striped like a pitch: at the closing shot that is a mown lawn
+       * running away behind a Japanese suburb. Centred on the FIELD instead
+       * it says the true thing, which is that the pitch is a mown pitch
+       * inside its own ring of trees and everything past that ring is
+       * countryside, town included.
+       *
+       * uWild is how much of it has arrived, and uWildR is where the field
+       * ends. The fade runs from 0.62 of that radius to all of it, which
+       * puts the whole change inside the treeline where nothing can see it
+       * happen.
+       */
+      uWild: { value: 0 },
+      uWildR: { value: 105 },
+      /* Rice green, held well back from the turf's own hue. A Japanese
+       * suburb sits in paddy and scrub, not on a cut lawn, and the
+       * difference between the two is most of what tells a viewer at
+       * altitude that they have left the race field. */
+      uWildGrass: { value: new THREE.Color(0x6a8a5e) },
+      uWildDry: { value: new THREE.Color(0x93916a) },
       /*
        * The ground's fog is OURS, not the renderer's.
        *
@@ -257,6 +318,10 @@ function ground() {
       uniform vec3 uGrassCut;
       uniform vec3 uDirt;
       uniform vec3 uSun;
+      uniform float uWild;
+      uniform float uWildR;
+      uniform vec3 uWildGrass;
+      uniform vec3 uWildDry;
 
       float lineAt(vec2 p, float spacing, float w) {
         vec2 g = abs(fract(p / spacing - 0.5) - 0.5) * spacing;
@@ -307,6 +372,26 @@ function ground() {
            near ground, cooling into the distance, which is most of what
            makes a flat plane read as a field at all. */
         turf *= mix(vec3(1.0), uSun, 0.30 - smoothstep(20.0, 120.0, r) * 0.20);
+
+        /*
+         * The town's ground, over the top of the field's.
+         *
+         * Two things change and they both matter. The mown stripes go,
+         * because a stripe is the mark of a mower and nobody mows a
+         * district. And the red wear that the field fades to at its edge
+         * goes with them, because that wear is a scuffed apron round a race
+         * pitch: left in, it put the town in the middle of a dust bowl,
+         * which is what the first render of it actually looked like.
+         *
+         * The blend is by distance from the town rather than by act, so the
+         * ground between the two places is a real gradient that the flight
+         * crosses rather than a switch that throws while nobody is looking.
+         */
+        float wild = uWild * smoothstep(uWildR * 0.62, uWildR, r);
+        vec3 paddy = mix(uWildGrass, uWildDry, 0.5 + 0.5 * sin(vWorld.x * 0.045) * sin(vWorld.z * 0.038));
+        paddy *= 0.94 + 0.06 * sin(vWorld.x * 0.31) * sin(vWorld.z * 0.27);
+        paddy *= mix(vec3(1.0), uSun, 0.22);
+        turf = mix(turf, paddy, wild);
 
         vec3 c = mix(plan, turf, uWorld);
 
@@ -764,12 +849,31 @@ export function buildCourse() {
     return v;
   }
 
+  /*
+   * How much country there is past the edge of the field.
+   *
+   * One number, driven by the timeline. It lives on the COURSE rather than
+   * on the city because the surface it paints is the course's own ground
+   * plane: the city module owns the town, and the quad the town stands on
+   * was here first and belongs to the field.
+   */
+  function setWild(strength, radius) {
+    const u = deck.material.uniforms;
+    u.uWild.value = Math.max(0, Math.min(1, strength));
+    if (radius) {
+      u.uWildR.value = radius;
+    }
+  }
+
   /* The renderer's fog, handed to the ground shader verbatim, so the deck's
    * far edge and the dome behind it resolve to the same value. */
   function setFog(fog) {
     deck.material.uniforms.uFogColor.value.copy(fog.color);
     deck.material.uniforms.uFogNear.value = fog.near;
     deck.material.uniforms.uFogFar.value = fog.far;
+    /* And the dome, which has no fog of its own and would otherwise put a
+     * line across the horizon where the deck runs out. */
+    sky.material.uniforms.uHaze.value.copy(fog.color);
   }
 
   /* Which gate the run wants next, lit the way the simulator lights it. */
@@ -798,6 +902,7 @@ export function buildCourse() {
     planLength,
     setBuild,
     setWorld,
+    setWild,
     setFog,
     setRun,
     hideLines,

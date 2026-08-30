@@ -3,11 +3,11 @@
  * and who gets told about it.
  *
  * ONE clock drives everything. `T` is a continuous number over the whole
- * page: 0 to 1 is the build, 1 to 2 is the track, 2 to 3 is the flight, and
- * 3 to 4 is the reason and the close together. It is measured off the
- * sections' real offsets rather than assumed from their CSS heights, so
- * changing a section's length in the stylesheet re-times the film instead
- * of desynchronising it.
+ * page: 0 to 1 is the build, 1 to 2 is the track, 2 to 3 is the lap, 3 to 4
+ * is the freestyle city, and 4 to 5 is the reason and the close together.
+ * It is measured off the sections' real offsets rather than assumed from
+ * their CSS heights, so changing a section's length in the stylesheet
+ * re-times the film instead of desynchronising it.
  *
  * Every visual is a pure function of T. That is the rule the whole file
  * obeys, and it is what makes the page scrubbable: drag the scrollbar
@@ -39,7 +39,8 @@
 import * as THREE from 'three';
 import { createStage } from './stage.js';
 import { buildDrone, CAMERA_MOUNT_FORWARD, CAMERA_MOUNT_UP } from './drone.js';
-import { buildCourse, GATE_COUNT, GATE_CENTRE_Y } from './course.js';
+import { buildCourse, GATE_COUNT } from './course.js';
+import { buildCity, flightLine, CITY_ORIGIN, BUILT_R, TREE_R } from './city.js';
 import { buildPetals } from './petals.js';
 import { destinations } from './config.js';
 
@@ -50,7 +51,8 @@ const BUILD_SECONDS = 9;
 
 /*
  * ?t=<number> pins the timeline. 0 to 1 is the build, 1 to 2 the track, 2 to
- * 3 the flight, 3 to 4 the close, so ?t=2.5 is the middle of a lap.
+ * 3 the lap, 3 to 4 the city, 4 to 5 the close, so ?t=2.5 is the middle of a
+ * lap and ?t=3.5 is somewhere in the shopping street.
  *
  * This exists because the page cannot otherwise be inspected: every frame is
  * a function of a scroll position and an eight second autoplay, and a
@@ -64,7 +66,7 @@ const PIN = (() => {
     return null;
   }
   const v = Number.parseFloat(raw);
-  return Number.isFinite(v) ? Math.max(0, Math.min(4, v)) : null;
+  return Number.isFinite(v) ? Math.max(0, Math.min(5, v)) : null;
 })();
 
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
@@ -74,6 +76,40 @@ const smooth = (t) => t * t * (3 - 2 * t);
  * timeline is written in these. */
 const seg = (v, a, b) => clamp01((v - a) / (b - a || 1e-6));
 const ease = (v, a, b) => smooth(seg(v, a, b));
+
+/*
+ * ease(), but with the two ends separately negotiable.
+ *
+ * THIS EXISTS BECAUSE TWO ACTS NOW HAND AN AIRCRAFT TO EACH OTHER. A
+ * smoothstep has zero slope at BOTH ends, which is exactly right for a
+ * camera move that starts and stops, and exactly wrong for a lap that runs
+ * straight into a freestyle line: the quad decelerated to a standstill at
+ * T = 3, hung there for the half screen it took to cross the act boundary,
+ * and set off again. Written down it sounds like a stall because it is one.
+ *
+ * So the lap eases IN and finishes at speed, and the city line starts at
+ * speed and eases OUT into the close. `inF` and `outF` are the fractions of
+ * the range given over to accelerating and decelerating; the rest is flown at
+ * a constant rate. The result is renormalised so the range still covers
+ * exactly 0 to 1, which is what makes it a drop in replacement.
+ *
+ * It is the integral of a trapezoid, which is the same shape a motion control
+ * rig uses to move a camera and for the same reason.
+ */
+function ramp(v, a, b, inF, outF) {
+  const t = seg(v, a, b);
+  const area = 1 - inF * 0.5 - outF * 0.5;
+  let x;
+  if (inF > 0 && t < inF) {
+    x = (t * t) / (2 * inF);
+  } else if (outF > 0 && t > 1 - outF) {
+    const w = (t - (1 - outF)) / outF;
+    x = (1 - outF) - inF * 0.5 + outF * (w - (w * w) * 0.5);
+  } else {
+    x = t - inF * 0.5;
+  }
+  return clamp01(x / area);
+}
 
 /* ------------------------------------------------------------------ copy */
 
@@ -115,6 +151,41 @@ const BEATS = [
     at: 0.84,
     k: 'The board',
     t: 'Publish the track, post the lap, and let somebody else try to take it off you.',
+  },
+];
+
+/*
+ * The freestyle act's own beats.
+ *
+ * Fewer and shorter than the lap's, because the lap is an argument and the
+ * city is a demonstration: the copy over a race line can afford to talk
+ * about determinism, and the copy over a nine metre street should get out of
+ * the way of the street. Three beats over the whole act, each one naming the
+ * thing that is actually in frame when it appears.
+ *
+ * THE FIRST ONE STARTS LATE ON PURPOSE. The act's own copy block runs from
+ * T 3.02 to 3.16, and a beat is a second column of type in the middle of the
+ * same frame: at 0.06 the two were on screen together for a quarter of the
+ * act, which is not two pieces of copy, it is a paragraph with somebody
+ * else's headline sitting on it. 0.19 of the act is T 3.172, which is after
+ * the copy has gone. The other two are spaced the same way against each
+ * other, by the 0.03 tail every beat already carries.
+ */
+const CITY_BEATS = [
+  {
+    at: 0.19,
+    k: 'Freestyle',
+    t: 'The same aircraft, the same control loop, somewhere with walls. A gate tells you where to go. A town does not.',
+  },
+  {
+    at: 0.40,
+    k: 'The city',
+    t: 'A Japanese railway town, drawn to its own dimensions. Six metre shopping street, a level crossing, and a cable web at head height.',
+  },
+  {
+    at: 0.74,
+    k: 'Proximity',
+    t: 'Nothing here is scored. Fly the line you can see, at the height you dare, and put it back on the roof you started from.',
   },
 ];
 
@@ -178,6 +249,24 @@ stage.scene.add(droneRig);
 const course = buildCourse();
 stage.scene.add(course.group);
 
+/*
+ * The town, and it is built at start up even though nothing sees it for two
+ * whole acts.
+ *
+ * Building it lazily is the obvious economy and it is the wrong one. It is
+ * about a fifth of a second of geometry and canvas painting, and the only
+ * two places to spend that are here, behind a boot screen that is already
+ * up, or in the middle of the scroll, where it lands as a stall on the exact
+ * frame the page transitions between its two worlds. A visitor who never
+ * scrolls that far has paid a fifth of a second they did not need; a visitor
+ * who does has been shown a stutter at the payoff. The first is cheaper.
+ *
+ * It is not DRAWN until the field arrives, which is the part that actually
+ * costs per frame. See setShown below.
+ */
+const city = buildCity();
+stage.scene.add(city.group);
+
 const petals = buildPetals();
 stage.scene.add(petals.mesh);
 
@@ -211,6 +300,75 @@ if (DEBUG) {
       return { pos: p.toArray(), pitch: e.x, yaw: e.y, roll: e.z };
     },
     heading: () => flyFlip,
+    /* Every tree in the town, so a line through it can be checked as
+     * clearance rather than watched for a frame where the lens fills with
+     * bark. */
+    trees: () => {
+      const out = [];
+      const m = new THREE.Matrix4();
+      const p = new THREE.Vector3();
+      const q = new THREE.Quaternion();
+      const v = new THREE.Vector3();
+      for (const [kind, mesh] of [['blossom', city.green.blobs], ['cedar', city.green.cedars]]) {
+        for (let i = 0; i < mesh.count; i += 1) {
+          mesh.getMatrixAt(i, m);
+          m.decompose(p, q, v);
+          out.push({
+            kind,
+            x: p.x + city.origin.x,
+            y: p.y + city.origin.y,
+            z: p.z + city.origin.z,
+            /* The cedar lathe is a unit cone about its own base; a blossom
+             * lump is a unit sphere about its centre. Both are bounded by
+             * the largest of their horizontal scales, which is what a
+             * clearance test wants to be conservative about. */
+            r: Math.max(v.x, v.z) * 0.5,
+            h: v.y,
+            base: kind === 'cedar',
+          });
+        }
+      }
+      return out;
+    },
+    /*
+     * The freestyle line, as numbers. Same affordance as flight() above and
+     * added for the same reason: the first pass of the city act flew the
+     * aircraft into a shopfront, and working out WHICH shopfront from a
+     * screenshot of a wall is an afternoon. Ask the curve instead.
+     */
+    city,
+    /* Accessors, not the values. `cityLine` is a const declared further down
+     * the file, and naming it in this object literal evaluates it HERE, in
+     * its temporal dead zone, which throws at module load and leaves the page
+     * on its boot screen forever. A debug handle that breaks the page it is
+     * meant to debug is a special kind of unhelpful. */
+    line: () => cityLine,
+    cityAt,
+    cityRoam: (t) => ramp(t, 3.0, 3.97, 0, 0.13),
+    cityWhere: (roam) => {
+      const u = cityAt(roam);
+      const p = cityLine.getPointAt(u);
+      const t = cityLine.getTangentAt(u);
+      return {
+        u,
+        world: p.toArray(),
+        local: [p.x - CITY_ORIGIN.x, p.y - CITY_ORIGIN.y, p.z - CITY_ORIGIN.z],
+        tangent: t.toArray(),
+        climb: Math.asin(Math.max(-1, Math.min(1, t.y))),
+      };
+    },
+    /* The closing shot's own numbers, so the cap can be read rather than
+     * inferred from a screenshot of a hazy town. */
+    close: () => ({
+      want: CLOSE_WANT, far: CLOSE_FAR, dist: CLOSE_DIST, high: CLOSE_HIGH,
+      fog: stage.fogFor(1, 1),
+    }),
+    /* Where the camera and the aircraft actually ended up on the last frame. */
+    live: () => ({
+      cam: stage.camera.position.toArray(),
+      drone: dronePos.toArray(),
+      quat: droneQuat.toArray(),
+    }),
     /* Force the aircraft onto a heading, 0 pointing down the line and 1
      * pointing back up it. The turn is a half second of animation that only
      * happens while somebody is scrolling the other way, which is precisely
@@ -315,6 +473,143 @@ const LAP_TIME = (() => {
   return t;
 })();
 
+/* ----------------------------------------------------------- the city line */
+
+/*
+ * Where the lap ends, which is where the freestyle line begins.
+ *
+ * Computed rather than typed, because it is a point ON A CURVE and the curve
+ * is generated from a plan loop. Type it and the first time somebody moves a
+ * waypoint the quad teleports at the handover.
+ */
+const CITY_ENTRY = course.line.getPointAt(LAP_START).clone();
+const CITY_EXIT_DIR = course.line.getTangentAt(LAP_START).clone().normalize();
+const cityLine = flightLine(CITY_ENTRY, CITY_EXIT_DIR, CITY_ORIGIN);
+const CITY_LENGTH = cityLine.getLength();
+
+/*
+ * THE PACING OF THE FREESTYLE ACT, and it is not uniform.
+ *
+ * The line is two things end to end: about a hundred and forty metres of
+ * transit over the wood between the field and the town, and about a hundred
+ * and thirty metres of town. Flown at one pace they get one share of the
+ * scroll each, which means half the act is spent watching trees go past at
+ * the speed of a shopping street. Nobody scrolls through that twice.
+ *
+ * So the transit is flown at about two and a half times the pace of the
+ * streets. That is not a cheat, it is what a pilot does: you get somewhere
+ * fast and then you slow down for the bit with walls in it. The dash also
+ * does the transition's work, because speed is what makes an arrival read as
+ * an arrival.
+ *
+ * It is a TABLE rather than a formula, integrated once at start up, for the
+ * same reason SPEED above is: the mapping has to be monotonic and smooth in
+ * its derivative, and a piecewise formula that is both is harder to read
+ * than the integral of an obvious one. `PACE` is speed against act progress;
+ * CITY_S is its normalised integral, so scrubbing anywhere lands on the
+ * frame that belongs there.
+ */
+const CITY_S = (() => {
+  const N = 256;
+  const out = new Float32Array(N + 1);
+  const pace = (t) => lerp(2.55, 1.0, smooth(clamp01((t - 0.17) / 0.24)));
+  let sum = 0;
+  for (let i = 1; i <= N; i += 1) {
+    sum += pace((i - 0.5) / N);
+    out[i] = sum;
+  }
+  for (let i = 0; i <= N; i += 1) {
+    out[i] /= sum;
+  }
+  return out;
+})();
+
+/*
+ * Where on the act the aircraft reaches the level crossing.
+ *
+ * Found by searching the line rather than typed, because it is the thing two
+ * independent moving objects have to agree about: the quad hops the barriers
+ * and the train goes under it, and if the number is written down then moving
+ * a single waypoint desynchronises them silently. Nobody would notice for
+ * weeks and then the best moment in the act would just be a train somewhere
+ * else.
+ */
+const CITY_CROSS_U = (() => {
+  const N = 600;
+  let best = 0;
+  let bestD = Infinity;
+  const p = new THREE.Vector3();
+  for (let i = 0; i <= N; i += 1) {
+    cityLine.getPointAt(i / N, p);
+    /* Nearest to the crossing itself: on the tracks, and on the road rather
+     * than a hundred metres along the line from it. */
+    const d = Math.abs(p.z - CITY_ORIGIN.z) + Math.abs(p.x - CITY_ORIGIN.x) * 0.6;
+    if (d < bestD) {
+      bestD = d;
+      best = i / N;
+    }
+  }
+  return best;
+})();
+
+function cityAt(p) {
+  const N = CITY_S.length - 1;
+  const f = clamp01(p) * N;
+  const i = Math.min(N - 1, Math.floor(f));
+  return lerp(CITY_S[i], CITY_S[i + 1], f - i);
+}
+
+/*
+ * How fast the aircraft is actually going, in km/h, for the instrument.
+ *
+ * Differentiated from the same table the position comes from, so the number
+ * on the OSD and the motion on the screen cannot disagree. The scale factor
+ * turns "fraction of the line per unit of act" into metres per second by way
+ * of the line's own length and the act's nominal duration, and the duration
+ * is a decision rather than a measurement: the act is not on a clock, it is
+ * on a scrollbar, so what is displayed is the speed the line would be flown
+ * at, which is what a pilot's OSD shows anyway.
+ */
+/*
+ * How long the freestyle line would take to fly, in seconds.
+ *
+ * NOT a duration the page obeys: the act is on a scrollbar, not a clock. It
+ * is the number that turns "fraction of the line per unit of act" into a
+ * speed, and what it is really setting is how fast the aircraft is meant to
+ * be going, which is a decision about the flying rather than a measurement.
+ *
+ * 260 m in 16 s is 58 km/h on average, which comes out as about 40 down the
+ * streets and 100 across the wood. Those are the right numbers for what is
+ * on screen: 40 km/h is a quad flying a street with intent and not
+ * hooning, and 100 is the dash. It was 26 s at first, which read 25 km/h in
+ * the street, and 25 km/h is a quad being flown by somebody nervous.
+ */
+const CITY_SECONDS = 16;
+/*
+ * cityAt run backwards: which act progress puts the aircraft at a given
+ * point on the line. The table is monotonic, so this is a walk rather than a
+ * solve.
+ */
+function cityFrom(u) {
+  const N = CITY_S.length - 1;
+  for (let i = 1; i <= N; i += 1) {
+    if (CITY_S[i] >= u) {
+      const span = CITY_S[i] - CITY_S[i - 1] || 1e-6;
+      return (i - 1 + (u - CITY_S[i - 1]) / span) / N;
+    }
+  }
+  return 1;
+}
+const CITY_CROSS_AT = cityFrom(CITY_CROSS_U);
+
+function citySpeed(p) {
+  const d = 0.004;
+  const a = cityAt(Math.max(0, p - d));
+  const b = cityAt(Math.min(1, p + d));
+  const per = (b - a) / (Math.min(1, p + d) - Math.max(0, p - d));
+  return (per * CITY_LENGTH / CITY_SECONDS) * 3.6;
+}
+
 /* ---------------------------------------------------------------- the page */
 
 const el = {
@@ -333,6 +628,7 @@ const el = {
   tbSeq: document.getElementById('tb-seq'),
   tbXy: document.getElementById('tb-xy'),
   osd: document.getElementById('osd'),
+  osdLabel: document.getElementById('osd-label'),
   osdTimer: document.getElementById('osd-timer'),
   osdGate: document.getElementById('osd-gate'),
   osdSpeed: document.getElementById('osd-speed'),
@@ -386,6 +682,7 @@ const LEDGER = [
   { id: 'assemble', label: 'Build' },
   { id: 'build', label: 'Track' },
   { id: 'fly', label: 'Fly' },
+  { id: 'city', label: 'Freestyle' },
   { id: 'close', label: 'Practise' },
 ];
 const ledgerRows = LEDGER.map((r) => {
@@ -416,13 +713,17 @@ for (let i = 1; i <= GATE_COUNT; i += 1) {
 }
 
 /* The flight beats. */
-const beatEls = BEATS.map((b) => {
-  const d = document.createElement('div');
-  d.className = 'beat';
-  d.innerHTML = `<div class="beat-k">${b.k}</div><div class="beat-t">${b.t}</div>`;
-  el.beats.append(d);
-  return d;
-});
+function makeBeats(list) {
+  return list.map((b) => {
+    const d = document.createElement('div');
+    d.className = 'beat';
+    d.innerHTML = `<div class="beat-k">${b.k}</div><div class="beat-t">${b.t}</div>`;
+    el.beats.append(d);
+    return d;
+  });
+}
+const beatEls = makeBeats(BEATS);
+const cityBeatEls = makeBeats(CITY_BEATS);
 
 /* ------------------------------------------------------------- the timeline */
 
@@ -462,7 +763,11 @@ function timeline(y) {
       return i + clamp01((y - a.top) / a.height);
     }
   }
-  return 3 + clamp01((y - closeTop) / Math.max(1, docEnd - closeTop));
+  /* `list.length` rather than a typed 3. The tail of the timeline begins
+   * where the acts end, and an act inserted into <main> moves it: with the
+   * number written down, adding the city act made the close start at 3 while
+   * the city act was still running and the whole page fought itself. */
+  return list.length + clamp01((y - closeTop) / Math.max(1, docEnd - closeTop));
 }
 
 /* -------------------------------------------------------------- the camera */
@@ -669,32 +974,87 @@ function poseFPV(pos, quat, outPos, outQuat) {
 }
 
 /*
- * The close. The machine hovering over its own start gate with the track
- * and the low sun behind it, pulling back and up as the headline arrives.
+ * The close: the whole town at golden hour, seen from the south east, pulling
+ * further out and further up as the headline lands.
  *
- * It orbits the PARKED QUAD rather than the world origin, which is the whole
- * of the fix here: the origin is the middle of an empty infield, so a hero
- * shot framed on it was a photograph of some grass with the subject somewhere
- * off to the left.
+ * IT FRAMES THE DISTRICT, NOT THE QUAD, and that is a decision the layout
+ * forces. The closing line is centred and the three launch cards span most of
+ * the width beneath it, so the only clear areas are the sky and the margins:
+ * a 0.35 m airframe placed in either is a speck or a crop. What the last
+ * frame of the page should say is "here is the thing you get", and the thing
+ * you get is a place to fly. The quad is still there, hovering over the
+ * roofs, as the detail that tells you the scale of the rest.
+ *
+ * HOW FAR IT MAY GO IS A MEASURED NUMBER. The brief on this shot was that it
+ * must not pull back so far that the colour runs out of the city, and that is
+ * a piece of trigonometry rather than a taste. At the last frame the lens is
+ * 58 degrees across and the camera is 150 m out, so the frame is
+ * 2 * 150 * tan(29) = 166 m wide where the town is. The built district is
+ * about 92 m across and the woodland around it reaches 227 m, so the town
+ * fills the middle of the frame and the trees fill every corner of the rest.
+ * Nothing in shot is further than about 210 m, which at the reach below is
+ * eighteen percent haze: still coloured, still legible, still obviously
+ * further away than the near roofs.
+ *
+ * Any further and the frame grows faster than the district does. The first
+ * thing to arrive in the corners would be bare ground, and after that the
+ * haze, and at that point the last frame of the page is a photograph of some
+ * weather with a town in the middle of it.
+ *
+ * The air is opened up to match: over the town the fog reaches 620 m rather
+ * than 302, so the far side of the district at about 140 m carries six
+ * percent haze instead of forty. See setRegime's `reach` in stage.js. Both
+ * halves of that are the same instruction and neither works alone.
  */
 /*
- * The close: the whole track at golden hour, seen from high and behind,
- * pulling further out as the headline lands.
+ * HOW FAR THE CLOSE MAY PULL BACK, as a clamp rather than as a comment.
  *
- * It frames the COURSE, not the quad, and that is a decision the layout
- * forces. The closing line is centred and the three launch cards span most
- * of the width beneath it, so the only clear areas are the sky and the
- * margins: a 0.35 m airframe placed in either is a speck or a crop. What the
- * last frame of the page should say is "here is the thing you get", and the
- * thing you get is a race track. The quad is still there, hovering over its
- * start gate, as the detail that tells you the scale of the rest.
+ * The brief on this shot was "not so far as to have the colour go out of the
+ * city", and that is a measurable thing rather than a taste, so it is
+ * measured. Two constraints bound the pull back and the tighter one wins:
+ *
+ *   THE HAZE. At the far side of the district the fog must still be leaving
+ *   most of the colour in. Solved by inverting the smoothstep the fog runs
+ *   on, against the actual distances stage.js will be using at that point,
+ *   which is why it asks rather than assumes.
+ *
+ *   THE FRAME. The lens must not open wider than the town's own woodland at
+ *   the town's distance, or the first thing to arrive in the corners is bare
+ *   ground and after that the sky.
+ *
+ * At 150 m neither binds: the haze cap sits near 200 and the frame cap far
+ * past that. That is the point of writing them down. The number can be tuned
+ * for the composition without anybody having to remember why it was 150, and
+ * if a future tune goes past what the air or the trees can support, the
+ * clamp pulls it back instead of the last frame of the page quietly turning
+ * into a photograph of some weather.
  */
-function poseHero(t, outPos, outQuat) {
-  const az = lerp(0.42, 0.96, smooth(t));
-  const dist = lerp(46, 72, smooth(t));
-  const h = lerp(25, 37, smooth(t));
-  outPos.set(Math.sin(az) * dist, h, Math.cos(az) * dist);
-  at.set(0, 2.0, 0);
+const CLOSE_FOV = 58;
+const CLOSE_HAZE_MAX = 0.28;
+const CLOSE_WANT = 150;
+const CLOSE_FAR = (() => {
+  const fog = stage.fogFor(1, 1);
+  /* smoothstep inverted: the t at which 3t^2 - 2t^3 equals CLOSE_HAZE_MAX. */
+  const t = 0.5 - Math.sin(Math.asin(1 - 2 * CLOSE_HAZE_MAX) / 3);
+  const byHaze = fog.near + t * (fog.far - fog.near) - BUILT_R;
+  const byFrame = TREE_R / Math.tan(THREE.MathUtils.degToRad(CLOSE_FOV) * 0.5);
+  return Math.min(CLOSE_WANT, byHaze, byFrame);
+})();
+
+const CLOSE_DIST = [74, CLOSE_FAR];
+const CLOSE_HIGH = [32, 66];
+function poseCity(t, outPos, outQuat) {
+  const az = lerp(0.44, 0.56, smooth(t));
+  const dist = lerp(CLOSE_DIST[0], CLOSE_DIST[1], smooth(t));
+  const h = lerp(CLOSE_HIGH[0], CLOSE_HIGH[1], smooth(t));
+  outPos.set(
+    city.heart.x + Math.sin(az) * dist,
+    h,
+    city.heart.z + Math.cos(az) * dist,
+  );
+  /* Aimed at the roofs rather than at the ground, so the district sits in the
+   * middle of the frame instead of along the bottom of it. */
+  at.set(city.heart.x, 7.0, city.heart.z);
   lookQuat(outPos, at, outQuat);
 }
 
@@ -704,14 +1064,20 @@ const dronePos = new THREE.Vector3();
 const droneQuat = new THREE.Quaternion();
 const parked = new THREE.Vector3();
 
-/* Where the quad ends up for the close: over the start and finish gate,
- * a little above its opening, turned across the track. */
-const PARK = new THREE.Vector3(
-  course.gates[0].pos.x,
-  GATE_CENTRE_Y + 1.15,
-  course.gates[0].pos.z,
-);
-const PARK_YAW = course.gates[0].yaw + Math.PI + 0.55;
+/*
+ * Where the quad ends up for the close: hovering over the town's roofs at
+ * the end of the freestyle line, turned back across the district.
+ *
+ * It used to be over the race field's start gate, which is where the page
+ * used to end. It is taken from the city line's own last point rather than
+ * typed, so moving the line moves the parked quad with it and the close can
+ * never be framed on an aircraft that is somewhere else.
+ */
+const PARK = cityLine.getPointAt(1).clone();
+const PARK_YAW = (() => {
+  const t = cityLine.getTangentAt(1);
+  return Math.atan2(t.x, t.z) + Math.PI + 0.4;
+})();
 const eul = new THREE.Euler(0, 0, 0, 'YXZ');
 
 /*
@@ -806,6 +1172,94 @@ function flightPose(s, outPos, outQuat, bobPhase, flip = 0, turnBank = 0) {
   outQuat.setFromEuler(eul);
   /* A little vertical float, because a quad on a line is still a quad. */
   outPos.y += Math.sin(bobPhase) * 0.035;
+}
+
+/*
+ * The same job on the freestyle line, and it is a second function rather
+ * than an argument to the first.
+ *
+ * flightPose above is about a LAP: the curve is closed so it wraps, the
+ * attitude is level because a race line is level, and the nose down angle
+ * comes from a speed profile computed off the track's own curvature. None of
+ * those three things is true here. The freestyle line is open, it dives into
+ * a corridor and climbs out over the roofs, and its pace comes from the act
+ * rather than from the shape of the line. Four arguments and three
+ * conditionals would let one function do both, and the result would be a
+ * function that is about neither of them.
+ *
+ * THE ATTITUDE IS ABOUT THE CAMERA, NOT ABOUT THE AIRCRAFT, and getting that
+ * the wrong way round cost the first version of this act.
+ *
+ * The lens is mounted on the airframe and tilted THIRTY DEGREES UP, because
+ * that is where a real FPV camera sits. So an airframe flying level shows you
+ * thirty degrees of sky, and the only thing that puts a horizon in the middle
+ * of the frame is the aircraft being nose down. flightPose knows this: its
+ * pitch is between -0.16 and -0.40 rad, which nets out to a view between 7
+ * and 21 degrees above level, and that is what an FPV feed looks like.
+ *
+ * The first draft of this function forgot it. It followed the flight path at
+ * three quarters with a token -0.15 of trim, so a line climbing at 22 degrees
+ * put the nose UP and the camera 38 degrees into the sky. The screenshots of
+ * the transit are a photograph of some clouds.
+ *
+ * So the trim is -0.34, which is where the lap sits, and the path angle is
+ * added at half weight ON TOP of it and clamped. Half rather than none,
+ * because a quad diving into a six metre corridor should look down the dive
+ * and a quad climbing out over the roofs should show you the roofs coming.
+ * Clamped, because a spline through a waypoint can be locally much steeper
+ * than the leg it belongs to, and one steep control point should not throw
+ * the horizon out of the frame for the two hundred milliseconds it takes to
+ * pass it.
+ */
+const CITY_TRIM = -0.34;
+/*
+ * ...and one more term, which is about ALTITUDE.
+ *
+ * A trim that composes a street at three metres does not compose a district
+ * at twenty. The lens sits 30 degrees up, so an aircraft at street height
+ * shows you the shopfronts and a bit of sky, which is right; the same
+ * attitude twenty metres up shows you two thirds sky and a strip of roofs
+ * along the bottom edge, which is what the transit and the climb out both
+ * looked like. A pilot who has climbed to look at something looks DOWN at
+ * it, and so does this.
+ *
+ * Nothing under six metres is touched, so the streets are exactly as they
+ * were. From there to twenty two it winds in another twenty degrees of nose
+ * down, which puts the camera axis a few degrees below level at the top of
+ * the transit and the town where the eye already is.
+ */
+const CITY_LOOK_LOW = 6;
+const CITY_LOOK_HIGH = 22;
+const CITY_LOOK_DOWN = 0.34;
+const cityTan = new THREE.Vector3();
+const cityTan2 = new THREE.Vector3();
+function cityPose(u, outPos, outQuat, bobPhase, flip = 0, turnBank = 0) {
+  const c = clamp01(u);
+  cityLine.getPointAt(c, outPos);
+  cityLine.getTangentAt(c, cityTan);
+  const yawBase = Math.atan2(cityTan.x, cityTan.z) + Math.PI;
+  const yaw = yawBase + flip * Math.PI;
+
+  cityLine.getTangentAt(clamp01(c + 0.008), cityTan2);
+  let dyaw = (Math.atan2(cityTan2.x, cityTan2.z) + Math.PI) - yawBase;
+  while (dyaw > Math.PI) dyaw -= Math.PI * 2;
+  while (dyaw < -Math.PI) dyaw += Math.PI * 2;
+  /* A little harder than the lap's 0.52, because a freestyle line through a
+   * town is flown on its side and a race line is not. Not much harder: 0.72
+   * put the horizon on the diagonal for most of the street and every frame
+   * of it looked like the moment before a crash. */
+  const roll = THREE.MathUtils.clamp(dyaw * 2.0, -0.56, 0.56) * Math.cos(flip * Math.PI)
+    + turnBank;
+
+  const climb = THREE.MathUtils.clamp(
+    Math.asin(THREE.MathUtils.clamp(cityTan.y, -1, 1)), -0.62, 0.30,
+  );
+  const high = clamp01((outPos.y - CITY_LOOK_LOW) / (CITY_LOOK_HIGH - CITY_LOOK_LOW));
+  const pitch = CITY_TRIM + climb * 0.5 - high * CITY_LOOK_DOWN;
+
+  eul.set(pitch, yaw, roll);
+  outQuat.setFromEuler(eul);
+  outPos.y += Math.sin(bobPhase) * 0.03;
 }
 
 /*
@@ -964,10 +1418,38 @@ function frame(ms) {
   const scale = ease(T, 0.94, 1.16);
   const world = REDUCED ? 1 : ease(T, 1.97, 2.19);
   course.setWorld(world);
-  stage.setRegime(scale, world);
+  /*
+   * The country beyond the field arrives with the daylight, not with the
+   * city act. It is a property of the WORLD rather than of an act: the
+   * ground past the treeline was never a mown pitch, and the whole change
+   * happens outside the ring of trees where no shot can see it happen.
+   */
+  course.setWild(world, 105);
+  /*
+   * The town is drawn from the moment there is daylight to see it in, and
+   * that is a composition decision rather than a saving.
+   *
+   * It could be shown only when the city act starts. It is shown from the
+   * top of the field instead, so that during the lap there is a town on the
+   * northern horizon, half in the haze, over the treeline. Then the flight
+   * act is not followed by a new place, it is followed by THAT place, and
+   * the transition has been motivated for ten screens before it happens.
+   * The cost is about thirty draw calls behind a treeline.
+   */
+  city.setShown(world > 0.02);
+  /*
+   * How far the air is clear. The field wants its haze close so the
+   * treeline dissolves; the town wants it far so the district keeps its
+   * colour. It opens up across the dash between the two, which is the one
+   * stretch of the page where nothing is close enough to notice.
+   */
+  const reach = REDUCED ? 0 : ease(T, 3.02, 3.34);
+  stage.setRegime(scale, world, reach);
   course.setFog(stage.scene.fog);
   /* ------------------------------------------------------------- aircraft */
-  const flying = ease(T, 2.06, 2.92);
+  /* Eased in off the union, then flat out to the handover: the lap does not
+   * slow down at the end of itself any more, it is overtaken by the dash. */
+  const flying = ramp(T, 2.06, 3.0, 0.16, 0);
   /*
    * The lap starts SHORT of gate 1, not on it.
    *
@@ -981,9 +1463,29 @@ function frame(ms) {
   const sRaw = LAP_START + flying;
   const s = sRaw % 1;
   const inWorld = T >= 1.98;
-  /* Which way it is pointing. Live from T = 2, so the quad has already
-   * committed to a heading by the time it lands on the line. */
-  const flip = updateHeading(flying, dt, T >= 2.0 && T < 3.0);
+
+  /*
+   * The freestyle act's own parameter, and the point on its line.
+   *
+   * `roaming` is progress through the act, 0 to 1, and `cityU` is where that
+   * puts the aircraft on the curve. They are two numbers rather than one
+   * because the mapping between them is not linear: see CITY_S. The beats,
+   * the train and the instrument all read `roaming`, because they are about
+   * the ACT; only the aircraft reads `cityU`, because it is about the line.
+   */
+  const roaming = ramp(T, 3.0, 3.97, 0, 0.13);
+  const cityU = cityAt(roaming);
+  const inCity = T >= 2.995 && T < 4.0;
+
+  /*
+   * Which way it is pointing. Live across BOTH flying acts, and driven by
+   * whichever of the two is running, so scrolling back up the page turns the
+   * aircraft round in the city exactly the way it does on the lap. Handing it
+   * only the lap's parameter would have left the quad flying backwards
+   * through the shopping street with its nose still pointing at the roofs.
+   */
+  const heading = inCity ? roaming : flying;
+  const flip = updateHeading(heading, dt, T >= 2.0 && T < 4.0);
   /* How far outside the aircraft the camera is: nothing at either heading,
    * everything at the half way point of a turn. */
   const turnBank = turnBankNow(flip);
@@ -1003,11 +1505,17 @@ function frame(ms) {
    *
    * The contrast between the first and the last is the payoff of the piece.
    */
+  /*
+   * ...and it stays at 104 for the whole of the city, because the city act is
+   * the same argument the lap is making. The only change is at the very end,
+   * where the page leaves the airframe for the last time and the lens comes
+   * back to something a landscape can be composed in.
+   */
   stage.setFov(
     T < 1.0 ? STUDIO_FOV
       : T < 1.98 ? lerp(STUDIO_FOV, 46, ease(T, 1.0, 1.34))
-        : T < 2.9 ? lerp(46, 104, ease(T, 1.98, 2.24))
-          : lerp(104, 58, ease(T, 2.92, 3.20)),
+        : T < 3.78 ? lerp(46, 104, ease(T, 1.98, 2.24))
+          : lerp(104, CLOSE_FOV, ease(T, 3.80, 4.20)),
   );
 
   if (T < 1.02 && !REDUCED) {
@@ -1076,43 +1584,115 @@ function frame(ms) {
     camPos.lerp(pos2, toFpv);
     camQuat.slerp(quat2, toFpv);
 
+    /*
+     * There is no pull out here any more. The lap used to leave the airframe
+     * over its last ten hundredths so the closing shot could inherit a third
+     * person camera; the lap now hands over to a freestyle line that is also
+     * flown from inside, so the page stays in the goggles from the union all
+     * the way to the roofs of the town. That unbroken stretch is the single
+     * longest thing the film does and it is the point of it.
+     */
+  } else if (T < 4.0) {
+    /*
+     * THE FREESTYLE ACT. Off the field, over the wood, and down into the town.
+     *
+     * Still FPV, still the same aircraft, and the camera does not cut. What
+     * changes is the pace: see CITY_S. The first third of the line is flown
+     * at two and a half times the speed of the last two thirds, which is what
+     * turns a hundred and forty metres of empty field into an arrival rather
+     * than a commute.
+     */
+    cityPose(cityU, dronePos, droneQuat, now * 2.1, flip, turnBank);
 
-    /* Out of the airframe again for the close, so the last thing seen from
-     * inside the quad is the finish gate. */
-    const out = ease(T, 2.90, 3.0);
+    /*
+     * The join, and it is a blend rather than a cut.
+     *
+     * The two lines meet at exactly the same point in space, because the city
+     * line's first control point IS the lap's last one, and they leave it
+     * pointing the same way, because it is handed the lap's own exit
+     * direction. What they do NOT agree about is attitude: the lap is level
+     * and nose down at 20 degrees, and the freestyle line is already climbing
+     * away at 22. Snapped, that is a 42 degree flick on one frame, through a
+     * 104 degree lens, at the exact moment the page changes acts. Blended
+     * over six hundredths it is the aircraft pulling up.
+     */
+    const join = ease(T, 3.0, 3.06);
+    if (join < 1) {
+      flightPose(LAP_START, pos2, quat2, now * 2.1, flip, turnBank);
+      dronePos.lerp(pos2, 1 - join);
+      quat2.slerp(droneQuat, join);
+      droneQuat.copy(quat2);
+    }
+
+    poseFPV(dronePos, droneQuat, camPos, camQuat);
+
+    /*
+     * Out of the airframe for the close, and it starts EARLY.
+     *
+     * It is a long pull rather than the lap's old short one, because what it
+     * is pulling back to is a hundred and fifty metre wide landscape rather
+     * than a parked quad, and a camera that leaves an airframe and arrives at
+     * a town in a tenth of a second has cut rather than craned.
+     *
+     * The other reason is the copy. The reason section is the last thing
+     * before the close and it starts inside this act, so its four lines of
+     * lede land over whatever is in frame. Pulled out at 3.88 that was a
+     * roofscape five metres from the lens: the headline survived it and the
+     * paragraph under it did not. Starting at 3.76 the same words arrive
+     * over a district seen from forty metres, which is a background rather
+     * than a texture.
+     */
+    const out = ease(T, 3.76, 4.0);
     if (out > 0) {
-      poseChase(dronePos, droneQuat, lerp(3.1, 14, out), lerp(0.72, 5.5, out), pos2, quat2);
+      poseChase(dronePos, droneQuat, lerp(3.1, 44, out), lerp(0.72, 19, out), pos2, quat2);
       camPos.lerp(pos2, out);
       camQuat.slerp(quat2, out);
     }
   } else {
-    const t = clamp01(T - 3);
+    const t = clamp01(T - 4);
     /*
-     * Parked over the start and finish gate, hovering, nose across the
-     * track so the shot has the track running away behind it.
+     * Parked over the town's roofs, hovering, turned back across the
+     * district so the shot has the streets running away behind it.
      *
-     * Eased into from wherever the lap ended rather than snapped to. The lap
-     * finishes at the gate 1 plane, 1.15 m below this and pointing down the
-     * straight; setting the park pose directly teleported the quad up and
-     * spun it on the exact frame the closing act began.
+     * Eased into from wherever the freestyle line ended rather than snapped
+     * to. The line finishes travelling at twenty metres and banked; setting
+     * the park pose directly levelled the aircraft and spun it on the exact
+     * frame the closing act began.
      */
-    const parkK = ease(T, 3.0, 3.18);
-    flightPose(LAP_START + 1, pos2, quat2, now * 2.1);
+    const parkK = ease(T, 4.0, 4.20);
+    cityPose(1, pos2, quat2, now * 2.1);
     parked.set(PARK.x, PARK.y + Math.sin(now * 1.1) * 0.07, PARK.z);
     dronePos.copy(pos2).lerp(parked, parkK);
     eul.set(-0.05, PARK_YAW + Math.sin(now * 0.55) * 0.10, Math.sin(now * 0.7) * 0.045);
     droneQuat.setFromEuler(eul);
     droneQuat.copy(quat2).slerp(droneQuat, parkK);
 
-    poseChase(dronePos, droneQuat, 14, 5.5, camPos, camQuat);
-    poseHero(t, pos2, quat2);
-    const k = ease(T, 3.0, 3.30);
+    poseChase(dronePos, droneQuat, 32, 13, camPos, camQuat);
+    poseCity(t, pos2, quat2);
+    const k = ease(T, 4.0, 4.34);
     camPos.lerp(pos2, k);
     camQuat.slerp(quat2, k);
   }
 
   droneRig.position.copy(dronePos);
   droneRig.quaternion.copy(droneQuat);
+
+  /*
+   * The train, timed off the act rather than off a clock.
+   *
+   * setTrain's own 0.5 puts the middle car on the road, and CITY_CROSS_AT is
+   * where the act puts the aircraft over it, so offsetting one by the other
+   * lines them up: the quad hops the barriers with a train actually going
+   * under it. It is the one moment in the district where two moving things
+   * are in the same frame, and it is worth the arithmetic.
+   *
+   * Before the act it is held where that offset would have put it rather
+   * than hidden, because the district is visible from the field for the whole
+   * of the lap and a town whose train pops into existence has a bug in it.
+   * After the act setTrain clamps, so it settles clear of the road with its
+   * tail still by the barriers, which is what the lowered booms are for.
+   */
+  city.setTrain(T < 3.0 ? 0.5 - CITY_CROSS_AT : 0.5 + (roaming - CITY_CROSS_AT));
 
   /* Props: still while it is being built, spooling as it arms, working once
    * it is flying. */
@@ -1123,7 +1703,7 @@ function frame(ms) {
   if (inWorld) {
     throttle = lerp(0.34, 0.86, ease(T, 2.0, 2.14));
   }
-  if (T >= 3.0) {
+  if (T >= 4.0) {
     throttle = 0.42;
   }
   /* Reduced motion means the props are stopped too. A spinning rotor is
@@ -1151,13 +1731,17 @@ function frame(ms) {
   } else if (T < 1.98) {
     /* Nearly off over the plan. A diagram should not have weather. */
     petals.update(dt, camPos, 0.10, 9, 0.02);
-  } else if (T < 3.0) {
+  } else if (T < 4.0) {
     /* A tight box in the flight, so most of them are NEAR the lens and
      * streak past it. Spread over 44 m they were all in the distance,
-     * which is a still field rather than a fast one. */
-    petals.update(dt, camPos, 0.6, 14, 0.022);
+     * which is a still field rather than a fast one.
+     *
+     * The freestyle act keeps it, and gets a few more: the town has cherry
+     * in it, so blossom past the lens in a shopping street is the district's
+     * own weather rather than a decoration carried over from the field. */
+    petals.update(dt, camPos, T < 3.0 ? 0.6 : 0.75, 14, 0.022);
   } else {
-    petals.update(dt, camPos, 0.45, 18, 0.024);
+    petals.update(dt, camPos, 0.45, 22, 0.026);
   }
 
   /* The one shadow the page draws follows the subject. */
@@ -1169,13 +1753,50 @@ function frame(ms) {
   } else if (T < 2.0) {
     stage.aimLight(vTmp.set(0, 0, -2), 46);
     stage.aimBlob(dronePos, 0, 1);
-  } else {
+  } else if (T < 4.0) {
     stage.aimLight(dronePos, 16);
     stage.aimBlob(dronePos, world, 1.05);
+  } else {
+    /*
+     * At the close the subject is the DISTRICT, so the sun is aimed at the
+     * district. Aimed at the quad instead, the shadow frustum was a 16 m box
+     * round an aircraft hovering over one roof and the other four hundred
+     * buildings were outside it, which on a machine with shadows on is a
+     * town with one lit house in it.
+     *
+     * No blob, either: a painted shadow under a quad 90 m from the lens is
+     * two pixels of dirt on a roof.
+     */
+    stage.aimLight(city.heart, 90);
+    stage.aimBlob(dronePos, 0, 1);
   }
 
   /* -------------------------------------------------------------- the run */
-  if (inWorld) {
+  if (inCity) {
+    /*
+     * THE INSTRUMENT KEEPS RUNNING AND IT STOPS COUNTING GATES.
+     *
+     * A freestyle line has no gates, so the counter cannot say "gate 4 of 7"
+     * over a shopping street without lying about what is being flown. It says
+     * what the aircraft is doing instead. Everything else on the OSD carries
+     * straight on from the lap: the same clock, the same pack, still going
+     * down, because it is the same flight. Resetting the timer at the act
+     * boundary would say these were two sorties, and the whole argument of
+     * the join is that they are one.
+     */
+    course.setRun(-1, 0);
+    course.hideLines(true);
+
+    const kmh = citySpeed(roaming);
+    el.osdSpeed.textContent = `${Math.round(kmh)} km/h`;
+    el.osdLabel.textContent = 'Flight';
+    el.osdTimer.textContent = fmtTime(LAP_TIME + roaming * CITY_SECONDS);
+    el.osdGate.textContent = 'Freestyle';
+    el.osdThrottle.style.width = `${Math.round(clamp01((kmh - 30) / 90) * 100)}%`;
+    const volts = lerp(15.0, 13.9, roaming);
+    el.osdVolts.textContent = `${volts.toFixed(1)} V`;
+    el.osdBatt.style.width = `${Math.round(lerp(34, 9, roaming))}%`;
+  } else if (inWorld && T < 4.0) {
     let next = GATE_LAP.length - 1;
     for (let i = 0; i < GATE_LAP.length; i += 1) {
       if (GATE_LAP[i] >= sRaw - 0.004) {
@@ -1190,12 +1811,20 @@ function frame(ms) {
 
     const kmh = speedAt(s);
     el.osdSpeed.textContent = `${Math.round(kmh)} km/h`;
+    el.osdLabel.textContent = 'Lap';
     el.osdTimer.textContent = fmtTime((sRaw - LAP_START) * LAP_TIME);
     el.osdGate.textContent = `Gate ${Math.min(GATE_COUNT, next + 1)} of ${GATE_COUNT}`;
     el.osdThrottle.style.width = `${Math.round(clamp01((kmh - 30) / 80) * 100)}%`;
     const volts = lerp(16.6, 15.0, flying);
     el.osdVolts.textContent = `${volts.toFixed(1)} V`;
     el.osdBatt.style.width = `${Math.round(lerp(96, 34, flying))}%`;
+  } else if (T >= 4.0) {
+    /* The close. The track is a hundred and forty metres away behind the
+     * town and nothing on it should still be lit for a run that finished two
+     * acts ago. The lines stay hidden, because they are a builder's drawing
+     * and the page is long past the builder. */
+    course.setRun(-1, 0);
+    course.hideLines(true);
   } else {
     course.setRun(-1, 0);
     course.hideLines(false);
@@ -1228,27 +1857,43 @@ function frame(ms) {
     lastT = T;
     el.ticker.classList.toggle('on', !REDUCED && T < 1.06);
     el.builder.classList.toggle('on', !REDUCED && T > 1.04 && T < 2.02);
-    el.osd.classList.toggle('on', !REDUCED && T > 2.12 && T < 2.95);
+    el.osd.classList.toggle('on', !REDUCED && T > 2.12 && T < 3.94);
     el.cue.style.opacity = T > 0.35 ? '0' : '1';
     if (el.progress) {
-      el.progress.style.width = `${(clamp01(T / 4) * 100).toFixed(2)}%`;
+      el.progress.style.width = `${(clamp01(T / 5) * 100).toFixed(2)}%`;
     }
     el.veil.style.opacity = String(lerp(0.72, 0.5, world));
 
     setCopy('assemble', T > 0.04 && T < 0.90);
     setCopy('build', T > 1.06 && T < 1.90);
     setCopy('fly', T > 2.0 && T < 2.2);
+    setCopy('city', T > 3.02 && T < 3.16);
 
-    const act = T < 1 ? 0 : T < 2 ? 1 : T < 3 ? 2 : 3;
+    const act = T < 1 ? 0 : T < 2 ? 1 : T < 3 ? 2 : T < 4 ? 3 : 4;
     for (let i = 0; i < ledgerRows.length; i += 1) {
       ledgerRows[i].classList.toggle('on', i === act);
     }
 
+    /*
+     * Two runs of beats, and only one of them is ever on.
+     *
+     * They share the same column and the same styling because they are the
+     * same device: a line of copy that belongs to whatever is in frame. What
+     * they do not share is a parameter, because the lap's beats are keyed to
+     * a position on a race line and the city's are keyed to a position in an
+     * act.
+     */
     for (let i = 0; i < beatEls.length; i += 1) {
       const b = BEATS[i];
       const nextAt = i + 1 < BEATS.length ? BEATS[i + 1].at : 1.02;
-      const on = inWorld && T < 2.95 && flying >= b.at && flying < nextAt - 0.02;
+      const on = inWorld && !inCity && flying >= b.at && flying < nextAt - 0.02;
       beatEls[i].classList.toggle('on', on);
+    }
+    for (let i = 0; i < cityBeatEls.length; i += 1) {
+      const b = CITY_BEATS[i];
+      const nextAt = i + 1 < CITY_BEATS.length ? CITY_BEATS[i + 1].at : 1.02;
+      const on = inCity && T < 3.92 && roaming >= b.at && roaming < nextAt - 0.03;
+      cityBeatEls[i].classList.toggle('on', on);
     }
   }
 

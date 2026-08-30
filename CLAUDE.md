@@ -4,7 +4,7 @@ Project conventions. Read fully before any turn. These are decisions already mad
 
 ## What this is
 
-The front door for WebFPVSimulator. One canvas, one scroll, four acts, a reason, and three links out. It owns no data and calls no API: the launch buttons are links, and the origins they point at live in `src/config.js`.
+The front door for WebFPVSimulator. One canvas, one scroll, five acts, a reason, and three links out. It owns no data and calls no API: the launch buttons are links, and the origins they point at live in `src/config.js`.
 
 The three repositories are one product. `Mathew-Harvey/WebFPVSimulator` holds the simulator and the track builder and is the copy of record for anything shared; `Mathew-Harvey/WebFPVSimulator-LeaderBoard` is the board. Read the simulator's `CLAUDE.md` before changing anything that has to agree across the three, and `DEPLOY.md` there for how they are wired together.
 
@@ -14,7 +14,9 @@ The three repositories are one product. `Mathew-Harvey/WebFPVSimulator` holds th
 
 **No dependencies, no build step, no bundler.** Three.js arrives from a CDN import map and nothing else does. Adding anything needs an argument first.
 
-**The scroll is the timeline.** `main.js` maps scroll position to a camera and a set of acts. It must not be hijacked by smooth scrolling: the damping lives in `main.js` where it can be tuned against the camera. Every `[data-act]` element is measured into the timeline, so a new section that is not an act goes outside `<main>`, the way `#why` and `#close` do.
+**The scroll is the timeline.** `main.js` maps scroll position to a camera and a set of acts. It must not be hijacked by smooth scrolling: the damping lives in `main.js` where it can be tuned against the camera. Every `[data-act]` element is measured into the timeline, so a new section that is not an act goes outside `<main>`, the way `#why` and `#close` do. Nothing counts the acts by hand: `timeline()` measures them, the ledger is a list, and the eyebrow numbers renumber with the markup. An act inserted in the middle should cost the markup, the ledger row, the copy block and the camera branch, and nothing else.
+
+**The town is a portrait, not the town.** `src/city.js` is the freestyle city that act 4 flies, built here rather than imported: the simulator's own map is sixty four thousand lines of vendored geometry and this page has no build step. Every dimension in it is copied from the simulator's source with the file it came from named beside it, the way `src/wiki/model.js` snapshots the plant. If the two disagree about a number, one of them is a bug and it will be this one.
 
 **The palette is the simulator's.** Light is warm, shadow is cool. Cream for lit type, sakura for chrome, amber for an instrument, mint for something good, slate for type that should recede. The panel fill and the two pixel edge rule are the board's, so a visitor arriving from the board is looking at the same furniture.
 
