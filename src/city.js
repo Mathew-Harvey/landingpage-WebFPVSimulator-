@@ -161,6 +161,8 @@ export function buildCity({ onReady = null } = {}) {
   const state = {
     ready: false,
     world: null,
+    /* The rectangle the race field's deck has to stop at. Null until built. */
+    ground: null,
     /* What it actually cost, for the debug handle. A number in a comment is
      * a claim; a number the page measured is evidence. */
     stats: null,
@@ -220,6 +222,48 @@ export function buildCity({ onReady = null } = {}) {
     thinFoliage(world.root, { keep: LITE ? 0.45 : 0.72 });
     chunkInstanced(world.root, { cell: 40 });
 
+    /*
+     * WHERE THE TOWN'S OWN GROUND REACHES, measured off the geometry that was
+     * just built rather than written down.
+     *
+     * The race field's deck has to be cut out from under it or the two are
+     * coplanar at y = 0 across three hundred metres and z-fight. What the
+     * cut needs is the extent of the town's GROUND, not of the town: a
+     * utility pole nine metres up does not put ground under itself, and a
+     * rectangle drawn round every mesh in the district would cut the deck
+     * away from under thin air.
+     *
+     * So it is the union of the things that ARE ground, found by name off
+     * the town's own builders: its landform and hills, its lake bed, its
+     * school ground and its paved surfaces. Then inset, so the town's ground
+     * overhangs the hole on every side and the cut edge is never visible.
+     */
+    const groundBox = new THREE.Box3();
+    const one = new THREE.Box3();
+    world.root.traverse((o) => {
+      if (!o.isMesh) {
+        return;
+      }
+      const name = `${o.name || ''}|${(o.parent && o.parent.name) || ''}`;
+      if (!/ground|land|terrain|hill|turf|grass|lake|road|street|pad/i.test(name)) {
+        return;
+      }
+      one.setFromObject(o);
+      if (!one.isEmpty()) {
+        groundBox.union(one);
+      }
+    });
+    if (!groundBox.isEmpty()) {
+      const INSET = 9;
+      groundBox.min.x += INSET;
+      groundBox.max.x -= INSET;
+      groundBox.min.z += INSET;
+      groundBox.max.z -= INSET;
+      /* Into the race field's frame, which is where the deck lives. */
+      groundBox.min.add(CITY_ORIGIN);
+      groundBox.max.add(CITY_ORIGIN);
+    }
+
     let meshes = 0;
     let tris = 0;
     world.root.traverse((o) => {
@@ -238,8 +282,13 @@ export function buildCity({ onReady = null } = {}) {
 
     state.world = world;
     state.ready = true;
+    state.ground = groundBox.isEmpty() ? null : groundBox;
     state.stats = {
       pruned,
+      ground: groundBox.isEmpty() ? null : {
+        min: groundBox.min.toArray().map((v) => Math.round(v)),
+        max: groundBox.max.toArray().map((v) => Math.round(v)),
+      },
       meshes,
       triangles: Math.round(tris),
       buildMs: Math.round(tBuilt - t0),
@@ -312,6 +361,9 @@ export function buildCity({ onReady = null } = {}) {
     /* The town's own world object, for the clearance check in main.js. Null
      * until the build lands. */
     world: () => state.world,
+    /* The rectangle the deck must not draw inside, in the race field's own
+     * coordinates. Null until the build lands. */
+    groundBox: () => state.ground,
     origin: CITY_ORIGIN,
     /*
      * The town's own centre in world space, which is what a camera looking AT

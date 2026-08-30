@@ -276,12 +276,53 @@ function ground() {
        */
       uWild: { value: 0 },
       uWildR: { value: 105 },
-      /* Rice green, held well back from the turf's own hue. A Japanese
-       * suburb sits in paddy and scrub, not on a cut lawn, and the
-       * difference between the two is most of what tells a viewer at
-       * altitude that they have left the race field. */
-      uWildGrass: { value: new THREE.Color(0x6a8a5e) },
-      uWildDry: { value: new THREE.Color(0x93916a) },
+      /*
+       * THE TOWN'S OWN HILL TONES, not a guess at countryside.
+       *
+       * These were a rice green picked to read as "not a mown pitch", which
+       * was right when the town was a model built in this page's palette. It
+       * is the simulator's town now and it brings its own ground: hillGrass
+       * 0x9fbc90 and hillBracken 0xc6bf86, from its palette.js. The deck runs
+       * up to the edge of that ground and stops, so the two are touching, and
+       * two touching grounds in different greens is a line across the
+       * closing shot. They are the same greens now.
+       *
+       * THE VALUES ARE NOT THE TOWN'S HEXES, and that is a colour space
+       * correction rather than a taste. Three converts a Color from sRGB to
+       * linear when it is set, and this plane is a raw shader that writes its
+       * result straight out, so a hex handed to it here displays as its own
+       * linear value: 0x9fbc90 arrives on screen as a dark olive. Every
+       * colour already in this shader was picked through that same pipeline,
+       * which is why the grass is 0x456f31 and looks nothing like it.
+       *
+       * So these two are the town's hillGrass and hillBracken pushed back up
+       * through the transfer function, which is what makes them meet the
+       * town's own ground rather than sit a stop under it.
+       */
+      uWildGrass: { value: new THREE.Color(0xc6d6c2) },
+      uWildDry: { value: new THREE.Color(0xd8dcc0) },
+      /*
+       * THE HOLE THE TOWN STANDS IN.
+       *
+       * The town brings its own ground: a landform, two hills, a lake bed
+       * and every paved surface on top of them. This plane is one quad at
+       * y = 0 and the town's ground sits at y = 0 too, so without a hole the
+       * two are coplanar over three hundred metres and z-fight across the
+       * whole district. That is not a subtle artefact: what it actually
+       * looked like was the town's streets replaced by a flat beige field
+       * with a fence standing in it, because the deck won the depth test
+       * over most of the frame.
+       *
+       * So the deck is cut. The rectangle is the town's own terrain bounds
+       * INSET, so the town's ground overhangs the hole on every side and the
+       * cut edge is never the thing you see: outside it the deck runs on as
+       * countryside, inside it there is no deck at all.
+       *
+       * Zero half extent means no cut, which is the state every act before
+       * the town arrives is in.
+       */
+      uCutAt: { value: new THREE.Vector2(0, 0) },
+      uCutHalf: { value: new THREE.Vector2(0, 0) },
       /*
        * The ground's fog is OURS, not the renderer's.
        *
@@ -322,6 +363,8 @@ function ground() {
       uniform float uWildR;
       uniform vec3 uWildGrass;
       uniform vec3 uWildDry;
+      uniform vec2 uCutAt;
+      uniform vec2 uCutHalf;
 
       float lineAt(vec2 p, float spacing, float w) {
         vec2 g = abs(fract(p / spacing - 0.5) - 0.5) * spacing;
@@ -332,6 +375,13 @@ function ground() {
 
       void main() {
         vec2 p = vWorld.xz;
+        /* Out from under the town before anything else is computed. */
+        if (uCutHalf.x > 0.0) {
+          vec2 d = abs(p - uCutAt) - uCutHalf;
+          if (max(d.x, d.y) < 0.0) {
+            discard;
+          }
+        }
         float r = length(p);
 
         /* Builder plan. The grid is drawn out to a radius that grows with
@@ -390,7 +440,10 @@ function ground() {
         float wild = uWild * smoothstep(uWildR * 0.62, uWildR, r);
         vec3 paddy = mix(uWildGrass, uWildDry, 0.5 + 0.5 * sin(vWorld.x * 0.045) * sin(vWorld.z * 0.038));
         paddy *= 0.94 + 0.06 * sin(vWorld.x * 0.31) * sin(vWorld.z * 0.27);
-        paddy *= mix(vec3(1.0), uSun, 0.22);
+        /* Barely warmed. The town's own ground is lit by the page's key and
+           comes out cooler than this plane's hand rolled sun tint, and a warm
+           deck meeting a cool one is the seam by another route. */
+        paddy *= mix(vec3(1.0), uSun, 0.10);
         turf = mix(turf, paddy, wild);
 
         vec3 c = mix(plan, turf, uWorld);
@@ -865,6 +918,25 @@ export function buildCourse() {
     }
   }
 
+  /*
+   * Where the deck stops, because something else has the ground there.
+   *
+   * Called once with the town's own measured terrain bounds. It is measured
+   * rather than typed: the town is imported, its extent is whatever its
+   * source says it is today, and a rectangle written down here would be a
+   * second opinion about that. See buildCity in city.js, which reads the
+   * bounds off the geometry it just built and hands them over.
+   */
+  function setCut(min, max) {
+    const u = deck.material.uniforms;
+    if (!min || !max) {
+      u.uCutHalf.value.set(0, 0);
+      return;
+    }
+    u.uCutAt.value.set((min.x + max.x) * 0.5, (min.z + max.z) * 0.5);
+    u.uCutHalf.value.set((max.x - min.x) * 0.5, (max.z - min.z) * 0.5);
+  }
+
   /* The renderer's fog, handed to the ground shader verbatim, so the deck's
    * far edge and the dome behind it resolve to the same value. */
   function setFog(fog) {
@@ -903,6 +975,7 @@ export function buildCourse() {
     setBuild,
     setWorld,
     setWild,
+    setCut,
     setFog,
     setRun,
     hideLines,

@@ -275,6 +275,13 @@ stage.scene.add(course.group);
  */
 const city = buildCity({
   onReady: (stats) => {
+    /*
+     * The deck stops where the town's own ground starts, and it can only be
+     * told once the town has been built and measured. Before that the cut is
+     * zero sized and the deck is the whole world, which is exactly right for
+     * every act that runs before the town arrives.
+     */
+    course.setCut(city.groundBox() && city.groundBox().min, city.groundBox() && city.groundBox().max);
     if (DEBUG) {
       console.info('city:', JSON.stringify(stats));
     }
@@ -1873,7 +1880,17 @@ function frame(ms) {
     lastT = T;
     el.ticker.classList.toggle('on', !REDUCED && T < 1.06);
     el.builder.classList.toggle('on', !REDUCED && T > 1.04 && T < 2.02);
-    el.osd.classList.toggle('on', !REDUCED && T > 2.12 && T < 3.94);
+    /*
+     * THE INSTRUMENT LEAVES WITH THE GOGGLES.
+     *
+     * It used to run to 3.94, which is almost the end of the act, and that is
+     * too late for two reasons. The camera leaves the airframe at 3.76, and an
+     * OSD is what you see through goggles: kept on past that it is a heads up
+     * display floating over a crane shot. And the reason section scrolls into
+     * view about a screen before the timeline reaches it, so on a narrow
+     * window the flight clock was sitting on top of the price table.
+     */
+    el.osd.classList.toggle('on', !REDUCED && T > 2.12 && T < 3.80);
     el.cue.style.opacity = T > 0.35 ? '0' : '1';
     if (el.progress) {
       el.progress.style.width = `${(clamp01(T / 5) * 100).toFixed(2)}%`;
