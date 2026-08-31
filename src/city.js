@@ -52,7 +52,7 @@
 import * as THREE from 'three';
 import { buildWorld } from './city/vendored/world/index.js';
 import { centerX, groundY } from './city/vendored/world/street.js';
-import { findAnimated, shareMaterials, thinFoliage, chunkInstanced } from './city/bake.js';
+import { bakeCity, thinFoliage } from './city/bake.js';
 import { LITE } from './quality.js';
 
 /* The town's own street functions, re-exported so the flight line and
@@ -304,224 +304,26 @@ function thinTrees(root, plan) {
   return out;
 }
 
-/* ---------------------------------------------------------------- merging */
-
 /*
- * MERGING THE TOWN BY MATERIAL, and why this is not bake.js's bakeCity.
+ * One level of an object, numbers and strings only.
  *
- * bakeCity is the simulator's own pass and it is much cleverer than this: it
- * shares materials, bakes colour to vertices, atlases textures, builds shadow
- * proxies and merges by cell. It is also, called from here, wrong: it drops
- * the shopping street's buildings. Every one of its knobs was tried, the
- * simulator's own combination included, and the shops go every time; with the
- * call removed they come back. The simulator does a good deal of preparation
- * between buildWorld and bakeCity that this page does not, and chasing that
- * down means porting most of another file to get a pass this page needs one
- * eighth of.
- *
- * So the merge is done here, and it does the one thing that actually matters:
- * eleven thousand meshes become a few dozen. Group every static mesh by its
- * material and its attribute signature, concatenate the geometries with each
- * mesh's world transform baked in, and put one mesh in their place.
- *
- * WHAT IT MUST NOT TOUCH is anything that moves. findAnimated is bake.js's
- * own and is imported rather than reimplemented, because "which parts of this
- * town are animated" is a question about the town and the town's own code is
- * the authority on it. The train, the crossing booms and the petals come back
- * from it and are left exactly where they are.
- *
- * Grouping by ATTRIBUTE SIGNATURE as well as material is not fussiness. A
- * merged buffer has to have the same attributes all the way through, and this
- * town has geometries with vertex colours and geometries without. Merge those
- * together and the ones without get whatever was left in the buffer, which is
- * a wall painted with somebody else's colours.
+ * bakeCity's report is full of the things it just built: meshes, materials,
+ * geometries, all of them holding references back up the scene graph. Asking
+ * JSON for it throws on the first cycle. What is wanted from it here is the
+ * counts, so the counts are what is kept.
  */
-function mergeStatics(root, animated) {
-  const groups = new Map();
-  const skip = new Set();
-  /* Everything under a moving object moves with it. */
-  for (const a of animated) {
-    a.traverse((o) => skip.add(o));
-  }
-
-  root.traverse((o) => {
-    if (!o.isMesh || o.isInstancedMesh || skip.has(o) || !o.geometry || !o.material) {
-      return;
-    }
-    if (Array.isArray(o.material)) {
-      return;
-    }
-    const attrs = Object.keys(o.geometry.attributes).sort().join(',');
-    const key = `${o.material.uuid}|${attrs}`;
-    let g = groups.get(key);
-    if (!g) {
-      g = { material: o.material, attrs: attrs.split(','), meshes: [] };
-      groups.set(key, g);
-    }
-    g.meshes.push(o);
-  });
-
-  /*
-   * INTO THE ROOT'S FRAME, NOT THE WORLD'S, and this is the whole of the one
-   * bug that made the first version of this look like a bombed town.
-   *
-   * Each source mesh's transform has to be baked into its vertices, because
-   * after the merge there is no per mesh transform left to apply. The obvious
-   * matrix to bake is matrixWorld, and it is wrong: the merged mesh is then
-   * parented under this same root, which is itself under a group standing at
-   * the town's origin, so every vertex gets that offset applied twice. At an
-   * origin of 460 m that is a town scattered half a kilometre from its own
-   * ground.
-   *
-   * So the transform baked is the mesh's position RELATIVE TO THE ROOT, and
-   * the root's own placement is left to do its job once.
-   */
-  root.updateMatrixWorld(true);
-  const toRoot = new THREE.Matrix4().copy(root.matrixWorld).invert();
-
-  let merged = 0;
-  let replaced = 0;
-  for (const g of groups.values()) {
-    if (g.meshes.length < 2) {
-      continue;
-    }
-    root.updateMatrixWorld(true);
-    const geo = concat(g.meshes, g.attrs, toRoot);
-    if (!geo) {
-      continue;
-    }
-    for (const m of g.meshes) {
-      if (m.parent) {
-        m.parent.remove(m);
-      }
-      m.geometry.dispose();
-      replaced += 1;
-    }
-    const mesh = new THREE.Mesh(geo, g.material);
-    mesh.name = 'cityMerged';
-    mesh.castShadow = false;
-    mesh.receiveShadow = false;
-    root.add(mesh);
-    merged += 1;
-  }
-  return { groups: groups.size, merged, replaced };
-}
-
-/*
- * Concatenate a set of meshes into one geometry, each with its own world
- * transform baked in. Indices are rebased; a geometry with no index gets a
- * generated one so the output is always indexed.
- */
-function concat(meshes, attrs, toRoot) {
-  let verts = 0;
-  let idx = 0;
-  for (const m of meshes) {
-    const pos = m.geometry.getAttribute('position');
-    if (!pos) {
-      return null;
-    }
-    verts += pos.count;
-    const index = m.geometry.getIndex();
-    idx += index ? index.count : pos.count;
-  }
-  /* 32 bit indices always: this town's merges run past 65536 vertices in the
-   * first material and guessing per group is a bug waiting for a big town. */
-  if (verts > 4294967295) {
+function summarise(o) {
+  if (!o || typeof o !== 'object') {
     return null;
   }
-
-  const out = new THREE.BufferGeometry();
-  const arrays = {};
-  const sizes = {};
-  for (const name of attrs) {
-    const a = meshes[0].geometry.getAttribute(name);
-    if (!a) {
-      return null;
+  const out = {};
+  for (const [k, v] of Object.entries(o)) {
+    if (typeof v === 'number' || typeof v === 'string' || typeof v === 'boolean') {
+      out[k] = v;
+    } else if (Array.isArray(v)) {
+      out[k] = v.length;
     }
-    sizes[name] = a.itemSize;
-    arrays[name] = new Float32Array(verts * a.itemSize);
   }
-  const index = new Uint32Array(idx);
-
-  const nm = new THREE.Matrix3();
-  const v = new THREE.Vector3();
-  const mat = new THREE.Matrix4();
-  let vo = 0;
-  let io = 0;
-  for (const m of meshes) {
-    const geo = m.geometry;
-    mat.multiplyMatrices(toRoot, m.matrixWorld);
-    nm.getNormalMatrix(mat);
-    const count = geo.getAttribute('position').count;
-    for (const name of attrs) {
-      const a = geo.getAttribute(name);
-      if (!a || a.itemSize !== sizes[name]) {
-        return null;
-      }
-      const dst = arrays[name];
-      const size = sizes[name];
-      if (name === 'position') {
-        for (let i = 0; i < count; i += 1) {
-          v.fromBufferAttribute(a, i).applyMatrix4(mat);
-          dst[(vo + i) * 3] = v.x;
-          dst[(vo + i) * 3 + 1] = v.y;
-          dst[(vo + i) * 3 + 2] = v.z;
-        }
-      } else if (name === 'normal') {
-        for (let i = 0; i < count; i += 1) {
-          v.fromBufferAttribute(a, i).applyMatrix3(nm).normalize();
-          dst[(vo + i) * 3] = v.x;
-          dst[(vo + i) * 3 + 1] = v.y;
-          dst[(vo + i) * 3 + 2] = v.z;
-        }
-      } else {
-        /*
-         * Through the accessors, not the raw array.
-         *
-         * a.array is only the flat float buffer people assume it is for the
-         * simple case. This town also has interleaved attributes, where the
-         * array is the whole interleaved block and an index into it lands in
-         * the middle of somebody else's vertex, and normalised integer
-         * attributes, where the raw value is 0 to 255 and the accessor is
-         * what divides it back down. Read raw, the merge produced a town of
-         * flattened walls and scattered fragments, which is exactly what
-         * garbage vertex data looks like. getX and friends handle both.
-         */
-        for (let i = 0; i < count; i += 1) {
-          const at = (vo + i) * size;
-          dst[at] = a.getX(i);
-          if (size > 1) {
-            dst[at + 1] = a.getY(i);
-          }
-          if (size > 2) {
-            dst[at + 2] = a.getZ(i);
-          }
-          if (size > 3) {
-            dst[at + 3] = a.getW(i);
-          }
-        }
-      }
-    }
-    const gi = geo.getIndex();
-    if (gi) {
-      for (let i = 0; i < gi.count; i += 1) {
-        index[io + i] = gi.getX(i) + vo;
-      }
-      io += gi.count;
-    } else {
-      for (let i = 0; i < count; i += 1) {
-        index[io + i] = vo + i;
-      }
-      io += count;
-    }
-    vo += count;
-  }
-
-  for (const name of attrs) {
-    out.setAttribute(name, new THREE.BufferAttribute(arrays[name], sizes[name]));
-  }
-  out.setIndex(new THREE.BufferAttribute(index, 1));
-  out.computeBoundingSphere();
   return out;
 }
 
@@ -559,7 +361,10 @@ function concat(meshes, attrs, toRoot) {
 export function buildCity({ onReady = null } = {}) {
   const group = new THREE.Group();
   group.name = 'city';
-  group.position.copy(CITY_ORIGIN);
+  /*
+   * AT THE ORIGIN UNTIL THE TOWN IS BAKED, and then moved. See make().
+   * Placing it here and building into it is what broke the merge.
+   */
   group.visible = false;
 
   const state = {
@@ -576,6 +381,29 @@ export function buildCity({ onReady = null } = {}) {
 
   function make() {
     const t0 = performance.now();
+    /*
+     * THE TOWN IS BUILT AND MERGED AT THE WORLD ORIGIN, AND MOVED AFTERWARDS.
+     *
+     * This one line is the whole of a bug that cost a day and left the
+     * shopping street missing from the page.
+     *
+     * bakeCity merges by baking each source mesh's matrixWorld into its
+     * vertices and then parenting the result under world.root. Those two
+     * steps cancel only if root is itself at the origin, which is how the
+     * simulator uses it: buildWorld(scene) hangs root off the scene and
+     * nothing above it has a transform. Hang it off a group standing 460 m
+     * away instead and every merged vertex gets that offset applied twice,
+     * so the merged half of the town lands half a kilometre from the half
+     * that was not merged. What that looks like from inside the shopping
+     * street is a street with no shops in it, which is exactly what it did.
+     *
+     * It is not bakeCity's bug. It is a documented consequence of what
+     * baking a world matrix means, and the caller's job is to make the world
+     * matrix the one the bake assumes. So the group sits at the origin for
+     * the build and the bake, and takes its place at the end.
+     */
+    group.position.set(0, 0, 0);
+    group.updateMatrixWorld(true);
     /*
      * `bake: false` is the town's own flag and it means "do not bend this
      * onto the planet". The simulator declines the bake for two reasons that
@@ -773,27 +601,93 @@ export function buildCity({ onReady = null } = {}) {
      * aircraft, so a town that casts would be paying for a second pass over
      * a thousand meshes to draw a shadow nobody is looking at.
      */
-    const { moving } = findAnimated(world, { releaseStillRigs: false });
-    /* Dedupe identical materials first: the merge groups by material, and
-     * two materials that differ only by object identity are two groups that
-     * could have been one. bake.js own pass. */
-    const shared = shareMaterials(world.root, moving);
-    const mergeStats = mergeStatics(world.root, moving);
-    mergeStats.shared = shared && shared.saved;
+    /*
+     * A CENSUS OF TEXTURED SURFACES, TAKEN EITHER SIDE OF THE MERGE.
+     *
+     * This exists because the merge was accused of losing the town's shop
+     * signs, on the evidence of two screenshots and a bad memory of what the
+     * street used to look like. It is not: 245 distinct textures go in and
+     * 245 come out, every time. What actually changed was that the hand
+     * rolled merge this replaced WAS lossy, and had been flattening the
+     * shopfront awnings from striped to plain for a week.
+     *
+     * It costs one traverse of a graph that is about to be traversed anyway,
+     * and it is the difference between believing the merge is safe and
+     * knowing it.
+     */
+    const censusMaps = (root) => {
+      let mapped = 0;
+      let meshes = 0;
+      const seen = new Set();
+      root.traverse((o) => {
+        if (!o.isMesh) {
+          return;
+        }
+        meshes += 1;
+        const m = Array.isArray(o.material) ? o.material[0] : o.material;
+        if (m && m.map) {
+          mapped += 1;
+          seen.add(m.map.uuid);
+        }
+      });
+      return { meshes, mapped, textures: seen.size };
+    };
+    const before = censusMaps(world.root);
+
+    /*
+     * The simulator's own merge, with the simulator's own shadows-off
+     * numbers. It shares materials, bakes colour to vertices, atlases the
+     * town's textures and merges by material, which is a great deal more
+     * than a hand rolled merge does and is the difference between four
+     * thousand draw calls and one.
+     *
+     * Casters are switched off outright: the page's one shadow is the
+     * aircraft's own and the town never receives it, so a town that cast
+     * would be paying a second pass over the whole district to draw a
+     * shadow nothing samples.
+     */
+    const mergeStats = bakeCity(world, {
+      cell: Infinity,
+      shadowCell: Infinity,
+      cullCell: 40,
+      casterMinRadius: 1e9,
+      casterMinRadiusInstanced: 1e9,
+      /*
+       * THE TEXTURE ATLAS IS OFF, and sixty four is how you turn it off:
+       * bakeCity always calls atlasTextures, and a sheet this small packs
+       * nothing, so every material is left exactly as it was found.
+       *
+       * It is off because it is not worth what it costs. Measured, packing
+       * the town's textures saves 138 draw calls at the closing shot out of
+       * about thirteen hundred, which is ten percent, and it leaves one
+       * shopfront in the shopping street rendering as a blank white panel.
+       * The merge below is where the win actually is: it is the difference
+       * between four thousand four hundred draw calls and thirteen hundred.
+       * A tenth more for a visibly broken shop is a bad trade on the one
+       * street this act was built around.
+       */
+      atlasSize: 64,
+      releaseStillRigs: true,
+      shadowProxyCell: 0,
+    });
     /* The town's own knob, which only reaches its hill tufts, moss, rocks and
      * lake reeds. Cheap, and worth having, but it is not the planting. */
     thinFoliage(world.root, { keep: LITE ? 0.35 : 0.55 });
     /*
-     * chunkInstanced is NOT run. It splits each instanced set into per cell
-     * sets so distant cells cull, which is the right trade for a player
-     * walking a district and the wrong one here: measured with and without,
-     * it cost a hundred and twenty draw calls at the close and a hundred on
-     * the main street, and saved seventy five in the corridor. The camera is
-     * never inside enough of this town for the culling to pay for the meshes
-     * it makes.
+     * chunkInstanced is NOT run, though bake.js offers it. It splits each
+     * instanced set into per cell sets so distant cells cull, which is the
+     * right trade for a player walking a district and the wrong one here:
+     * measured both ways it cost a hundred and twenty draw calls at the
+     * close and a hundred on the main street, and saved seventy five in the
+     * corridor. The camera is never inside enough of this town for the
+     * culling to pay for the meshes it makes.
      */
 
     /* CHUNK OFF FOR TEST */
+
+    /* Everything is baked. The town can take its place. */
+    group.position.copy(CITY_ORIGIN);
+    group.updateMatrixWorld(true);
 
     let meshes = 0;
     let tris = 0;
@@ -817,7 +711,13 @@ export function buildCity({ onReady = null } = {}) {
     state.stats = {
       pruned,
       thinned,
-      merge: mergeStats,
+      /*
+       * Flattened, because bakeCity answers with an object that holds live
+       * meshes and materials, and a debug handle that cannot be stringified
+       * is a debug handle nobody can read. Numbers and strings only.
+       */
+      merge: summarise(mergeStats),
+      maps: { before, after: censusMaps(world.root) },
       petals: { before: petalsBefore, after: petalsAfter },
       ground: groundBox.isEmpty() ? null : {
         world: {
