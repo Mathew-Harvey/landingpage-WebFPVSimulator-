@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The five pages of webfpv.org, which are three separate services behind one
+  domain: this landing page and its wiki are a static site, /sim/ is the
+  simulator's Render static site and /board/ is the board's Render web
+  service, joined by the Cloudflare Worker in the simulator's edge/router.js.
+
+  The wiki's articles are hash routes off /wiki/, so they cannot be listed
+  here as URLs of their own. What makes them findable is the per article
+  document.title in src/wiki/wiki.js and the links out of /wiki/ itself.
+
+  Hand maintained, and short enough that it should be. If a sixth page ever
+  appears, it goes here.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://webfpv.org/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://webfpv.org/sim/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://webfpv.org/wiki/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://webfpv.org/board/</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://webfpv.org/sim/src/trackbuilder/index.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+</urlset>

@@ -369,6 +369,7 @@ export class WikiView {
     this.toggleRail(false);
     this.renderRail();
     this.render();
+    this.setDocumentTitle(page);
     if (!opts.silentHash) {
       const url = new URL(window.location.href);
       url.hash = `wiki/${id}`;
@@ -386,6 +387,34 @@ export class WikiView {
     }
     this.main.scrollTop = 0;
     return true;
+  }
+
+  /*
+   * EVERY ARTICLE IS ITS OWN PAGE IN THE TAB STRIP AND IN HISTORY.
+   *
+   * The wiki routes by hash and pushes a history entry for each article, but
+   * never touched document.title, so all thirty six pages read "FPV wiki,
+   * WebFPV": a reader with four of them open could not tell the tabs apart,
+   * and neither could their own back list, which is the one place a pushed
+   * entry is supposed to be legible.
+   *
+   * The description meta moves with it. A hash route is one URL to a crawler
+   * whatever this does, and the sitemap is the answer to that; this is for
+   * the person with the tabs.
+   *
+   * The suffix is kept so a bookmark still says what site it is from.
+   */
+  setDocumentTitle(page) {
+    const base = 'FPV wiki, WebFPV';
+    if (!page || !page.title) {
+      document.title = base;
+      return;
+    }
+    document.title = `${page.title}, FPV wiki`;
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta && (page.lede || page.note)) {
+      meta.setAttribute('content', String(page.lede || page.note));
+    }
   }
 
   openDefault(opts = {}) {
@@ -538,7 +567,13 @@ export class WikiView {
       kicker.append(el('span', 'wiki-step-tag', `Step ${step} of ${JOURNEY.length}`));
     }
     this.article.append(kicker);
-    this.article.append(el('h2', null, page.title));
+    /* h1, not h2. This IS the page's heading, and the document had no h1 at
+     * all: the article opened at h2 with nothing above it, so a screen
+     * reader's heading list started one level down and a crawler found no
+     * title element for the page. The static markup carries no h1 of its own
+     * because the article is what the page is. The type is unchanged, the
+     * stylesheet names both tags. */
+    this.article.append(el('h1', null, page.title));
     if (page.key && page.kind === 'cli') {
       const code = el('p', 'wiki-key');
       code.append(el('code', null, page.key));

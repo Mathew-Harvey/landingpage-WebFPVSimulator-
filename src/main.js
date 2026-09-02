@@ -1994,7 +1994,21 @@ function frame(ms) {
     const flare = 1 - clamp01(Math.abs(T - 3.0) / 0.085);
     el.dissolve.style.opacity = (flare * flare * (3 - 2 * flare)).toFixed(3);
 
-    setCopy('assemble', T > 0.04 && T < 0.90);
+    /*
+     * ACT 1'S COPY IS ON SCREEN FROM THE FIRST FRAME.
+     *
+     * It used to open at T > 0.04, which is about a screen of scroll, so the
+     * page as it loaded was a dark stage, a small lit frame plate, the nav
+     * and the word SCROLL, and the claim the whole page is making, that a
+     * five inch quad is built in front of you on Betaflight 4.5.1 compiled
+     * to WebAssembly, was not on screen until scrollY passed a thousand
+     * pixels. On a phone that empty frame was the entire first impression,
+     * and the first impression is the one thing a front door cannot afford
+     * to spend on a held beat.
+     *
+     * The fade out at 0.90 is untouched: leaving is timing, arriving is not.
+     */
+    setCopy('assemble', T < 0.90);
     setCopy('build', T > 1.06 && T < 1.90);
     setCopy('fly', T > 2.0 && T < 2.2);
     setCopy('city', T > 3.02 && T < 3.16);

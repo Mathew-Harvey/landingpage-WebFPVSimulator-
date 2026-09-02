@@ -1,0 +1,17 @@
+# webfpv.org
+#
+# The Cloudflare Worker in the simulator's edge/router.js serves this
+# repository at the site root, so this file governs all five pages: the
+# landing page here, the wiki here, and the simulator, the track builder and
+# the board behind their mount points.
+#
+# Everything is public and nothing is expensive to fetch, so there is nothing
+# to disallow. What was actually missing was the sitemap line: without it a
+# crawler finds the wiki's thirty six articles only by following links from
+# one page, and the articles are hash routes off a single URL, so it finds
+# them not at all.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://webfpv.org/sitemap.xml
