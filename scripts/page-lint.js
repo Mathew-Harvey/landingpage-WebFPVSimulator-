@@ -215,6 +215,33 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki]]) {
   check('no en or em dashes', bad.length === 0, bad.length ? bad.join(', ') : 'the separator is &#183; as the house style says');
 }
 
+/*
+ * 10. THE INVITATION IS STILL THE SHORTEST PATH INTO THE SIMULATOR.
+ *
+ * The card that offers a first visitor a flight is worth exactly as much as
+ * it is reachable, and there are three ways to quietly break it. Building it
+ * at run time, or moving its switch into a module, puts the front door
+ * behind a CDN request for three.js. Dropping data-dest off its link leaves
+ * a laptop serving all three repos pointing at production. And leaving the
+ * hidden attribute off shows the card for a frame before the script has
+ * decided whether it should be shown at all.
+ */
+{
+  const hasCard = /id="invite"/.test(index);
+  const hidden = /id="invite"[^>]*\shidden/.test(index);
+  const targeted = /class="invite-fly"[^>]*data-dest="sim"/.test(index);
+  /* Every script tag in the page, and the module is allowed to be one. */
+  const modules = (index.match(/<script[^>]*type="module"/g) || []).length;
+  const scripts = (index.match(/<script(?![^>]*type="importmap")[^>]*>/g) || []).length;
+  check(
+    'index.html: the invitation is static markup, not a module',
+    hasCard && hidden && targeted && modules === 1 && scripts === 2,
+    hasCard
+      ? `${hidden ? 'hidden' : 'NOT hidden, so it flashes'}, ${targeted ? 'data-dest set' : 'NO data-dest, so local serving points at production'}, ${modules} module script and ${scripts - modules} plain`
+      : 'MISSING, so the only way in is a 12 px label in the corner',
+  );
+}
+
 const w = Math.max(...rows.map((r) => r[0].length));
 console.log('page-lint: the parts of the pages that are true or false\n');
 for (const [name, status, detail] of rows) {

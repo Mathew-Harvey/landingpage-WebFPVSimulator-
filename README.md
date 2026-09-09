@@ -105,6 +105,39 @@ Client side only. No build step, no bundler, no framework, no dependencies
 to install, no API. Three.js comes from a CDN import map, the same version
 the simulator uses.
 
+## The invitation
+
+A four minute film about a simulator has to answer the visitor who does not
+want the film. That visitor arrived, looked at a wordmark the height of a
+hand, and had to find a twelve pixel label in the top corner to get into the
+product. So the page makes the offer in the middle of the screen, once, and
+the corner keeps it afterwards.
+
+The card is static markup and a plain inline script, not a module. Every
+other thing on this page begins by importing three.js from a CDN, and this
+is the one piece whose entire job is to put somebody in the simulator: it
+must not be able to fail with the render. Delete the script and the card's
+link still works. Kill the CDN and the card still comes up, on a thirteen
+second timer past every path where `main.js` clears its own loading screen.
+
+Three details are the design rather than the decoration. The button in the
+card is mint on deep at the bar's own weight and tracking, because it is the
+same button said larger and the eye should know it again. The bar is lifted
+over the scrim while the card is open, so "Fly now stays in the top right"
+is a thing the visitor can see rather than a promise. And on dismissal the
+focus and two pulses of mint land on that button: the offer did not go away,
+it moved, and the last frame of the card says where to.
+
+It appears when the loading screen lifts, which `main.js` announces with a
+`webfpv:ready` event, so there is a beat of the studio shot before anything
+is asked. It does not appear at all if the visitor is part way down the page
+already, which is a reload rather than a landing, or if WebGL is missing,
+since the simulator needs it too. It closes on Escape, on the scrim, on
+either dismissal control, and on the first turn of the wheel: this page's
+scroll is its timeline, so reaching for it is choosing the film. A dismissal
+is remembered for thirty days, and storage that throws shows the card, which
+errs toward the offer.
+
 ## Run it
 
 ```bash

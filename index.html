@@ -269,6 +269,170 @@
         .nav a:not(.is-primary):not(.is-wiki) { display: none; }
       }
 
+      /* ------------------------------------------------------------------
+         THE INVITATION.
+
+         The bar above says FLY NOW, and it is a twelve pixel label in the
+         corner of a page whose first screen is a wordmark the height of a
+         hand. Somebody who came to fly rather than to watch the film had to
+         find it up there, and enough of them did not that this exists: the
+         page makes the offer out loud, once, and then gets out of the way.
+
+         Two things here are load bearing rather than taste. The button in
+         the card is mint on deep at the bar's own weight and tracking,
+         because it is the SAME button said larger and the eye should know
+         it again when the card goes. And the bar is lifted OVER the scrim
+         while the card is open, so the line at the foot of the card is
+         something the visitor can see rather than a promise about later.
+         ------------------------------------------------------------------ */
+      #invite {
+        position: fixed;
+        inset: 0;
+        /* Over the boot screen at 40 and the WebGL notice at 41. It is only
+           ever seen over the boot screen in one case, which is the module
+           graph having failed: see the script at the foot of the body. */
+        z-index: 45;
+        display: grid;
+        place-items: center;
+        padding: var(--gutter);
+        opacity: 0;
+        transition: opacity 0.42s var(--ease);
+      }
+      /* An id outranks the browser's own [hidden] rule, so the attribute
+         has to be honoured here or it does nothing at all and the card is
+         on screen before the script has had a say. */
+      #invite[hidden] { display: none; }
+      #invite.on { opacity: 1; }
+
+      .invite-scrim {
+        position: absolute;
+        inset: 0;
+        background: rgba(8, 12, 9, 0.68);
+        /* The film is running behind this. The blur says so, and it stops a
+           lit frame from competing with thirty pixels of type. */
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+      }
+
+      .invite-card {
+        position: relative;
+        width: min(520px, 100%);
+        padding: 30px clamp(22px, 4vw, 34px) 26px;
+        background: var(--panel-fill);
+        border: 1px solid var(--line);
+        /* The board's two pixel rule, which every panel in the family
+           wears. A visitor who has seen the leaderboard has seen this. */
+        border-top: 2px solid var(--edge);
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+        transform: translateY(14px);
+        transition: transform 0.42s var(--ease);
+      }
+      #invite.on .invite-card { transform: none; }
+
+      .invite-card .eyebrow { margin-bottom: 16px; }
+      /* The page's h2 is sized for a headline over a whole screen. In a 520
+         px card that is a shout through a letterbox. */
+      .invite-card h2 {
+        margin: 0 0 12px;
+        font-size: clamp(26px, 3.2vw, 33px);
+        line-height: 1.06;
+      }
+      .invite-card .lede { font-size: 15px; }
+
+      .invite-go {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 24px;
+      }
+      .invite-fly,
+      .invite-stay {
+        flex: 1 1 auto;
+        padding: 15px 20px;
+        border-radius: 3px;
+        font-family: inherit;
+        font-size: 12px;
+        letter-spacing: var(--track-label);
+        text-transform: uppercase;
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+        transition: background 0.18s var(--ease), color 0.18s var(--ease), border-color 0.18s var(--ease);
+      }
+      .invite-fly {
+        /* Twice the secondary's share of the row, so the two are never a
+           pair of equals asking the visitor to choose. */
+        flex-grow: 2;
+        background: var(--mint);
+        border: 1px solid var(--mint);
+        color: var(--deep);
+        font-weight: 700;
+      }
+      .invite-fly::after { content: " \2192"; }
+      .invite-fly:hover { background: #9dffc7; }
+      .invite-stay {
+        background: transparent;
+        border: 1px solid var(--line);
+        color: rgba(243, 234, 212, 0.7);
+      }
+      .invite-stay:hover { border-color: rgba(244, 236, 214, 0.28); color: var(--cream); }
+      .invite-fly:focus-visible,
+      .invite-stay:focus-visible,
+      .invite-x:focus-visible {
+        outline: 2px solid var(--sakura);
+        outline-offset: 2px;
+      }
+
+      /* The corner cross. The secondary button says the same thing in
+         words, but the corner is where a hand goes first and a card that
+         does not have one reads as a card that will not close. */
+      .invite-x {
+        position: absolute;
+        top: 6px; right: 6px;
+        width: 34px; height: 34px;
+        display: grid;
+        place-items: center;
+        background: transparent;
+        border: 0;
+        border-radius: 3px;
+        color: rgba(243, 234, 212, 0.5);
+        font: 15px/1 var(--ui-font);
+        cursor: pointer;
+      }
+      .invite-x:hover { color: var(--cream); background: rgba(243, 234, 212, 0.07); }
+
+      .invite-foot {
+        margin: 16px 0 0;
+        font-size: 10px;
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: rgba(157, 179, 200, 0.62);
+      }
+
+      /*
+       * The bar over the scrim, and the handoff.
+       *
+       * While the card is open the bar is the one lit thing outside it, so
+       * the corner the card names is the corner the eye is already on. When
+       * the card goes, that button takes two pulses of its own colour. That
+       * is the last frame of the same sentence rather than decoration: the
+       * offer did not disappear, it moved, and this says where to.
+       */
+      body.invite-open #topbar { z-index: 46; }
+      .nav a.is-primary.handoff { animation: handoff 1.5s var(--ease) 2; }
+      @keyframes handoff {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(125, 255, 180, 0); }
+        35% { box-shadow: 0 0 0 7px rgba(125, 255, 180, 0.26); }
+      }
+
+      /* Side by side, two buttons in a 430 px card are two half words. And
+         the keys half of the foot line goes: there is no Esc key on a phone,
+         and at this tracking it wrapped to a second line to say so. */
+      @media (max-width: 520px) {
+        .invite-go { flex-direction: column; }
+        .invite-foot span { display: none; }
+      }
+
       /* Act ledger down the left edge: which act you are in, and how far
          through the whole timeline you are. CollectUI's chrome is a thin
          persistent frame around loud content; this is that frame. */
@@ -1320,6 +1484,14 @@
         .act { min-height: auto !important; padding-top: 12vh; padding-bottom: 12vh; }
         .pin { position: static; height: auto; }
         #veil { opacity: 0.5 !important; }
+        /* The invitation appears rather than rising, and the bar's handoff
+           pulse does not run. Neither carries anything the still card and
+           the lit button in the corner do not already say, which is the
+           test this contract applies. It is honoured here only, and not in
+           REDUCED in main.js: that half of the contract is for what the
+           scroll drives, and the card is not on the timeline. */
+        #invite, .invite-card { transition: none; }
+        .nav a.is-primary.handoff { animation: none; }
       }
     </style>
 
@@ -1368,6 +1540,51 @@
         <a class="is-primary" href="https://webfpv.org/sim/?map=field" data-dest="sim">Fly now</a>
       </nav>
     </header>
+
+    <!--
+      THE INVITATION.
+
+      A page that is a four minute film about a simulator has to answer the
+      visitor who does not want the film. That visitor existed and the page
+      did not serve them: the only unmissable thing on the first screen was
+      the wordmark, and the way in was a twelve pixel label in the corner.
+
+      So the offer is made in the middle of the screen, once, and the corner
+      keeps it afterwards. The card is markup rather than something built at
+      run time for the same reason the launch links are: it is the shortest
+      path between arriving and flying, and it must not depend on a module
+      graph, a CDN or a working WebGL context. With the script at the foot
+      of the body deleted this is still a link to the simulator.
+
+      hidden, so nothing flashes before the script has decided.
+    -->
+    <div id="invite" hidden>
+      <div class="invite-scrim" data-invite-close></div>
+      <!-- tabindex, because the card takes the focus itself when it opens
+           rather than handing it to the mint button. A dialog that opens
+           with its primary action already ringed reads as a thing that has
+           been pressed, and the first impression of the page should not be
+           a focus ring. -->
+      <div class="invite-card" role="dialog" aria-modal="true" aria-labelledby="invite-h" tabindex="-1">
+        <p class="eyebrow">Free &#183; no install &#183; no account</p>
+        <h2 id="invite-h">Want to just fly?</h2>
+        <p class="lede">
+          A five inch quad on Betaflight 4.5.1, in this tab, on the MultiGP
+          race field. Plug in an Xbox pad or a radio and take a lap.
+        </p>
+        <div class="invite-go">
+          <a class="invite-fly" href="https://webfpv.org/sim/?map=field" data-dest="sim">Just fly</a>
+          <button class="invite-stay" type="button" data-invite-close>Watch the film</button>
+        </div>
+        <!-- The keys are a desktop sentence. A phone has no Esc, so that
+             half is dropped rather than lied about: see the stylesheet. -->
+        <p class="invite-foot">Fly now stays in the top right<span> &#183; Esc or scroll</span></p>
+        <!-- Last in the markup, first in the corner. The cross is the reflex
+             rather than the argument, so it takes the last tab stop and the
+             mint button takes the first. -->
+        <button class="invite-x" type="button" data-invite-close aria-label="Close">&#10005;</button>
+      </div>
+    </div>
 
     <div id="ledger"></div>
 
@@ -1669,6 +1886,196 @@
         </p>
       </div>
     </div>
+
+    <!--
+      The invitation's switch, and it is a plain script on purpose.
+
+      Everything else on this page is a module that starts by importing
+      three.js from a CDN, and a visitor whose network ate that request gets
+      none of it. This is the one piece of chrome whose entire job is to put
+      somebody in the simulator, so it does not join that graph: no import,
+      nothing to fetch, nothing to compile. It is inline rather than a file
+      for the same reason the styles are.
+    -->
+    <script>
+      (function () {
+        var root = document.getElementById('invite');
+        var card = root && root.querySelector('.invite-card');
+        var fly = root && root.querySelector('.invite-fly');
+        var bar = document.querySelector('.nav a.is-primary');
+        if (!root || !card || !fly) {
+          return;
+        }
+
+        /*
+         * ONCE, NOT EVERY VISIT.
+         *
+         * An interstitial a returning visitor cannot get rid of is the whole
+         * reason interstitials are hated, so a dismissal is remembered.
+         * Thirty days rather than forever, because somebody arriving a month
+         * later is a first visit in every way that matters and the card
+         * costs them one key.
+         *
+         * Storage throws outright in a locked down browser rather than
+         * returning null, so every touch is wrapped, and a failure shows the
+         * card. Erring toward the offer is the point of the feature.
+         */
+        var KEY = 'webfpv.invite.seen';
+        var AGAIN_AFTER = 30 * 24 * 60 * 60 * 1000;
+
+        function seen() {
+          try {
+            var at = Number(window.localStorage.getItem(KEY));
+            return at > 0 && Date.now() - at < AGAIN_AFTER;
+          } catch (e) {
+            return false;
+          }
+        }
+
+        function remember() {
+          try {
+            window.localStorage.setItem(KEY, String(Date.now()));
+          } catch (e) {
+            /* Nothing to do, and nothing worth logging: a browser that will
+               not store this still shows the card, which is the safe way
+               round for a visitor and a harmless one for everybody else. */
+          }
+        }
+
+        var open = false;
+        var stops = [];
+        var atShow = 0;
+
+        function show() {
+          if (open || seen()) {
+            return;
+          }
+          /* Not a landing. A reload part way through the film restores the
+             scroll position, and a visitor who is already inside act three
+             is not somebody who needs telling where the front door is. */
+          if (window.scrollY > 40) {
+            return;
+          }
+          /* No WebGL. The simulator needs it too, so the honest thing on
+             screen is the one #nowebgl is already saying. */
+          var nowebgl = document.getElementById('nowebgl');
+          if (nowebgl && nowebgl.classList.contains('on')) {
+            return;
+          }
+          open = true;
+          atShow = window.scrollY;
+          root.hidden = false;
+          document.body.classList.add('invite-open');
+          stops = card.querySelectorAll('a[href], button');
+          /* A frame between display and opacity, or the transition has
+             nothing to transition from and the card simply appears. */
+          window.requestAnimationFrame(function () {
+            root.classList.add('on');
+          });
+          card.focus({ preventScroll: true });
+          window.addEventListener('keydown', onKey, true);
+          window.addEventListener('wheel', dismiss, { passive: true });
+          window.addEventListener('touchmove', dismiss, { passive: true });
+          window.addEventListener('scroll', onScroll, { passive: true });
+        }
+
+        function dismiss() {
+          if (!open) {
+            return;
+          }
+          open = false;
+          remember();
+          root.classList.remove('on');
+          document.body.classList.remove('invite-open');
+          window.removeEventListener('keydown', onKey, true);
+          window.removeEventListener('wheel', dismiss);
+          window.removeEventListener('touchmove', dismiss);
+          window.removeEventListener('scroll', onScroll);
+          /* Past the fade, so the card is not a transparent sheet over the
+             page catching clicks that were meant for the film. */
+          window.setTimeout(function () {
+            root.hidden = true;
+          }, 520);
+          /* THE HANDOFF. The eye and the focus both land on the small button
+             in the corner, which is where the offer lives from here. */
+          if (bar) {
+            bar.focus({ preventScroll: true });
+            bar.classList.add('handoff');
+            window.setTimeout(function () {
+              bar.classList.remove('handoff');
+            }, 3200);
+          }
+        }
+
+        /*
+         * Scrolling IS the answer to the card: this page's scroll is its
+         * timeline, so a visitor who reaches for the wheel has chosen the
+         * film. A wheel or a drag is unambiguous and dismisses at once. A
+         * scroll EVENT is not, because the browser can fire one for its own
+         * reasons on a page that has just finished loading, so that path
+         * asks for movement it can measure.
+         */
+        function onScroll() {
+          if (Math.abs(window.scrollY - atShow) > 8) {
+            dismiss();
+          }
+        }
+
+        function onKey(e) {
+          if (e.key === 'Escape') {
+            dismiss();
+            return;
+          }
+          if (e.key !== 'Tab' || !stops.length) {
+            return;
+          }
+          /* The card keeps the focus while it is open. Three stops, so the
+             trap is a wrap at each end and a catch for anything outside.
+             The card itself is the fourth thing that can hold the focus,
+             because it is what the focus opens on, and a shift tab from
+             there would otherwise walk backwards out of the dialog. */
+          var first = stops[0];
+          var last = stops[stops.length - 1];
+          if (document.activeElement === card) {
+            e.preventDefault();
+            (e.shiftKey ? last : first).focus();
+          } else if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          } else if (!card.contains(document.activeElement)) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+
+        var closers = root.querySelectorAll('[data-invite-close]');
+        for (var i = 0; i < closers.length; i += 1) {
+          closers[i].addEventListener('click', dismiss);
+        }
+        /* Going flying counts as having seen it. Somebody who took the offer
+           knows where the offer is. */
+        fly.addEventListener('click', remember);
+
+        /*
+         * WHEN IT APPEARS.
+         *
+         * When the loading screen lifts, which main.js announces, so the
+         * visitor gets a beat of the studio shot before anything is asked of
+         * them. A card over a loading bar is a queue with a leaflet in it.
+         *
+         * The timer is for the case where that announcement never comes,
+         * because the module graph failed and the page behind is a permanent
+         * loading screen. main.js clears its own screen at twelve seconds on
+         * every live path, so thirteen is past all of them, and by then this
+         * card is the only way left into the simulator.
+         */
+        window.addEventListener('webfpv:ready', show);
+        window.setTimeout(show, 13000);
+      })();
+    </script>
 
     <script type="module" src="src/main.js"></script>
   </body>

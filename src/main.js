@@ -226,7 +226,21 @@ function clearBoot() {
   }
   bootCleared = true;
   bootEl.classList.add('gone');
-  setTimeout(() => bootEl.remove(), 900);
+  setTimeout(() => {
+    bootEl.remove();
+    /*
+     * The invitation waits for this, and for nothing else.
+     *
+     * It is announced here rather than read out of the DOM by the card's own
+     * script, because the honest signal is the one the thing that knows says
+     * out loud. It fires after the removal rather than with the fade so the
+     * visitor gets a beat of the page before being asked anything, and it
+     * fires on the WebGL failure path too, where the card checks #nowebgl
+     * and stays down. The card has its own timer for the case where this
+     * module never runs at all, which is the case it matters most in.
+     */
+    window.dispatchEvent(new Event('webfpv:ready'));
+  }, 900);
 }
 
 /*
