@@ -94,7 +94,20 @@ own `findAnimated` for the part that must not be got wrong: which bits of the
 town move.
 
 The build is seconds rather than milliseconds, so it happens behind the boot
-screen. See below.
+screen, and the boot screen is built around that fact. Its bar used to be a
+220 ms interval writing 18 percent, then 44, then 70, then 96, and then
+sitting there until the town was finished: a stopwatch wearing a workshop's
+clothes. It now names five real phases as they happen, fetching the renderer,
+building the studio, the first frame, the town, the shaders, and the bar is
+aimed at each phase's mark as that phase begins.
+
+Both moving parts are CSS transforms rather than widths, and that is the
+whole trick: building the town blocks the main thread for seconds, so
+anything driven from JavaScript stops with it and so does a width, which is
+layout. A transform transition and a transform keyframe animation are
+composited and keep running. The sweep says the page is alive, the bar says
+how far through it is, and neither of them can be stopped by the work they
+are describing.
 
 The district is sakura-crossing, by Kenton Wang, MIT, which the simulator
 vendors and credits in its `NOTICE`. No code from it is here and none of it

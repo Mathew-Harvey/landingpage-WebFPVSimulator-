@@ -205,11 +205,31 @@ const CITY_BEATS = [
   },
 ];
 
-const BOOT_NOTES = [
-  'Torquing the arms',
-  'Soldering the stack',
-  'Balancing props',
-  'Checking motor direction',
+/*
+ * THE BOOT SCREEN'S PHASES, AND THEY ARE REAL ONES NOW.
+ *
+ * This used to be four jokes on a 220 ms interval and a bar that went to
+ * 18 percent and then added 26 every tick, so the screen was a stopwatch
+ * wearing a workshop's clothes: it said "Balancing props" while the module
+ * graph was still arriving, and it said 96 percent while the town, which is
+ * most of the wait, had not started. Reported, and rightly: the bar sat and
+ * then jumped.
+ *
+ * Each entry is a thing that actually happens, in the order it happens, with
+ * the share of the bar it gets when it starts. The shares are eyeballed
+ * against a measured load rather than derived: the town dominates, so it is
+ * given the room, and the two cheap phases before it are given enough of the
+ * track to be visible rather than their true fraction of a second.
+ *
+ * `at` is where the bar sits when the phase BEGINS. What carries the wait
+ * inside a phase is the creep: see aimBoot.
+ */
+const BOOT_PHASES = [
+  { id: 'modules', at: 0.02, ms: 1400, note: 'Fetching the renderer' },
+  { id: 'studio', at: 0.18, ms: 1200, note: 'Building the studio' },
+  { id: 'frame', at: 0.34, ms: 1200, note: 'Drawing the first frame' },
+  { id: 'town', at: 0.46, ms: 9000, note: 'Building the town' },
+  { id: 'warm', at: 0.84, ms: 6000, note: 'Warming the shaders' },
 ];
 
 /* ------------------------------------------------------------------- boot */
@@ -219,12 +239,98 @@ const bootEl = document.getElementById('boot');
 const bootFill = document.getElementById('boot-fill');
 const bootNote = document.getElementById('boot-note');
 
+/*
+ * MOVE THE BAR, AND MOVE IT ON THE COMPOSITOR.
+ *
+ * scaleX rather than width, for the reason the sweep beside it is a CSS
+ * animation: building the town is seconds of synchronous JavaScript, and
+ * during those seconds the main thread does no layout, so a width transition
+ * stops dead and a transform transition does not. Both halves of this screen
+ * have to keep moving through the one window where the visitor most needs to
+ * see that something is happening.
+ *
+ * `to` is where the bar is aimed and `ms` is how long it may take to get
+ * there. A phase aims at the START of the next phase and is given longer
+ * than the phase is expected to take, with an easing that decelerates, so
+ * the bar is always moving, never arrives early, and never crosses into
+ * territory the next phase has not reached yet. When a phase really does
+ * end, bootPhase aims at the next mark and the bar catches up.
+ */
+function aimBoot(to, ms) {
+  if (!bootFill) {
+    return;
+  }
+  bootFill.style.transition = `transform ${Math.round(ms)}ms cubic-bezier(0.2, 0.4, 0.3, 1)`;
+  bootFill.style.transform = `scaleX(${Math.max(0, Math.min(1, to)).toFixed(4)})`;
+  /*
+   * AND START IT NOW, IN THIS TASK.
+   *
+   * A transition does not begin when the style is set, it begins at the
+   * next style recalc, and the next style recalc is a rendering step the
+   * main thread has to run. Set an aim and then block for four seconds
+   * building a world and the transition has still not started when the
+   * block begins, so there is nothing for the compositor to carry through
+   * it: measured, and it is exactly the window this screen exists for.
+   *
+   * Reading a computed style forces the recalc here instead, so the
+   * animation is handed to the compositor before the caller gets the
+   * thread back. One forced recalc per aim, a handful per load.
+   */
+  void getComputedStyle(bootFill).transform;
+}
+
+/*
+ * Say what is happening and aim the bar at the end of it.
+ *
+ * The note is the phase's own words rather than a joke on a timer: a line
+ * that changes when a real thing finishes is the cheapest proof a page can
+ * give that it is getting somewhere, and it is the difference between a
+ * visitor waiting and a visitor leaving.
+ */
+let bootPhaseAt = -1;
+function bootPhase(id) {
+  const i = BOOT_PHASES.findIndex((p) => p.id === id);
+  if (i < 0 || i <= bootPhaseAt) {
+    return;
+  }
+  bootPhaseAt = i;
+  const phase = BOOT_PHASES[i];
+  const next = BOOT_PHASES[i + 1];
+  if (bootNote) {
+    bootNote.textContent = phase.note;
+  }
+  /*
+   * ONE AIM, AND IT IS SET IN THIS TASK.
+   *
+   * The obvious version snaps to this phase's own mark and then arms the
+   * creep in a requestAnimationFrame, so the phase that just ended visibly
+   * lands before the next one starts crawling. It cannot be that, because
+   * the two phases that matter are followed IMMEDIATELY by seconds of
+   * blocked main thread, and a callback scheduled for the next frame does
+   * not run before a block: the creep would be armed after the thing it was
+   * supposed to cover had finished.
+   *
+   * So a phase aims once, from wherever the bar has got to, at the mark
+   * where the NEXT phase begins, over the time this one is expected to
+   * take. A phase that runs long leaves the bar decelerating toward that
+   * mark and never past it; a phase that ends early is overtaken by the next
+   * announcement. `at` is what the next phase pulls toward, which is why
+   * both numbers are in the table.
+   */
+  const end = next ? next.at : 0.97;
+  aimBoot(end, phase.ms);
+}
+
 let bootCleared = false;
 function clearBoot() {
   if (bootCleared || !bootEl) {
     return;
   }
   bootCleared = true;
+  /* All the way, and quickly: the screen is about to fade over the page and
+   * a bar caught mid creep fades out unfinished, which reads as a load that
+   * gave up rather than one that arrived. */
+  aimBoot(1, 200);
   bootEl.classList.add('gone');
   setTimeout(() => {
     bootEl.remove();
@@ -1443,6 +1549,9 @@ let autoBuild = 0;
 let clock = 0;
 let lastT = -1;
 let bootDone = false;
+/* Which of the boot's four closing steps the frame loop is on. See the block
+ * that reads it: each step announces or does, never both. */
+let bootStep = 0;
 
 const camPos = new THREE.Vector3();
 const camQuat = new THREE.Quaternion();
@@ -2068,20 +2177,44 @@ function frame(ms) {
    * with it, which is why the boot bar's sweep is a CSS animation: it runs on
    * the compositor and keeps moving through a blocked main thread.
    */
+  /*
+   * ONE STEP PER FRAME, AND THE ANNOUNCEMENT ALWAYS GETS ITS OWN.
+   *
+   * The two calls in here, building the town and warming it, are seconds of
+   * synchronous work each. A note set in the same frame that then blocks is
+   * a note nobody sees: the DOM was updated and nothing was composited, and
+   * the visitor reads the PREVIOUS phase's words for the whole of the wait.
+   * Same lesson as yieldToPaint in the simulator's loading screen, and the
+   * same fix: say it, let the frame end, do it on the next one.
+   *
+   * Three extra frames on a boot that is measured in seconds.
+   */
   if (!bootDone) {
-    bootDone = true;
-    /*
-     * Not for a reduced motion visitor. The timeline is pinned to one frame
-     * for them, that frame is on the race field, and the town is never shown
-     * at all: building it would be seconds of loading screen for geometry
-     * nobody is going to see. They get the page sooner, which is the whole
-     * point of asking for less.
-     */
-    if (!REDUCED) {
-      city.start();
+    if (bootStep === 0) {
+      /* The frame above this is the first one the visitor's GPU has drawn. */
+      bootPhase('frame');
+      /*
+       * Not for a reduced motion visitor. The timeline is pinned to one
+       * frame for them, that frame is on the race field, and the town is
+       * never shown at all: building it would be seconds of loading screen
+       * for geometry nobody is going to see. They get the page sooner, which
+       * is the whole point of asking for less.
+       */
+      bootStep = REDUCED ? 2 : 1;
+    } else if (bootStep === 1) {
+      bootPhase('town');
+      bootStep = 2;
+    } else if (bootStep === 2) {
+      if (!REDUCED) {
+        city.start();
+      }
+      bootPhase('warm');
+      bootStep = 3;
+    } else {
+      warmCity();
+      clearBoot();
+      bootDone = true;
     }
-    warmCity();
-    clearBoot();
   }
 
   requestAnimationFrame(frame);
@@ -2220,36 +2353,16 @@ window.addEventListener('resize', () => {
 }, { passive: true });
 window.addEventListener('load', measure);
 
-/* A short, honest boot: the modules are already here, the textures are
- * painted on a canvas, and there is nothing to download. The bar is the
- * first compile of the cel shaders, which is real work. */
-{
-  let n = 0;
-  const tick = setInterval(() => {
-    /*
-     * The clear is in a finally, and the elements are checked.
-     *
-     * An exception thrown inside a setInterval callback does not stop the
-     * interval: it fires again, throws again, and keeps going for the life
-     * of the page. One transient error in here produced fifty six identical
-     * console entries before it was noticed, which is fifty five more than
-     * any error needs to report itself.
-     */
-    try {
-      n += 1;
-      if (bootFill) {
-        bootFill.style.width = `${Math.min(100, 18 + n * 26)}%`;
-      }
-      if (bootNote) {
-        bootNote.textContent = BOOT_NOTES[n % BOOT_NOTES.length];
-      }
-    } finally {
-      if (n > 3) {
-        clearInterval(tick);
-      }
-    }
-  }, 220);
-}
+/*
+ * The studio is built: the module graph has arrived, WebGL is up, and the
+ * quad, the course and the petals are in the scene. Everything above this
+ * line ran to get here, which is why this is the phase that reports it.
+ *
+ * The two phases after this one are announced by the frame loop, which is
+ * the only thing that knows when the first frame has actually been drawn and
+ * when the town has been asked for.
+ */
+bootPhase('studio');
 
 requestAnimationFrame(frame);
 

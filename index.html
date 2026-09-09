@@ -1320,8 +1320,30 @@
         color: var(--cream);
       }
       .boot-mark .fpv { color: var(--sakura); }
-      .boot-rail { position: relative; width: 148px; height: 2px; background: rgba(157, 179, 200, 0.2); overflow: hidden; }
-      .boot-fill { height: 100%; width: 12%; background: var(--sakura); transition: width 0.3s var(--ease); }
+      .boot-rail { position: relative; width: 190px; height: 3px; background: rgba(157, 179, 200, 0.2); overflow: hidden; }
+      /*
+       * TRANSFORM, NOT WIDTH, AND FOR THE SAME REASON AS THE SWEEP BELOW.
+       *
+       * The bar used to be a width set from a 220 ms interval: 18 percent,
+       * then 44, then 70, then 96, and then it sat there until the town was
+       * built. It was a stopwatch pretending to be a measurement, and what
+       * it measured was itself. Worse, width is layout and layout is the
+       * main thread's, so even an honest width would have frozen through the
+       * seconds this screen exists to cover.
+       *
+       * A transform transition is composited and keeps moving through a
+       * blocked main thread. The phases and their marks are BOOT_PHASES in
+       * src/main.js, and each one is announced before the work it names
+       * begins, because nothing can be announced while it is running.
+       */
+      .boot-fill {
+        position: absolute; inset: 0;
+        transform: scaleX(0.02);
+        transform-origin: left center;
+        background: var(--sakura);
+        transition: transform 0.3s var(--ease);
+        will-change: transform;
+      }
       /*
        * THE SWEEP, and it is a CSS animation for one specific reason.
        *
@@ -1874,7 +1896,7 @@
     <div id="boot">
       <div class="boot-mark">WEB<span class="fpv">FPV</span></div>
       <div class="boot-rail"><div class="boot-fill" id="boot-fill"></div><div class="boot-sweep"></div></div>
-      <div class="boot-note" id="boot-note">Torquing the arms</div>
+      <div class="boot-note" id="boot-note">Fetching the renderer</div>
     </div>
 
     <div id="nowebgl">
