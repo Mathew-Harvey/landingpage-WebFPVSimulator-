@@ -239,7 +239,7 @@ const ROOM_BEATS = [
   {
     at: 0.44,
     k: 'The track',
-    t: 'Twenty eight inch gates, cut from one length of three quarter inch plumbing pipe. A little over three metres by two of floor, and forty four metres of line through it.',
+    t: 'Four gates, two of them stacked, a pole and a rail, all cut from one length of three quarter inch plumbing pipe. Three and a half metres by two of floor.',
   },
   {
     at: 0.66,
@@ -867,12 +867,14 @@ function citySpeed(p) {
 /* ----------------------------------------------------------- the room line */
 
 /*
- * THE WHOOP LAP, and the whole reason the act exists is in these two numbers.
+ * THE WHOOP LAP, measured rather than typed, because the demo track is a
+ * regeneration away from being a different track.
  *
- * 43.3 m of racing line, folded into a footprint 3.25 m by 2.28. The lap is
- * within a few metres of the length of the town's freestyle line and it fits
- * between a sofa and a television, which is the argument the act is making
- * and it is made by the geometry rather than by the copy.
+ * The one it ships with is 14.4 m of racing line inside 3.54 m by 2.00, with
+ * four gates, a pole and a rail on it. That is a whole race track, with a
+ * stack and a rail to go under, in the floor area of a large rug, and it is
+ * the argument the act is making. The geometry makes it; the copy only
+ * quotes it. room-data.js exports SPAN and LAP_LENGTH for the quoting.
  */
 const ROOM_LENGTH = room.line.getLength();
 
@@ -882,25 +884,33 @@ const ROOM_LENGTH = room.line.getLength();
  * aircraft rather than the reader's finger.
  *
  * The two ends of it are the whoop's, not the five inch's. A 65 mm machine
- * on 1S runs about 26 km/h down a straight it has room to use, and comes
+ * on 1S runs about 22 km/h down a straight it has room to use, and comes
  * back to walking pace through a 0.45 m radius corner under a rail. Those
- * are a fifth of the five inch's numbers, which is exactly the ratio
+ * are about a fifth of the five inch's numbers, which is the ratio
  * configs/airframes.js gives the two aircraft, and it is why a track this
  * size is a track at all.
  *
- * The window is four samples of 340 rather than of 240, so it measures the
- * turn over about half a metre. On a line this tight a wider window reads
- * every corner as the same corner.
+ * The top end is 22 rather than 26 because this track has no straight worth
+ * the name: the longest run between two passes is a metre and a half, and a
+ * whoop does not reach 26 in a metre and a half.
  */
 const ROOM_SPEED = (() => {
-  const N = 340;
+  /*
+   * SAMPLED AT A FIXED DISTANCE, not a fixed count, because the tracks are
+   * not all the same length. A flat 340 samples measured the turn over half
+   * a metre on a 43 m track and over 170 mm on a 14 m one, which is not the
+   * same measurement: at 170 mm every corner on the track reads as the same
+   * corner. 127 mm a sample and a four sample window is half a metre either
+   * way, which is about what a whoop can see itself about to do.
+   */
+  const N = Math.max(64, Math.round(ROOM_LENGTH / 0.127));
   const raw = new Float32Array(N);
   const a = new THREE.Vector3();
   const b = new THREE.Vector3();
   for (let i = 0; i < N; i += 1) {
     room.line.getTangentAt(i / N, a);
     room.line.getTangentAt(((i + 4) % N) / N, b);
-    raw[i] = lerp(26, 8.5, clamp01(a.angleTo(b) / 0.55));
+    raw[i] = lerp(22, 7.5, clamp01(a.angleTo(b) / 0.55));
   }
   const out = new Float32Array(N);
   for (let i = 0; i < N; i += 1) {
@@ -921,8 +931,9 @@ function roomSpeedAt(u) {
 }
 
 /* One lap, integrated from that profile, so the clock and the speedometer
- * cannot disagree. It comes out near eleven seconds, which is a RaceGOW lap:
- * three of them is the thing the series is scored on. */
+ * cannot disagree. Three consecutive laps is the thing a time trial is
+ * scored on, and the clock in the corner counts the run rather than the
+ * lap for that reason. */
 const ROOM_TIME = (() => {
   const N = ROOM_SPEED.length;
   let t = 0;
@@ -1762,17 +1773,22 @@ function cityPose(u, outPos, outQuat, bobPhase, flip = 0, turnBank = 0) {
  *   least do without, which was a surprise. The town has one because a
  *   district seen from twenty metres wants a different attitude from a
  *   street seen from three. A four metre ceiling looked like too small a
- *   range for the question to arise, and it is not: the track is 3.25 m
- *   across and the lap climbs to 2.5 m over the tower, so above head height
- *   the ONLY thing a forward looking lens has in front of it is the far
- *   wall. Screenshots at 0.15 and at 0.35 of the lap were two photographs
- *   of a brown corner with a pipe in them. A pilot who has climbed over
- *   something looks down at it, and above 0.9 m so does this.
+ *   range for the question to arise, and it is not: the track is three and a
+ *   half metres across in a room ten by twelve, so the moment the aircraft
+ *   is above the pipe the ONLY thing a forward looking lens has in front of
+ *   it is the far wall. Screenshots of two points in the lap came back as
+ *   two photographs of a brown corner. A pilot who has climbed over
+ *   something looks down at it, and so does this.
+ *
+ *   The band is the LINE'S band and not the room's. This lap runs from 0.36
+ *   to 1.25 m, so it winds in between 0.55 and 1.30 and is fully wound by
+ *   the top of the highest pass. A band sized to the ceiling would never
+ *   engage on a track that stays under waist height.
  */
 const ROOM_TRIM = -0.38;
-const ROOM_LOOK_LOW = 0.9;
-const ROOM_LOOK_HIGH = 2.4;
-const ROOM_LOOK_DOWN = 0.46;
+const ROOM_LOOK_LOW = 0.55;
+const ROOM_LOOK_HIGH = 1.30;
+const ROOM_LOOK_DOWN = 0.34;
 const roomTan = new THREE.Vector3();
 const roomTan2 = new THREE.Vector3();
 function roomPose(u, outPos, outQuat, bobPhase, flip = 0, turnBank = 0) {
@@ -1938,8 +1954,8 @@ const LENS = [
   { at: 3.80, fov: 104 },
   { at: 3.99, fov: CLOSE_FOV },
   { at: 4.01, fov: 66 },
-  { at: 4.24, fov: 66 },
-  { at: 4.36, fov: WHOOP_FOV },
+  { at: 4.20, fov: 66 },
+  { at: 4.33, fov: WHOOP_FOV },
   { at: 4.90, fov: WHOOP_FOV },
   { at: 5.16, fov: ROOM_CLOSE_FOV },
 ];
@@ -2223,8 +2239,8 @@ function frame(ms) {
    *            then turns into a position: see roomAt.
    */
   const lamps = REDUCED ? 0 : ease(T, 4.004, 4.085);
-  const lift = ease(T, 4.22, 4.31);
-  const running = ramp(T, 4.31, 4.94, 0.06, 0.09);
+  const lift = ease(T, 4.20, 4.27);
+  const running = ramp(T, 4.27, 4.95, 0.05, 0.08);
   const roomU = roomAt(running);
   const inRoom = T >= 4.0 && T < 5.0;
 
@@ -2428,7 +2444,7 @@ function frame(ms) {
      * and about a track being a specification rather than a place, so it
      * opens on something standing still and lets the room be read.
      */
-    poseRoomIn(ease(T, 4.075, 4.19), camPos, camQuat);
+    poseRoomIn(ease(T, 4.085, 4.185), camPos, camQuat);
 
     /*
      * On the pad, then off it. The aircraft sits exactly where room.js put
@@ -2453,7 +2469,7 @@ function frame(ms) {
      * thirty metre gap to cross: the camera is already a metre from the
      * aircraft when it leaves the pad. */
     poseWhoopFPV(whoopPos, whoopQuat, pos2, quat2);
-    const toFpv = ease(T, 4.26, 4.36);
+    const toFpv = ease(T, 4.23, 4.32);
     camPos.lerp(pos2, toFpv);
     camQuat.slerp(quat2, toFpv);
 
@@ -2468,7 +2484,7 @@ function frame(ms) {
      * is where a RaceGOW pilot's aircraft is at the end of a run: the lap
      * closes on the gate it opened on.
      */
-    const out = ease(T, 4.86, 4.97);
+    const out = ease(T, 4.88, 4.97);
     if (out > 0) {
       poseChase(whoopPos, whoopQuat,
         lerp(0.34, 1.4, out), lerp(0.06, 0.55, out), pos2, quat2, 0.5);
@@ -2485,7 +2501,7 @@ function frame(ms) {
      * Landing on poseRoomClose(0) here means the closing act simply carries
      * the same crane on, and there is no blend at the boundary at all.
      */
-    const wide = ease(T, 4.93, 5.0);
+    const wide = ease(T, 4.94, 5.0);
     if (wide > 0) {
       poseRoomClose(0, pos2, quat2);
       camPos.lerp(pos2, wide);

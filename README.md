@@ -43,9 +43,9 @@ Act 4  The frame goes to warm haze and comes out of it in a six metre
        under, a climb out at the far end, and the camera leaves the airframe
        for the whole district at a hundred and twenty metres.
 Act 5  The frame goes to black. Two bulbs come on in a shed, and there is a
-       whoop track in it: RaceGOW5 Track 8, twenty eight inch gates in three
-       quarter inch pipe, 44 m of lap in a footprint 3.25 m by 2.28. A 65 mm
-       whoop lifts off a pad and flies a lap of it from inside.
+       whoop track in it: four 28 inch gates in 3/4 inch pipe, two of them
+       stacked, a pole and a rail, 14.4 m of lap in a footprint 3.54 m by
+       2.00. A 65 mm whoop lifts off a pad and flies a lap of it from inside.
 Act 6  You must practice, in the shed, over the gate the lap closed on.
 ```
 
@@ -335,7 +335,7 @@ screenshot of a wall is an afternoon. On a clean URL, no global.
 | `src/course.js` | The layout, the ground, the racing line, the dress |
 | `src/city.js` | The freestyle town, and the line flown through it |
 | `src/room.js` | The shed, the RaceGOW track standing in it, and its two bulbs |
-| `src/room-data.js` | RaceGOW5 Track 8, GENERATED. See `scripts/bake-room.js` |
+| `src/room-data.js` | The demo micro track, GENERATED. See `scripts/bake-room.js` |
 | `src/whoop.js` | The 65 mm ducted whoop, at the size it actually is |
 | `src/config.js` | Where the simulator and the board are |
 | `src/quality.js` | One decision about how much machine is on the other end |
@@ -359,16 +359,22 @@ mapping has to be monotonic and smooth in its derivative and the integral
 of an obvious speed curve is easier to read than a piecewise one that is
 both. See `CITY_S` in `main.js`.
 
-The room act's height is the same rule applied to a smaller machine. 620vh
-over a 43.3 m lap is 0.107 m of line per vh, which is 2.2 times finer than
-the field's in metres and about the same in GATES: a RaceGOW opening is
-0.711 m against a MultiGP gate's 1.75, so the same notch of a wheel moves
-the aircraft about the same fraction of a hole. Its position on the line is
-worked out from the line's OWN speed profile rather than from a pace curve,
-so the whoop slows into the corners and runs on the straights on screen as
-well as on the instrument: a whoop track is mostly corner, and a line flown
-through one at a constant rate reads as a camera on a rail. See `ROOM_S`
-and `roomAt` in `main.js`.
+The room act's height is the same rule and it does not come out the same
+way, because a micro track is short and dense. 700vh over a 14.4 m lap is
+0.030 m of line per vh, eight times finer than the field's 0.24, so a wheel
+notch moves the aircraft 330 mm against the field quad's 2.65 m: a bit under
+half the distance between two gates. Matching the field on GATES rather than on metres would need
+about three times that again, because the passes on this track are a metre
+apart and the field's are twenty, and at some point an act has to end. That
+one number in `index.html` is the whole lever, and every timing inside the
+act is a fraction of the act's height rather than an absolute, so turning it
+re-times the act rather than breaking it.
+
+Its position on the line is worked out from the line's OWN speed profile
+rather than from a pace curve, so the whoop slows into the corners and runs
+on the straights on screen as well as on the instrument: a micro track is
+mostly corner, and a line flown through one at a constant rate reads as a
+camera on a rail. See `ROOM_S` and `roomAt` in `main.js`.
 
 The two flying acts before it hand the aircraft to each other at speed. A smoothstep has
 zero slope at both ends, which is right for a camera move that starts and
@@ -398,9 +404,9 @@ PVC. Those are the simulator's numbers, not numbers chosen to look good here.
 The whoop is the same promise at a twentieth of the mass. 0.0325 m centre to
 motor, 0.0826 m across the ducts, 0.0155 m prop radius, camera 0.024 m
 forward and 0.012 m up at 25 degrees, a 95 degree lens, one cell. Its gates
-are RaceGOW's 28 inch square in 3/4 in schedule 40 PVC, 0.7112 m of opening
-on 26.7 mm pipe, and it is not scaled up to make it easier to see. If a shot
-needs the machine bigger, the camera moves.
+are the micro class's 28 inch square in 3/4 in schedule 40 PVC, 0.7112 m of
+opening on 26.7 mm pipe, and it is not scaled up to make it easier to see.
+If a shot needs the machine bigger, the camera moves.
 
 ## Licence
 

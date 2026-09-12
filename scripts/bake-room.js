@@ -1,14 +1,15 @@
 /*
  * bake-room.js: print src/room-data.js from the simulator's own track.
  *
- * WHY A GENERATOR RATHER THAN A COPY. The whoop act flies RaceGOW5 Track 8,
- * and the front door has no business holding its own opinion about where the
- * gates are. The simulator is the copy of record: src/trackbuilder/presets.js
+ * WHY A GENERATOR RATHER THAN A COPY. The whoop act flies a real published
+ * micro track, and the front door has no business holding its own opinion
+ * about where the gates are. The simulator is the copy of record: src/trackbuilder/presets.js
  * holds the track and src/game/trackdoc.js turns it into the course the game
  * builds, path solver and all. This asks those two the same questions the
  * game asks and writes the answers down.
  *
  *   node scripts/bake-room.js ../WebFPVSimulator > src/room-data.js
+ *   node scripts/bake-room.js ../WebFPVSimulator racegow5-track8 > src/room-data.js
  *
  * IT IMPORTS NOTHING BUT THE SIMULATOR. No three.js, which this repository
  * does not have on disk: the resample below walks the solver's own 1777
@@ -35,11 +36,21 @@
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 
-/* The track, and how many knots the line is cut down to. 340 puts a knot
- * every 128 mm and holds the curve to 8 mm of the solver's own output,
- * measured. See the note in the generated file. */
-const TRACK_ID = 'racegow5-track8';
-const KNOTS = 340;
+/*
+ * Which track, and how finely the line is cut.
+ *
+ * The id is the second argument so that changing the demo track is a command
+ * rather than an edit to this file. The default is the one the page ships.
+ *
+ * KNOTS is a SPACING rather than a count, because the tracks are not all the
+ * same length: track 8 is 43.9 m and track 1 is 14.4, and a fixed 340 knots
+ * would put a knot every 128 mm on one and every 42 on the other. 128 mm
+ * holds the rebuilt spline to within about 10 mm of the solver's own output,
+ * which is an eighth of the aircraft in a hole 711 mm across, so that is the
+ * number and the count falls out of it.
+ */
+const TRACK_ID = process.argv[3] ?? 'racegow5-track1';
+const KNOT_SPACING = 0.128;
 
 const simRoot = resolve(process.argv[2] ?? '../WebFPVSimulator');
 const load = async (rel) => import(pathToFileURL(resolve(simRoot, rel)).href);
@@ -113,7 +124,34 @@ for (const s of course.structures) {
   }
 }
 
+/* Measure the loop first, then choose the count from the spacing. */
+const loopLength = (() => {
+  let total = 0;
+  for (let i = 0; i < course.line.length; i += 1) {
+    const a = course.line[i];
+    const b = course.line[(i + 1) % course.line.length];
+    total += Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
+  }
+  return total;
+})();
+const KNOTS = Math.max(48, Math.round(loopLength / KNOT_SPACING));
+
 const { points, length } = resample(course.line, KNOTS);
+
+/* What the lap actually occupies, measured rather than typed, because the
+ * copy on the page quotes it and the tracks are not all the same size. */
+const span = (() => {
+  const lo = { x: Infinity, y: Infinity, z: Infinity };
+  const hi = { x: -Infinity, y: -Infinity, z: -Infinity };
+  for (const q of course.line) {
+    for (const k of ['x', 'y', 'z']) {
+      lo[k] = Math.min(lo[k], q[k]);
+      hi[k] = Math.max(hi[k], q[k]);
+    }
+  }
+  return { x: hi.x - lo.x, y: hi.y, z: hi.z - lo.z };
+})();
+
 const rows = [];
 for (let i = 0; i < points.length; i += 7) {
   rows.push(`  ${points.slice(i, i + 7).map((p) => p.join(', ')).join(', ')},`);
@@ -127,7 +165,7 @@ const table = (list, keys) => list
  * will quietly edit instead.
  */
 process.stdout.write(`/*
- * room-data.js: RaceGOW5 Track 8, as numbers, and the line flown through it.
+ * room-data.js: ${doc.name}, as numbers, and the line flown through it.
  *
  * GENERATED, NOT AUTHORED. Do not edit. Every figure below was read out of
  * the simulator's own copy of the track and its own path solver, which is
@@ -151,8 +189,9 @@ process.stdout.write(`/*
  *
  * ${doc.name} was designed by ${doc.credit?.designer ?? 'unknown'} and read off the official
  * animation gate by gate; the simulator credits ${doc.credit?.broughtOverBy ?? 'unknown'} for bringing it
- * over. The lap is ${length.toFixed(1)} m of line inside a footprint 3.25 by 2.28 m, which
- * is the most surprising number on this page.
+ * over. The lap is ${length.toFixed(1)} m of line inside a footprint ${span.x.toFixed(2)} by ${span.z.toFixed(2)} m
+ * and ${span.y.toFixed(2)} m off the floor at its highest, which is the most surprising
+ * set of numbers on this page.
  *
  * THE FRAME IS THE PAGE'S, ALREADY CONVERTED. The simulator's track
  * documents are Z up with the origin at the room's near left corner; these
@@ -278,4 +317,12 @@ ${rows.join('\n')}
  * not an artefact of how many knots this file happens to carry.
  */
 export const LAP_LENGTH = ${length.toFixed(1)};
+
+/*
+ * What the lap occupies: the footprint on the floor and the highest the line
+ * ever gets. Measured off the solver's own output, and quoted on the page,
+ * so a change of track changes the copy's numbers with it rather than
+ * leaving the front door advertising the last track's dimensions.
+ */
+export const SPAN = { x: ${span.x.toFixed(2)}, y: ${span.y.toFixed(2)}, z: ${span.z.toFixed(2)} };
 `);

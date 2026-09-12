@@ -1,11 +1,17 @@
 /*
- * room.js: the shed, and RaceGOW5 Track 8 standing in it.
+ * room.js: the shed, and the micro track standing in it.
  *
  * The last place the film goes, and the smallest. Everything before it is
  * outdoors and measured in tens of metres: a 51 m race field and a town 460 m
  * from it. This is ten metres by twelve with a four metre ceiling, and the
- * track inside it is 3.25 m by 2.28. The whole act is that change of scale,
- * so nothing here is drawn a size that would make it easier to see.
+ * track standing in it is a few metres across. The whole act is that change
+ * of scale, so nothing here is drawn a size that would make it easier to see.
+ *
+ * WHICH track is not this file's business. It builds whatever room-data.js
+ * holds: a gate at every position in GATES, a stack wherever two of them
+ * share one, a flat one for every entry in DIVES, and legs under whatever is
+ * left unsupported. Changing the demo track is a regeneration of that file
+ * and nothing here moves.
  *
  * IT IS THE SIMULATOR'S ROOM, NOT A ROOM. The dimensions and every colour
  * below are lifted from WebFPVSimulator/src/render/scene.js, which builds the

@@ -1818,34 +1818,40 @@
       </section>
 
       <!-- ACT 5: the room -->
-      <!-- 470vh, and it is the shortest of the three flying acts by a long
-           way, which is right twice over.
+      <!-- 700vh, and THIS IS THE ONE NUMBER TO TURN IF THE WHOOP FEELS FAST.
 
-           It is right by the clock. The lap is 640vh for about 14 s of
-           flying and the town is 760 for 16, which is roughly 46vh a second.
-           A RaceGOW lap of this track is 11 s at the speeds in ROOM_SPEED,
-           and the act spends about 0.7 of its height on it, so 470 puts the
-           pace at the same 46. The place changes and the film does not
-           change gear, which is the same argument the town act's height
-           makes.
+           An act's height is the gearing between the wheel and the aircraft,
+           and the arithmetic here does not work the way the other acts' does.
+           The lap act is 640vh over a 145 m racing line, which is 0.23 m of
+           line per vh: one wheel notch moves the quad about two and a half
+           metres, and its gates are twenty metres apart, so a notch is a
+           fraction of the way to the next one.
 
-           It is right by the page. This is the fifth act and the third one
-           in a row of somebody flying. Whatever is here has to make its
-           point and get out of the way of the reason section, and its point
-           is a size rather than a journey: 43 m of lap inside three metres
-           by two, which is a thing you see in one shot and understand in
-           two. Six screens of it would be six screens of the same
-           revelation. -->
-      <section class="act" data-act="room" style="min-height: 620vh">
+           This track is 14.4 m long with a pass every metre or so. At the
+           lap act's gearing the whole of it would be over in 60vh, which is
+           half a screen and not an act. At 700 the lap gets 476 of them, so
+           a notch moves the aircraft 330 mm: a bit under half the distance
+           between two gates, which is a thing you can follow. It was 1.16 m
+           before this number was turned up and before the track changed.
+
+           That is four times finer than the field's gearing in metres and
+           still three times coarser in GATES, because the track is dense and
+           the passes come at you whatever the scroll does. Turning this
+           number up moves the aircraft less per notch and makes the act
+           longer. Nothing else on the page has to change with it: every
+           timing inside the act is a fraction of its height, and timeline()
+           measures the height rather than assuming it. -->
+      <section class="act" data-act="room" style="min-height: 700vh">
         <div class="pin">
           <div class="copy copy-tight" data-copy="room">
             <p class="eyebrow">05 &#183; The room</p>
-            <h2>Forty four metres of lap,<br /><em>three metres across.</em></h2>
+            <h2>Four gates and a rail,<br /><em>in three and a half metres.</em></h2>
             <p class="lede">
               A sixty five millimetre whoop, twenty three grams, one cell.
-              The track is twenty eight inch gates cut from one length of
-              three quarter inch plumbing pipe: a little over three metres by
-              two on the floor, with forty four metres of line through it.
+              Four twenty eight inch gates, two of them stacked, a pole and a
+              rail, all cut from one length of three quarter inch plumbing
+              pipe. Three and a half metres by two on the floor, and fourteen
+              metres of lap threaded through it.
             </p>
             <p class="lede">
               Nobody lines up beside you. Everyone builds the same track in
@@ -1918,7 +1924,7 @@
         <a class="card" href="https://webfpv.org/sim/?map=custom&amp;craft=whoop65" data-dest="whoop" style="--accent: var(--cream)">
           <span class="card-n">02</span>
           <span class="card-t">Whoop micro tracks</span>
-          <span class="card-d">A 65 mm whoop indoors, on a track three metres across. Same control loop, a fifth of the speed.</span>
+          <span class="card-d">A 65 mm whoop indoors, on a track three and a half metres across. Same control loop, a fifth of the speed.</span>
           <span class="card-go">Fly the whoop</span>
         </a>
         <a class="card" href="https://webfpv.org/sim/src/trackbuilder/index.html" data-dest="builder" style="--accent: var(--sakura)">
