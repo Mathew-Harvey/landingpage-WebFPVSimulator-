@@ -984,6 +984,25 @@ function roomAt(p) {
   return (lo + (want - ROOM_S[lo]) / span) / N;
 }
 
+/*
+ * THE PACK, AND IT IS THE AIRCRAFT'S PACK.
+ *
+ * The instrument read "4S pack" at 16.6 V for the whole of the lap and the
+ * town, and configs/airframes.js ships the five inch as a 6S. It had been
+ * wrong since the OSD was written and nothing could catch it, because the
+ * cell count was a string in the markup and the voltage was a pair of
+ * numbers in a lerp, and the two never had to agree with each other or with
+ * the simulator.
+ *
+ * So the volts are a CELL COUNT TIMES A CELL VOLTAGE now. The per cell
+ * figures are the ones the page already flew, 4.15 charged down to 3.48 at
+ * the end of the town, which sit inside the 4.2 and 3.5 that
+ * configs/airframes.js calls charged and nearly empty; only the multiplier
+ * changed. The whoop's own numbers are in its branch below, on one cell,
+ * from the same file.
+ */
+const CELLS_6S = 6;
+
 /* ---------------------------------------------------------------- the page */
 
 const el = {
@@ -2699,7 +2718,7 @@ function frame(ms) {
     el.osdLabel.textContent = 'Run';
     el.osdTimer.textContent = fmtTime(ROOM_TIME * (1 + running));
     el.osdGate.textContent = 'Lap 2 of 3';
-    el.osdPack.textContent = '1S 300 mAh \u00b7 Acro';
+    el.osdPack.textContent = '1S 280 mAh \u00b7 Acro';
     el.osdThrottle.style.width = `${Math.round(clamp01((kmh - 6) / 22) * 100)}%`;
     /*
      * One cell, and the numbers are the aircraft's. configs/airframes.js
@@ -2732,9 +2751,9 @@ function frame(ms) {
     el.osdTimer.textContent = fmtTime(LAP_TIME + roaming * CITY_SECONDS);
     el.osdGate.textContent = 'Freestyle';
     el.osdThrottle.style.width = `${Math.round(clamp01((kmh - 30) / 90) * 100)}%`;
-    const volts = lerp(15.0, 13.9, roaming);
+    const volts = lerp(CELLS_6S * 3.75, CELLS_6S * 3.48, roaming);
     el.osdVolts.textContent = `${volts.toFixed(1)} V`;
-    el.osdPack.textContent = '4S pack \u00b7 Acro';
+    el.osdPack.textContent = '6S pack \u00b7 Acro';
     el.osdBatt.style.width = `${Math.round(lerp(34, 9, roaming))}%`;
   } else if (inWorld && T < 4.0) {
     let next = GATE_LAP.length - 1;
@@ -2755,9 +2774,9 @@ function frame(ms) {
     el.osdTimer.textContent = fmtTime((sRaw - LAP_START) * LAP_TIME);
     el.osdGate.textContent = `Gate ${Math.min(GATE_COUNT, next + 1)} of ${GATE_COUNT}`;
     el.osdThrottle.style.width = `${Math.round(clamp01((kmh - 30) / 80) * 100)}%`;
-    const volts = lerp(16.6, 15.0, flying);
+    const volts = lerp(CELLS_6S * 4.15, CELLS_6S * 3.75, flying);
     el.osdVolts.textContent = `${volts.toFixed(1)} V`;
-    el.osdPack.textContent = '4S pack \u00b7 Acro';
+    el.osdPack.textContent = '6S pack \u00b7 Acro';
     el.osdBatt.style.width = `${Math.round(lerp(96, 34, flying))}%`;
   } else if (T >= 5.0) {
     /* The close, and it is in the shed now. The race track is three hundred
