@@ -1889,13 +1889,15 @@ function poseRoomClose(t, outPos, outQuat) {
     room.heart.z + Math.cos(az) * dist,
   );
   /*
-   * Aimed ABOVE the track rather than at it, which drops the track into the
-   * lower half of the frame. That is where the copy leaves room: the
-   * headline takes the top third and the four cards take the bottom, so the
-   * one clear band is between them, and a track drawn across the middle of
-   * a headline is a headline nobody reads.
+   * Aimed at the top of the track rather than at the middle of it, which is
+   * where the copy leaves room. The headline takes the top third of the last
+   * frame and the four cards take the bottom, so the track has to sit in the
+   * band between them. Aimed at the mat it ran through the headline; aimed
+   * clear above the tall pole it dropped behind the cards and the last frame
+   * of the page became four metres of empty board. This is the middle of
+   * those two, and the only thing that crosses a letter is 27 mm of pipe.
    */
-  at.set(room.heart.x + 0.15, 1.22, room.heart.z - 0.15);
+  at.set(room.heart.x + 0.15, 0.92, room.heart.z - 0.15);
   lookQuat(outPos, at, outQuat);
 }
 
