@@ -41,6 +41,8 @@ import { createStage } from './stage.js';
 import { buildDrone, CAMERA_MOUNT_FORWARD, CAMERA_MOUNT_UP } from './drone.js';
 import { buildCourse, GATE_COUNT } from './course.js';
 import { buildCity, flightLine, CITY_ORIGIN, BUILT_R, TREE_R } from './city.js';
+import { buildRoom, ROOM_AIR } from './room.js';
+import { buildWhoop, WHOOP_FOV, WHOOP_MOUNT_FORWARD, WHOOP_MOUNT_UP, WHOOP_CAM_TILT_DEG } from './whoop.js';
 import { buildPetals } from './petals.js';
 import { destinations } from './config.js';
 
@@ -51,8 +53,9 @@ const BUILD_SECONDS = 9;
 
 /*
  * ?t=<number> pins the timeline. 0 to 1 is the build, 1 to 2 the track, 2 to
- * 3 the lap, 3 to 4 the city, 4 to 5 the close, so ?t=2.5 is the middle of a
- * lap and ?t=3.5 is somewhere in the shopping street.
+ * 3 the lap, 3 to 4 the city, 4 to 5 the room and 5 to 6 the close, so
+ * ?t=2.5 is the middle of a lap and ?t=3.5 is somewhere in the shopping
+ * street.
  *
  * This exists because the page cannot otherwise be inspected: every frame is
  * a function of a scroll position and an eight second autoplay, and a
@@ -66,7 +69,7 @@ const PIN = (() => {
     return null;
   }
   const v = Number.parseFloat(raw);
-  return Number.isFinite(v) ? Math.max(0, Math.min(5, v)) : null;
+  return Number.isFinite(v) ? Math.max(0, Math.min(6, v)) : null;
 })();
 
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
@@ -202,6 +205,47 @@ const CITY_BEATS = [
     until: 0.82,
     k: 'Proximity',
     t: 'Nothing here is scored. Fly the line you can see, at the height you dare, and put it back on the roof you started from.',
+  },
+];
+
+/*
+ * The room act's beats.
+ *
+ * Three again, and none of them repeats an argument the page has already
+ * made. The lap's beats are about the control loop, the town's are about
+ * having no gates; these are about SIZE and about who you are racing, which
+ * are the two things nobody expects and the two things a picture of a shed
+ * cannot say on its own.
+ *
+ * NO SERIES IS NAMED, and that is the board's decision rather than this
+ * page's. The board's whoop plate is called Whoop Micro Tracks, and its own
+ * note says why: the builder will make any micro track a whoop can fly, and
+ * a series' name on the plate tells a pilot who built their own that it does
+ * not belong. The same holds here. The track this act flies is a published
+ * one and its designer is credited where a credit belongs, in NOTICE and in
+ * the data file, not in a headline over somebody else's living room.
+ *
+ * The first waits until the act's copy block has gone, the same way the
+ * town's does. The last stops before the end of the act, because the end of
+ * the act is the camera leaving the airframe and the reason section arriving
+ * over it.
+ */
+const ROOM_BEATS = [
+  {
+    at: 0.20,
+    k: 'The aircraft',
+    t: 'Sixty five millimetres, twenty three grams, one cell. The same Betaflight, a different plant: three times the angular acceleration and a fifth of the speed.',
+  },
+  {
+    at: 0.44,
+    k: 'The track',
+    t: 'Twenty eight inch gates, cut from one length of three quarter inch plumbing pipe. A little over three metres by two of floor, and forty four metres of line through it.',
+  },
+  {
+    at: 0.66,
+    until: 0.86,
+    k: 'The clock',
+    t: 'Nobody lines up beside you. Everyone builds the same track, flies it alone, and posts a time. Three consecutive laps, and the clock says who was quicker.',
   },
 ];
 
@@ -422,6 +466,38 @@ const city = buildCity({
   },
 });
 stage.scene.add(city.group);
+
+/*
+ * THE SHED, AND THE AIRCRAFT THAT FLIES IN IT.
+ *
+ * Built at import like the field and unlike the town, because it costs what
+ * the town does not: about a hundred and fifty meshes of pipe, board and
+ * furniture against the district's fifteen hundred. There is nothing here
+ * worth a loading phase and nothing worth deferring.
+ *
+ * ITS LAMPS ARE NOT IN ITS GROUP. Hiding a subtree takes the lights inside it
+ * out of the renderer's lighting state, and every material on the page
+ * recompiles when they come back, which on this machine is a second of black
+ * screen at the exact moment the act begins. So the geometry hides and the
+ * lamps stay, turned down to nothing until the switch: see setLamps.
+ */
+const room = buildRoom();
+stage.scene.add(room.group);
+stage.scene.add(room.lamps);
+
+/*
+ * The whoop rides its own rig for the same reason the five inch does: the
+ * pose is written to the rig and the model hangs off it, so nothing in here
+ * ever touches the aircraft's own transform. Hidden until the room act, and
+ * the five inch is hidden for the whole of it, because the two are never in
+ * frame together and a 0.35 m machine parked behind a 0.082 m one would
+ * settle the scale argument the wrong way round.
+ */
+const whoop = buildWhoop();
+const whoopRig = new THREE.Group();
+whoopRig.add(whoop.group);
+whoopRig.visible = false;
+stage.scene.add(whoopRig);
 
 const petals = buildPetals();
 stage.scene.add(petals.mesh);
@@ -788,6 +864,126 @@ function citySpeed(p) {
   return (per * CITY_LENGTH / CITY_SECONDS) * 3.6;
 }
 
+/* ----------------------------------------------------------- the room line */
+
+/*
+ * THE WHOOP LAP, and the whole reason the act exists is in these two numbers.
+ *
+ * 43.3 m of racing line, folded into a footprint 3.25 m by 2.28. The lap is
+ * within a few metres of the length of the town's freestyle line and it fits
+ * between a sofa and a television, which is the argument the act is making
+ * and it is made by the geometry rather than by the copy.
+ */
+const ROOM_LENGTH = room.line.getLength();
+
+/*
+ * The speed profile, from the line's own curvature, the same way SPEED is
+ * built for the field and for the same reason: the instrument reports the
+ * aircraft rather than the reader's finger.
+ *
+ * The two ends of it are the whoop's, not the five inch's. A 65 mm machine
+ * on 1S runs about 26 km/h down a straight it has room to use, and comes
+ * back to walking pace through a 0.45 m radius corner under a rail. Those
+ * are a fifth of the five inch's numbers, which is exactly the ratio
+ * configs/airframes.js gives the two aircraft, and it is why a track this
+ * size is a track at all.
+ *
+ * The window is four samples of 340 rather than of 240, so it measures the
+ * turn over about half a metre. On a line this tight a wider window reads
+ * every corner as the same corner.
+ */
+const ROOM_SPEED = (() => {
+  const N = 340;
+  const raw = new Float32Array(N);
+  const a = new THREE.Vector3();
+  const b = new THREE.Vector3();
+  for (let i = 0; i < N; i += 1) {
+    room.line.getTangentAt(i / N, a);
+    room.line.getTangentAt(((i + 4) % N) / N, b);
+    raw[i] = lerp(26, 8.5, clamp01(a.angleTo(b) / 0.55));
+  }
+  const out = new Float32Array(N);
+  for (let i = 0; i < N; i += 1) {
+    let sum = 0;
+    for (let k = -7; k <= 7; k += 1) {
+      sum += raw[(i + k + N) % N];
+    }
+    out[i] = sum / 15;
+  }
+  return out;
+})();
+
+function roomSpeedAt(u) {
+  const N = ROOM_SPEED.length;
+  const f = ((u % 1) + 1) % 1 * N;
+  const i = Math.floor(f);
+  return lerp(ROOM_SPEED[i % N], ROOM_SPEED[(i + 1) % N], f - i);
+}
+
+/* One lap, integrated from that profile, so the clock and the speedometer
+ * cannot disagree. It comes out near eleven seconds, which is a RaceGOW lap:
+ * three of them is the thing the series is scored on. */
+const ROOM_TIME = (() => {
+  const N = ROOM_SPEED.length;
+  let t = 0;
+  for (let i = 0; i < N; i += 1) {
+    t += (ROOM_LENGTH / N) / (ROOM_SPEED[i] / 3.6);
+  }
+  return t;
+})();
+
+/*
+ * WHERE ON THE LINE, against progress through the act.
+ *
+ * The field's lap and the town's line both fly at a rate the act sets and
+ * the curve follows. This one is the other way round: the pace comes from
+ * the speed profile above, so the aircraft slows into the corners and runs
+ * on the straights ON SCREEN as well as on the instrument. A whoop track is
+ * mostly corner, and a line flown at a constant rate through it reads as a
+ * camera on a rail rather than as somebody flying.
+ *
+ * Same shape as CITY_S: a normalised integral, built once, monotonic by
+ * construction, so scrubbing anywhere lands on the frame that belongs there.
+ */
+const ROOM_S = (() => {
+  const N = ROOM_SPEED.length;
+  const out = new Float32Array(N + 1);
+  let sum = 0;
+  for (let i = 1; i <= N; i += 1) {
+    /* Time to cover one step at that step's speed. The integral of time
+     * against distance is what makes progress through the ACT linear in
+     * seconds rather than in metres. */
+    sum += 1 / ROOM_SPEED[i - 1];
+    out[i] = sum;
+  }
+  for (let i = 0; i <= N; i += 1) {
+    out[i] /= sum;
+  }
+  return out;
+})();
+
+/* Given progress through the act, where that is on the curve. */
+function roomAt(p) {
+  const N = ROOM_S.length - 1;
+  /* ROOM_S is time against distance, so it has to be inverted: walk it for
+   * the distance whose cumulative time is p. A 340 entry table binary
+   * searched every frame would be silly; it is monotonic and short, so a
+   * scan with a remembered start is both simpler and faster. */
+  const want = clamp01(p);
+  let lo = 0;
+  let hi = N;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (ROOM_S[mid] <= want) {
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+  const span = ROOM_S[hi] - ROOM_S[lo] || 1e-9;
+  return (lo + (want - ROOM_S[lo]) / span) / N;
+}
+
 /* ---------------------------------------------------------------- the page */
 
 const el = {
@@ -796,6 +992,7 @@ const el = {
   cue: document.getElementById('cue'),
   veil: document.getElementById('veil'),
   dissolve: document.getElementById('dissolve'),
+  blackout: document.getElementById('blackout'),
   ticker: document.getElementById('ticker'),
   tickRows: document.getElementById('tick-rows'),
   tickCount: document.getElementById('tick-count'),
@@ -812,6 +1009,7 @@ const el = {
   osdGate: document.getElementById('osd-gate'),
   osdSpeed: document.getElementById('osd-speed'),
   osdVolts: document.getElementById('osd-volts'),
+  osdPack: document.getElementById('osd-pack'),
   osdThrottle: document.getElementById('osd-throttle'),
   osdBatt: document.getElementById('osd-batt'),
   beats: document.getElementById('beats'),
@@ -862,6 +1060,7 @@ const LEDGER = [
   { id: 'build', label: 'Track' },
   { id: 'fly', label: 'Fly' },
   { id: 'city', label: 'Freestyle' },
+  { id: 'room', label: 'Whoop' },
   { id: 'close', label: 'Practise' },
 ];
 const ledgerRows = LEDGER.map((r) => {
@@ -903,6 +1102,7 @@ function makeBeats(list) {
 }
 const beatEls = makeBeats(BEATS);
 const cityBeatEls = makeBeats(CITY_BEATS);
+const roomBeatEls = makeBeats(ROOM_BEATS);
 
 /* ------------------------------------------------------------- the timeline */
 
@@ -1117,14 +1317,19 @@ function poseBuilder(t, outPos, outQuat) {
 }
 
 /* Chase: behind and above the quad, the camera a spotter would hold. */
-function poseChase(pos, quat, back, high, outPos, outQuat) {
+function poseChase(pos, quat, back, high, outPos, outQuat, ahead = 4.5) {
   vTmp.set(0, 0, 1).applyQuaternion(quat).multiplyScalar(back);
   outPos.copy(pos).add(vTmp);
   outPos.y += high;
   /* Aimed four and a half metres ahead rather than six: looking further out
    * tips the camera down and pushes the quad off the bottom of the frame,
-   * which it was doing on exactly the shot the page builds to. */
-  vTmp2.set(0, 0, -4.5).applyQuaternion(quat).add(pos);
+   * which it was doing on exactly the shot the page builds to.
+   *
+   * The default is the five inch's, and the room passes its own. A whoop
+   * chased from 340 mm behind, aimed 4.5 m ahead, is a camera looking at a
+   * wall with an aircraft somewhere along the bottom edge: the aim point has
+   * to scale with the machine, not with the page. */
+  vTmp2.set(0, 0, -ahead).applyQuaternion(quat).add(pos);
   lookQuat(outPos, vTmp2, outQuat);
 }
 
@@ -1150,6 +1355,27 @@ function poseFPV(pos, quat, outPos, outQuat) {
   vTmp.set(0, CAMERA_MOUNT_UP, -CAMERA_MOUNT_FORWARD).applyQuaternion(quat);
   outPos.copy(pos).add(vTmp);
   outQuat.copy(quat).multiply(qTilt);
+}
+
+/*
+ * The whoop's own goggles, and every number in it is different.
+ *
+ * The five inch carries its camera 80 mm forward and 18 mm up at 30 degrees.
+ * On a machine 82 mm across, 80 mm forward is a body length in front of the
+ * aircraft: the lens would be outside the ducts, and every gate would pass
+ * the camera before it passed the quad. The Air65 II's C03 is 24 mm forward
+ * and 12 mm up, and it is tilted back 25 rather than 30 because the aircraft
+ * is a fifth as fast and therefore flies a fifth as nose down.
+ *
+ * Both pairs are the simulator's, from configs/airframes.js and plant.c.
+ */
+const WHOOP_TILT = THREE.MathUtils.degToRad(WHOOP_CAM_TILT_DEG);
+const qWhoopTilt = new THREE.Quaternion()
+  .setFromAxisAngle(new THREE.Vector3(1, 0, 0), WHOOP_TILT);
+function poseWhoopFPV(pos, quat, outPos, outQuat) {
+  vTmp.set(0, WHOOP_MOUNT_UP, -WHOOP_MOUNT_FORWARD).applyQuaternion(quat);
+  outPos.copy(pos).add(vTmp);
+  outQuat.copy(quat).multiply(qWhoopTilt);
 }
 
 /*
@@ -1266,21 +1492,34 @@ function poseCity(t, outPos, outQuat) {
 
 const dronePos = new THREE.Vector3();
 const droneQuat = new THREE.Quaternion();
+const whoopPos = new THREE.Vector3();
+const whoopQuat = new THREE.Quaternion();
 const parked = new THREE.Vector3();
 
 /*
- * Where the quad ends up for the close: hovering over the town's roofs at
- * the end of the freestyle line, turned back across the district.
+ * Where the whoop ends up for the close: hovering a hand's width over the
+ * start gate, which is the gate a RaceGOW lap opens and closes on and
+ * therefore where a pilot's aircraft is when the run ends.
  *
- * It used to be over the race field's start gate, which is where the page
- * used to end. It is taken from the city line's own last point rather than
- * typed, so moving the line moves the parked quad with it and the close can
- * never be framed on an aircraft that is somewhere else.
+ * Taken from the line's own first point rather than typed, so moving the
+ * track moves the hover with it. The town's quad used to park at the far end
+ * of the freestyle line for the same reason and in the same way; that block
+ * has gone, because the town's act now ends with the aircraft still flying
+ * and the camera craning off it, which is a better way to leave a place than
+ * stopping dead over it.
  */
-const PARK = cityLine.getPointAt(1).clone();
-const PARK_YAW = (() => {
-  const t = cityLine.getTangentAt(1);
-  return Math.atan2(t.x, t.z) + Math.PI + 0.4;
+const ROOM_HOVER = room.line.getPointAt(0).clone().setY(
+  room.line.getPointAt(0).y + 0.16,
+);
+
+/*
+ * Which way the aircraft faces on the pad: down the line's own first tangent,
+ * so it is pointing at the gate it is about to fly through. Read rather than
+ * typed, for the reason above.
+ */
+const padYaw = (() => {
+  const t = room.line.getTangentAt(0);
+  return Math.atan2(t.x, t.z) + Math.PI;
 })();
 const eul = new THREE.Euler(0, 0, 0, 'YXZ');
 
@@ -1467,6 +1706,227 @@ function cityPose(u, outPos, outQuat, bobPhase, flip = 0, turnBank = 0) {
 }
 
 /*
+ * THE ROOM'S FLIGHT POSE.
+ *
+ * The same shape as the town's and tuned for a different machine. Three
+ * things move:
+ *
+ *   THE TRIM is 0.38, which is STEEPER than the town's 0.34 even though the
+ *   aircraft is slower, and that is about the room rather than about the
+ *   flying. The whoop's lens sits 25 degrees back, the ceiling is four
+ *   metres up, and the lap spends half its length above head height: at a
+ *   gentle trim the net view is nine degrees up and two thirds of every
+ *   frame is joists. At 0.38 the camera axis sits a few degrees above level
+ *   and the track is in the middle of the picture, which is where a pilot
+ *   flying it would be looking.
+ *
+ *   THE LOOKAHEAD is a fifth of the town's. 0.008 of this line is 350 mm,
+ *   which on a 450 mm radius corner is most of the corner: the roll would
+ *   arrive with the apex instead of before it. 0.0018 is about 80 mm, which
+ *   is a whoop's own length and is what it can see itself about to do.
+ *
+ *   THE BANK is softer than it wants to be, and that is a decision made
+ *   against a screenshot rather than against the physics. A 0.45 m radius
+ *   corner at 2 m/s is a 42 degree bank and this track is almost all
+ *   corner, so an honest gain put the horizon on the diagonal for most of
+ *   the lap and every frame of it looked like the moment before a crash.
+ *   Through a 95 degree lens a roll also reads as more than it is, because
+ *   the frame's edges are further off axis than its middle. 0.42 rad at the
+ *   limit, reached less often, reads as a whoop being flown and not as a
+ *   page that has fallen over.
+ *
+ *   THE CLIMB feeds in at a third rather than at a half. The line leaves the
+ *   start gate at seventeen degrees up, and a lens already tilted 25 back
+ *   does not need help finding the ceiling.
+ *
+ *   THE ALTITUDE TERM is the last one and it was the one this act could
+ *   least do without, which was a surprise. The town has one because a
+ *   district seen from twenty metres wants a different attitude from a
+ *   street seen from three. A four metre ceiling looked like too small a
+ *   range for the question to arise, and it is not: the track is 3.25 m
+ *   across and the lap climbs to 2.5 m over the tower, so above head height
+ *   the ONLY thing a forward looking lens has in front of it is the far
+ *   wall. Screenshots at 0.15 and at 0.35 of the lap were two photographs
+ *   of a brown corner with a pipe in them. A pilot who has climbed over
+ *   something looks down at it, and above 0.9 m so does this.
+ */
+const ROOM_TRIM = -0.38;
+const ROOM_LOOK_LOW = 0.9;
+const ROOM_LOOK_HIGH = 2.4;
+const ROOM_LOOK_DOWN = 0.46;
+const roomTan = new THREE.Vector3();
+const roomTan2 = new THREE.Vector3();
+function roomPose(u, outPos, outQuat, bobPhase, flip = 0, turnBank = 0) {
+  const c = clamp01(u);
+  room.line.getPointAt(c, outPos);
+  room.line.getTangentAt(c, roomTan);
+  const yawBase = Math.atan2(roomTan.x, roomTan.z) + Math.PI;
+  const yaw = yawBase + flip * Math.PI;
+
+  room.line.getTangentAt((c + 0.0018) % 1, roomTan2);
+  let dyaw = (Math.atan2(roomTan2.x, roomTan2.z) + Math.PI) - yawBase;
+  while (dyaw > Math.PI) dyaw -= Math.PI * 2;
+  while (dyaw < -Math.PI) dyaw += Math.PI * 2;
+  const roll = THREE.MathUtils.clamp(dyaw * 2.1, -0.42, 0.42) * Math.cos(flip * Math.PI)
+    + turnBank;
+
+  const climb = THREE.MathUtils.clamp(
+    Math.asin(THREE.MathUtils.clamp(roomTan.y, -1, 1)), -0.7, 0.5,
+  );
+  const high = clamp01((outPos.y - room.heart.y - ROOM_LOOK_LOW)
+    / (ROOM_LOOK_HIGH - ROOM_LOOK_LOW));
+  eul.set(ROOM_TRIM + climb * 0.30 - high * ROOM_LOOK_DOWN, yaw, roll);
+  outQuat.setFromEuler(eul);
+  /* A tenth of the town's bob. It is the same 23 gram machine that gets
+   * blown about by its own wash indoors, but the camera is 24 mm from the
+   * centre of it rather than 80, so the same angular twitch moves the frame
+   * far less and a town sized bob would read as a fault. */
+  outPos.y += Math.sin(bobPhase) * 0.004;
+}
+
+/*
+ * ARRIVING IN THE SHED, and it is two shots rather than one.
+ *
+ * The act opens on the whole room, because the room is the surprise: four
+ * walls, a ceiling, two bulbs and a small white lattice on a mat in the
+ * middle of a floor big enough to park a van on. Then it pushes in on the
+ * pad, where there is a 23 gram aircraft nobody has noticed yet, and hands
+ * over to its camera.
+ *
+ * Read from the pad and the room rather than typed as six numbers, so that
+ * moving the shed or the start of the track moves the shot with it.
+ */
+const roomFrom = new THREE.Vector3();
+const roomTo = new THREE.Vector3();
+function poseRoomIn(t, outPos, outQuat) {
+  const k = smooth(clamp01(t));
+  /* Wide: a high back corner, on the same side as the pad so the push in is
+   * a move along one line rather than an orbit. High enough to have the
+   * joists in the top of the frame, because the ceiling is half of what
+   * says this is a room and not a floor. */
+  roomFrom.set(room.heart.x - 4.3, 2.72, room.heart.z + 5.4);
+  /*
+   * Close: A HAND'S WIDTH BEHIND THE AIRCRAFT AND ALMOST ON THE MAT.
+   *
+   * 280 mm, which sounds absurd until the arithmetic is done. At 66 degrees
+   * the frame is 360 mm across there, so an 82 mm machine is a fifth of it
+   * and reads as a machine. From three quarters of a metre it is five
+   * percent of the frame, which is a speck with a shed behind it.
+   *
+   * And that closeness is the shot rather than a compromise for it. What is
+   * behind the aircraft at this range is a gate 711 mm across, standing over
+   * it like a doorway. Both halves of the scale argument are in one frame:
+   * the machine is tiny, and so is the track, and the track is still four
+   * times bigger than the machine.
+   */
+  roomTo.set(room.pad.x - 0.28, 0.105, room.pad.z + 0.17);
+  outPos.copy(roomFrom).lerp(roomTo, k);
+  /* The aim slides from the middle of the track to the aircraft on the pad,
+   * so the wide shot is of the room and the tight one is of the machine. */
+  at.set(
+    lerp(room.heart.x + 0.2, room.pad.x + 0.03, k),
+    lerp(1.30, 0.048, k),
+    lerp(room.heart.z - 0.3, room.pad.z, k),
+  );
+  lookQuat(outPos, at, outQuat);
+}
+
+/*
+ * THE LAST SHOT OF THE PAGE.
+ *
+ * It used to be the town from 145 m, and the town still gets that shot: it
+ * is the end of the freestyle act now, where the copy is not competing with
+ * it. What the page closes on instead is this, and the swap is the whole
+ * argument of adding the act.
+ *
+ * The town says "here is a place to fly", which is a promise about a good
+ * afternoon. The shed says "here is a track, and it is in a room, and you
+ * could have one tonight", which is what the words over it actually claim:
+ * that the hard part of FPV is getting to the first lap and that this costs
+ * nothing. The last frame should agree with the last sentence.
+ *
+ * Composed for the copy rather than for the room. The reason section's type
+ * runs down the left and the three cards span the bottom, so the track sits
+ * a little above centre with the mat's dark floor under it, which is the one
+ * surface on the page a white card reads cleanly against.
+ *
+ * The aircraft is in it and it is two pixels of mint. At 5.5 m through a 62
+ * degree lens the frame is 6.6 m across where the track is, so an 82 mm
+ * machine is a bit over one percent of it: what reads is the pair of lamps
+ * on its tail, hovering over the start gate. That is the honest version, and
+ * it is the same admission the town's own wide shot makes about a five inch
+ * at 145 m. The subject of this frame is the track and the room around it.
+ *
+ * How far it may go is bounded by the room and not by taste: at the last
+ * frame the camera is 5.5 m out on a diagonal and 2.45 m up, which is inside
+ * a 10 by 12 box with 4 m of headroom, clear of the joists at 3.86 and about
+ * 400 mm off the wall behind it. A camera that leaves the room is a camera
+ * looking at the outside of a closed box, which is the exact failure the
+ * simulator's own title screen had to fix.
+ */
+const ROOM_CLOSE_FOV = 62;
+function poseRoomClose(t, outPos, outQuat) {
+  const k = smooth(clamp01(t));
+  /*
+   * The far corner from the one the act came in over, so the closing frame
+   * is not the opening frame with the lights left on, and the corner with
+   * nothing in it: the bench, the shelving, the crates and the ladder all
+   * end up across the room where they belong in a wide shot, rather than a
+   * metre and a half from the lens where a trestle table is a brown bar
+   * across the bottom of the last frame of the page.
+   *
+   * 5.5 m out on the diagonal puts the camera 400 mm off the wall behind it,
+   * which is as far as this room goes. What a landscape buys with distance
+   * an interior has to buy with angle, which is why the lens is 62 rather
+   * than the town's 58.
+   */
+  const az = lerp(0.72, 0.98, k);
+  const dist = lerp(4.4, 5.5, k);
+  const h = lerp(1.15, 2.45, k);
+  outPos.set(
+    room.heart.x + Math.sin(az) * dist,
+    h,
+    room.heart.z + Math.cos(az) * dist,
+  );
+  /* Aimed at the top of the tower rather than at the mat, so the track sits
+   * in the middle of the frame instead of along the bottom of it. */
+  at.set(room.heart.x + 0.15, 0.78, room.heart.z - 0.15);
+  lookQuat(outPos, at, outQuat);
+}
+
+/*
+ * The lens, as one function of T rather than as a ladder of ternaries.
+ *
+ * It was a ladder, and at four rungs it was already the hardest line in the
+ * file to read. Six is not a line, it is a table, so it is written as one.
+ * Every entry is the horizontal angle at that point on the timeline and the
+ * lens eases between the pairs; see the note at the call site for what each
+ * one is for.
+ */
+const LENS = [
+  { at: 0.00, fov: STUDIO_FOV },
+  { at: 1.00, fov: STUDIO_FOV },
+  { at: 1.34, fov: 46 },
+  { at: 1.98, fov: 46 },
+  { at: 2.24, fov: 104 },
+  { at: 3.80, fov: 104 },
+  { at: 3.99, fov: CLOSE_FOV },
+  { at: 4.01, fov: 66 },
+  { at: 4.24, fov: 66 },
+  { at: 4.36, fov: WHOOP_FOV },
+  { at: 4.90, fov: WHOOP_FOV },
+  { at: 5.16, fov: ROOM_CLOSE_FOV },
+];
+function lensAt(t) {
+  for (let i = 1; i < LENS.length; i += 1) {
+    if (t < LENS[i].at) {
+      return lerp(LENS[i - 1].fov, LENS[i].fov, ease(t, LENS[i - 1].at, LENS[i].at));
+    }
+  }
+  return LENS[LENS.length - 1].fov;
+}
+
+/*
  * WHICH WAY THE QUAD IS POINTING, and the only state on the page that is not
  * a pure function of T.
  *
@@ -1650,7 +2110,7 @@ function frame(ms) {
    * haze has all of it, so that was thirty draw calls of nothing for ten
    * screens of scroll.
    */
-  city.setShown(T > 2.90);
+  city.setShown(T > 2.90 && T < 4.02);
   /*
    * The town's own clock: the train, the crossing sequence that lowers the
    * barriers for it, and the blossom coming off its trees. Only while it is
@@ -1667,6 +2127,18 @@ function frame(ms) {
    */
   const reach = REDUCED ? 0 : ease(T, 3.02, 3.34);
   stage.setRegime(scale, world, reach);
+  /*
+   * INDOORS, and the switch is a step rather than a fade because it happens
+   * inside the blackout.
+   *
+   * Two hundredths of an act is about a tenth of a screen of scroll, and at
+   * either end of that window the overlay is more than ninety eight percent
+   * opaque, so nothing on screen can see the lighting rig change hands. A
+   * long crossfade would be worse than useless: there is no frame in which a
+   * sun and a pair of shed bulbs are both the right answer.
+   */
+  const indoor = REDUCED ? 0 : clamp01((T - 3.988) / 0.016);
+  stage.setIndoor(indoor, ROOM_AIR);
   course.setFog(stage.scene.fog);
   /* ------------------------------------------------------------- aircraft */
   /*
@@ -1709,14 +2181,42 @@ function frame(ms) {
   const inCity = T >= 2.995 && T < 4.0;
 
   /*
-   * Which way it is pointing. Live across BOTH flying acts, and driven by
-   * whichever of the two is running, so scrolling back up the page turns the
+   * THE ROOM ACT, and it opens standing still, which is the one thing none
+   * of the other acts does.
+   *
+   * The lap begins in the air off the back of the plan view, and the town
+   * act begins mid flight because the page has cut to it. This one begins
+   * with the lights off, an empty shed, and an aircraft on a pad, because
+   * the shed is the surprise and a surprise flown past at 20 km/h is not one.
+   * It also means the two acts either side of it cannot be confused for each
+   * other, which was the risk of a fifth act that is also somebody flying.
+   *
+   *   lamps    the light switch. See setLamps in room.js.
+   *   lift     off the pad and onto the start of the line.
+   *   running  progress through the lap, which the line's own speed profile
+   *            then turns into a position: see roomAt.
+   */
+  const lamps = REDUCED ? 0 : ease(T, 4.004, 4.085);
+  const lift = ease(T, 4.22, 4.31);
+  const running = ramp(T, 4.31, 4.94, 0.06, 0.09);
+  const roomU = roomAt(running);
+  const inRoom = T >= 4.0 && T < 5.0;
+
+  /*
+   * Which way it is pointing. Live across all THREE flying acts, and driven
+   * by whichever of them is running, so scrolling back up the page turns the
    * aircraft round in the city exactly the way it does on the lap. Handing it
    * only the lap's parameter would have left the quad flying backwards
    * through the shopping street with its nose still pointing at the roofs.
+   *
+   * The parameter jumps at an act boundary, from one act's 1 to the next
+   * act's 0, and for one frame that reads as a hard reverse. It costs
+   * nothing: the flip moves at most dt over 1.3 s in a frame, which is about
+   * a hundredth, and the very next frame puts it back. Both boundaries are
+   * behind a full screen transition anyway.
    */
-  const heading = inCity ? roaming : flying;
-  const flip = updateHeading(heading, dt, T >= 2.0 && T < 4.0);
+  const heading = inRoom ? running : inCity ? roaming : flying;
+  const flip = updateHeading(heading, dt, T >= 2.0 && T < 5.0);
   /* How far outside the aircraft the camera is: nothing at either heading,
    * everything at the half way point of a turn. */
   const turnBank = turnBankNow(flip);
@@ -1738,16 +2238,27 @@ function frame(ms) {
    */
   /*
    * ...and it stays at 104 for the whole of the city, because the city act is
-   * the same argument the lap is making. The only change is at the very end,
-   * where the page leaves the airframe for the last time and the lens comes
-   * back to something a landscape can be composed in.
+   * the same argument the lap is making. It comes back to 58 at the end of
+   * that act, where the page leaves the airframe and the town gets the one
+   * shot a landscape can be composed in.
+   *
+   * THEN THE ROOM, and it needs two more.
+   *
+   *    66 deg the shed. An interior cannot be established on a long lens,
+   *           because the camera cannot back away from it: a 10 by 12 m box
+   *           seen from inside needs about what a 24 mm lens gives, and
+   *           anything longer is a photograph of one wall. It is the same
+   *           trade the closing shot makes and for the same reason.
+   *    95 deg the whoop's own lens, from configs/airframes.js, and wider
+   *           than the five inch's 85 because indoors everything is close.
+   *    62 deg the last frame. Wider than the town's 58 because the camera
+   *           cannot back off past a wall: what a landscape buys with
+   *           distance an interior has to buy with angle.
+   *
+   * The step down from 58 to 44 happens across the blackout at the act
+   * boundary, where the frame is black and there is nothing to see it in.
    */
-  stage.setFov(
-    T < 1.0 ? STUDIO_FOV
-      : T < 1.98 ? lerp(STUDIO_FOV, 46, ease(T, 1.0, 1.34))
-        : T < 3.78 ? lerp(46, 104, ease(T, 1.98, 2.24))
-          : lerp(104, CLOSE_FOV, ease(T, 3.80, 4.20)),
-  );
+  stage.setFov(lensAt(T));
 
   if (T < 1.02 && !REDUCED) {
     /* Studio: on the turntable, a shade nose down so it reads as a machine
@@ -1845,55 +2356,160 @@ function frame(ms) {
     poseFPV(dronePos, droneQuat, camPos, camQuat);
 
     /*
-     * Out of the airframe for the close, and it starts EARLY.
+     * OUT OF THE AIRFRAME, AND THE TOWN GETS ITS SHOT HERE.
      *
-     * It is a long pull rather than the lap's old short one, because what it
-     * is pulling back to is a hundred and fifty metre wide landscape rather
-     * than a parked quad, and a camera that leaves an airframe and arrives at
-     * a town in a tenth of a second has cut rather than craned.
+     * This pull back used to run into the closing act and finish there, at
+     * 145 m, under the reason section's copy. The page ends in a shed now,
+     * so the town's wide shot has to be spent inside the town's own act or
+     * not at all, and it is worth spending: a hundred and forty metre
+     * district in low sun is the best single frame the page owns.
      *
-     * The other reason is the copy. The reason section is the last thing
-     * before the close and it starts inside this act, so its four lines of
-     * lede land over whatever is in frame. Pulled out at 3.88 that was a
-     * roofscape five metres from the lens: the headline survived it and the
-     * paragraph under it did not. Starting at 3.76 the same words arrive
-     * over a district seen from forty metres, which is a background rather
-     * than a texture.
+     * It gets it clean, which the old version never did. Under the closing
+     * copy the shot was a background: four lines of lede down the left and
+     * three cards across the bottom. Here there is no type on it at all, the
+     * act's own beats having stopped at 0.82 of the act for exactly this
+     * reason, so the last thing before the lights go out is a town and
+     * nothing else.
+     *
+     * It stops at 0.62 of the crane rather than running to the end of it,
+     * which puts the camera about 120 m out instead of 145. Further is
+     * better with copy over it and worse without: the whole point of the
+     * frame is that it is a place somebody flies, and a place needs to be
+     * near enough to have streets in it.
      */
-    const out = ease(T, 3.76, 4.0);
+    const out = ease(T, 3.70, 3.94);
     if (out > 0) {
       poseChase(dronePos, droneQuat, lerp(3.1, 44, out), lerp(0.72, 19, out), pos2, quat2);
       camPos.lerp(pos2, out);
       camQuat.slerp(quat2, out);
     }
-  } else {
-    const t = clamp01(T - 4);
+    const wide = ease(T, 3.88, 4.0);
+    if (wide > 0) {
+      poseCity(wide * 0.62, pos2, quat2);
+      camPos.lerp(pos2, wide);
+      camQuat.slerp(quat2, wide);
+    }
+  } else if (T < 5.0) {
     /*
-     * Parked over the town's roofs, hovering, turned back across the
-     * district so the shot has the streets running away behind it.
+     * THE ROOM ACT. A shed, one warm pair of bulbs, and 43 m of RaceGOW lap
+     * folded into three metres by two.
      *
-     * Eased into from wherever the freestyle line ended rather than snapped
-     * to. The line finishes travelling at twenty metres and banked; setting
-     * the park pose directly levelled the aircraft and spun it on the exact
-     * frame the closing act began.
+     * Three shots and two joins, and the order is the argument: the place,
+     * then the machine, then the machine's own eye. Nothing here is a
+     * repeat of the two flying acts before it, and that is deliberate. The
+     * lap is an argument about a control loop and the town is a
+     * demonstration of having nowhere you have to go; this is about size,
+     * and about a track being a specification rather than a place, so it
+     * opens on something standing still and lets the room be read.
      */
-    const parkK = ease(T, 4.0, 4.20);
-    cityPose(1, pos2, quat2, now * 2.1);
-    parked.set(PARK.x, PARK.y + Math.sin(now * 1.1) * 0.07, PARK.z);
-    dronePos.copy(pos2).lerp(parked, parkK);
-    eul.set(-0.05, PARK_YAW + Math.sin(now * 0.55) * 0.10, Math.sin(now * 0.7) * 0.045);
-    droneQuat.setFromEuler(eul);
-    droneQuat.copy(quat2).slerp(droneQuat, parkK);
+    poseRoomIn(ease(T, 4.075, 4.19), camPos, camQuat);
 
-    poseChase(dronePos, droneQuat, 32, 13, camPos, camQuat);
-    poseCity(t, pos2, quat2);
-    const k = ease(T, 4.0, 4.34);
-    camPos.lerp(pos2, k);
-    camQuat.slerp(quat2, k);
+    /*
+     * On the pad, then off it. The aircraft sits exactly where room.js put
+     * the pad, nose down the line's own first tangent rather than at a typed
+     * heading, so moving the track moves the aircraft with it.
+     */
+    roomPose(0, pos2, quat2, now * 3.1, flip, turnBank);
+    if (lift < 1) {
+      whoopPos.copy(room.pad);
+      /* A 23 gram machine sitting on a mat does not hover and does not bob.
+       * It is dead still until the throttle comes up, and the stillness is
+       * half of what makes the first metre of the lap read as a launch. */
+      eul.set(0, padYaw, 0);
+      whoopQuat.setFromEuler(eul);
+      whoopPos.lerp(pos2, lift);
+      whoopQuat.slerp(quat2, lift);
+    } else {
+      roomPose(roomU, whoopPos, whoopQuat, now * 3.1, flip, turnBank);
+    }
+
+    /* Into the goggles. Shorter than the lap's union, because there is no
+     * thirty metre gap to cross: the camera is already a metre from the
+     * aircraft when it leaves the pad. */
+    poseWhoopFPV(whoopPos, whoopQuat, pos2, quat2);
+    const toFpv = ease(T, 4.26, 4.36);
+    camPos.lerp(pos2, toFpv);
+    camQuat.slerp(quat2, toFpv);
+
+    /*
+     * And out again for the close, on the same argument the town act makes:
+     * the reason section scrolls into frame about a screen before the
+     * timeline reaches it, so the camera has to be out of the airframe
+     * before the copy lands on it. A goggle feed with a price table over it
+     * is a heads up display, not a shot.
+     *
+     * The whoop settles into a hover as it goes, over the start gate, which
+     * is where a RaceGOW pilot's aircraft is at the end of a run: the lap
+     * closes on the gate it opened on.
+     */
+    const out = ease(T, 4.86, 4.97);
+    if (out > 0) {
+      poseChase(whoopPos, whoopQuat,
+        lerp(0.34, 1.4, out), lerp(0.06, 0.55, out), pos2, quat2, 0.5);
+      camPos.lerp(pos2, out);
+      camQuat.slerp(quat2, out);
+    }
+    /*
+     * ...and it arrives AT the closing crane's first frame rather than at a
+     * chase pose the close then has to blend out of.
+     *
+     * The town act's close used to do that and the seam showed: half a
+     * screen of scroll where the camera was neither behind the aircraft nor
+     * looking at the place, pointing at a patch of floor between the two.
+     * Landing on poseRoomClose(0) here means the closing act simply carries
+     * the same crane on, and there is no blend at the boundary at all.
+     */
+    const wide = ease(T, 4.93, 5.0);
+    if (wide > 0) {
+      poseRoomClose(0, pos2, quat2);
+      camPos.lerp(pos2, wide);
+      camQuat.slerp(quat2, wide);
+    }
+  } else {
+    /*
+     * THE CLOSE, in the shed, hovering over the gate the lap closed on while
+     * the camera cranes back into the corner of the room.
+     *
+     * Eased into from wherever the lap ended rather than snapped to, the
+     * same way the town's close used to be: the line finishes travelling and
+     * banked, and setting a hover pose directly levels the aircraft and
+     * spins it on the exact frame the closing act begins.
+     */
+    const parkK = ease(T, 5.0, 5.14);
+    roomPose(1, pos2, quat2, now * 3.1);
+    parked.set(ROOM_HOVER.x, ROOM_HOVER.y + Math.sin(now * 1.3) * 0.012, ROOM_HOVER.z);
+    whoopPos.copy(pos2).lerp(parked, parkK);
+    eul.set(-0.02, padYaw + Math.sin(now * 0.6) * 0.14, Math.sin(now * 0.8) * 0.03);
+    whoopQuat.setFromEuler(eul);
+    whoopQuat.copy(quat2).slerp(whoopQuat, parkK);
+
+    /* No blend. The room act's last frame IS this crane's first one. */
+    poseRoomClose(clamp01(T - 5), camPos, camQuat);
   }
 
   droneRig.position.copy(dronePos);
   droneRig.quaternion.copy(droneQuat);
+  whoopRig.position.copy(whoopPos);
+  whoopRig.quaternion.copy(whoopQuat);
+  /*
+   * ONE AIRCRAFT IN FRAME AT A TIME.
+   *
+   * They are never both in shot, they are 300 m apart, and the room's group
+   * is off for every act but its own, so in principle neither of these lines
+   * changes a pixel. They are here because the scale argument is the whole
+   * act: a five inch left switched on somewhere in the shed would be a 0.35 m
+   * machine standing next to a 0.082 m one, and it would settle that argument
+   * the wrong way round in one frame.
+   */
+  const shed = T >= 3.995;
+  droneRig.visible = !shed;
+  /* The field and its sky go with the daylight. The sky dome is a ten metre
+   * shell centred on the lens, so leaving it on would put a painted horizon
+   * through the shed's walls. */
+  course.group.visible = !shed;
+  whoopRig.visible = shed && !REDUCED;
+  room.setShown(shed && !REDUCED);
+  room.setLamps(lamps);
 
   /*
    * The train is the town's own and runs on the town's own sequence, so
@@ -1913,12 +2529,28 @@ function frame(ms) {
   if (inWorld) {
     throttle = lerp(0.34, 0.86, ease(T, 2.0, 2.14));
   }
-  if (T >= 4.0) {
-    throttle = 0.42;
-  }
   /* Reduced motion means the props are stopped too. A spinning rotor is
    * the single most animated thing on the page. */
   drone.spin(dt, REDUCED ? 0 : throttle);
+
+  /*
+   * The whoop's own throttle. Dead until it is armed on the pad, up hard for
+   * the launch, and then working for the lap: a 1S whoop indoors is nearer
+   * its cap for more of a lap than a 6S five inch ever is, which is why it
+   * sounds like an angry wasp and why the blur discs are on for all of it.
+   */
+  let whoopThrottle = 0;
+  if (T >= 4.09) {
+    whoopThrottle = lerp(0.18, 0.62, ease(T, 4.09, 4.24));
+  }
+  if (T >= 4.24) {
+    whoopThrottle = 0.58;
+  }
+  if (T >= 5.0) {
+    whoopThrottle = 0.44;
+  }
+  whoop.setArmed(T >= 4.06);
+  whoop.spin(dt, REDUCED ? 0 : whoopThrottle);
 
   /*
    * A camera the debug handle can drive, in the town's own coordinates.
@@ -1969,7 +2601,19 @@ function frame(ms) {
      * own weather rather than a decoration carried over from the field. */
     petals.update(dt, camPos, T < 3.0 ? 0.6 : 0.75, 14, 0.022);
   } else {
-    petals.update(dt, camPos, 0.45, 22, 0.026);
+    /*
+     * NO WEATHER INDOORS, and it is the cheapest thing on the page that says
+     * where you are.
+     *
+     * Blossom has been drifting past the lens since the studio, so the frame
+     * it stops in is the frame that has a roof over it. Left running it
+     * would be cherry petals falling through a ceiling, which nobody would
+     * be able to name and everybody would feel.
+     *
+     * Off rather than thinned. A single petal in a shed is not weather, it
+     * is a bug somebody will report.
+     */
+    petals.update(dt, camPos, 0, 22, 0.026);
   }
 
   /* The one shadow the page draws follows the subject. */
@@ -1981,26 +2625,86 @@ function frame(ms) {
   } else if (T < 2.0) {
     stage.aimLight(vTmp.set(0, 0, -2), 46);
     stage.aimBlob(dronePos, 0, 1);
-  } else if (T < 4.0) {
+  } else if (T < 3.88) {
     stage.aimLight(dronePos, 16);
     stage.aimBlob(dronePos, world, 1.05);
-  } else {
+  } else if (T < 4.0) {
     /*
-     * At the close the subject is the DISTRICT, so the sun is aimed at the
-     * district. Aimed at the quad instead, the shadow frustum was a 16 m box
-     * round an aircraft hovering over one roof and the other four hundred
-     * buildings were outside it, which on a machine with shadows on is a
-     * town with one lit house in it.
+     * At the end of the town act the subject is the DISTRICT, so the sun is
+     * aimed at the district. Aimed at the quad instead, the shadow frustum
+     * was a 16 m box round an aircraft hovering over one roof and the other
+     * four hundred buildings were outside it, which on a machine with
+     * shadows on is a town with one lit house in it.
      *
      * No blob, either: a painted shadow under a quad 90 m from the lens is
      * two pixels of dirt on a roof.
      */
     stage.aimLight(city.heart, 90);
     stage.aimBlob(dronePos, 0, 1);
+  } else {
+    /*
+     * Indoors the directional light is turned down to a twentieth by
+     * setIndoor and the room's two bulbs do the work, so what is left for it
+     * to do is the shadow map. Aimed at the middle of the room with a seven
+     * metre frustum, which holds the whole track and the mat it stands on.
+     *
+     * No blob under the aircraft. The painted one is sized for a five inch
+     * over a field, and a whoop 300 mm off a mat casts a shadow the size of
+     * a beer mat: the bulbs and the shadow map have that covered, and a
+     * half metre smudge under an 82 mm machine is a smudge that says the
+     * aircraft is the size of a dinner plate.
+     */
+    stage.aimLight(room.heart, 7);
+    stage.aimBlob(whoopPos, 0, 1);
   }
 
   /* -------------------------------------------------------------- the run */
-  if (inCity) {
+  if (inRoom) {
+    /*
+     * A DIFFERENT AIRCRAFT, SO A DIFFERENT INSTRUMENT, AND THE CLOCK RESETS.
+     *
+     * Everything about the OSD carries over from the lap to the town act on
+     * purpose: one clock, one pack, one flight. Here every one of those is a
+     * lie. It is a 23 gram machine on a 300 mAh cell in a shed on another
+     * day, so the clock starts again, the pack is 1S, and the counter says
+     * what a RaceGOW attempt is actually scored on.
+     *
+     * LAP 2 OF 3, and not lap 1. The series is scored on the fastest three
+     * CONSECUTIVE laps, which means the run you are watching is somebody
+     * three quarters of the way through a hot lap they will not get to
+     * repeat. Starting the act on lap 1 would have needed two more laps of
+     * scroll to say the same thing; joining in the middle says it in three
+     * words and puts the pressure in the right place.
+     *
+     * The clock is the RUN clock rather than the lap's, so it is already
+     * carrying a lap when the act opens: one whole lap plus however far into
+     * this one we are.
+     */
+    course.setRun(-1, 0);
+    course.hideLines(true);
+
+    /* One decimal, which the other two acts do not get. At 90 km/h a whole
+     * number is a tenth of a percent; at 14 it is a seventh of the range the
+     * needle ever moves through, and a speedometer that reads 14, 14, 14
+     * through a corner is a speedometer nobody believes. */
+    const kmh = roomSpeedAt(roomU);
+    el.osdSpeed.textContent = `${kmh.toFixed(1)} km/h`;
+    el.osdLabel.textContent = 'Run';
+    el.osdTimer.textContent = fmtTime(ROOM_TIME * (1 + running));
+    el.osdGate.textContent = 'Lap 2 of 3';
+    el.osdPack.textContent = '1S 300 mAh \u00b7 Acro';
+    el.osdThrottle.style.width = `${Math.round(clamp01((kmh - 6) / 22) * 100)}%`;
+    /*
+     * One cell, and the numbers are the aircraft's. configs/airframes.js
+     * ships the whoop on 4.35 V charged and 3.6 V nearly empty; a lap in is
+     * about 4.05 under load and it sags to 3.78 by the end of the run, which
+     * is a whoop pilot's actual problem and the reason a pack is three
+     * minutes rather than five.
+     */
+    const volts = lerp(4.05, 3.78, running);
+    el.osdVolts.textContent = `${volts.toFixed(2)} V`;
+    el.osdBatt.style.width = `${Math.round(lerp(52, 14, running))}%`;
+  } else if (inCity) {
     /*
      * THE INSTRUMENT KEEPS RUNNING AND IT STOPS COUNTING GATES.
      *
@@ -2023,6 +2727,7 @@ function frame(ms) {
     el.osdThrottle.style.width = `${Math.round(clamp01((kmh - 30) / 90) * 100)}%`;
     const volts = lerp(15.0, 13.9, roaming);
     el.osdVolts.textContent = `${volts.toFixed(1)} V`;
+    el.osdPack.textContent = '4S pack \u00b7 Acro';
     el.osdBatt.style.width = `${Math.round(lerp(34, 9, roaming))}%`;
   } else if (inWorld && T < 4.0) {
     let next = GATE_LAP.length - 1;
@@ -2045,12 +2750,13 @@ function frame(ms) {
     el.osdThrottle.style.width = `${Math.round(clamp01((kmh - 30) / 80) * 100)}%`;
     const volts = lerp(16.6, 15.0, flying);
     el.osdVolts.textContent = `${volts.toFixed(1)} V`;
+    el.osdPack.textContent = '4S pack \u00b7 Acro';
     el.osdBatt.style.width = `${Math.round(lerp(96, 34, flying))}%`;
-  } else if (T >= 4.0) {
-    /* The close. The track is a hundred and forty metres away behind the
-     * town and nothing on it should still be lit for a run that finished two
-     * acts ago. The lines stay hidden, because they are a builder's drawing
-     * and the page is long past the builder. */
+  } else if (T >= 5.0) {
+    /* The close, and it is in the shed now. The race track is three hundred
+     * metres away with its lights off and nothing on it should still be lit
+     * for a run that finished three acts ago. The lines stay hidden, because
+     * they are a builder's drawing and the page is long past the builder. */
     course.setRun(-1, 0);
     course.hideLines(true);
   } else {
@@ -2095,10 +2801,19 @@ function frame(ms) {
      * view about a screen before the timeline reaches it, so on a narrow
      * window the flight clock was sitting on top of the price table.
      */
-    el.osd.classList.toggle('on', !REDUCED && T > 2.12 && T < 3.80);
+    /* ...and it comes back for the room act, from the moment the aircraft is
+     * off the pad to the moment the camera leaves it. Same contract at both
+     * ends: an OSD is what you see through goggles, so it is on exactly when
+     * the page is in them. */
+    el.osd.classList.toggle('on', !REDUCED
+      && ((T > 2.12 && T < 3.74) || (T > 4.24 && T < 4.90)));
     el.cue.style.opacity = T > 0.35 ? '0' : '1';
     if (el.progress) {
-      el.progress.style.width = `${(clamp01(T / 5) * 100).toFixed(2)}%`;
+      /* Six, not five: the acts run 0 to 5 and the tail is the sixth. It is
+       * the one number on the page that has to be counted by hand, because
+       * the bar is about the whole document and the document's last stretch
+       * is not an act. */
+      el.progress.style.width = `${(clamp01(T / 6) * 100).toFixed(2)}%`;
     }
     el.veil.style.opacity = String(lerp(0.72, 0.5, world));
     /*
@@ -2118,6 +2833,29 @@ function frame(ms) {
     el.dissolve.style.opacity = (flare * flare * (3 - 2 * flare)).toFixed(3);
 
     /*
+     * THE SECOND TRANSITION, AND IT GOES THE OTHER WAY.
+     *
+     * Same mechanism as the dissolve above, same symmetry, same reason for
+     * both: the page is scrubbable and the camera changes place at the peak.
+     * What is different is the direction through the tonal range, and that
+     * is the whole of why this is a second device rather than the same one
+     * used twice.
+     *
+     * The dissolve goes UP, into warm haze, which is what leaving a field in
+     * low sun looks like. This goes DOWN, into the dark, because what is on
+     * the other side of it is indoors with the lights off. Then the room's
+     * own bulbs come up, in the room, on the room: see setLamps in room.js
+     * and `lamps` above. The frame is not uncovered by a veil lifting, it is
+     * lit by a switch being thrown, which is a thing that happens in the
+     * place rather than a thing that happens to the page.
+     *
+     * A slightly narrower window than the dissolve's, because a fade to
+     * black reads as complete sooner than a fade to white does.
+     */
+    const dark = 1 - clamp01(Math.abs(T - 4.0) / 0.075);
+    el.blackout.style.opacity = (dark * dark * (3 - 2 * dark)).toFixed(3);
+
+    /*
      * ACT 1'S COPY IS ON SCREEN FROM THE FIRST FRAME.
      *
      * It used to open at T > 0.04, which is about a screen of scroll, so the
@@ -2135,8 +2873,12 @@ function frame(ms) {
     setCopy('build', T > 1.06 && T < 1.90);
     setCopy('fly', T > 2.0 && T < 2.2);
     setCopy('city', T > 3.02 && T < 3.16);
+    /* Later into its act than the others, because the room act opens on a
+     * dark shed and a headline over black is a headline nobody reads as part
+     * of a film. By 4.06 the bulbs are up and there is something behind it. */
+    setCopy('room', T > 4.06 && T < 4.20);
 
-    const act = T < 1 ? 0 : T < 2 ? 1 : T < 3 ? 2 : T < 4 ? 3 : 4;
+    const act = T < 1 ? 0 : T < 2 ? 1 : T < 3 ? 2 : T < 4 ? 3 : T < 5 ? 4 : 5;
     for (let i = 0; i < ledgerRows.length; i += 1) {
       ledgerRows[i].classList.toggle('on', i === act);
     }
@@ -2162,6 +2904,16 @@ function frame(ms) {
       const until = b.until ?? nextAt - 0.03;
       const on = inCity && roaming >= b.at && roaming < until;
       cityBeatEls[i].classList.toggle('on', on);
+    }
+    /* And the shed's, keyed to progress through its lap for the same reason
+     * the town's are keyed to progress through its act: the beat is about
+     * what is in frame, and what is in frame is a position on a line. */
+    for (let i = 0; i < roomBeatEls.length; i += 1) {
+      const b = ROOM_BEATS[i];
+      const nextAt = i + 1 < ROOM_BEATS.length ? ROOM_BEATS[i + 1].at : 1.02;
+      const until = b.until ?? nextAt - 0.03;
+      const on = inRoom && running >= b.at && running < until;
+      roomBeatEls[i].classList.toggle('on', on);
     }
   }
 
@@ -2289,8 +3041,30 @@ function warmCity() {
    * It is also why this is worth doing inside a scissor: with nothing culled
    * the town is a million triangles, and none of them need to land anywhere.
    */
+  /*
+   * THE SHED IS WARMED WITH THEM, and it is the cheapest part of this whole
+   * function and the one that would be missed.
+   *
+   * It is a hundred and fifty meshes against the district's fifteen hundred,
+   * so nobody would think to. But it is hidden for four fifths of the page,
+   * hidden means never submitted, and never submitted means its pipe, its
+   * boards and its two bulbs were all cold at the exact frame the lights
+   * come on. That frame is also the frame the camera changes place on, so a
+   * stall there does not read as a stall, it reads as the transition being
+   * broken.
+   *
+   * Its lamps go up for the pass too, because a material compiled with two
+   * point lights at zero is not the same program as one compiled with two
+   * point lights doing something. Both are put back below: the next frame
+   * recomputes them from T, so there is no state here to lose.
+   */
+  const wasRoomShown = room.group.visible;
+  room.setShown(true);
+  room.setLamps(1);
+  whoopRig.visible = true;
+
   const culled = [];
-  for (const root of [city.group, course.group, droneRig]) {
+  for (const root of [city.group, course.group, droneRig, room.group, whoopRig]) {
     root.traverse((o) => {
       if (o.isMesh && o.frustumCulled) {
         culled.push(o);
@@ -2312,6 +3086,14 @@ function warmCity() {
       stage.renderer.compile(stage.scene, stage.camera);
       stage.render();
     }
+    /* And one from inside the shed, which none of the three above can see
+     * into: it is 300 m away and it is a closed box. From a back corner,
+     * looking across the track, which is the act's own opening shot. */
+    stage.camera.position.set(room.heart.x - 4.1, 2.35, room.heart.z + 5.1);
+    stage.camera.lookAt(room.heart.x, 0.85, room.heart.z);
+    stage.camera.updateMatrixWorld(true);
+    stage.renderer.compile(stage.scene, stage.camera);
+    stage.render();
   });
 
   for (const o of culled) {
@@ -2342,6 +3124,9 @@ function warmCity() {
   stage.render();
 
   city.setShown(wasShown);
+  room.setShown(wasRoomShown);
+  room.setLamps(0);
+  whoopRig.visible = false;
 }
 
 /* --------------------------------------------------------------- start up */

@@ -1,9 +1,9 @@
 <!doctype html>
 <!--
-  The WebFPV landing page. One canvas, one scroll, five acts.
+  The WebFPV landing page. One canvas, one scroll, six acts.
 
   Everything here is client side. The page owns no data and calls no API:
-  the three launch buttons are links, and the origins they point at live in
+  the launch buttons are links, and the origins they point at live in
   src/config.js.
 
   Colour rule, borrowed from the simulator and the track builder so all
@@ -1301,6 +1301,18 @@
         background: radial-gradient(120% 100% at 50% 62%, #f6ded2, #e0a89a);
       }
 
+      /* Not pure black: the shed's own air, which is what is behind it and
+         is the colour the frame comes back at. A #000 dip against a page
+         whose darkest surface is #0c120e reads as the monitor turning off. */
+      #blackout {
+        position: fixed;
+        inset: 0;
+        z-index: 12;
+        opacity: 0;
+        pointer-events: none;
+        background: radial-gradient(120% 100% at 50% 58%, #14100c, #07060a);
+      }
+
       #boot {
         position: fixed;
         inset: 0;
@@ -1500,7 +1512,7 @@
            not watching the film: the timeline is pinned to a single frame, so
            there is no act boundary to cross and a full screen flare over a
            still page would be a flash with nothing behind it. */
-        #dissolve { display: none; }
+        #dissolve, #blackout { display: none; }
         .copy { opacity: 1; transform: none; transition: none; }
         #cue, #ticker, #builder, #osd, #beats { display: none; }
         .act { min-height: auto !important; padding-top: 12vh; padding-bottom: 12vh; }
@@ -1550,6 +1562,24 @@
       middle, and the middle is where the camera moves.
     -->
     <div id="dissolve" aria-hidden="true"></div>
+    <!--
+      THE BLACKOUT. The film's second change of place, and it is deliberately
+      not the same device as the first.
+
+      The dissolve above goes UP, into warm haze, because that is what leaving
+      a field in low sun looks like. This goes DOWN. On the other side of it
+      the page is indoors with the lights off, and what brings the frame back
+      is not this element lifting off a lit room, it is the room's own two
+      bulbs coming on: see setLamps in src/room.js. The light arrives in the
+      place rather than on the page, which is the difference between a scene
+      change and a slide transition.
+
+      Same mechanism as the dissolve otherwise, and for the same reason: the
+      page is scrubbable, the camera changes place at the peak, and a reader
+      dragging the bar back up has to come out of the shed the way they went
+      into it.
+    -->
+    <div id="blackout" aria-hidden="true"></div>
     <div id="grain"></div>
 
     <header id="topbar">
@@ -1682,7 +1712,9 @@
       </div>
       <div class="osd-corner osd-right">
         <div class="osd-value" id="osd-volts">16.4 V</div>
-        <div class="osd-sub">4S pack &#183; Acro</div>
+        <!-- Driven from main.js, because the page flies two aircraft and
+             the second one is on one cell. -->
+        <div class="osd-sub" id="osd-pack">4S pack &#183; Acro</div>
         <div class="osd-bar"><div class="osd-fill" id="osd-batt"></div></div>
       </div>
     </div>
@@ -1784,6 +1816,45 @@
           </div>
         </div>
       </section>
+
+      <!-- ACT 5: the room -->
+      <!-- 470vh, and it is the shortest of the three flying acts by a long
+           way, which is right twice over.
+
+           It is right by the clock. The lap is 640vh for about 14 s of
+           flying and the town is 760 for 16, which is roughly 46vh a second.
+           A RaceGOW lap of this track is 11 s at the speeds in ROOM_SPEED,
+           and the act spends about 0.7 of its height on it, so 470 puts the
+           pace at the same 46. The place changes and the film does not
+           change gear, which is the same argument the town act's height
+           makes.
+
+           It is right by the page. This is the fifth act and the third one
+           in a row of somebody flying. Whatever is here has to make its
+           point and get out of the way of the reason section, and its point
+           is a size rather than a journey: 43 m of lap inside three metres
+           by two, which is a thing you see in one shot and understand in
+           two. Six screens of it would be six screens of the same
+           revelation. -->
+      <section class="act" data-act="room" style="min-height: 620vh">
+        <div class="pin">
+          <div class="copy copy-tight" data-copy="room">
+            <p class="eyebrow">05 &#183; The room</p>
+            <h2>Forty four metres of lap,<br /><em>three metres across.</em></h2>
+            <p class="lede">
+              A sixty five millimetre whoop, twenty three grams, one cell.
+              The track is twenty eight inch gates cut from one length of
+              three quarter inch plumbing pipe: a little over three metres by
+              two on the floor, with forty four metres of line through it.
+            </p>
+            <p class="lede">
+              Nobody lines up beside you. Everyone builds the same track in
+              their own room, flies it alone, and posts a time.
+              <a class="inline-go" href="https://webfpv.org/sim/?map=custom&amp;craft=whoop65" data-dest="whoop">Fly a micro track</a>
+            </p>
+          </div>
+        </div>
+      </section>
     </main>
 
     <!--
@@ -1794,7 +1865,7 @@
     -->
     <section id="why">
       <div class="why-copy">
-        <p class="eyebrow eyebrow-lit">05 &#183; The reason</p>
+        <p class="eyebrow eyebrow-lit">06 &#183; The reason</p>
         <h2>The hard part of FPV<br /><em>is getting to the first lap.</em></h2>
         <p class="lede">
           A quad, a radio, goggles, batteries, a charger. Hundreds of dollars
@@ -1815,10 +1886,10 @@
       </dl>
     </section>
 
-    <!-- ACT 4: the close -->
+    <!-- The close -->
     <section id="close">
       <div class="close-copy">
-        <p class="eyebrow eyebrow-lit" style="justify-content: center">06 &#183; The point</p>
+        <p class="eyebrow eyebrow-lit" style="justify-content: center">07 &#183; The point</p>
         <!-- h2, not h1. The wordmark at the top of the page is the h1, and a
              document with two of them has no single heading a crawler or a
              screen reader can name it by. The type is unchanged: .shout is
@@ -1836,16 +1907,30 @@
           <span class="card-d">The MultiGP race field. Plug in an Xbox pad or a radio. Free, nothing to install.</span>
           <span class="card-go">Fly now</span>
         </a>
-        <a class="card" href="https://webfpv.org/sim/src/trackbuilder/index.html" data-dest="builder" style="--accent: var(--sakura)">
+        <!--
+          The whoop, second, because it is the other half of the product
+          rather than a corner of it: two aircraft, two sizes of track, one
+          control loop. The link carries the aircraft as well as the map, so
+          a visitor arriving from this card lands seated on the whoop with
+          the most flown room already loaded, rather than on a race field
+          with a menu to hunt through.
+        -->
+        <a class="card" href="https://webfpv.org/sim/?map=custom&amp;craft=whoop65" data-dest="whoop" style="--accent: var(--cream)">
           <span class="card-n">02</span>
+          <span class="card-t">Whoop micro tracks</span>
+          <span class="card-d">A 65 mm whoop indoors, on a track three metres across. Same control loop, a fifth of the speed.</span>
+          <span class="card-go">Fly the whoop</span>
+        </a>
+        <a class="card" href="https://webfpv.org/sim/src/trackbuilder/index.html" data-dest="builder" style="--accent: var(--sakura)">
+          <span class="card-n">03</span>
           <span class="card-t">Track builder</span>
-          <span class="card-d">Draw a track on a snap grid, watch it stand up in 3D, then fly it.</span>
+          <span class="card-d">Draw a track on a snap grid, watch it stand up in 3D, then fly it. Sixty metre field or a room.</span>
           <span class="card-go">Build a track</span>
         </a>
         <a class="card" href="https://webfpv.org/board/" data-dest="board" style="--accent: var(--amber)">
-          <span class="card-n">03</span>
+          <span class="card-n">04</span>
           <span class="card-t">Tracks and Times</span>
-          <span class="card-d">Every published track, and the times flown on it. Post yours.</span>
+          <span class="card-d">Every published track, both aircraft, and the times flown on them. Post yours.</span>
           <span class="card-go">See the times</span>
         </a>
       </div>

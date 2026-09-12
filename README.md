@@ -40,36 +40,49 @@ Act 4  The frame goes to warm haze and comes out of it in a six metre
        shopping street. A slow cruise under the strung lanterns, then the
        freestyle line: up over the roofs, hard round, down onto the main
        road, over a level crossing with its barriers down and a train going
-       under, and a climb out at the far end.
-Act 5  You must practice, over the town at golden hour.
+       under, a climb out at the far end, and the camera leaves the airframe
+       for the whole district at a hundred and twenty metres.
+Act 5  The frame goes to black. Two bulbs come on in a shed, and there is a
+       whoop track in it: RaceGOW5 Track 8, twenty eight inch gates in three
+       quarter inch pipe, 44 m of lap in a footprint 3.25 m by 2.28. A 65 mm
+       whoop lifts off a pad and flies a lap of it from inside.
+Act 6  You must practice, in the shed, over the gate the lap closed on.
 ```
 
-Between act 4 and the close sits `#why`, which is not an act: nothing
+Between act 5 and the close sits `#why`, which is not an act: nothing
 assembles or draws itself there, the copy is simply on the page. It is
 sized and placed like one all the same, at the act gutter and in the act
 copy's column, so the reason lands in the exact place the flight's copy
 just left.
 
-The one cut in the film is at the top of act 4, and it is a dissolve rather
-than a cut because the page is scrubbable: a reader dragging the bar slowly
-across a hard cut would see it flicker, and a fade has a middle to move the
-camera in. It replaced a transit. The aircraft used to fly from the field to
-the town, and that leg was the weakest thing on the page: nothing to look at,
-flown fast to get it over with, and it still read as waiting. Everything
-awkward about the act was something the transit needed, the town's distance
-included.
+There are two cuts in the film, they are at the tops of acts 4 and 5, and
+they go opposite ways. Both are fades rather than hard cuts because the page
+is scrubbable: a reader dragging the bar slowly across a hard cut would see
+it flicker, and a fade has a middle to move the camera in.
 
-Nothing has to fly between the two places now, so the town sits 460 m out,
-past the point where anything of the race field survives the haze. The two
-places are two places.
+Act 4's goes UP, into warm haze. It replaced a transit. The aircraft used to
+fly from the field to the town, and that leg was the weakest thing on the
+page: nothing to look at, flown fast to get it over with, and it still read
+as waiting. Everything awkward about the act was something the transit
+needed, the town's distance included. Nothing has to fly between the two
+places now, so the town sits 460 m out, past the point where anything of the
+race field survives the haze. The two places are two places.
+
+Act 5's goes DOWN, into the dark, and it is a different device rather than
+the same one twice. What is on the other side of it is indoors with the
+lights off, so the frame does not come back by a veil lifting off a lit room:
+the shed's own two bulbs come on. The light arrives in the place rather than
+on the page, which is the difference between a scene change and a slide
+transition. Nothing could have been flown between them anyway. The other side
+is 300 m away, it is inside a closed box, and the aircraft is a different
+aircraft.
 
 The camera does not stop for the reason section. The last stretch of the
-timeline begins at `#why` rather than at the close, so 4 to 5 covers the
-reason and the close together and the pull-out plays across the reading: the
-district falls away behind the type and lands under the invitation. That stretch is also the
-only place the pull-out ever had room to finish. Measured from the close
-alone it had about a fifth of a screen of scroll and played a quarter of
-its arc.
+timeline begins at `#why` rather than at the close, so 5 to 6 covers the
+reason and the close together and the crane plays across the reading. That
+stretch is also the only place the pull-out ever had room to finish. Measured
+from the close alone it had about a fifth of a screen of scroll and played a
+quarter of its arc.
 
 The town IS the simulator's town, not a drawing of one. `src/city/vendored/`
 is sakura-crossing, copied from the simulator's `src/maps/city/vendored/`
@@ -321,6 +334,9 @@ screenshot of a wall is an afternoon. On a clean URL, no global.
 | `src/gate.js` | One MultiGP gate at published dimensions |
 | `src/course.js` | The layout, the ground, the racing line, the dress |
 | `src/city.js` | The freestyle town, and the line flown through it |
+| `src/room.js` | The shed, the RaceGOW track standing in it, and its two bulbs |
+| `src/room-data.js` | RaceGOW5 Track 8, GENERATED. See `scripts/bake-room.js` |
+| `src/whoop.js` | The 65 mm ducted whoop, at the size it actually is |
 | `src/config.js` | Where the simulator and the board are |
 | `src/quality.js` | One decision about how much machine is on the other end |
 | `src/petals.js` | Sakura, one draw call, all of it in the vertex shader |
@@ -343,7 +359,18 @@ mapping has to be monotonic and smooth in its derivative and the integral
 of an obvious speed curve is easier to read than a piecewise one that is
 both. See `CITY_S` in `main.js`.
 
-The two acts hand the aircraft to each other at speed. A smoothstep has
+The room act's height is the same rule applied to a smaller machine. 620vh
+over a 43.3 m lap is 0.107 m of line per vh, which is 2.2 times finer than
+the field's in metres and about the same in GATES: a RaceGOW opening is
+0.711 m against a MultiGP gate's 1.75, so the same notch of a wheel moves
+the aircraft about the same fraction of a hole. Its position on the line is
+worked out from the line's OWN speed profile rather than from a pace curve,
+so the whoop slows into the corners and runs on the straights on screen as
+well as on the instrument: a whoop track is mostly corner, and a line flown
+through one at a constant rate reads as a camera on a rail. See `ROOM_S`
+and `roomAt` in `main.js`.
+
+The two flying acts before it hand the aircraft to each other at speed. A smoothstep has
 zero slope at both ends, which is right for a camera move that starts and
 stops and wrong for a lap running into a freestyle line: the quad
 decelerated to a standstill at `T = 3`, hung there for the half screen it
@@ -362,11 +389,18 @@ desynchronising it. Nothing accumulates between frames except the scroll
 damping, which is why the page can be dragged backwards as happily as
 forwards.
 
-**The machine on the advert is the machine in the product.** The quad is
+**The machine on the advert is the machine in the product.** The five inch is
 0.110 m centre to motor, 0.220 m diagonal, 0.0635 m prop radius, camera 0.080
 m forward and 0.018 m up. The gates are a 5 ft MultiGP opening at the
 simulator's own 15 percent departure, so 1.7526 m, on 1.315 in schedule 40
 PVC. Those are the simulator's numbers, not numbers chosen to look good here.
+
+The whoop is the same promise at a twentieth of the mass. 0.0325 m centre to
+motor, 0.0826 m across the ducts, 0.0155 m prop radius, camera 0.024 m
+forward and 0.012 m up at 25 degrees, a 95 degree lens, one cell. Its gates
+are RaceGOW's 28 inch square in 3/4 in schedule 40 PVC, 0.7112 m of opening
+on 26.7 mm pipe, and it is not scaled up to make it easier to see. If a shot
+needs the machine bigger, the camera moves.
 
 ## Licence
 

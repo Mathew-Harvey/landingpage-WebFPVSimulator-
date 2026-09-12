@@ -342,6 +342,58 @@ export function createStage(canvas) {
     shadowCatcher.visible = !LITE && s < 0.98;
   }
 
+  /*
+   * INDOORS, which is the one regime setRegime cannot express.
+   *
+   * Its two parameters are about how big the world is and how much daylight
+   * has arrived, and both of them are wrong in a shed. There is no sun, the
+   * air is the colour of an unlit basement rather than of a horizon, and the
+   * far wall is twelve metres away rather than three hundred, so a haze
+   * tuned to dissolve a treeline puts a fog over a skirting board.
+   *
+   * Called AFTER setRegime every frame and it simply takes over, which is
+   * why it is a separate function rather than a third argument: at k = 1 not
+   * one of setRegime's decisions survives, so blending them inside one
+   * function would be two rigs arguing in the same expression. The room
+   * brings its own lamps, in room.js, and this is what gets the outdoor ones
+   * out of their way.
+   */
+  const indoorAir = new THREE.Color();
+  const indoorSun = new THREE.Color(0xffe9c4);
+  const lerp = (a, b, t) => a + (b - a) * t;
+  function setIndoor(k, air) {
+    const t = Math.max(0, Math.min(1, k));
+    if (t <= 0) {
+      return;
+    }
+    indoorAir.set(air);
+    scene.fog.color.lerp(indoorAir, t);
+    scene.background.lerp(indoorAir, t);
+    renderer.setClearColor(scene.background, 1);
+    /*
+     * A shed has air in it, and 12 m of it is worth about a tenth of the
+     * wall's colour. Far enough that the near end of the room is clean and
+     * near enough that the far wall sits behind the track rather than beside
+     * it, which on a 10 by 12 m box is the only depth cue there is.
+     */
+    scene.fog.near = lerp(scene.fog.near, 5, t);
+    scene.fog.far = lerp(scene.fog.far, 62, t);
+    /*
+     * The sun down to a sixteenth, and the studio's rim and kick out
+     * altogether. The simulator leaves the same trace of a directional light
+     * in its own indoor scene, for the same reason: the shadow camera and
+     * half the material setup read it, and a key of exactly zero makes every
+     * face that no bulb reaches perfectly flat.
+     */
+    key.intensity = lerp(key.intensity, 0.24, t);
+    key.color.lerp(indoorSun, t);
+    rim.intensity = lerp(rim.intensity, 0, t);
+    kick.intensity = lerp(kick.intensity, 0, t);
+    hemi.intensity = lerp(hemi.intensity, 0, t);
+    pool.visible = false;
+    shadowCatcher.visible = false;
+  }
+
   /* The key light follows the subject, so the one shadow the page can
    * afford always lands under the thing being looked at. */
   const keyOffset = new THREE.Vector3(0.42, 0.70, 0.55);
@@ -456,6 +508,7 @@ export function createStage(canvas) {
     rim,
     hemi,
     setRegime,
+    setIndoor,
     fogFor,
     setFov,
     composePitch,

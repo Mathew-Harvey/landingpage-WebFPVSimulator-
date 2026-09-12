@@ -66,8 +66,8 @@ export function boardOrigin() {
 }
 
 /*
- * The three destinations, in the order the page argues for them: fly
- * something, then build something, then compare. The track builder is a
+ * The destinations, in the order the page argues for them: fly something,
+ * fly the small one, then build something, then compare. The track builder is a
  * page inside the simulator's static site rather than a service of its
  * own, which is why its path is spelled out; `map=field` is the simulator's
  * built in MultiGP circuit and is what a first visit should land on.
@@ -93,6 +93,21 @@ export function destinations() {
      * its own link and this is the address behind it. Same simulator, same
      * origin, different map. */
     { id: 'city', href: `${sim}/?map=city` },
+    /*
+     * The whoop, and the two parameters are doing different jobs.
+     *
+     * `map=custom` is the designed track world, which is the only world a
+     * RaceGOW room can be: the simulator builds a shed rather than a paddock
+     * when the seated aircraft's class is micro. `craft=whoop65` is what
+     * makes it micro, and it is read by the simulator's own Ui before
+     * anything asks the board for a course, so a cold visit adopts the most
+     * flown WHOOP track rather than the most flown five inch one and lands
+     * with the right aircraft under it.
+     *
+     * Without the craft parameter this link is a five inch on a race field,
+     * which is card 01. With it, it is the other half of the product.
+     */
+    { id: 'whoop', href: `${sim}/?map=custom&craft=whoop65` },
     { id: 'builder', href: `${sim}/src/trackbuilder/index.html` },
     { id: 'board', href: `${board}/` },
   ];

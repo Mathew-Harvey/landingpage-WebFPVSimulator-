@@ -4,7 +4,7 @@ Project conventions. Read fully before any turn. These are decisions already mad
 
 ## What this is
 
-The front door for WebFPVSimulator. One canvas, one scroll, five acts, a reason, and three links out. It owns no data and calls no API: the launch buttons are links, and the origins they point at live in `src/config.js`.
+The front door for WebFPVSimulator. One canvas, one scroll, six acts, a reason, and four links out. It owns no data and calls no API: the launch buttons are links, and the origins they point at live in `src/config.js`.
 
 The three repositories are one product. `Mathew-Harvey/WebFPVSimulator` holds the simulator and the track builder and is the copy of record for anything shared; `Mathew-Harvey/WebFPVSimulator-LeaderBoard` is the board. Read the simulator's `CLAUDE.md` before changing anything that has to agree across the three, and `DEPLOY.md` there for how they are wired together.
 
@@ -20,7 +20,17 @@ The three repositories are one product. `Mathew-Harvey/WebFPVSimulator` holds th
 
 **The merge in `src/city.js` is ours, and `bakeCity` is not used.** bake.js is vendored alongside the town and its `shareMaterials`, `thinFoliage`, `chunkInstanced` and `findAnimated` are used; `bakeCity` itself drops the shopping street's buildings when called from here, with every option tried including the simulator's own. `mergeStatics` does the one thing that matters, which is turning eleven thousand meshes into a few hundred. It bakes each mesh's transform RELATIVE TO THE TOWN'S ROOT, not its world matrix: the merged mesh is parented back under that root, so a world matrix applies the town's offset twice.
 
-**There is exactly one cut in the film, and it is a dissolve.** Everything else is flown: the studio floor becomes a plan grid, the grid becomes a field, and the quad that leaves the studio arrives at the track. Act 4 is the exception, because the alternative was a transit and the transit was the weakest thing on the page. It is a fade rather than a hard cut because the page is scrubbable and a hard cut flickers under a dragged scrollbar. Because nothing flies between them, the town sits 460 m from the field, past where the haze leaves anything of it.
+**There are exactly two cuts in the film, they go opposite ways, and neither is a hard cut.** Everything else is flown: the studio floor becomes a plan grid, the grid becomes a field, and the quad that leaves the studio arrives at the track. Acts 4 and 5 are the exceptions, and each one is an exception for its own reason.
+
+Act 4 is a **dissolve UP, into warm haze**. The alternative was a transit, forty metres of empty ground flown fast to get it over with, and it was the weakest thing on the page. Because nothing flies between them, the town sits 460 m from the field, past where the haze leaves anything of it.
+
+Act 5 is a **blackout DOWN, into the dark**, and it is a different device rather than the same one twice. What is on the far side of it is indoors with the lights off, so the frame does not come back by a veil lifting off a lit room: the room's own two bulbs come on, in `setLamps`, and the light arrives in the place rather than on the page. Nothing could be flown between a town and a shed 300 m away and indoors, and the aircraft changes too, which is a thing a cut can say and a transit cannot.
+
+Both are fades rather than hard cuts because the page is scrubbable: a reader dragging the bar slowly across a hard cut sees it flicker, and a fade has a middle for the camera to move in. Both are symmetric for the same reason. A third transition needs an argument this good, and there is not one: any further place in this film has to be flown to.
+
+**The room is the simulator's room, and the track in it is generated.** `src/room.js` builds the same 10 by 12 by 4 m shed `WebFPVSimulator/src/render/scene.js` builds for a micro track, in the same colours and by the same recipe: uprights whose inner faces are the opening, a cross member above every opening and below only the ones that are off the floor, a moulded corner at each junction, stub feet, and no printing of any kind, because a RaceGOW gate is bare white pipe. A visitor who clicks through from that act lands in that room and the two must not disagree about it.
+
+`src/room-data.js` is RaceGOW5 Track 8 and is GENERATED, by `node scripts/bake-room.js ../WebFPVSimulator > src/room-data.js`. It reads the simulator's own preset through the simulator's own `courseFromDocument`, path solver and all, so the gates are where the track says and the line is the one the builder derives. Regenerate, do not edit. What `src/room.js` owns is the shed, the lamps and the furniture; what it must never own is a gate position.
 
 **The palette is the simulator's.** Light is warm, shadow is cool. Cream for lit type, sakura for chrome, amber for an instrument, mint for something good, slate for type that should recede. The panel fill and the two pixel edge rule are the board's, so a visitor arriving from the board is looking at the same furniture.
 
