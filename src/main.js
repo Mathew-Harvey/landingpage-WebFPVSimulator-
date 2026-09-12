@@ -149,7 +149,7 @@ const BEATS = [
   },
   {
     at: 0.84,
-    k: 'The board',
+    k: 'Tracks and times',
     t: 'Publish the track, post the lap, and let somebody else try to take it off you.',
   },
 ];
