@@ -57,12 +57,74 @@ const load = async (rel) => import(pathToFileURL(resolve(simRoot, rel)).href);
 
 const { PRESETS } = await load('src/trackbuilder/presets.js');
 const { courseFromDocument } = await load('src/game/trackdoc.js');
+const { MICRO_SCALE } = await load('configs/airframes.js');
 
 const doc = PRESETS.find((d) => d.id === TRACK_ID);
 if (!doc) {
   throw new Error(`${TRACK_ID} is not in ${simRoot}/src/trackbuilder/presets.js`);
 }
-const course = courseFromDocument(structuredClone(doc));
+
+/*
+ * DIVIDED BACK DOWN TO RACEGOW'S OWN METRES, because this page has no physics
+ * and the simulator's scale is not about geometry.
+ *
+ * The simulator builds every micro course MICRO_SCALE times life size, 3.4289,
+ * because its whoop flies the five inch's plant and a five inch needs the
+ * room. That is a change of units: the world and the aircraft come through the
+ * same factor, so the picture is unchanged and only the flight model under it
+ * differs. Nothing flies here, so there is nothing for the factor to buy, and
+ * paying it anyway would cost two things that matter on a front door.
+ *
+ * src/room.js builds a 10 by 12 by 4 m shed by hand, in the simulator's own
+ * colours and by its own recipe, and a scaled track would stand in it at three
+ * and a half times its size. And the copy QUOTES these measurements: LAP_LENGTH
+ * and SPAN below are what the act's headline, lede and beats are checked
+ * against, and a front door that advertises a living room may not print a lap
+ * in a hangar's metres.
+ *
+ * So the gates are where RaceGOW says, the shed is the size it says it is, and
+ * the page looks exactly like the simulator does. Dividing here rather than
+ * anywhere else keeps the simulator the copy of record: this reads its preset
+ * through its own solver, and the only thing it undoes is the units.
+ */
+const scaled = courseFromDocument(structuredClone(doc));
+const course = unscale(scaled, MICRO_SCALE);
+
+/* Every length in a course, back to the document's metres. Positions, the
+ * line, the spawn and the built dimensions: the same set the simulator's
+ * trackdoc.js multiplied on the way out. */
+function unscale(c, k) {
+  const pt = (p) => ({ ...p, x: p.x / k, ...(p.y === undefined ? {} : { y: p.y / k }), z: p.z / k });
+  const dims = (d) => {
+    if (!d) {
+      return d;
+    }
+    const out = {};
+    for (const [key, v] of Object.entries(d)) {
+      out[key] = (typeof v === 'number' && key !== 'levels' && key !== 'pads' && key !== 'stack')
+        ? v / k : v;
+    }
+    return out;
+  };
+  return {
+    ...c,
+    field: c.field ? { width: c.field.width / k, depth: c.field.depth / k } : c.field,
+    structures: (c.structures ?? []).map((st) => ({
+      ...st, x: st.x / k, z: st.z / k, baseY: (st.baseY ?? 0) / k, dims: dims(st.dims),
+    })),
+    stations: (c.stations ?? []).map((st) => ({
+      ...st,
+      x: st.x / k,
+      z: st.z / k,
+      baseY: (st.baseY ?? 0) / k,
+      ...(st.clearW === undefined ? {} : { clearW: st.clearW / k }),
+      ...(st.clearH === undefined ? {} : { clearH: st.clearH / k }),
+      ...(st.centreY === undefined ? {} : { centreY: st.centreY / k }),
+    })),
+    spawn: c.spawn ? { ...c.spawn, x: c.spawn.x / k, z: c.spawn.z / k } : c.spawn,
+    line: (c.line ?? []).map(pt),
+  };
+}
 
 /* Arc length resample of the solver's closed polyline. The loop closes, so
  * the last leg runs from the final point back to the first. */

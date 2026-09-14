@@ -870,7 +870,7 @@ function citySpeed(p) {
  * THE WHOOP LAP, measured rather than typed, because the demo track is a
  * regeneration away from being a different track.
  *
- * The one it ships with is 14.4 m of racing line inside 3.54 m by 2.00, with
+ * The one it ships with is 13.8 m of racing line inside 2.97 m by 1.42, with
  * four gates, a pole and a rail on it. That is a whole race track, with a
  * stack and a rail to go under, in the floor area of a large rug, and it is
  * the argument the act is making. The geometry makes it; the copy only

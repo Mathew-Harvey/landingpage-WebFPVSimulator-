@@ -74,6 +74,25 @@ import {
 export const ROOM_ORIGIN = new THREE.Vector3(0, 0, 300);
 
 /* The shed, in metres. src/trackbuilder/racegow.js owns these three. */
+/*
+ * TEN BY TWELVE BY FOUR, AND THE SIMULATOR'S OWN SHED IS 34.3 BY 41.2 BY 13.7.
+ *
+ * Those two are the same room and the difference is units, not disagreement.
+ * The simulator's whoop flies the five inch's plant now, because that is what
+ * feels like flying, so it builds every micro course MICRO_SCALE times life
+ * size, 3.4289, to give a five inch the space it needs. World and aircraft
+ * come through the same factor, so the picture is untouched and only the
+ * flight model under it differs.
+ *
+ * Nothing flies here. This page has no plant, so the factor buys it nothing
+ * and costs it two things: the shed below is built by hand in RaceGOW's own
+ * metres, and the copy QUOTES the track's measurements. So scripts/bake-room.js
+ * divides the simulator's course back down on the way in and everything on
+ * this page stays life size.
+ *
+ * A visitor clicking through from this act still lands in this room. What they
+ * must not do is open both files and conclude one of them is wrong.
+ */
 export const ROOM = { width: 10, depth: 12, height: 4 };
 
 /*
