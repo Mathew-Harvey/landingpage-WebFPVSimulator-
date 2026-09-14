@@ -1181,16 +1181,19 @@
          Somebody has slapped stickers on the screen. Not on the page: on
          the glass, over the film, the way a laptop lid or a goggle case
          picks them up. They are fixed to the viewport, cocked a few degrees
-         off square, and they arrive with a slap rather than a fade: the
-         sticker comes in a size larger, as if held above the glass, and is
-         pressed down with a small overshoot. Peeling one off is the same
-         move backwards, which is what a scrub back up the page does.
+         off square, and each one is slapped on as the scroll reaches it.
+         The slap is the keyframes below and it is the point of them.
+
+         EIGHT, which is two on the opening, one an act after it, and two on
+         the reason. It was twelve and that was too many: at three on the
+         first screen the eye read them as a layer of the page rather than
+         as something somebody had stuck on it, and the joke of a sticker is
+         that there is one.
 
          Which sticker is on the glass, where, and for which stretch of the
          film is written on the element itself. data-spot names the corner,
-         data-on and data-off bound its stretch of T, and data-wait holds it
-         back a beat after the boot screen lifts, so the opening three land
-         one after another rather than all at once. main.js reads those and
+         data-on and data-off bound its stretch of T, and data-wait holds one
+         back a beat after the boot screen lifts. main.js reads those and
          does one thing with them, which is toggle .on.
 
          The spots are the parts of the glass the instruments never want at
@@ -1202,6 +1205,11 @@
          column below the ledger is free wherever the ledger itself is, which
          is every screen over 900 px. And the close wears nothing at all: see
          the note on the last two in the markup.
+
+         No two stickers are ever in one spot at the same time, and the three
+         spots a phone folds into one are disjoint in T as a set, because
+         they become the same place. Both are checked by lint:page rather
+         than believed.
 
          Every one is the actual sticker. The anchors here are empty and
          carry the sticker's name; src/stickers-data.js is generated from the
@@ -1217,29 +1225,79 @@
         z-index: 19;
         pointer-events: none;
       }
+      /*
+       * THE SLAP, and it is an animation rather than a transition because a
+       * transition cannot describe an impact.
+       *
+       * The sticker comes in from the viewer's side of the glass at nearly
+       * twice the size and eight degrees off its resting angle, and the
+       * approach EASES IN, which is what a hand does: slow at the top of the
+       * swing and quickest at the end of it. It arrives short, squashing to
+       * 93 per cent and a degree and a half past square, rings back once
+       * through 104, and settles. Two thirds of the run is the approach.
+       *
+       * The shadow is the other half of the cue and the reason the arrival
+       * reads as distance rather than as a zoom: 24 px of soft blur while
+       * the sticker is still above the glass, 4 px once it is stuck, so the
+       * gap closes as the scale does.
+       *
+       * Opacity is up by 18 per cent of the run and not tied to the scale,
+       * because a sticker that fades in while it travels is an apparition,
+       * and the whole claim is that somebody put it there.
+       *
+       * NO FILL MODE. The last keyframe and the .on rule are the same
+       * transform, so there is nothing to hold over, and an animation with
+       * `both` outranks the hover rule for the life of the page.
+       */
+      @keyframes slap {
+        0% {
+          opacity: 0;
+          transform: rotate(calc(var(--r, 0deg) + 8deg)) scale(1.85);
+          filter: drop-shadow(0 24px 22px rgba(0, 0, 0, 0.5));
+          animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.42);
+        }
+        18% { opacity: 1; }
+        46% {
+          transform: rotate(calc(var(--r, 0deg) - 1.6deg)) scale(0.93);
+          filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.5));
+          animation-timing-function: cubic-bezier(0.22, 0.86, 0.3, 1);
+        }
+        64% { transform: rotate(calc(var(--r, 0deg) + 0.6deg)) scale(1.045); }
+        82% { transform: rotate(var(--r, 0deg)) scale(0.99); }
+        100% {
+          opacity: 1;
+          transform: rotate(var(--r, 0deg)) scale(1);
+          filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.5));
+        }
+      }
+
       .slap {
         position: absolute;
         display: block;
         width: var(--w, 160px);
         opacity: 0;
         visibility: hidden;
-        transform: rotate(var(--r, 0deg)) scale(1.28);
+        /* Peeled off, not faded out, and quicker than it went on: lifted a
+           little off the glass and gone. A scrub back up the page is a hand
+           taking it off again. */
+        transform: rotate(var(--r, 0deg)) scale(1.08);
         /* The shadow follows the die cut, so a white keyline and a clear
            corner read as a sticker's edge and not a card's. */
         filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.5));
         transition:
           opacity 0.16s linear,
-          transform 0.34s cubic-bezier(0.34, 1.56, 0.64, 1),
-          visibility 0s linear 0.34s;
+          transform 0.2s var(--ease),
+          visibility 0s linear 0.2s;
       }
       .slap.on {
         opacity: 1;
         visibility: visible;
         pointer-events: auto;
         transform: rotate(var(--r, 0deg)) scale(1);
+        animation: slap 0.48s;
         transition:
-          opacity 0.12s linear,
-          transform 0.34s cubic-bezier(0.34, 1.56, 0.64, 1),
+          opacity 0.1s linear,
+          transform 0.2s var(--ease),
           visibility 0s;
       }
       .slap.on:hover,
@@ -1283,15 +1341,22 @@
       /* A phone has no margins to slap anything into. The copy owns the top
          and the scrim under it, the OSD owns the bottom corners and the
          beats own the band above them, so one spot survives: the right
-         edge, between the OSD corner and the beats, at half size. The two
-         desktop spots that fold into it are never on at the same moment. */
+         edge, between the OSD corner and the beats, at half size.
+
+         Three of the five fold into it, which is what keeps a phone at one
+         sticker an act rather than at two for the whole film. They can,
+         because their windows do not overlap and they become the same
+         place; lint:page is what says so. The other two are the reason's,
+         and the reason on a phone is a column of copy with the close
+         arriving under it: nothing goes there. */
       @media (max-width: 900px) {
-        .slap[data-spot="tl"],
         .slap[data-spot="tr"],
         .slap[data-spot="l"] { display: none; }
+        .slap[data-spot="tl"],
         .slap[data-spot="r"],
         .slap[data-spot="br"] {
           top: auto;
+          left: auto;
           right: 14px;
           bottom: calc(92px + env(safe-area-inset-bottom, 0px));
           width: calc(var(--w, 160px) * 0.5);
@@ -1654,6 +1719,7 @@
         .nav a.is-primary.handoff { animation: none; }
         /* The stickers are already on the glass. Nothing gets slapped. */
         .slap, .slap.on { transition: none; }
+        .slap.on { animation: none; }
       }
     </style>
 
@@ -1852,41 +1918,40 @@
     <!--
       THE STICKERS ON THE GLASS. See the stylesheet's block on #slaps. Each
       element says which sticker it is, where it goes, which stretch of the
-      film it is there for and, for the opening three, how long it waits
+      film it is there for and, for the one that opens, how long it waits
       after the boot. main.js fills them from src/stickers-data.js, which
       scripts/stickers.js generates from the slap pack at stickers/, and
       toggles them. Every one is the actual sticker, and every one is a link
       to that page.
 
-      Ordered by when they land, which is also roughly top to bottom of the
-      page, and the window comments say what each one is next to.
+      Eight, in the order they land. A phone sees five of them, one an act,
+      because three of the spots fold into its one free band and the
+      reason's two have nowhere to go.
     -->
     <div id="slaps">
-      <!-- Act one, the studio. Three land in the first two seconds after
-           the boot, a beat apart. The pilot in the bottom right, the strip
-           under the nav, the banner down the left under the ledger. -->
+      <!-- Act one, the studio, and the two of them arrive by different
+           means on purpose. The pilot lands on his own a beat after the boot
+           screen lifts, so a visitor who has not touched the wheel yet sees
+           one arrive and knows the page does this. The banner is the first
+           thing the SCROLL slaps on, a twentieth of an act in, which is the
+           first flick of a wheel. Everything after it is the same: a sticker
+           lands because the film reached it. -->
       <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="br" data-on="0" data-off="1" data-wait="0.6" data-slap="pilot" style="--r: -7deg; --w: 176px"></a>
-      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="tr" data-on="0" data-off="1.02" data-wait="1.3" data-slap="visor_strip" style="--r: 3deg; --w: 236px"></a>
-      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="l" data-on="0" data-off="2.02" data-wait="2" data-slap="brush_banner" style="--r: -4deg; --w: 66px"></a>
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="l" data-on="0.05" data-off="2.02" data-slap="brush_banner" style="--r: -4deg; --w: 66px"></a>
       <!-- Act two, the builder. Its title bar and side panel take the top,
            so the gate goes where the pilot was. The banner stays. -->
       <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="br" data-on="1" data-off="2.02" data-slap="pen_ink_gate" style="--r: 5deg; --w: 208px"></a>
-      <!-- Act three, the lap. The goggles on the right edge, above the OSD
-           corner, and a branch top left, under the wordmark. -->
-      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="r" data-on="2.02" data-off="3" data-slap="goggle_view" style="--r: -6deg; --w: 206px"></a>
-      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="tl" data-on="2.02" data-off="3.6" data-slap="sakura_branch" style="--r: 4deg; --w: 186px"></a>
-      <!-- Act four, the city. The town sticker says leave the track, which
-           is what the act says. -->
+      <!-- Act three, the lap, flown from inside a pair of goggles, which is
+           what the sticker is. Top left, under the wordmark and above the
+           act's copy, because the OSD owns both bottom corners here. -->
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="tl" data-on="2.02" data-off="3" data-slap="goggle_view" style="--r: -6deg; --w: 190px"></a>
+      <!-- Act four, the city. The sticker says leave the track, which is
+           what the act says. -->
       <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="r" data-on="3" data-off="4" data-slap="railway_town" style="--r: 5deg; --w: 214px"></a>
-      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="tr" data-on="3" data-off="4" data-slap="wave_strip" style="--r: -3deg; --w: 240px"></a>
-      <!-- Act five, the room. The whoop, and the wordmark it peeks over.
-           Both leave with the act rather than running into the reason, whose
-           headline is at the top of its own section and was printed over.
-           Neither carries a number the copy could disagree with: the chibi
-           whoop sticker says 16 g and the copy says twenty three, so the
-           chibi is not one of the twelve. -->
+      <!-- Act five, the room. It carries no number the copy could disagree
+           with, which is why the chibi whoop is not the one used here: that
+           one says 16 g on it and the copy beside it says twenty three. -->
       <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="r" data-on="4" data-off="5.02" data-slap="bubble_whoop" style="--r: -8deg; --w: 172px"></a>
-      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="tl" data-on="4" data-off="5.02" data-slap="peeker" style="--r: 3deg; --w: 196px"></a>
       <!-- The reason, and the last two. A wakaba is the mark a new driver
            wears in Japan and the headline beside it is about getting to the
            first lap; an ema is the plaque you write a wish on. The reason's

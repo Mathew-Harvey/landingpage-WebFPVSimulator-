@@ -4,7 +4,7 @@
  * stickers/index.html is the copy of record. It is one self contained page
  * holding twenty two stickers as inline SVG and the three fonts they set
  * their type in, base64 in a style block, so it prints from a desk with no
- * server behind it. The landing page slaps a dozen of those on the glass,
+ * server behind it. The landing page slaps eight of those on the glass,
  * and the film should not have to carry that page to do it: this writes
  * src/stickers-data.js, a module holding the SVG of every sticker index.html
  * asks for, verbatim, and the font block once. main.js puts the fonts in the
@@ -13,7 +13,7 @@
  * WHY A MODULE AND NOT A FILE PER STICKER. An SVG shown through <img> is a
  * document of its own and sees none of the page's fonts, so each file would
  * have to embed the faces it sets, and Caveat Brush alone is 73 KB of base64
- * that five of the twelve use. Written that way the set weighed 650 KB.
+ * that four of the eight use. Written that way the set weighed 650 KB.
  * Inline, the type is set from one copy of each face, the set is a fifth of
  * that, and the pack stays the only place a sticker is drawn.
  *

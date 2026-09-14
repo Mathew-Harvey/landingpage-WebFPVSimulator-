@@ -5,7 +5,7 @@ One canvas, one scroll, six acts, a reason, four links out, and two pages
 that are not part of the film: a wiki at `wiki/`, thirty five illustrated
 pages on how a quad actually flies plus every Betaflight setting, with
 figures you can drive, and a sticker pack at `stickers/`, twenty two of them
-print ready. Twelve of the stickers are slapped on the film as it plays.
+print ready. Eight of the stickers are slapped on the film as it plays.
 
 ## Why it exists
 
@@ -256,20 +256,46 @@ are base64 in a style block, the export code reads them back out of it,
 and nothing on the page fetches anything, so it works saved to a desk or
 handed to a printer as an attachment.
 
-The film wears twelve of them. Somebody has slapped stickers on the
+The film wears eight of them. Somebody has slapped stickers on the
 screen: not on the page, on the glass, over the film, fixed to the
-viewport and cocked a few degrees off square, and they land with a slap
-rather than a fade. The sticker arrives a size larger, as if held above
-the glass, and is pressed down with a small overshoot; scrub back up the
-page and it is lifted off the same way. Each one is a link to the pack.
+viewport and cocked a few degrees off square, and each one is slapped on
+as the scroll reaches it. Each is a link to the pack.
 
-Two an act, two on the reason, and none at the close. The close is the one
-thing the page is for: centred type the full width of the screen and four
-cards under it, with no margin to slap anything into that survives a
-narrow window. Measured at 1024 by 700, where the cards wrap to two rows
-and the section rides up, a sticker in either top corner printed across
-"Launch the simulator" and "Track builder". The door to the pack there is
-the footer's own link.
+THE SLAP is `@keyframes slap` and it is the point of the whole thing. The
+sticker comes in from the viewer's side of the glass at nearly twice the
+size and eight degrees off its resting angle, and the approach eases IN,
+slow at the top of the swing and quickest at the end, which is what a hand
+does. It arrives short, squashing to 93 per cent and a degree and a half
+past square, rings back through 104, and settles, 480 ms in all with two
+thirds of that the approach. The shadow is the other half of the cue and
+the reason it reads as distance rather than as a zoom: 24 px of soft blur
+while the sticker is still above the glass, 4 px once it is stuck. Peeling
+one off is quicker and plainer, a small lift and gone, which is what a
+scrub back up the page does. Measured on the real page, slowed fifty
+times so a two frame a second renderer could sample it: 1.85 at the start,
+1.45 at 174 ms, 0.947 at 224 ms with the angle swung to 7.3 degrees past
+its rest, 1.04 at 275 ms, settled by 400.
+
+It carries no fill mode, and that is load bearing rather than tidy: an
+animation with one outranks the hover rule for the life of the page. The
+last keyframe and the resting rule are the same transform, so there is
+nothing to hold over.
+
+Two on the opening, one an act after it, two on the reason, and none at
+the close. It was twelve and that was a third too many: at three on the
+first screen they read as a layer of the page rather than as something
+somebody stuck on it. The close is the one thing the page is for, centred
+type the full width of the screen and four cards under it, with no margin
+that survives a narrow window. Measured at 1024 by 700, where the cards
+wrap to two rows and the section rides up, a sticker in either top corner
+printed across "Launch the simulator" and "Track builder". The door to the
+pack there is the footer's own link.
+
+A phone sees five, one an act, because three of the spots fold into its
+one free band and the reason's two have nowhere to go. That fold is why
+no two stickers may share a spot and why the folded three have to be
+disjoint in T: on a phone they are the same place. Both are arithmetic on
+the windows and both are checked.
 
 Checked by driving headless Chromium through the served page at each act
 and measuring every lit sticker against every piece of type and chrome on
@@ -278,7 +304,12 @@ builder's panels, the OSD, the beats, the ledger and the nav. At 1440 by
 900, 1600 by 1000, 1152 by 800, 1024 by 700 and 430 by 932, nothing
 overlaps. That check is a browser and lives in the session it was run in,
 not in the repository; what the repository holds is `npm run lint:page`,
-which checks the parts that stay true without one.
+which checks the parts that stay true without one: that the generated
+module is current, that every anchor names a sticker the pack has, that no
+two share a spot on a wide screen or in the phone's folded band, that the
+stylesheet folds and hides the spots the check believes it does, that the
+slap is an animation with an impact and no fill mode, and that reduced
+motion is honoured in both places.
 
 Every one is the actual sticker. `src/stickers-data.js` is generated from
 the pack by `node scripts/stickers.js` and holds each sticker's SVG
@@ -388,7 +419,7 @@ screenshot of a wall is an afternoon. On a clean URL, no global.
 | `src/whoop.js` | The 65 mm ducted whoop, at the size it actually is |
 | `src/config.js` | Where the simulator and the board are |
 | `stickers/index.html` | The slap pack: twenty two stickers, the fonts, and a download for each |
-| `src/stickers-data.js` | The twelve the film wears, GENERATED. See `scripts/stickers.js` |
+| `src/stickers-data.js` | The eight the film wears, GENERATED. See `scripts/stickers.js` |
 | `src/quality.js` | One decision about how much machine is on the other end |
 | `src/petals.js` | Sakura, one draw call, all of it in the vertex shader |
 
