@@ -75,7 +75,7 @@ export const ROOM_ORIGIN = new THREE.Vector3(0, 0, 300);
 
 /* The shed, in metres. src/trackbuilder/racegow.js owns these three. */
 /*
- * TEN BY TWELVE BY FOUR, AND THE SIMULATOR'S OWN SHED IS 34.3 BY 41.2 BY 13.7.
+ * TEN BY TWELVE BY FOUR, AND THE SIMULATOR'S OWN SHED IS 34.3 BY 41.1 BY 13.7.
  *
  * Those two are the same room and the difference is units, not disagreement.
  * The simulator's whoop flies the five inch's plant now, because that is what
