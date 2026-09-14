@@ -1175,6 +1175,132 @@
       .inline-go:hover,
       .inline-go:focus-visible { border-bottom-color: var(--mint); }
 
+      /* ------------------------------------------------------------------
+         The stickers.
+
+         Somebody has slapped stickers on the screen. Not on the page: on
+         the glass, over the film, the way a laptop lid or a goggle case
+         picks them up. They are fixed to the viewport, cocked a few degrees
+         off square, and they arrive with a slap rather than a fade: the
+         sticker comes in a size larger, as if held above the glass, and is
+         pressed down with a small overshoot. Peeling one off is the same
+         move backwards, which is what a scrub back up the page does.
+
+         Which sticker is on the glass, where, and for which stretch of the
+         film is written on the element itself. data-spot names the corner,
+         data-on and data-off bound its stretch of T, and data-wait holds it
+         back a beat after the boot screen lifts, so the opening three land
+         one after another rather than all at once. main.js reads those and
+         does one thing with them, which is toggle .on.
+
+         The spots are the parts of the glass the instruments never want at
+         the same moment, and that is a promise kept by the windows rather
+         than by these rules. The top right is free in act one and from act
+         three on, and the builder's title bar owns it in between. The
+         bottom right is free until the OSD's corner arrives with the
+         goggles. The right edge belongs to the ticker in act one. The left
+         column below the ledger is free wherever the ledger itself is, which
+         is every screen over 900 px. And the close wears nothing at all: see
+         the note on the last two in the markup.
+
+         Every one is the actual sticker. The anchors here are empty and
+         carry the sticker's name; src/stickers-data.js is generated from the
+         slap pack at stickers/ by scripts/stickers.js, holding each one's
+         SVG verbatim and the three fonts once, and main.js puts the markup
+         in. Each one is a link to that page. The picture is decoration and
+         the link is not, so the name is on the anchor and the drawing is
+         hidden from a screen reader.
+         ------------------------------------------------------------------ */
+      #slaps {
+        position: fixed;
+        inset: 0;
+        z-index: 19;
+        pointer-events: none;
+      }
+      .slap {
+        position: absolute;
+        display: block;
+        width: var(--w, 160px);
+        opacity: 0;
+        visibility: hidden;
+        transform: rotate(var(--r, 0deg)) scale(1.28);
+        /* The shadow follows the die cut, so a white keyline and a clear
+           corner read as a sticker's edge and not a card's. */
+        filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.5));
+        transition:
+          opacity 0.16s linear,
+          transform 0.34s cubic-bezier(0.34, 1.56, 0.64, 1),
+          visibility 0s linear 0.34s;
+      }
+      .slap.on {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: rotate(var(--r, 0deg)) scale(1);
+        transition:
+          opacity 0.12s linear,
+          transform 0.34s cubic-bezier(0.34, 1.56, 0.64, 1),
+          visibility 0s;
+      }
+      .slap.on:hover,
+      .slap.on:focus-visible { transform: rotate(var(--r, 0deg)) scale(1.05); }
+      .slap:focus-visible { outline: 2px solid var(--sakura); outline-offset: 6px; }
+      .slap svg { display: block; width: 100%; height: auto; overflow: visible; }
+      /* The one line that says a sticker is a door. Counter rotated, so it
+         reads level under a cocked sticker. */
+      .slap::after {
+        content: "Get the stickers \2192";
+        position: absolute;
+        left: 50%;
+        top: 100%;
+        transform: translate(-50%, 8px) rotate(calc(var(--r, 0deg) * -1));
+        padding: 6px 9px;
+        white-space: nowrap;
+        font: 700 10px/1 var(--ui-font);
+        letter-spacing: var(--track-label);
+        text-transform: uppercase;
+        color: var(--deep);
+        background: var(--cream);
+        opacity: 0;
+        transition: opacity 0.18s var(--ease);
+      }
+      .slap.on:hover::after,
+      .slap.on:focus-visible::after { opacity: 1; }
+      /* A label under a sticker that is already at the foot of the glass is
+         a label off the bottom of the screen, so that one goes above. */
+      .slap[data-spot="br"]::after {
+        top: auto;
+        bottom: 100%;
+        transform: translate(-50%, -8px) rotate(calc(var(--r, 0deg) * -1));
+      }
+
+      .slap[data-spot="tl"] { top: 92px; left: var(--gutter); }
+      .slap[data-spot="tr"] { top: 84px; right: var(--gutter); }
+      .slap[data-spot="r"] { top: 56%; right: var(--gutter); }
+      .slap[data-spot="br"] { bottom: 26px; right: var(--gutter); }
+      .slap[data-spot="l"] { bottom: max(12vh, 112px); left: var(--gutter); }
+
+      /* A phone has no margins to slap anything into. The copy owns the top
+         and the scrim under it, the OSD owns the bottom corners and the
+         beats own the band above them, so one spot survives: the right
+         edge, between the OSD corner and the beats, at half size. The two
+         desktop spots that fold into it are never on at the same moment. */
+      @media (max-width: 900px) {
+        .slap[data-spot="tl"],
+        .slap[data-spot="tr"],
+        .slap[data-spot="l"] { display: none; }
+        .slap[data-spot="r"],
+        .slap[data-spot="br"] {
+          top: auto;
+          right: 14px;
+          bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+          width: calc(var(--w, 160px) * 0.5);
+        }
+      }
+      @media (max-height: 460px) and (orientation: landscape) {
+        #slaps { display: none; }
+      }
+
       /*
        * TWO ROWS NOW, so the footer is a grid and the licence line keeps the
        * flex row it always had. The other sites go above the licence rather
@@ -1526,6 +1652,8 @@
            scroll drives, and the card is not on the timeline. */
         #invite, .invite-card { transition: none; }
         .nav a.is-primary.handoff { animation: none; }
+        /* The stickers are already on the glass. Nothing gets slapped. */
+        .slap, .slap.on { transition: none; }
       }
     </style>
 
@@ -1720,6 +1848,63 @@
     </div>
 
     <div id="beats"></div>
+
+    <!--
+      THE STICKERS ON THE GLASS. See the stylesheet's block on #slaps. Each
+      element says which sticker it is, where it goes, which stretch of the
+      film it is there for and, for the opening three, how long it waits
+      after the boot. main.js fills them from src/stickers-data.js, which
+      scripts/stickers.js generates from the slap pack at stickers/, and
+      toggles them. Every one is the actual sticker, and every one is a link
+      to that page.
+
+      Ordered by when they land, which is also roughly top to bottom of the
+      page, and the window comments say what each one is next to.
+    -->
+    <div id="slaps">
+      <!-- Act one, the studio. Three land in the first two seconds after
+           the boot, a beat apart. The pilot in the bottom right, the strip
+           under the nav, the banner down the left under the ledger. -->
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="br" data-on="0" data-off="1" data-wait="0.6" data-slap="pilot" style="--r: -7deg; --w: 176px"></a>
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="tr" data-on="0" data-off="1.02" data-wait="1.3" data-slap="visor_strip" style="--r: 3deg; --w: 236px"></a>
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="l" data-on="0" data-off="2.02" data-wait="2" data-slap="brush_banner" style="--r: -4deg; --w: 66px"></a>
+      <!-- Act two, the builder. Its title bar and side panel take the top,
+           so the gate goes where the pilot was. The banner stays. -->
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="br" data-on="1" data-off="2.02" data-slap="pen_ink_gate" style="--r: 5deg; --w: 208px"></a>
+      <!-- Act three, the lap. The goggles on the right edge, above the OSD
+           corner, and a branch top left, under the wordmark. -->
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="r" data-on="2.02" data-off="3" data-slap="goggle_view" style="--r: -6deg; --w: 206px"></a>
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="tl" data-on="2.02" data-off="3.6" data-slap="sakura_branch" style="--r: 4deg; --w: 186px"></a>
+      <!-- Act four, the city. The town sticker says leave the track, which
+           is what the act says. -->
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="r" data-on="3" data-off="4" data-slap="railway_town" style="--r: 5deg; --w: 214px"></a>
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="tr" data-on="3" data-off="4" data-slap="wave_strip" style="--r: -3deg; --w: 240px"></a>
+      <!-- Act five, the room. The whoop, and the wordmark it peeks over.
+           Both leave with the act rather than running into the reason, whose
+           headline is at the top of its own section and was printed over.
+           Neither carries a number the copy could disagree with: the chibi
+           whoop sticker says 16 g and the copy says twenty three, so the
+           chibi is not one of the twelve. -->
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="r" data-on="4" data-off="5.02" data-slap="bubble_whoop" style="--r: -8deg; --w: 172px"></a>
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="tl" data-on="4" data-off="5.02" data-slap="peeker" style="--r: 3deg; --w: 196px"></a>
+      <!-- The reason, and the last two. A wakaba is the mark a new driver
+           wears in Japan and the headline beside it is about getting to the
+           first lap; an ema is the plaque you write a wish on. The reason's
+           copy is one column at the left, so the bottom left under it and
+           the whole top right are free at every width the spots exist at.
+
+           NOTHING AT THE CLOSE, and that is the one deliberate gap. Measured
+           at 1024 by 700, where the four cards wrap to two rows and the
+           section rides up the screen, a sticker in either top corner
+           printed across "Launch the simulator" and "Track builder". The
+           close is centred type the full width of the page and four cards
+           under it: there is no margin to slap anything into that survives
+           a narrow window, and the page's one call to action is the last
+           thing that should be fought with. The door to the pack at the
+           close is the footer's own link. -->
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="l" data-on="5" data-off="5.78" data-slap="wakaba" style="--r: -6deg; --w: 98px"></a>
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="tr" data-on="5.04" data-off="5.78" data-slap="ema_plaque" style="--r: 4deg; --w: 160px"></a>
+    </div>
 
     <main id="flow">
       <!-- ACT 1: the build -->
@@ -1976,6 +2161,7 @@
         <span>GPLv3 &#183; Betaflight 4.5.1 compiled to WebAssembly</span>
         <div class="foot-links" id="foot">
           <a href="wiki/">FPV wiki</a>
+          <a href="stickers/">Stickers</a>
           <a href="https://github.com/Mathew-Harvey/WebFPVSimulator" rel="noreferrer">Simulator repo</a>
           <a href="https://github.com/Mathew-Harvey/WebFPVSimulator-LeaderBoard" rel="noreferrer">Leaderboard repo</a>
           <a href="https://betaflight.com" rel="noreferrer">Betaflight</a>

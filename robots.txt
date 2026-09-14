@@ -1,9 +1,9 @@
 # webfpv.org
 #
 # The Cloudflare Worker in the simulator's edge/router.js serves this
-# repository at the site root, so this file governs all five pages: the
-# landing page here, the wiki here, and the simulator, the track builder and
-# the board behind their mount points.
+# repository at the site root, so this file governs all six pages: the
+# landing page, the wiki and the sticker pack here, and the simulator, the
+# track builder and the board behind their mount points.
 #
 # Everything is public and nothing is expensive to fetch, so there is nothing
 # to disallow. What was actually missing was the sitemap line: without it a

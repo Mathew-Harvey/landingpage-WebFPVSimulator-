@@ -51,6 +51,31 @@ and carries its own citations in `src/trackbuilder/racegow.js` and
 bringing the track over. Regenerate rather than edit, so the front door and
 the simulator cannot come to disagree about where a gate is.
 
+## Zen Kaku Gothic New, Caveat Brush and M PLUS Rounded 1c
+
+    Zen Kaku Gothic New   The Zen Kaku Gothic Project Authors
+                          https://github.com/googlefonts/zen-kakugothic
+    Caveat Brush          Impallari Type
+                          https://fonts.google.com/specimen/Caveat+Brush
+    M PLUS Rounded 1c     The M+ Fonts Project, Coji Morishita
+                          https://fonts.google.com/specimen/M+PLUS+Rounded+1c
+    Licence               SIL Open Font License 1.1, all three
+    Held at               stickers/index.html, base64 in its #fontcss block,
+                          and src/stickers-data.js, generated from it
+
+These are the three faces the sticker pack sets its type in, subsetted and
+embedded so that the pack is one file that prints from a desk and so that
+the stickers the film wears at / are set from the same bytes a printer gets.
+The pack carries M PLUS Rounded 1c under its earlier name, Rounded Mplus 1c,
+as well: same bytes, two names, so a sticker set in either resolves.
+
+The OFL is not the GPL and does not need to be: it permits embedding a font
+in a document and redistributing the document, which is all that is done
+here, and the fonts are not sold on their own. The subsets travel under
+their own names because they are used only as embedded web fonts, which is
+the use the OFL's naming clause and the Google Fonts distribution of these
+faces both contemplate. Nothing here is relicensed.
+
 ## three.js
 
     Upstream    https://github.com/mrdoob/three.js

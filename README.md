@@ -1,10 +1,11 @@
 # WebFPV landing page
 
 The front door for [WebFPVSimulator](https://github.com/Mathew-Harvey/WebFPVSimulator).
-One canvas, one scroll, five acts, a reason, three links out, and a wiki
-at `wiki/` that is not part of the film: thirty five illustrated pages on
-how a quad actually flies, plus every Betaflight setting, with figures you
-can drive.
+One canvas, one scroll, six acts, a reason, four links out, and two pages
+that are not part of the film: a wiki at `wiki/`, thirty five illustrated
+pages on how a quad actually flies plus every Betaflight setting, with
+figures you can drive, and a sticker pack at `stickers/`, twenty two of them
+print ready. Twelve of the stickers are slapped on the film as it plays.
 
 ## Why it exists
 
@@ -245,6 +246,54 @@ whole trace in one pass rather than building it up frame by frame. A
 reader who has asked for reduced motion gets one frame, and one frame of a
 curve being drawn is not a curve.
 
+## The stickers
+
+`stickers/index.html` is the slap pack: twenty two stickers as inline SVG
+in the house palette, and for each one a download, a PNG at 600 dpi
+rendered from the vector in the tab or the SVG itself with the fonts
+embedded. It is one file on purpose. The three faces it sets its type in
+are base64 in a style block, the export code reads them back out of it,
+and nothing on the page fetches anything, so it works saved to a desk or
+handed to a printer as an attachment.
+
+The film wears twelve of them. Somebody has slapped stickers on the
+screen: not on the page, on the glass, over the film, fixed to the
+viewport and cocked a few degrees off square, and they land with a slap
+rather than a fade. The sticker arrives a size larger, as if held above
+the glass, and is pressed down with a small overshoot; scrub back up the
+page and it is lifted off the same way. Each one is a link to the pack.
+
+Two an act, two on the reason, and none at the close. The close is the one
+thing the page is for: centred type the full width of the screen and four
+cards under it, with no margin to slap anything into that survives a
+narrow window. Measured at 1024 by 700, where the cards wrap to two rows
+and the section rides up, a sticker in either top corner printed across
+"Launch the simulator" and "Track builder". The door to the pack there is
+the footer's own link.
+
+Checked by driving headless Chromium through the served page at each act
+and measuring every lit sticker against every piece of type and chrome on
+screen: the act copy, the reason, the close, the footer, the ticker, the
+builder's panels, the OSD, the beats, the ledger and the nav. At 1440 by
+900, 1600 by 1000, 1152 by 800, 1024 by 700 and 430 by 932, nothing
+overlaps. That check is a browser and lives in the session it was run in,
+not in the repository; what the repository holds is `npm run lint:page`,
+which checks the parts that stay true without one.
+
+Every one is the actual sticker. `src/stickers-data.js` is generated from
+the pack by `node scripts/stickers.js` and holds each sticker's SVG
+verbatim plus the pack's font block once, and `main.js` puts the fonts in
+the head and the markup in the anchors. Where a sticker goes, which
+stretch of the film it is there for and how long the opening three wait
+after the boot are attributes on its anchor in `index.html`; the
+stylesheet's block on `#slaps` says which corner of the glass is free of
+which instrument when. The reduced motion contract has its usual two
+halves: the stylesheet stills the slap and `main.js` skips the wait.
+
+`npm run lint:page` regenerates the module in memory and fails if the one
+on disk differs, so an edit to the pack that is not followed by a rerun
+cannot ship two versions of one sticker.
+
 ## Colour
 
 The tokens are the simulator's and the board's, unchanged: cream, sakura,
@@ -338,6 +387,8 @@ screenshot of a wall is an afternoon. On a clean URL, no global.
 | `src/room-data.js` | The demo micro track, GENERATED. See `scripts/bake-room.js` |
 | `src/whoop.js` | The 65 mm ducted whoop, at the size it actually is |
 | `src/config.js` | Where the simulator and the board are |
+| `stickers/index.html` | The slap pack: twenty two stickers, the fonts, and a download for each |
+| `src/stickers-data.js` | The twelve the film wears, GENERATED. See `scripts/stickers.js` |
 | `src/quality.js` | One decision about how much machine is on the other end |
 | `src/petals.js` | Sakura, one draw call, all of it in the vertex shader |
 

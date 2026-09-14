@@ -45,6 +45,7 @@ import { buildRoom, ROOM_AIR } from './room.js';
 import { buildWhoop, WHOOP_FOV, WHOOP_MOUNT_FORWARD, WHOOP_MOUNT_UP, WHOOP_CAM_TILT_DEG } from './whoop.js';
 import { buildPetals } from './petals.js';
 import { destinations } from './config.js';
+import { FONTCSS, STICKERS } from './stickers-data.js';
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -366,6 +367,12 @@ function bootPhase(id) {
 }
 
 let bootCleared = false;
+/*
+ * When the boot screen lifted, in the frame clock's seconds, or -1 while it
+ * is still up. The opening stickers are timed off this rather than off the
+ * scroll: a visitor who arrives and does nothing still sees them land.
+ */
+let readyAt = -1;
 function clearBoot() {
   if (bootCleared || !bootEl) {
     return;
@@ -389,6 +396,7 @@ function clearBoot() {
      * and stays down. The card has its own timer for the case where this
      * module never runs at all, which is the case it matters most in.
      */
+    readyAt = performance.now() * 0.001;
     window.dispatchEvent(new Event('webfpv:ready'));
   }, 900);
 }
@@ -1060,6 +1068,41 @@ const COPIES = new Map();
 for (const c of document.querySelectorAll('[data-copy]')) {
   COPIES.set(c.dataset.copy, c);
 }
+
+/*
+ * The stickers on the glass. Each anchor says which sticker it is, where it
+ * is, which stretch of T it is there for and, for the opening ones, how long
+ * it waits after the boot screen lifts. This puts the drawing in and reads
+ * the rest once; the frame loop toggles .on, and the slap itself is a CSS
+ * transition. See the stylesheet's block on #slaps for where the spots are
+ * and why.
+ *
+ * The drawings come from src/stickers-data.js, generated from the slap pack,
+ * and so do the fonts: the pack sets its type in three faces the page does
+ * not otherwise load, and they go into the head here, before any sticker is
+ * on the glass, as a data URI block that needs no fetch. An anchor naming a
+ * sticker the module does not hold stays empty and never comes on, which is
+ * the failure a lint catches before it ships.
+ */
+{
+  const style = document.createElement('style');
+  style.textContent = FONTCSS;
+  document.head.append(style);
+}
+const SLAPS = [...document.querySelectorAll('.slap')]
+  .filter((node) => {
+    const svg = STICKERS[node.dataset.slap];
+    if (svg) {
+      node.innerHTML = svg;
+    }
+    return Boolean(svg);
+  })
+  .map((node) => ({
+    node,
+    on: Number.parseFloat(node.dataset.on) || 0,
+    off: Number.parseFloat(node.dataset.off) || 0,
+    wait: Number.parseFloat(node.dataset.wait) || 0,
+  }));
 
 /*
  * The launch links.
@@ -2956,6 +2999,21 @@ function frame(ms) {
       const until = b.until ?? nextAt - 0.03;
       const on = inRoom && running >= b.at && running < until;
       roomBeatEls[i].classList.toggle('on', on);
+    }
+  }
+
+  /*
+   * THE STICKERS, every frame rather than only when T moves. The opening
+   * three are timed off the boot and not off the scroll, so they have to
+   * be checked while T sits at zero. Pinned or reduced there is no beat to
+   * wait for: a frame named by ?t= has to be the whole frame, and a visitor
+   * who asked for less motion gets the stickers simply on the glass.
+   */
+  {
+    const since = readyAt < 0 ? -1 : now - readyAt;
+    for (const s of SLAPS) {
+      const due = REDUCED || PIN !== null || since >= s.wait;
+      s.node.classList.toggle('on', due && T >= s.on && T < s.off);
     }
   }
 
