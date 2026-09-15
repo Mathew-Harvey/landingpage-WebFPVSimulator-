@@ -185,13 +185,18 @@ const BEATS = [
 const CITY_BEATS = [
   {
     at: 0.19,
-    k: 'The map',
-    t: 'A Japanese town, and a freestyle map.',
+    k: 'The aircraft',
+    /* NO LINK IN A BEAT, however much this one wants one. #beats is
+     * pointer-events: none, because it is fixed over the middle of a page
+     * whose whole interaction is the scroll, and a beat is on screen for a
+     * fifth of an act. Betaflight is linked where it can be clicked and
+     * where it is first named, in act one's lede, and again in the footer. */
+    t: 'A 5 inch quad, running Betaflight firmware.',
   },
   {
     at: 0.42,
-    k: 'The town',
-    t: 'Streets, gaps and open spaces.',
+    k: 'The map',
+    t: 'A Japanese town, and a freestyle map.',
   },
   {
     at: 0.64,
@@ -218,7 +223,7 @@ const CITY_BEATS = [
      * builds the vendored town only: see src/city/vendored. A visitor
      * clicking Fly the city gets it, so leaving it out would undersell the
      * map. Everything else the beats say is in the frame they say it in. */
-    t: 'And a freestyle training park.',
+    t: 'Streets, gaps and a freestyle training park.',
   },
 ];
 

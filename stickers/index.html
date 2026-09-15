@@ -107,11 +107,17 @@
   .btn small { font-weight:400; opacity:.7; letter-spacing:0; }
   .btn:disabled { opacity:.5; cursor:wait; }
   .close { position:absolute; top:18px; right:22px; background:transparent; border:0; color:var(--cream); font-size:28px; cursor:pointer; line-height:1; }
+  /* The mark goes home. Relative, like the two nav links beside it, so it
+     works from a desk with no server as well as from webfpv.org. It looks
+     like the wordmark until it is pointed at, then it takes the sakura the
+     rest of the family's links take on hover. */
+  a.wm { text-decoration:none; color:inherit; transition:color .12s ease; }
+  a.wm:hover, a.wm:focus-visible { color:var(--sakura); }
   .status { font-size:12px; color:var(--amber); min-height:16px; }
   @media (max-width:820px) { .sheet { grid-template-columns:1fr; max-height:96vh; overflow:auto; } .sheet .side { border-left:0; border-top:1px solid rgba(243,234,212,.1); } .top nav { margin-left:0; } }
 </style></head>
 <body>
-<div class="top"><div class="wm">WEBFPV</div><div class="pk">slap pack</div>
+<div class="top"><a class="wm" href="../" title="Back to the front page">WEBFPV</a><div class="pk">slap pack</div>
 <!-- The way back. The film wears these stickers and links here from each
      one, so a visitor who arrived by clicking a sticker gets the same three
      doors the rest of the family's bars offer.
