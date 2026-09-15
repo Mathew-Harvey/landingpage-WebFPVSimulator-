@@ -40,7 +40,7 @@ The act's copy now quotes NO measurement, and that is the safest state for it. I
 
 **No brand is named for a controller.** A radio or a game controller, every time, in the invitation, the kit list, the beat and the cards. Naming one manufacturer's pad tells everybody holding a different one that the page was not written for them, and the kit list is the whole pitch.
 
-**The AI disclosure is on the first screen and it is dry.** `.admission`, under act one's copy: built with AI, by me, a developer who orders AI agents about now, out of the way, now let's fly. Said once, in the owner's voice, quieter type than the lede, with no apology in it, because an apology invites an argument about whether the tool was allowed and the argument this page wants is about whether the quad flies right. Do not move it to the footer and do not expand it into a paragraph.
+**The AI disclosure is on the first screen and it is dry.** `.admission`, under act one's copy: built with AI, by me, a developer who, apparently, orders AI agents about these days, out of the way, now let's fly. Said once, in the owner's voice, quieter type than the lede, with no apology in it, because an apology invites an argument about whether the tool was allowed and the argument this page wants is about whether the quad flies right. Do not move it to the footer and do not expand it into a paragraph.
 
 **The palette is the simulator's.** Light is warm, shadow is cool. Cream for lit type, sakura for chrome, amber for an instrument, mint for something good, slate for type that should recede. The panel fill and the two pixel edge rule are the board's, so a visitor arriving from the board is looking at the same furniture.
 
