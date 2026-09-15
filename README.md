@@ -17,8 +17,9 @@ download and an install on a machine that can run them. For a lot of people
 that is one more barrier on a pile that was already too tall.
 
 This one takes barriers off the pile instead. It runs in a browser tab,
-costs nothing, installs nothing, and asks for no account. An Xbox controller
-and a computer you already have in front of you is the whole kit list.
+costs nothing, installs nothing, and asks for no account. A radio or a game
+controller and a computer you already have in front of you is the whole kit
+list.
 
 The page says that in about eighty words, in `#why`, between the flight and
 the close. It is deliberately short. Everything else here says its piece in
@@ -45,8 +46,9 @@ Act 4  The frame goes to warm haze and comes out of it in a six metre
        for the whole district at a hundred and twenty metres.
 Act 5  The frame goes to black. Two bulbs come on in a shed, and there is a
        whoop track in it: four 28 inch gates in 3/4 inch pipe, two of them
-       stacked, a pole and a rail, 14.4 m of lap in a footprint 3.54 m by
-       2.00. A 65 mm whoop lifts off a pad and flies a lap of it from inside.
+       stacked, a pole and a rail, 13.8 m of lap in a footprint 2.97 m by
+       1.42, as src/room-data.js measures it. A 65 mm whoop lifts off a pad
+       and flies a lap of it from inside.
 Act 6  You must practice, in the shed, over the gate the lap closed on.
 ```
 

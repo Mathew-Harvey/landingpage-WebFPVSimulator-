@@ -619,6 +619,20 @@
       .lede + .lede { margin-top: 14px; }
       .lede strong { color: var(--cream); font-weight: 600; }
 
+      /* The admission. A third of a step down from the lede, with the
+         eyebrow's own sakura bar turned on its side, so it reads as an
+         aside somebody said rather than as a line of the pitch. */
+      .admission {
+        margin: 18px 0 0;
+        padding-left: 12px;
+        max-width: 30em;
+        border-left: 2px solid var(--sakura);
+        font-size: clamp(12px, 1.15vw, 13.5px);
+        line-height: 1.65;
+        color: var(--slate);
+        text-shadow: 0 1px 8px rgba(8, 12, 9, 0.8);
+      }
+
       .rule {
         width: 100%;
         height: 1px;
@@ -992,10 +1006,12 @@
          Selected through the id so it outranks the narrow screen rule that
          puts every other .specs back to two columns. */
       /* Wider than the prose column it sits under, on purpose: four cells
-         at the text column's width squeeze "Xbox pad or a radio" onto two
-         lines and the row grows past the parts-page cell act two prints. */
+         at the text column's width squeeze "Radio or game controller" onto
+         two lines and the row grows past the parts-page cell act two
+         prints. 52em is measured against that cell, which is the longest
+         of the four and the one that decides the number. */
       #why .specs {
-        width: min(46em, 100%);
+        width: min(52em, 100%);
         margin-top: 30px;
         grid-template-columns: repeat(4, minmax(0, 1fr));
       }
@@ -1167,6 +1183,7 @@
       .inline-go {
         color: var(--mint);
         text-decoration: none;
+        white-space: nowrap;
         border-bottom: 1px solid rgba(125, 255, 180, 0.42);
         padding-bottom: 2px;
         transition: border-color 0.2s var(--ease), color 0.2s var(--ease);
@@ -1174,6 +1191,23 @@
       .inline-go::after { content: " \2192"; }
       .inline-go:hover,
       .inline-go:focus-visible { border-bottom-color: var(--mint); }
+
+      /*
+       * A CREDIT INSIDE A PARAGRAPH, which is not a call to action and must
+       * not dress like one. The room act names RaceGOW because the format is
+       * theirs and so is the track being flown, and a name that is a credit
+       * should take you to the people it credits. No arrow and no mint: both
+       * belong to the links that launch something of ours.
+       */
+      .inline-cite {
+        color: var(--cream);
+        text-decoration: none;
+        border-bottom: 1px solid var(--sakura);
+        padding-bottom: 2px;
+        transition: color 0.2s var(--ease), border-color 0.2s var(--ease);
+      }
+      .inline-cite:hover,
+      .inline-cite:focus-visible { color: var(--sakura); }
 
       /* ------------------------------------------------------------------
          The stickers.
@@ -1816,7 +1850,7 @@
         <h2 id="invite-h">Want to just fly?</h2>
         <p class="lede">
           A five inch quad on Betaflight 4.5.1, in this tab, on the MultiGP
-          race field. Plug in an Xbox pad or a radio and take a lap.
+          race field. Plug in a radio or a game controller and take a lap.
         </p>
         <div class="invite-go">
           <a class="invite-fly" href="https://webfpv.org/sim/?map=field" data-dest="sim">Just fly</a>
@@ -1986,7 +2020,24 @@
             <p class="lede">
               Then it flies on <strong>Betaflight 4.5.1</strong>, compiled to
               WebAssembly and running the real control loop at 1&#8239;kHz.
-              Not an approximation of one.
+            </p>
+            <!--
+              THE DISCLOSURE, AND IT IS ON THE FIRST SCREEN ON PURPOSE.
+
+              Somebody works out that a one man project shipped a flight
+              model, a town, a track builder and a wiki, and they wonder. Said
+              here, once, in the owner's own voice, it costs a line and it is
+              over. Left for a visitor to discover, it is the only thing they
+              remember about the page.
+
+              Dry, and no apology in it: an apology invites an argument about
+              whether the tool was allowed, and the argument this page wants
+              is about whether the quad flies right. Quieter type than the
+              lede for the same reason. It is a fact, not the pitch.
+            -->
+            <p class="admission">
+              Built with AI, by me and my AI team. There, out of the way.
+              Now let's fly.
             </p>
           </div>
         </div>
@@ -1997,11 +2048,10 @@
         <div class="pin">
           <div class="copy" data-copy="build">
             <p class="eyebrow">02 &#183; The track</p>
-            <h2>Draw a track.<br /><em>Watch it stand up.</em></h2>
+            <h2>Draw a track.</h2>
             <p class="lede">
-              The track builder is a plan view and a snap grid. Drop gates,
-              drag the line, and the track rises in 3D beside you at
-              published MultiGP dimensions.
+              Design, build and export both MultiGP five inch tracks and
+              whoop micro UTT tracks, with animated GIF export.
             </p>
             <div class="rule"></div>
             <dl class="specs">
@@ -2034,8 +2084,7 @@
             <p class="eyebrow">03 &#183; The line</p>
             <h2>Now fly it.</h2>
             <p class="lede">
-              Camera on the airframe, thirty degrees up, eighty five degree
-              lens. Every gate is a decision made three gates early.
+              Gate racing, with adjustable camera angle and field of view.
             </p>
           </div>
         </div>
@@ -2055,10 +2104,8 @@
             <p class="eyebrow">04 &#183; The city</p>
             <h2>Then leave the track.</h2>
             <p class="lede">
-              A Japanese railway town, built to its own dimensions and flown
-              rather than walked. Nothing here is scored. There is a six metre
-              shopping street, a level crossing, and a cable web at head
-              height.
+              A Japanese town, and a freestyle map. A training park, gaps and
+              open spaces.
             </p>
             <p class="lede">
               <a class="inline-go" href="https://webfpv.org/sim/?map=city" data-dest="city">Fly the city</a>
@@ -2095,18 +2142,29 @@
         <div class="pin">
           <div class="copy copy-tight" data-copy="room">
             <p class="eyebrow">05 &#183; The room</p>
-            <h2>Four gates and a rail,<br /><em>in three and a half metres.</em></h2>
+            <h2>Micro UTT.</h2>
             <p class="lede">
-              A sixty five millimetre whoop, twenty three grams, one cell.
-              Four twenty eight inch gates, two of them stacked, a pole and a
-              rail, all cut from one length of three quarter inch plumbing
-              pipe. Three and a half metres by two on the floor, and fourteen
-              metres of lap threaded through it.
+              A 65 mm whoop. Four gates, a pole and a rail, cut from three
+              quarter inch plumbing pipe and built on the floor of a room.
             </p>
+            <!-- The credit is a link because it is a credit: the track in
+                 this act is RaceGOW5 Track 1, designed by Skittles, read off
+                 RaceGOW's own published animation. NOTICE has the long
+                 version. The sign up is the one link on this page that goes
+                 to somebody else's season rather than to our own simulator,
+                 and it earns its place: the format is theirs. -->
             <p class="lede">
-              Nobody lines up beside you. Everyone builds the same track in
-              their own room, flies it alone, and posts a time.
+              The format <a class="inline-cite" href="https://www.racegow.com/" rel="noreferrer">RaceGOW</a>
+              made famous. Every Season 5 track is in the simulator, and the
+              builder makes your own.
+              <!-- A break rather than a third paragraph: on a short landscape
+                   phone the stylesheet drops every lede after the first, and
+                   the two links are the one part of this act that has to
+                   survive that. -->
+              <br />
               <a class="inline-go" href="https://webfpv.org/sim/?map=custom&amp;craft=whoop65" data-dest="whoop">Fly a micro track</a>
+              <br />
+              <a class="inline-go" href="https://forms.gle/bQmvL7vvaJo4hu2H6" rel="noreferrer">Sign up for RaceGOW 6</a>
             </p>
           </div>
         </div>
@@ -2131,14 +2189,14 @@
         </p>
         <p class="why-sign">
           So I built one that asks for nothing.
-          <em>A tab, and the pad already on your desk.</em>
+          <em>A tab, and the controller already on your desk.</em>
         </p>
       </div>
       <dl class="specs">
         <div><dt>Price</dt><dd>Free</dd></div>
         <div><dt>Install</dt><dd>None</dd></div>
         <div><dt>Account</dt><dd>None</dd></div>
-        <div><dt>Controller</dt><dd>Xbox pad <span class="unit">or a radio</span></dd></div>
+        <div><dt>Controller</dt><dd>Radio <span class="unit">or game controller</span></dd></div>
       </dl>
     </section>
 
@@ -2153,14 +2211,15 @@
         <h2 class="shout">You must practice.</h2>
         <p class="close-sub">
           Nobody gets smooth by reading about it. Free, in the browser, no
-          install, no account. Plug in the Xbox pad and take a lap.
+          install, no account. Plug in a radio or a game controller and take
+          a lap.
         </p>
       </div>
       <div class="cards" id="cards">
         <a class="card" href="https://webfpv.org/sim/?map=field" data-dest="sim" style="--accent: var(--mint)">
           <span class="card-n">01</span>
           <span class="card-t">Launch the simulator</span>
-          <span class="card-d">The MultiGP race field. Plug in an Xbox pad or a radio. Free, nothing to install.</span>
+          <span class="card-d">The MultiGP race field. Plug in a radio or a game controller. Free, nothing to install.</span>
           <span class="card-go">Fly now</span>
         </a>
         <!--
@@ -2174,13 +2233,13 @@
         <a class="card" href="https://webfpv.org/sim/?map=custom&amp;craft=whoop65" data-dest="whoop" style="--accent: var(--cream)">
           <span class="card-n">02</span>
           <span class="card-t">Whoop micro tracks</span>
-          <span class="card-d">A 65 mm whoop indoors, on a track three and a half metres across. Same control loop, a fifth of the speed.</span>
+          <span class="card-d">A 65 mm whoop on a micro UTT track. Every RaceGOW Season 5 track, or build your own.</span>
           <span class="card-go">Fly the whoop</span>
         </a>
         <a class="card" href="https://webfpv.org/sim/src/trackbuilder/index.html" data-dest="builder" style="--accent: var(--sakura)">
           <span class="card-n">03</span>
           <span class="card-t">Track builder</span>
-          <span class="card-d">Draw a track on a snap grid, watch it stand up in 3D, then fly it. Sixty metre field or a room.</span>
+          <span class="card-d">Design, build and export MultiGP five inch tracks and whoop micro UTT tracks, with animated GIF export.</span>
           <span class="card-go">Build a track</span>
         </a>
         <a class="card" href="https://webfpv.org/board/" data-dest="board" style="--accent: var(--amber)">

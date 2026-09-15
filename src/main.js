@@ -134,12 +134,15 @@ const BEATS = [
   },
   {
     at: 0.24,
-    k: 'Your rates',
-    /* This used to promise a CLI diff dropped on the page, editing your own
-     * PIDs and filters. The simulator took that out: it offers two tunes and
-     * lets you set your rates, so the copy says that instead. Marketing a
-     * screen that is not there is the one bug this page can ship. */
-    t: 'Two tunes, stock Betaflight or a 6S race setup. Set your rates and fly the curve your sticks will actually follow.',
+    k: 'The tune',
+    /* This once promised a CLI diff dropped on the page, then it promised
+     * two tunes, and both were wrong in the same direction: the first sold a
+     * screen that did not exist, the second undersold the one that does.
+     * configs/registry.js ships three tunes per aircraft and the PIDs panel
+     * edits P, I, D, D max and feedforward on every axis. Marketing a screen
+     * that is not there is the one bug this page can ship. Hiding one is the
+     * second. */
+    t: 'Three tune presets, or full PID tuning.',
   },
   {
     at: 0.44,
@@ -148,8 +151,11 @@ const BEATS = [
   },
   {
     at: 0.64,
-    k: 'Sticks',
-    t: 'Plug in a radio in joystick mode, or the Xbox pad already on the desk. Sticks are the skill, and a keyboard has none.',
+    k: 'The controls',
+    /* NO BRAND NAMES. A pad is a pad, and naming one manufacturer's tells
+     * everybody holding a different one that the page was not written for
+     * them. The kit list is the whole point of this product. */
+    t: 'Plug in a radio or a game controller.',
   },
   {
     at: 0.84,
@@ -165,7 +171,8 @@ const BEATS = [
  * city is a demonstration: the copy over a race line can afford to talk
  * about determinism, and the copy over a nine metre street should get out of
  * the way of the street. Three beats over the whole act, each one naming the
- * thing that is actually in frame when it appears.
+ * thing that is actually in frame when it appears, with one stated exception
+ * on the last of them.
  *
  * THE FIRST ONE STARTS LATE ON PURPOSE. The act's own copy block runs from
  * T 3.02 to 3.16, and a beat is a second column of type in the middle of the
@@ -178,13 +185,13 @@ const BEATS = [
 const CITY_BEATS = [
   {
     at: 0.19,
-    k: 'Freestyle',
-    t: 'The same aircraft, the same control loop, somewhere with walls. A gate tells you where to go. A town does not.',
+    k: 'The map',
+    t: 'A Japanese town, and a freestyle map.',
   },
   {
     at: 0.42,
-    k: 'The city',
-    t: 'A Japanese railway town, drawn to its own dimensions. Six metre shopping street, a level crossing, and a cable web at head height.',
+    k: 'The town',
+    t: 'Streets, gaps and open spaces.',
   },
   {
     at: 0.64,
@@ -204,27 +211,36 @@ const CITY_BEATS = [
      * arrives on.
      */
     until: 0.82,
-    k: 'Proximity',
-    t: 'Nothing here is scored. Fly the line you can see, at the height you dare, and put it back on the roof you started from.',
+    k: 'The park',
+    /* THE ONE BEAT THAT NAMES SOMETHING THIS FILM DOES NOT SHOW, and it is
+     * named on purpose rather than by accident. The practice field is in the
+     * simulator's town, in src/maps/city/places/training.js, and this page
+     * builds the vendored town only: see src/city/vendored. A visitor
+     * clicking Fly the city gets it, so leaving it out would undersell the
+     * map. Everything else the beats say is in the frame they say it in. */
+    t: 'And a freestyle training park.',
   },
 ];
 
 /*
  * The room act's beats.
  *
- * Three again, and none of them repeats an argument the page has already
- * made. The lap's beats are about the control loop, the town's are about
- * having no gates; these are about SIZE and about who you are racing, which
- * are the two things nobody expects and the two things a picture of a shed
- * cannot say on its own.
+ * Three again, and each one says a single thing: what is flying, what it is
+ * flying through, and whose format it is. A picture of a shed with a whoop
+ * in it cannot say any of the three on its own, and none of them needs a
+ * sentence to say it.
  *
- * NO SERIES IS NAMED, and that is the board's decision rather than this
- * page's. The board's whoop plate is called Whoop Micro Tracks, and its own
- * note says why: the builder will make any micro track a whoop can fly, and
- * a series' name on the plate tells a pilot who built their own that it does
- * not belong. The same holds here. The track this act flies is a published
- * one and its designer is credited where a credit belongs, in NOTICE and in
- * the data file, not in a headline over somebody else's living room.
+ * THE SERIES IS NAMED NOW, and that is a change of mind worth writing down.
+ * It used to be left out for the board's reason: the board's whoop plate is
+ * called Whoop Micro Tracks because the builder will make any micro track a
+ * whoop can fly, and a series' name on the plate tells a pilot who built
+ * their own that it does not belong. That argument is about a PLATE OVER A
+ * LIST OF EVERYBODY'S TRACKS. This is one act flying one published track,
+ * RaceGOW5 Track 1, in a format RaceGOW invented and popularised, and
+ * leaving their name off it is not neutrality, it is taking the credit by
+ * omission. So the act names them, links them, and points at their next
+ * season. The builder still makes your own, and the copy still says so in
+ * the same breath.
  *
  * The first waits until the act's copy block has gone, the same way the
  * town's does. The last stops before the end of the act, because the end of
@@ -235,18 +251,24 @@ const ROOM_BEATS = [
   {
     at: 0.20,
     k: 'The aircraft',
-    t: 'Sixty five millimetres, twenty three grams, one cell. The same Betaflight, a different plant: three times the angular acceleration and a fifth of the speed.',
+    t: '65 mm whoop.',
   },
   {
     at: 0.44,
     k: 'The track',
-    t: 'Four gates, two of them stacked, a pole and a rail, all cut from one length of three quarter inch plumbing pipe. Three and a half metres by two of floor.',
+    t: 'Micro UTT. Four gates, a pole and a rail.',
   },
   {
     at: 0.66,
     until: 0.86,
-    k: 'The clock',
-    t: 'Nobody lines up beside you. Everyone builds the same track, flies it alone, and posts a time. Three consecutive laps, and the clock says who was quicker.',
+    k: 'The series',
+    /* The only numbers left in this act's copy are the ones in the name of
+     * the aircraft and the season. The floor dimensions that used to be here
+     * said three and a half metres by two, and room-data.js has measured the
+     * shipped track at 2.97 by 1.42 since it was last regenerated, so the
+     * page was quoting a track nobody could build. A number in the copy is a
+     * number to keep true; this act no longer needs any. */
+    t: 'RaceGOW5 Track 1, designed by Skittles. Every Season 5 track is in the simulator.',
   },
 ];
 
