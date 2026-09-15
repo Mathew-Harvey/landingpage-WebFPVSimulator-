@@ -42,6 +42,10 @@ The copy quotes the track's own measurements, so the generator measures them: `L
 
 **The site icon comes from the simulator's `scripts/icons.js`.** `icon.svg`, `favicon.ico` and `apple-touch-icon.png` are generated output, in cream, because the front door owns no product's accent. Regenerate, do not edit: `node scripts/icons.js cream ../landingpage-WebFPVSimulator-` from a checkout of the simulator beside this one.
 
+**The stickers are the slap pack's, and the pack is the copy of record.** `stickers/index.html` is one self contained page: twenty two stickers as inline SVG, the three fonts they are set in as base64, and a download for each. The film wears eight of them, slapped on the glass rather than laid on the page, and every one is the actual sticker: `src/stickers-data.js` is GENERATED from the pack by `node scripts/stickers.js` and holds each one's SVG verbatim plus the font block once, and `main.js` puts them in. Regenerate, do not edit; `npm run lint:page` fails if the module is stale. Where a sticker goes, when it is there and how long the one that opens waits after the boot is written on its anchor in `index.html`, and the stylesheet's block on `#slaps` says which corner of the glass is free of which instrument when. A sticker never sits where an instrument is at the same moment, never near the bottom at the close, and never carries a number the copy beside it could disagree with.
+
+**The slap is an animation and it is the point of them.** `@keyframes slap` in `index.html`: in from nearly twice the size and eight degrees off, easing IN because that is what a hand does, short onto the glass at 93 per cent with the shadow tightening from 24 px of blur to 4, one ring back, settled. A transition cannot describe an impact, which is what it was before. It must never carry a fill mode, or it outranks the hover rule for the life of the page. Eight is the count because twelve read as a layer of the page rather than as something somebody stuck on it. Two stickers are never in one spot at the same time, and the three spots a phone folds into its one free band are disjoint in T as a set; `npm run lint:page` checks both, and the reduced motion contract has the usual two halves, the stylesheet stilling the animation and `REDUCED` skipping the wait.
+
 **The marks under "Also by Mat Harvey" belong to other sites.** They are other people's artwork in a block that says so, and Winmarchy's green is the one colour on the page that is not in the palette above. That is deliberate. They carry no `data-dest`, so the local origin retargeting in `main.js` never touches them.
 
 ## Style
@@ -55,6 +59,7 @@ The copy quotes the track's own measurements, so the generator measures them: `L
 
 - There is no test suite here. `npm run serve` and look at the page, at a wide width and at 430 px, and at the 900 px breakpoint where the ledger and the instruments drop out. The wiki has the same breakpoint, where its rail becomes a drawer.
 - `npm run lint:wiki` before handing the wiki over. It is cheap, and it catches the things that stay invisible until somebody scrolls to the one page that has them.
+- `npm run lint:page` before handing the film or the sticker pack over. Also cheap: the share cards, the sitemap, the dashes, and whether `src/stickers-data.js` is what the pack would generate now.
 - Never report a check as passing without having run it in the same turn. If a check was not run, say so, say why, and say what was done instead.
 - The simulator's `npm run verify` is expensive and does not cover this repository. Do not reach for it here.
 

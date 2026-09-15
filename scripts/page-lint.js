@@ -35,6 +35,7 @@
 import { readFile, access } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { bake, OUT as STICKERS_OUT } from './stickers.js';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const rows = [];
@@ -60,6 +61,7 @@ const index = await readFile(join(root, 'index.html'), 'utf8');
 const wiki = await readFile(join(root, 'wiki/index.html'), 'utf8');
 const wikiJs = await readFile(join(root, 'src/wiki/wiki.js'), 'utf8');
 const mainJs = await readFile(join(root, 'src/main.js'), 'utf8');
+const pack = await readFile(join(root, 'stickers/index.html'), 'utf8');
 
 /*
  * 1. ONE h1 A PAGE.
@@ -128,7 +130,7 @@ const mainJs = await readFile(join(root, 'src/main.js'), 'utf8');
  * path read M18 18h5v5H9z, closing back to x=9, so it drew a wedge fused to
  * its neighbour. A generated file cannot be wrong in that way.
  */
-for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki]]) {
+for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['stickers/index.html', pack]]) {
   const inlined = /rel="icon"[^>]*href="data:/.test(src);
   check(`${name}: icon is a file, not an inline drawing`, !inlined, inlined ? 'a data URI icon is hand drawn and can be, and was, malformed' : 'points at the generated icon');
 }
@@ -136,7 +138,7 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki]]) {
 /*
  * 5. EVERY PAGE RENDERS A CARD WHEN IT IS PASTED SOMEWHERE.
  */
-for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki]]) {
+for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['stickers/index.html', pack]]) {
   const need = ['rel="canonical"', 'og:title', 'og:description', 'og:image', 'twitter:card', 'name="description"'];
   const missing = need.filter((t) => !src.includes(t));
   check(`${name}: has a share card`, missing.length === 0, missing.length ? `missing ${missing.join(', ')}` : 'canonical, og and twitter all present');
@@ -159,7 +161,7 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki]]) {
  * 7. THE SITE IS DISCOVERABLE AT ALL.
  *
  * The Worker serves this repository at the root, so these two files govern
- * all five pages. Production's robots.txt was Cloudflare's injected stub with
+ * all six pages. Production's robots.txt was Cloudflare's injected stub with
  * no Sitemap line, and /sitemap.xml was a 404.
  */
 {
@@ -173,7 +175,7 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki]]) {
     check('robots.txt names the sitemap', /^Sitemap:\s*https:\/\/\S+sitemap\.xml/m.test(robots), 'the line a crawler reads');
     /* Every page the family has, and no page it does not. A sitemap that
      * lists a 404 is worse than no sitemap. */
-    const want = ['https://webfpv.org/', 'https://webfpv.org/sim/', 'https://webfpv.org/wiki/', 'https://webfpv.org/board/'];
+    const want = ['https://webfpv.org/', 'https://webfpv.org/sim/', 'https://webfpv.org/wiki/', 'https://webfpv.org/stickers/', 'https://webfpv.org/board/'];
     const missing = want.filter((u) => !map.includes(`<loc>${u}</loc>`));
     check('sitemap lists every page of the family', missing.length === 0, missing.length ? `missing ${missing.join(', ')}` : `${want.length} pages plus the builder`);
     check('sitemap is well formed', /<\?xml/.test(map) && /sitemaps\.org\/schemas\/sitemap\/0\.9/.test(map), 'declaration and the real namespace URL');
@@ -207,7 +209,7 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki]]) {
  */
 {
   const bad = [];
-  for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['src/main.js', mainJs], ['src/wiki/wiki.js', wikiJs]]) {
+  for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['stickers/index.html', pack], ['src/main.js', mainJs], ['src/wiki/wiki.js', wikiJs]]) {
     if (/[\u2013\u2014]/.test(src)) {
       bad.push(name);
     }
@@ -240,6 +242,143 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki]]) {
       ? `${hidden ? 'hidden' : 'NOT hidden, so it flashes'}, ${targeted ? 'data-dest set' : 'NO data-dest, so local serving points at production'}, ${modules} module script and ${scripts - modules} plain`
       : 'MISSING, so the only way in is a 12 px label in the corner',
   );
+}
+
+/*
+ * 11. THE STICKERS ON THE GLASS ARE THE PACK'S, AND CURRENT.
+ *
+ * src/stickers-data.js is generated from stickers/index.html by
+ * scripts/stickers.js, and the way that goes wrong is an edit to the pack
+ * with no rerun behind it: the film keeps wearing last week's sticker while
+ * the pack hands out this week's. bake() is the generator itself, so this is
+ * the file as it would be written now against the file as it is.
+ *
+ * And the contract around the anchors. Every data-slap has to name a sticker
+ * the pack has, or the anchor stays empty and nothing ever comes on; every
+ * window has to run forwards; no two stickers may be in one spot at the same
+ * time, and the three spots a phone folds into one band have to be disjoint
+ * as a set, because on a phone they are the same place; and the reduced
+ * motion contract has two halves here as everywhere else, the stylesheet and
+ * the REDUCED branch in main.js, which have to agree or a visitor who asked
+ * for less motion gets slapped anyway.
+ */
+{
+  let fresh = false;
+  let why = '';
+  try {
+    const want = await bake();
+    const have = await readFile(join(root, STICKERS_OUT), 'utf8');
+    fresh = want === have;
+    why = fresh ? 'matches what scripts/stickers.js would write now' : `STALE: rerun node scripts/stickers.js`;
+  } catch (e) {
+    why = `bake failed: ${e.message}`;
+  }
+  check('src/stickers-data.js is current', fresh, why);
+
+  const anchors = [...index.matchAll(/<a class="slap"[^>]*>/g)].map((m) => m[0]);
+  const names = [...pack.matchAll(/"name":\s*"([^"]+)"/g)].map((m) => m[1].toLowerCase().replace(/[^a-z0-9]+/g, '_'));
+  const bad = [];
+  for (const a of anchors) {
+    const name = /data-slap="([^"]+)"/.exec(a);
+    const on = Number.parseFloat((/data-on="([^"]+)"/.exec(a) || [])[1]);
+    const off = Number.parseFloat((/data-off="([^"]+)"/.exec(a) || [])[1]);
+    const spot = /data-spot="(tl|tr|r|br|l)"/.test(a);
+    if (!name || !names.includes(name[1])) {
+      bad.push(`${name ? name[1] : 'unnamed'}: not in the pack`);
+    } else if (!(on >= 0 && off > on)) {
+      bad.push(`${name[1]}: window ${on} to ${off}`);
+    } else if (!spot) {
+      bad.push(`${name[1]}: no spot the stylesheet places`);
+    }
+  }
+  check(
+    'index.html: every sticker names one the pack has, with a window and a spot',
+    anchors.length > 0 && bad.length === 0,
+    bad.length ? bad.join('; ') : `${anchors.length} stickers`,
+  );
+
+  /*
+   * TWO STICKERS IN ONE SPOT IS ONE STICKER ON TOP OF ANOTHER, and on a
+   * phone three of the spots are the same place, so the set of them has to
+   * be disjoint too. Both are arithmetic on the windows, which is exactly
+   * the kind of thing that is obvious until an act is retimed.
+   */
+  {
+    const win = anchors.map((t) => ({
+      name: (/data-slap="([^"]+)"/.exec(t) || [, '?'])[1],
+      spot: (/data-spot="([^"]+)"/.exec(t) || [, '?'])[1],
+      on: Number.parseFloat((/data-on="([^"]+)"/.exec(t) || [])[1]),
+      off: Number.parseFloat((/data-off="([^"]+)"/.exec(t) || [])[1]),
+    }));
+    /* Each spot on a wide screen, then the three a phone folds together.
+     * FOLDED is the media query's own list: if that changes, so does this. */
+    const FOLDED = ['tl', 'r', 'br'];
+    const groups = new Map();
+    for (const w of win) {
+      groups.set(w.spot, [...(groups.get(w.spot) || []), w]);
+    }
+    groups.set('the phone band', win.filter((w) => FOLDED.includes(w.spot)));
+    const clashes = [];
+    for (const [where, list] of groups) {
+      const sorted = [...list].sort((a, b) => a.on - b.on);
+      for (let i = 1; i < sorted.length; i += 1) {
+        if (sorted[i].on < sorted[i - 1].off) {
+          clashes.push(`${where}: ${sorted[i - 1].name} and ${sorted[i].name} overlap at T ${sorted[i].on}`);
+        }
+      }
+    }
+    check(
+      'no two stickers share a spot, on a wide screen or in the phone band',
+      clashes.length === 0,
+      clashes.length ? clashes.join('; ') : `${groups.size - 1} spots plus the folded band`,
+    );
+    /* FOLDED above is this check's belief about the stylesheet, and a belief
+     * is worth nothing unless it can be wrong: the rule that moves them all
+     * to one place is the one declaring `right: 14px`, so read its selector
+     * list and compare. Every other spot has to be the hidden one. */
+    const at = index.indexOf('right: 14px');
+    const selector = at > 0 ? index.slice(Math.max(0, at - 260), at) : '';
+    const hiddenAt = index.indexOf('display: none; }', index.indexOf('#slaps'));
+    const hiddenSel = hiddenAt > 0 ? index.slice(Math.max(0, hiddenAt - 160), hiddenAt) : '';
+    const spots = [...new Set(win.map((w) => w.spot))];
+    const foldsInCss = FOLDED.filter((f) => selector.includes(`data-spot="${f}"`));
+    const hidesInCss = spots.filter((f) => !FOLDED.includes(f) && hiddenSel.includes(`data-spot="${f}"`));
+    const shouldHide = spots.filter((f) => !FOLDED.includes(f));
+    check(
+      'the phone folds and hides the spots this check thinks it does',
+      foldsInCss.length === FOLDED.length && hidesInCss.length === shouldHide.length,
+      foldsInCss.length === FOLDED.length && hidesInCss.length === shouldHide.length
+        ? `folds ${FOLDED.join(', ')}, hides ${shouldHide.join(', ')}`
+        : `stylesheet folds ${foldsInCss.join(', ') || 'nothing'} and hides ${hidesInCss.join(', ') || 'nothing'}`,
+    );
+  }
+
+  const cssHalf = /prefers-reduced-motion: reduce\)[\s\S]*\.slap[^{]*\{[^}]*transition:\s*none/.test(index);
+  const cssAnim = /prefers-reduced-motion: reduce\)[\s\S]*\.slap\.on\s*\{[^}]*animation:\s*none/.test(index);
+  const jsHalf = /const due = REDUCED \|\|/.test(mainJs);
+  check(
+    'stickers honour reduced motion in both places',
+    cssHalf && cssAnim && jsHalf,
+    `stylesheet ${cssHalf && cssAnim ? 'stills the slap and its animation' : `INCOMPLETE, transition ${cssHalf ? 'ok' : 'live'}, animation ${cssAnim ? 'ok' : 'LIVE'}`}, main.js ${jsHalf ? 'skips the wait' : 'STILL WAITS'}`,
+  );
+
+  /*
+   * THE SLAP ITSELF. It is the thing the stickers are for, and it is one
+   * @keyframes away from being a fade nobody notices: a rule that loses the
+   * animation, or an animation with a fill mode, which would outrank the
+   * hover for the life of the page.
+   */
+  {
+    const frames = /@keyframes slap\s*\{([\s\S]*?)\n      \}/.exec(index);
+    const used = /\.slap\.on\s*\{[^}]*animation:\s*slap\s+[\d.]+m?s;/.test(index);
+    const noFill = used && !/animation:\s*slap\s+[\d.]+m?s\s+(both|forwards)/.test(index);
+    const squash = frames ? /scale\(0\.9\d*\)/.test(frames[1]) : false;
+    check(
+      'the slap is an animation with an impact in it',
+      Boolean(frames) && used && noFill && squash,
+      `${frames ? 'keyframes present' : 'NO @keyframes slap'}, ${used ? 'used by .slap.on' : 'NOT USED'}, ${noFill ? 'no fill mode' : 'FILL MODE, so hover is dead'}, ${squash ? 'squashes on contact' : 'NO squash, so it is a zoom'}`,
+    );
+  }
 }
 
 const w = Math.max(...rows.map((r) => r[0].length));
