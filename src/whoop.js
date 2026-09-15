@@ -9,13 +9,13 @@
  * two of everything and a boolean in it would belong to neither machine.
  *
  * Ported from WebFPVSimulator/src/render/whoopcraft.js, which models a
- * BetaFPV Air65 II Champion, the machine src/native/plant.c flies as
+ * 65 mm whoop, the machine src/native/plant.c flies as
  * SIM_AIRFRAME_WHOOP65. The numbers are quoted, not chosen:
  *
  *   wheelbase   65 mm motor to motor across the diagonal
  *   width       82.6 mm over the ducts, which is the whole aircraft
  *   duct bore   33 mm, a 31 mm Gemfan 1207 three blade with a 1 mm gap
- *   pack        a 1S LAVA II 280 mAh under the belly
+ *   pack        a 1S 280 mAh pack under the belly
  *   all up      23.4 g
  *
  * THE SCALE IS THE POINT OF THE ACT, so nothing here is rounded up to be
@@ -23,7 +23,7 @@
  * thirtieth of its weight, and against a 711 mm gate it looks it. If a shot
  * needs the machine bigger, the camera moves.
  *
- * IT IS SOLD BARE AND IT IS DRAWN BARE. An Air65 II has no canopy: the flight
+ * IT IS SOLD BARE AND IT IS DRAWN BARE. A whoop has no canopy: the flight
  * controller is the top of the aircraft and you look straight down at the
  * green, and the only tall thing on it is the camera. So the palette lands
  * differently here from drone.js on purpose. The moulding is the light cool
@@ -70,7 +70,7 @@ const ROTOR_Y = 0.0035;
  *
  * Those two are the five inch's, 80 mm forward and 18 mm up, which on a
  * machine 82 mm across would put the camera a body length in front of the
- * aircraft. The Air65 II carries a C03 at the front of its stack: 24 mm
+ * aircraft. The whoop carries a C03 at the front of its stack: 24 mm
  * forward and 12 mm up, which is the same pair src/native/plant.c gives the
  * whoop, and the same 25 degrees of uptilt configs/airframes.js ships it on.
  * A whoop is tilted back less than a five inch because it is slower.

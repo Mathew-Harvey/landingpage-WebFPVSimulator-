@@ -1463,7 +1463,7 @@ function poseFPV(pos, quat, outPos, outQuat) {
  * The five inch carries its camera 80 mm forward and 18 mm up at 30 degrees.
  * On a machine 82 mm across, 80 mm forward is a body length in front of the
  * aircraft: the lens would be outside the ducts, and every gate would pass
- * the camera before it passed the quad. The Air65 II's C03 is 24 mm forward
+ * the camera before it passed the quad. The whoop's C03 is 24 mm forward
  * and 12 mm up, and it is tilted back 25 rather than 30 because the aircraft
  * is a fifth as fast and therefore flies a fifth as nose down.
  *
