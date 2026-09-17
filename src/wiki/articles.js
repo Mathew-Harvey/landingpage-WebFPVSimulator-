@@ -92,14 +92,14 @@ export const ARTICLES = [
     lede: 'Throw a paper aeroplane and it flies. Throw a quadcopter and it tumbles. Everything else on this site follows from that difference.',
     figure: 'unstable',
     air: [
-      'An aeroplane flies straight with nobody helping it. The wings are angled slightly upward, so a gust that tips the aircraft makes the lower wing meet the air at a steeper angle and lift harder than the raised one. The tailplane sits on a long lever arm behind the wing, so a wandering nose gets pushed back into line. That is geometry, not piloting, and it is why a paper aeroplane sorts itself out on the way across a room.',
+      'An aeroplane flies straight with nobody helping it. The wings are angled slightly upward, so a gust that tips the aircraft makes the lower wing meet the air at a steeper angle and lift harder than the raised one. The tailplane sits on a long lever arm behind the wing, so a wandering nose gets pushed back into line. That is geometry, and it is why a paper aeroplane sorts itself out on the way across a room.',
       'A quadcopter has none of that geometry. Four motors on four arms, all pushing equally, and nothing anywhere on the airframe prefers level to any other attitude. Tip it ten degrees and it stays at ten degrees. It does not stay there long, because no real aircraft is built perfectly: one motor sits a fraction of a degree crooked, one propeller is a hundredth of a gram heavy, and those asymmetries add up to a steady push one way. The aircraft does not just fail to correct itself. It diverges.',
       'So something has to watch and push back, continuously. The figure asks how fast. A very good human, reacting to what they can see, manages about five corrections a second, and by the time they have registered the tilt and moved a thumb the aircraft is past saving. The flight controller does it a thousand times a second. That gap is the reason a quadcopter can be flown at all.',
       'Which changes what the rest of this site is describing. You are not flying the aircraft the way a pilot flies an aeroplane. You are sending a computer a rotation rate, the computer is flying the aircraft, and the skill is knowing what to ask for.',
     ],
     lab: [
       'A multirotor in hover has no static stability in attitude. With all four thrusts equal the net moment about the centre of gravity is zero at every orientation, so attitude is a double integrator driven by whatever residual torque exists. There is no restoring term, unlike the dihedral and tailplane contributions that give a fixed wing positive static stability. Any bias, a build tolerance, a propeller imbalance, an unmodelled gust, integrates twice into a divergent attitude.',
-      'The figure runs a sample and hold PD loop on attitude against a constant 1.5 mN m bias, using this airframe\'s roll inertia of 0.0035 kg m^2 and its real torque per unit of mixer output. The instability as the update rate falls is discrete time behaviour, not exaggeration: hold a control output constant for longer than the closed loop wants to respond and the phase lost across the hold eats the margin. For these gains the transition sits between 50 and 100 Hz, which is why 1 kHz is comfortable and 5 Hz is not.',
+      'The figure runs a sample and hold PD loop on attitude against a constant 1.5 mN m bias, using this airframe\'s roll inertia of 0.0035 kg m^2 and its real torque per unit of mixer output. The instability as the update rate falls is discrete time behaviour: hold a control output constant for longer than the closed loop wants to respond and the phase lost across the hold eats the margin. For these gains the transition sits between 50 and 100 Hz, which is why 1 kHz is comfortable and 5 Hz is not.',
       'Position is worse than attitude. Attitude at least stays where it is put without a bias. Horizontal position cannot, because a tilt of theta commands an acceleration of g tan(theta), so a small attitude error becomes a growing velocity and then a growing displacement whatever the pilot does afterwards.',
     ],
     sim: [
@@ -243,7 +243,7 @@ export const ARTICLES = [
       'The figure of merit is enforced rather than assumed: kq = kt^1.5 / (FM sqrt(2 rho A)) with FM = 0.565, inside the plausible band of 0.4 to 0.6. An earlier pair of constants gave 2.01, which is thermodynamically impossible, and sim_bf_debug case 12 now recomputes the value from the compiled constants so it cannot drift back.',
     ],
     sim: [
-      'None of these are CLI fields. Pack charge sets the cell open circuit voltage, 4.2, 3.8 or 3.5 V, and the rest is fixed in the plant. A different airframe is a change to the shape of the physics model, not a value a wiki page can offer.',
+      'None of these are CLI fields. Pack charge sets the cell open circuit voltage, 4.2, 3.8 or 3.5 V, and the rest is fixed in the plant. A different airframe would be a change to the shape of the physics model.',
     ],
     related: ['physics-motor', 'physics-fm', 'physics-sag', 'start-honesty'],
     source: 'src/native/plant.c PlantParams, STAGE1.md',
@@ -254,7 +254,7 @@ export const ARTICLES = [
     chapter: 'physics',
     title: 'Fixed timestep and determinism',
     kicker: 'The plant',
-    lede: 'The aircraft does not know how fast your computer is drawing. That is deliberate, and load-bearing.',
+    lede: 'The aircraft does not know how fast your computer is drawing, which is what lets a replay and a lap time mean anything.',
     figure: 'timestep',
     air: [
       'What you see is a recording of a calculation that is indifferent to the display. If the picture stutters, the aircraft in the calculation is where it would have been anyway, because physics advances in fixed one millisecond steps with no relationship to frames. A recorded flight therefore replays bit for bit on another machine.',

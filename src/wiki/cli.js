@@ -408,7 +408,7 @@ for (const [key, title, air] of [
     related: ['control-filters', 'start-honesty', 'physics-gyro'],
     air: `${air} On a real 8 kHz board this is a hunting spectrogram filter. It is one of the reasons modern 5 inches can run more D than 2018 could.`,
     lab: 'Compiled dyn_notch_filter.c. Betaflight refuses to arm it below DYN_NOTCH_UPDATE_MIN_HZ (2 kHz) because SDFT resolution at 1 kHz is not useful. This build is 1 kHz by contract.',
-    sim: 'GATED. The keys write the real PG so a dump round-trips. At 1 kHz the firmware does what a 1 kHz board does: nothing. Raising the loop rate to un-grey it is a human decision, not a suggestion from this page.',
+    sim: 'GATED. The keys write the real PG so a dump round-trips. At 1 kHz the firmware does what a 1 kHz board does: nothing. Un-greying it means raising the loop rate, which is a human decision.',
     upAir: 'Would hunt more or differently on an 8 kHz board. Here you will not feel a change in the air.',
     upLab: 'PG value changes. SDFT stays disarmed. Trace should not move. scripts/fc-trace.js exists to keep that honest.',
     downAir: 'Same: no flight change here.',
@@ -1616,7 +1616,7 @@ const FEATURE_COPY = {
   AIRMODE: copy({
     title: 'Feature AIRMODE',
     related: ['control-tpa', 'cli-pid_at_min_throttle'],
-    air: 'Keeps PID authority at zero throttle. Race default in spirit. Without it, idle is a brick.',
+    air: 'Keeps PID authority at zero throttle, so the mixer can still speed one motor and slow another. Without it, chopping throttle leaves you with no control at all.',
     lab: 'feature AIRMODE in the dump. Compiled mixer/pid path.',
     sim: 'LIVE feature line.',
     upAir: 'On: flips at zero throttle still have motors that can move.',
@@ -1672,7 +1672,7 @@ function family(field) {
     return copy({
       title: `OSD: ${elName}`,
       related: ['start-honesty', 'physics-lens'],
-      air: `OSD element "${elName}". On a real quad it is drawn over the camera video in the goggles: a timer, a voltage, a warning, a slot on the character grid. This simulator draws no Betaflight OSD pixels. The HUD you see, lap clock and pack, is the game shell, not this field.`,
+      air: `On a real quad the ${elName} element is drawn over the camera video in the goggles, alongside the timer, voltage and warning readouts on the character grid. This simulator draws no Betaflight OSD pixels. The HUD you see, lap clock and pack, is the game shell, not this field.`,
       lab: 'OSD parameter group in 4.5.1. Positions are packed grid coordinates. Alarms are thresholds. Units select metric/imperial for OSD text.',
       sim: inert,
       upAir: 'On a real board this would move, raise, or enable that OSD item. Here it round-trips in a dump and does not change the picture.',
@@ -1824,7 +1824,7 @@ function family(field) {
   return copy({
     title: k,
     related: ['start-honesty'],
-    air: `A real Betaflight 4.5.1 CLI key named ${k}. It is in the catalog so a dump can round-trip.`,
+    air: 'A real Betaflight 4.5.1 key, carried in this catalog so a dump round-trips unchanged.',
     lab: field.pg ? `Parameter group ${field.pg}.` : 'No PG mapping in the live table.',
     sim: inert || `${field.status}. Would need the matching Betaflight subsystem compiled.`,
     upAir: 'On a board that implements this key, the labelled quantity would increase. Here it does not fly unless status is LIVE (and this family is the fallback, so it is not).',
