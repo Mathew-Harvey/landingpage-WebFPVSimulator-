@@ -456,7 +456,7 @@ export class WikiView {
 
     const head = el('div', 'wiki-rail-head');
     head.append(el('div', 'wiki-rail-kicker', 'The reading path'));
-    head.append(el('p', 'wiki-rail-note', 'Fifteen pages, in order, that make the whole argument. Everything else is reference you can reach from the list below or from search.'));
+    head.append(el('p', 'wiki-rail-note', 'Fifteen pages, in order. Everything else is reference, reachable from the list below or from search.'));
     const bar = el('div', 'wiki-progress');
     const fill = el('div', 'wiki-progress-fill');
     fill.style.width = `${((here || 0) / JOURNEY.length) * 100}%`;

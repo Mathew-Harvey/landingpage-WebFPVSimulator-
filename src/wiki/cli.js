@@ -107,7 +107,7 @@ for (const axis of ['roll', 'pitch', 'yaw']) {
     related: ['control-ff', 'physics-radio', `cli-p_${axis}`, 'cli-feedforward_smooth_factor'],
     air: `Feedforward on ${a.axis} starts the motors when you move ${a.stick}, before the gyro has had time to be wrong. It is the connected feeling. It is also the first thing a jittery radio makes ugly.`,
     lab: `F gain on the setpoint derivative after averaging, smoothing, jitter attenuation, boost and max-rate limit. Not an error term. A perfect 250 Hz grid makes this derivative cleaner than ExpressLRS will.`,
-    sim: `LIVE. Writes pid[].F. Tune F on the ELRS 250 Hz link preset if you actually fly ELRS, or you will ship a twitchy dump.`,
+    sim: `LIVE. Writes pid[].F. Tune F on the ELRS 250 Hz link preset if you fly ELRS, or you will ship a twitchy dump.`,
     upAir: `${a.Axis} leads the stick. Too much overshoots, especially at the start of a move.`,
     upLab: `Higher F reduces P's workload on stick tracking and can hide a low P in plots. Disturbance rejection does not improve. Jitter becomes motor activity.`,
     downAir: `You wait a beat after the stick. The craft feels like it thinks about it.`,
@@ -156,7 +156,7 @@ put('d_max_gain', copy({
   sim: 'LIVE.',
   upAir: 'Flicks get their D faster. Hover stays on D min if the floor is low.',
   upLab: 'Higher gain on the D scheduler. Can make D look like it is always on if you fly busily.',
-  downAir: 'D stays near the min unless you really slam it.',
+  downAir: 'D stays near the min unless you slam the stick.',
   downLab: 'Slower blend. A timid stick never reaches d_roll.',
 }));
 put('d_max_advance', copy({
@@ -181,7 +181,7 @@ function lpfPut(key, title, where, related) {
     sim: 'LIVE. Gyro path is compiled gyro.c. D-term path is compiled pid_init.c. The shake they are smoothing is injected in bf_glue.c, not in the rigid body.',
     upAir: 'If this is a cutoff in Hz, raising it lets more noise through and costs less delay. The craft feels more connected and more raw.',
     upLab: 'Higher cutoff, less phase lag, more D-term hash. Measure in a punch, not a hover.',
-    downAir: 'Smoother, later, easier to fly badly. Too low and the craft feels like it is in gravy.',
+    downAir: 'Smoother, later, easier to fly badly. Too low and the craft feels like it is wading.',
     downLab: 'More lag in the loop. You will often raise P to compensate and then oscillate. Do not.',
   }));
 }
@@ -319,9 +319,9 @@ RPM(
   'How many multiples of motor RPM to notch. 1 is the once-per-rev wobble. 2 and 3 are twice and three times that.',
   'rpm_filter_harmonics. Each harmonic is a tracking notch. More harmonics is more delay and more chance of notching something useful.',
   'Notches more of the spectrum around RPM. Can calm a bent bell. Can also eat authority.',
-  'More SDFT/notch work at 1 kHz. Diminishing returns past the lines that actually exist.',
+  'More SDFT/notch work at 1 kHz. Diminishing returns past the lines that exist.',
   'Fewer notches. Cleaner loop, dirtier gyro at those multiples.',
-  '1 is the imbalance line this sim actually injects.',
+  '1 is the imbalance line this sim injects.',
 );
 RPM(
   'rpm_filter_weights_1',
@@ -442,7 +442,7 @@ put('iterm_relax', copy({
 put('iterm_relax_type', copy({
   title: 'I-term relax type',
   related: ['cli-iterm_relax'],
-  air: 'GYRO: relax when the craft is actually rotating fast. SETPOINT: relax when you ask it to. Setpoint is stick-driven and works even if the craft has not caught up.',
+  air: 'GYRO: relax when the craft is rotating fast. SETPOINT: relax when you ask it to. Setpoint is stick-driven and works even if the craft has not caught up.',
   lab: 'itermRelaxType_e.',
   sim: 'LIVE.',
   upAir: 'N/A as a number. SETPOINT is usually what people want for acro.',
@@ -544,7 +544,7 @@ put('thrust_linear', copy({
   related: ['control-mixer', 'physics-fm'],
   air: 'Compensation for thrust not being linear with motor output (it goes with RPM squared, and RPM is not linear with duty). Makes stick throttle feel more even.',
   lab: 'thrustLinearization in the PID profile, mixer.c. 0 is off.',
-  sim: 'LIVE. The plant really is kt ω², so this compensation is pointed at a real nonlinearity, not a decorative one.',
+  sim: 'LIVE. The plant thrust is kt ω², so this compensation is pointed at a nonlinearity that is present here.',
   upAir: 'More compensation. Hover and punch spacing on the stick changes.',
   upLab: 'Higher percent of the linearisation mix.',
   downAir: 'Toward 0: raw, hover crammed into the bottom of the stick on this 9.2 TWR machine.',
@@ -555,10 +555,10 @@ put('transient_throttle_limit', copy({
   related: ['control-mixer'],
   air: 'Limits how fast throttle in the mixer is allowed to change, to spare the ESC and the pack a brick-wall punch.',
   lab: 'transient_throttle_limit.',
-  sim: 'LIVE. The plant has no ESC current ceiling, so this is one of the few firmware-side current softeners that actually exists here.',
+  sim: 'LIVE. The plant has no ESC current ceiling, so this is one of the few firmware-side current softeners that does anything here.',
   upAir: 'More limiting: punches feel rounded.',
   upLab: 'Lower slew on mixer throttle.',
-  downAir: 'Sharper punches, sillier millisecond current spikes in sim_state.',
+  downAir: 'Sharper punches, larger millisecond current spikes in sim_state.',
   downLab: 'Those spikes still do not reach thrust; rotor lag eats them.',
 }));
 
@@ -587,7 +587,7 @@ put('launch_trigger_allow_reset', copy({
 put('launch_trigger_throttle_percent', copy({
   title: 'Launch trigger throttle %',
   related: ['cli-launch_control_mode'],
-  air: 'How far you must push throttle to leave the launch hold and actually go.',
+  air: 'How far you must push throttle to leave the launch hold and go.',
   lab: 'launchControlThrottlePercent, cap 90.',
   sim: 'LIVE.',
   upAir: 'Harder to trigger. Safer on a twitchy finger.',
@@ -621,13 +621,13 @@ put('launch_control_gain', copy({
 put('anti_gravity_gain', copy({
   title: 'Anti-gravity gain',
   related: ['control-tpa', 'cli-anti_gravity_p_gain'],
-  air: 'How much extra I (and the loop around it) you get when throttle changes fast. It exists so a punch does not bow. It is not a G sensor.',
+  air: 'How much extra I (and the loop around it) you get when throttle changes fast. It exists so a punch does not bow. There is no G sensor behind it.',
   lab: 'anti_gravity_gain, plus the ANTI_GRAVITY feature flag. mixTable updates the throttle high-pass that drives it.',
   sim: 'LIVE. Feature ANTI_GRAVITY is a separate LIVE feature line.',
   upAir: 'Punches stay flatter. Too much and the craft leaps in attitude when you blip throttle.',
   upLab: 'Larger I boost on throttle transients.',
   downAir: 'Bows on punch. Classic, visible in the camera.',
-  downLab: '0 with the feature on is still "almost off." Turning the feature off is the true off.',
+  downLab: '0 with the feature on still leaves the code path running. Turn the feature off for a real off.',
 }));
 put('anti_gravity_cutoff_hz', copy({
   title: 'Anti-gravity cutoff Hz',
@@ -699,7 +699,7 @@ put('feedforward_jitter_factor', copy({
 put('feedforward_boost', copy({
   title: 'Feedforward boost',
   related: ['control-ff'],
-  air: 'Extra FF at the start of a move, then it settles. The "breakout" feeling.',
+  air: 'Extra FF at the start of a move, which then settles. Pilots call it breakout.',
   lab: 'feedforward_boost.',
   sim: 'LIVE.',
   upAir: 'Harder initial bite. Can overshoot the first 50 ms.',
@@ -722,7 +722,7 @@ put('feedforward_max_rate_limit', copy({
 put('tpa_mode', copy({
   title: 'TPA mode',
   related: ['control-tpa', 'cli-tpa_rate'],
-  air: 'PD: turn down P and D as throttle rises. D: only D. D-only is common on modern 5 inches that want hover P and punch D to be different stories.',
+  air: 'PD: turn down P and D as throttle rises. D: only D. D-only is common on modern 5 inches that want hover P and punch D set independently.',
   lab: 'tpaMode_e PD or D.',
   sim: 'LIVE.',
   upAir: 'Not numeric. PD is more TPA, D is narrower.',
@@ -735,7 +735,7 @@ put('tpa_rate', copy({
   related: ['control-tpa', 'cli-tpa_breakpoint'],
   air: 'How much to attenuate above the breakpoint, as a percent. 0 is off. 70 is a heavy cut.',
   lab: 'tpa_rate, 0 to 100.',
-  sim: 'LIVE. This plant\'s thrust is strongly throttle-dependent (TWR 9.2). TPA is not optional flavour.',
+  sim: 'LIVE. This plant\'s thrust is strongly throttle-dependent (TWR 9.2), so TPA is doing real work here.',
   upAir: 'Softer on punch, more stable, less authority at the top of the stick.',
   upLab: 'Larger attenuation.',
   downAir: 'Hover tune follows you to full throttle. Often a buzz.',
@@ -777,7 +777,7 @@ put('tpa_low_breakpoint', copy({
 put('tpa_low_always', copy({
   title: 'TPA low always',
   related: ['cli-tpa_low_rate'],
-  air: 'Whether low-throttle TPA applies even when you are not in the "low" story the firmware otherwise uses (for example during certain dynamic idle conditions).',
+  air: 'Whether low-throttle TPA applies outside the low-throttle case the firmware otherwise restricts it to, for example during some dynamic idle conditions.',
   lab: 'tpa_low_always OFF/ON.',
   sim: 'LIVE.',
   upAir: 'ON: low TPA is more willing to apply.',
@@ -879,10 +879,10 @@ put('abs_control_cutoff', copy({
 put('use_integrated_yaw', copy({
   title: 'Integrated yaw',
   related: ['physics-yaw', 'control-mixer'],
-  air: 'A mixer mode that treats yaw as an integral of motor difference rather than a direct torque demand. It can make yaw feel more "in the world" and can also feel like yaw lag. Default is off on most race dumps.',
+  air: 'A mixer mode that treats yaw as an integral of motor difference rather than a direct torque demand. It can make yaw feel more anchored and can also read as yaw lag. Default is off on most race dumps.',
   lab: 'use_integrated_yaw OFF/ON, plus integrated_yaw_relax.',
   sim: 'LIVE if the compiled mixer honours it, which this build does compile.',
-  upAir: 'ON: yaw changes character. Try it on grass, not in a gate.',
+  upAir: 'ON: yaw changes character. Try it over grass before you fly it in a gate.',
   upLab: 'Enables the integrated yaw path in pid/mixer.',
   downAir: 'OFF: classic yaw.',
   downLab: 'OFF.',
@@ -908,7 +908,7 @@ put('vbat_sag_compensation', copy({
   upAir: 'More compensation. A sagged pack stays twitchy. A full pack is unchanged.',
   upLab: 'Higher percent.',
   downAir: '0: the plant gets softer as it sags, which is physical, and the PID does not pretend otherwise.',
-  downLab: '0 is honest. Non-zero is a feel match to a "pack that does not fall off."',
+  downLab: '0 is the plant\'s own sag. Non-zero matches the feel of a pack that does not fall off.',
 }));
 
 put('dyn_idle_min_rpm', copy({
@@ -1074,7 +1074,7 @@ put('angle_limit', copy({
   air: 'Maximum tilt angle mode will ask for, in degrees. This is why you cannot flip in angle.',
   lab: 'angle_limit.',
   sim: 'LIVE in angle mode.',
-  upAir: 'Steeper max tilt. More of a "almost acro" angle mode.',
+  upAir: 'Steeper max tilt, so angle mode starts to feel like acro.',
   upLab: 'Higher deg cap.',
   downAir: 'Flatter. Safer hover, useless for a gate.',
   downLab: 'Lower cap.',
@@ -1138,7 +1138,7 @@ function simp(key, title, air) {
     title,
     related: ['control-simplified', 'control-pid'],
     air,
-    lab: 'A simplified_tuning.c slider. 100 is "as authored." 0 to 200 typically. apply overwrites the raw gains.',
+    lab: 'A simplified_tuning.c slider. 100 leaves the authored gains alone, and the usual range is 0 to 200. apply overwrites the raw gains.',
     sim: 'LIVE. Race presets in configs/ depend on this. If apply is missing, you fly defaults and think the preset is the plant.',
     upAir: 'More of that slider\'s quantity.',
     upLab: 'Higher multiplier, then apply.',
@@ -1168,7 +1168,7 @@ put('simplified_dterm_filter', copy({
 put('simplified_dterm_filter_multiplier', copy({
   title: 'Simplified D-term filter multiplier',
   related: ['cli-simplified_dterm_filter'],
-  air: 'Filter slider for D-term Hz. Higher is typically less filtering (higher Hz), matching Configurator\'s "multiplier" language. Confirm on the Hz fields after apply.',
+  air: 'Filter slider for D-term Hz. Higher is typically less filtering (higher Hz), matching the multiplier language Configurator uses. Confirm on the Hz fields after apply.',
   lab: 'simplified_dterm_filter_multiplier, 10 to 200 style.',
   sim: 'LIVE when the simplified D filter switch is on.',
   upAir: 'Usually rawer D (check the Hz it wrote).',
@@ -1389,7 +1389,7 @@ put('rc_smoothing_auto_factor', copy({
 put('rc_smoothing_auto_factor_throttle', copy({
   title: 'RC smoothing auto factor (throttle)',
   related: ['cli-rc_smoothing'],
-  air: 'The throttle copy of the auto factor. Throttle FF is not a thing in the same way; this is about a smooth punch.',
+  air: 'The throttle copy of the auto factor. Throttle has no feedforward in the same sense; this one is about a smooth punch.',
   lab: 'rc_smoothing_auto_factor_throttle.',
   sim: 'LIVE.',
   upAir: 'Usually smoother throttle.',
@@ -1467,7 +1467,7 @@ put('max_check', copy({
 put('airmode_start_throttle_percent', copy({
   title: 'Airmode start throttle %',
   related: ['control-tpa', 'cli-pid_at_min_throttle'],
-  air: 'Throttle percent where airmode becomes active, if it is not already forced on. Racers often want it always.',
+  air: 'Throttle percent where airmode becomes active, if it is not already forced on. Racers usually want it on everywhere.',
   lab: 'airModeActivateThreshold.',
   sim: 'LIVE. Feature AIRMODE is separate. The shell does not expose an AUX to turn airmode off in flight.',
   upAir: 'Airmode waits for more throttle.',
@@ -1571,9 +1571,9 @@ put('yaw_motors_reversed', copy({
   related: ['physics-yaw', 'start-loop'],
   air: 'Flips the mixer yaw sign for props-out versus props-in. If this does not match the actual spin of the bells, yaw runs away.',
   lab: 'yaw_motors_reversed. mixer.c negates yaw PID when this is off, matching the plant\'s props-in table.',
-  sim: 'LIVE. The plant spin table does not flip with this field. Turn it on and you will build a yaw runaway. That is the correct bug, not a wiki error.',
+  sim: 'LIVE. The plant spin table does not flip with this field, so turning it on builds a yaw runaway. That is the plant and the firmware disagreeing, which is what this field is for.',
   upAir: 'ON: yaw inverts relative to this plant. Do not.',
-  upLab: 'Sign flip. The glue comments are the bible.',
+  upLab: 'Sign flip. The glue comments carry the full sign chain.',
   downAir: 'OFF: matches PLANT_SPIN as shipped.',
   downLab: 'Off.',
 }));
@@ -1710,7 +1710,7 @@ function family(field) {
   if (k.startsWith('led_') || k.startsWith('ledstrip')) {
     return copy({
       title: k,
-      air: 'LED strip colour, mode, and mapping. Pretty, heavy on a PDB, irrelevant to rate tracking.',
+      air: 'LED strip colour, mode, and mapping. Heavy on a PDB and irrelevant to rate tracking.',
       lab: 'LEDSTRIP PG.',
       sim: inert,
       upAir: 'Would change lights. No LEDs in the plant.',
@@ -1752,7 +1752,7 @@ function family(field) {
       lab: 'Setup PGs. Acc-based modes are not flown. No mag heading. No baro altitude.',
       sim: inert,
       upAir: 'Would calibrate or align a real board. Not here.',
-      upLab: 'No those sensors.',
+      upLab: 'Those sensors do not exist here.',
       downAir: 'Same.',
       downLab: 'Same.',
     });
@@ -1824,7 +1824,7 @@ function family(field) {
   return copy({
     title: k,
     related: ['start-honesty'],
-    air: `A real Betaflight 4.5.1 CLI key named ${k}. It is in the catalog so a dump can round-trip. It is not a mystery PID.`,
+    air: `A real Betaflight 4.5.1 CLI key named ${k}. It is in the catalog so a dump can round-trip.`,
     lab: field.pg ? `Parameter group ${field.pg}.` : 'No PG mapping in the live table.',
     sim: inert || `${field.status}. Would need the matching Betaflight subsystem compiled.`,
     upAir: 'On a board that implements this key, the labelled quantity would increase. Here it does not fly unless status is LIVE (and this family is the fallback, so it is not).',

@@ -30,7 +30,7 @@
  */
 
 export const CHAPTERS = [
-  { id: 'start', title: 'The journey', note: 'What FPV is, what the four motors are actually doing, and what this simulator computes.' },
+  { id: 'start', title: 'The journey', note: 'What FPV is, what the four motors are doing, and what this simulator computes.' },
   { id: 'physics', title: 'The aircraft', note: 'Everything the airframe itself does, before the computer gets involved.' },
   { id: 'control', title: 'The controller', note: 'Betaflight 4.5.1, compiled, not rewritten.' },
   { id: 'cli', title: 'Every setting', note: 'One page per Betaflight 4.5.1 catalog key, including the grey ones.' },
@@ -63,12 +63,12 @@ export const ARTICLES = [
     chapter: 'start',
     title: 'How a racing drone actually flies',
     kicker: 'Start here',
-    lede: 'A racing quad is a small rigid body with four spinning discs, a radio, and a computer that tries 1,000 times a second to make the body rotate at the rate you asked for. This wiki is the map of that loop as the simulator actually builds it.',
+    lede: 'A racing quad is a small rigid body with four spinning discs, a radio, and a computer that tries 1,000 times a second to make the body rotate at the rate you asked for. This wiki is that loop as the simulator builds it.',
     figure: 'loop',
     air: [
-      'First-person view flying is a camera on a quadcopter, goggles on a face, and two sticks. The left stick (Mode 2) is throttle and yaw. The right stick is roll and pitch. There are no ailerons. There is no elevator. There is no brake. You point the camera where you want to go and you push.',
-      'That sounds like a toy helicopter. It is not. A 5 inch race quad on 6S has around nine times its own weight in static thrust. It can leave a hover and be at building height in a couple of seconds. It can also eat itself in a vortex of its own wake if you descend into the air you just pushed. The sport is learning those instincts until they are faster than thought.',
-      'This page is not How to fly. How to fly is the sticks. This is why the sticks do what they do, why a tune file changes the feel, and which of those things this browser is actually computing.',
+      'First-person view flying is a camera on a quadcopter, goggles on a face, and two sticks. The left stick (Mode 2) is throttle and yaw. The right stick is roll and pitch. There are no ailerons, no elevator and no brake. You point the camera where you want to go and you push.',
+      'A 5 inch race quad on 6S has around nine times its own weight in static thrust. It leaves a hover and reaches building height in a couple of seconds. Descend into the air it just pushed and it can drop into a vortex of its own wake. Learning to race is mostly building instincts for both.',
+      'How to fly is the sticks, and it is a different screen. This page is why the sticks do what they do, why a tune file changes the feel, and which of those things this browser computes.',
     ],
     lab: [
       'The architecture is two machines in one WASM module. Betaflight 4.5.1\'s control loop (rates, PID, filters, mixer, rc command handling) is compiled from vendor/betaflight. The plant (motors, props, battery, aero, rigid body) is C in src/native/plant.c. They step together at a fixed 1000 Hz. Rendering reads a snapshot and interpolates. Frame time never reaches the integrator.',
@@ -76,8 +76,8 @@ export const ARTICLES = [
       'Determinism is a requirement. No relaxed SIMD. No JavaScript Math.sin, Math.cos or Math.pow on the physics path. A compiled libm in the module, a seeded xorshift32 for wash and gyro hash, and the same input stream must hash identically in Node and in Chrome.',
     ],
     sim: [
-      'Stage 1\'s original brief was a grey plane and a quad. The product around it grew: maps, a configurator, a track builder. The plant is still one 5 inch airframe. Changing motor_kv in the configurator stores a number and does not retune ke. Pack charge in Settings does. That honesty is the point of the grey rows, and of this wiki.',
-      'Read the plant chapter before you chase a PID number. A lot of what people call "tune" is the airframe: sag, advance ratio, H-force, wash. The controller chapter is what compiled Betaflight does with that plant. Every setting is the last chapter, including the ones that do nothing here.',
+      'Stage 1\'s brief was a grey plane and a quad. The product around it grew: maps, a configurator, a track builder. The plant is still one 5 inch airframe. Changing motor_kv in the configurator stores a number and does not retune ke. Pack charge in Settings does reach the plant. The grey rows exist so that difference is visible.',
+      'Read the aircraft chapter before you chase a PID number. A lot of what gets called tune is the airframe: sag, advance ratio, H-force, wash. The controller chapter is what compiled Betaflight does with that airframe. Every setting is the last chapter, including the ones that do nothing here.',
     ],
     related: ['start-nowings', 'start-loop', 'physics-airframe', 'start-honesty'],
     source: 'CLAUDE.md, STAGE1.md, src/native/sim_abi.h',
@@ -88,13 +88,13 @@ export const ARTICLES = [
     chapter: 'start',
     title: 'Why it needs a computer',
     kicker: 'The journey',
-    lede: 'Let go of a paper plane and it glides. Let go of a quadcopter and it tips over. Everything else on this site follows from that one difference.',
+    lede: 'Let go of a paper plane and it glides. Let go of a quadcopter and it tips over. Everything else on this site follows from that difference.',
     figure: 'unstable',
     air: [
-      'An aeroplane mostly wants to fly straight. Its wings are angled slightly upwards from the body, its tail is a long way behind the wing, and if a gust knocks it sideways all of that geometry quietly pushes it back. You can throw a paper plane across a room and it will sort itself out on the way.',
-      'A quadcopter has none of that. It is four motors on the ends of four arms, and when all four push equally there is nothing at all trying to keep it level. Tip it ten degrees and it stays at ten degrees, then tips further, because no real aircraft is perfectly balanced: one motor sits a fraction of a degree crooked, one propeller weighs a fraction of a gram more, and those tiny differences are a steady push in one direction.',
-      'So something has to be watching, all the time, and pushing back. Move the slider in the figure to see how fast that something needs to be. A very good human, reacting to something they can see, manages about five corrections a second. It is nowhere near enough: the aircraft is upside down before you have finished noticing. The flight controller does it a thousand times a second, and that is the only reason a quadcopter can be flown at all.',
-      'This is worth sitting with, because it changes what the rest of this site is about. You are never really flying the aircraft. You are telling a computer what you would like, a thousand times a second, and the computer is flying the aircraft.',
+      'An aeroplane mostly wants to fly straight. Its wings are angled slightly upwards from the body, its tail is a long way behind the wing, and if a gust knocks it sideways all of that geometry pushes it back. Throw a paper plane across a room and it sorts itself out on the way.',
+      'A quadcopter has none of that. It is four motors on the ends of four arms, and when all four push equally nothing is trying to keep it level. Tip it ten degrees and it stays at ten degrees, then tips further, because no real aircraft is perfectly balanced: one motor sits a fraction of a degree crooked, one propeller weighs a fraction of a gram more, and those tiny differences are a steady push in one direction.',
+      'Something has to watch and push back, continuously. Drag the slider in the figure to see how fast. A very good human reacting to what they can see manages about five corrections a second, and the aircraft is upside down before they have finished noticing. The flight controller does it a thousand times a second, which is the only reason a quadcopter can be flown at all.',
+      'So you are not flying the aircraft. You are telling a computer what rotation you want, a thousand times a second, and the computer is flying the aircraft. The rest of this site is about that arrangement.',
     ],
     lab: [
       'A multirotor in hover is not statically stable in attitude. With equal rotor thrusts the net moment about the centre of gravity is zero at every orientation, so attitude is a double integrator driven by whatever residual torque exists: there is no restoring term, unlike the dihedral and tailplane contributions that give a fixed wing positive static stability. Any bias, build tolerance cant, prop mass imbalance, or an unmodelled gust, integrates twice into a divergent attitude.',
@@ -102,11 +102,11 @@ export const ARTICLES = [
       'The position states are worse than the attitude states. Attitude at least stays where it is put in the absence of a bias; horizontal position cannot, because a tilt of theta commands a horizontal acceleration of g tan(theta), so a small attitude error becomes a growing velocity and then a growing displacement whatever the pilot does about it afterwards.',
     ],
     sim: [
-      'The plant in this simulator contains no stabilising term of any kind, because a real airframe has none either. Every bit of the steadiness you feel when you fly the sim is being produced by the compiled Betaflight loop, at 1 kHz, out of gyro readings. Turn the gains down far enough on the PID page and you can watch this page happen to you.',
+      'The plant contains no stabilising term, because a real airframe has none. All of the steadiness you feel in the sim comes from the compiled Betaflight loop, at 1 kHz, out of gyro readings. Turn the gains far enough down on the PID page and the aircraft does what this page describes.',
       'The steady push the figure uses is the motor cant table, which is a modelled build tolerance rather than a measurement. See Motor cant and roll-to-yaw coupling for what it is and why it is there.',
     ],
     related: ['start-loop', 'control-pid', 'physics-cant', 'control-angle'],
-    source: 'src/native/plant.c, and the absence of any restoring moment in it',
+    source: 'src/native/plant.c, which contains no restoring moment',
   }),
 
   page({
@@ -118,8 +118,8 @@ export const ARTICLES = [
     figure: 'tilt',
     air: [
       'An aeroplane holds itself up with wings and changes direction with control surfaces that bite the relative wind. A quad holds itself up by pointing four props at the ground, more or less, and it changes direction by spinning. Roll right means the right motors slow and the left motors speed up, the craft rotates, and now a component of thrust is pulling you right. Pitch and yaw are the same idea on the other axes.',
-      'That is why a quad has no brakes. To slow down you pitch up (or roll out of the line) so thrust fights the velocity you already have, plus the discs and the body drag. Chopping throttle in a fast descent does not "idle reverse." It drops you into your own wake.',
-      'Acro mode, which is what a racer flies, does not level the craft when you centre the stick. The stick is a rate demand: how many degrees per second to rotate. Hands off means "stop rotating," not "return to level." Angle mode does the other job, and keyboard flight in this sim raises it because a key is a poor rate stick.',
+      'That is why a quad has no brakes. To slow down you pitch up (or roll out of the line) so thrust fights the velocity you already have, plus the discs and the body drag. Chopping throttle in a fast descent does not reverse thrust. It drops you into your own wake.',
+      'Acro mode, which is what a racer flies, does not level the craft when you centre the stick. The stick is a rate demand: how many degrees per second to rotate. Hands off means stop rotating, not return to level. Angle mode does the other job, and keyboard flight in this sim raises it because a key is a poor rate stick.',
     ],
     lab: [
       'Newton 2 for a rigid body: m a = sum F, I dot(omega) + omega × (I omega) = sum tau. The plant integrates those with a diagonal inertia, a quaternion attitude, and semi-implicit Euler on the linear state, all at dt = 0.001 s. Gravity is 9.80665 m/s² along world −z after the body forces are rotated out.',
@@ -127,7 +127,7 @@ export const ARTICLES = [
       'There is no lifting surface. Plan, front and side quadratic drag (0.5 rho CdA |v| v in the body frame) plus the rotor H-force are the only translational damping besides gravity and thrust. A banked turn without rudder therefore washes out the way an acro quad does: the nose does not magically track the velocity vector.',
     ],
     sim: [
-      'The How to fly screen is the short version of this page, with live gimbals. This page is the reason those gimbals are enough. The plant will not grow wings. If a trajectory feels like an aeroplane, something in the drag or the H-force is wrong, and that is a plant bug, not a tune.',
+      'The How to fly screen is the short version of this page, with live gimbals. If a trajectory feels like an aeroplane, something in the drag or the H-force is wrong. That is a plant bug, not a tune.',
     ],
     related: ['start-loop', 'physics-drag', 'physics-hforce', 'control-rates'],
     source: 'src/native/sim_abi.h, src/native/plant.c',
@@ -138,17 +138,17 @@ export const ARTICLES = [
     chapter: 'start',
     title: 'The closed loop',
     kicker: 'The journey',
-    lede: 'You do not fly motors. You fly a rate loop that flies motors. The plant is what the rate loop is standing on.',
+    lede: 'You do not fly motors. You fly a rate loop that flies motors. The airframe is what that loop is standing on.',
     figure: 'loop',
     air: [
       'Move the roll stick. The radio sends a packet. The flight controller turns that packet into a desired roll rate using your rates curve. It looks at the gyro. The difference is error. PID turns error into four motor duties. The motors change RPM, the props change thrust, the craft rotates, the gyro sees it, and the error shrinks. That conversation happens a thousand times a second.',
       'If the gyro is lying (vibration), the loop fights ghosts. If the motors are late (inertia, sag, advance ratio), the loop overshoots. If you ask for more rate than the airframe can produce, the motors pin and the craft does what physics allows, not what the sticker said.',
-      'Feedforward is the cheat code that is not a cheat: it looks at how fast the stick is moving and starts the motors before the error appears. A perfect radio makes feedforward unnaturally clean. That is why this sim has a radio model you can turn on.',
+      'Feedforward looks at how fast the stick is moving and starts the motors before the error appears. A perfect radio makes it unnaturally clean, which is why this sim has a radio model you can turn on.',
     ],
     lab: [
       'Each 1 ms step in bf_glue.c: gyro device read (plant omega plus modelled imbalance, quantised as a 2000 deg/s 16-bit gyro), gyroFiltering, updateRcCommands and processRcCommand on the simulated clock, pidController, mixTable. Motor duties come back as the plant\'s duty vector. Dynamic idle and the RPM filter see getMotorFrequencyHz from the plant, lagged like DShot telemetry.',
       'The PID runs in degrees per second. The plant runs in radians per second. The glue converts. TPA and anti-gravity\'s throttle filter are driven from mixTable, matching Betaflight\'s own order. Calling pidController with a stale throttle was a real bug; it is called out in bf_glue.c so it is not reintroduced.',
-      'Input samples carry their own timestamps. sim.c applies a sample before the 1 ms step that contains it, never by wall-clock arrival. Irregular packet times feeding a fixed-step integrator is what people read as floaty if you get this wrong.',
+      'Input samples carry their own timestamps. sim.c applies a sample before the 1 ms step that contains it, never by wall-clock arrival. Irregular packet times into a fixed-step integrator read as floaty.',
     ],
     sim: [
       'Save on the flight-controller screen is sim_init of a CLI dump, the same path as dropping a Betaflight diff on the page. The UI never writes a PID into the plant. Grey options are named. LIVE options reach compiled 4.5.1 parameter groups.',
@@ -165,15 +165,15 @@ export const ARTICLES = [
     lede: 'If a Betaflight behaviour is missing, the fix is to compile more of Betaflight, not to approximate it in JavaScript.',
     figure: 'boundary',
     air: [
-      'Every racing sim is tempted to write "a PID" in the game engine. It will look like a PID in a plot and feel like a different aircraft, because the thing a pilot has in their head as "Betaflight" is not three gains. It is the D-term filter chain, TPA, iterm relax, anti-gravity, feedforward averaging, the mixer, airmode, and a dozen other clauses that only exist because somebody crashed into a real edge case.',
-      'This project vendors Betaflight 4.5.1 and compiles the control loop to WASM. Your dump is a dump. Simplified sliders run simplified_tuning.c. The rates graph on the FC screen is a preview; the plant still runs applyRates from fc/rc.c.',
+      'Most racing sims write their own PID in the game engine. It plots like a PID and flies like a different aircraft, because what a pilot means by Betaflight is not three gains. It is the D-term filter chain, TPA, iterm relax, anti-gravity, feedforward averaging, the mixer, airmode, and a dozen other clauses that exist because somebody crashed into an edge case.',
+      'This project vendors Betaflight 4.5.1 and compiles the control loop to WASM. A dump you paste in is read by that firmware, not by a parser written to imitate it. Simplified sliders run simplified_tuning.c. The rates graph on the FC screen is a preview; the plant still runs applyRates from fc/rc.c.',
     ],
     lab: [
       'Sources compiled include pid.c, pid_init.c, mixer.c, mixer_init.c, rc.c, rc_controls.c, controlrate_profile.c, gyro filtering, rpm_filter, dyn_notch_filter (which then refuses to arm at 1 kHz), and simplified_tuning.c. Hardware is stubbed: no UART, no MSP, no OSD pixels, no GPS. Patches live in patches/ and are applied at build time. git diff --stat vendor/betaflight must be empty after a build.',
       'Licence is GPLv3 because this is a derivative work. Every file in this repository carries that header. Do not add a dependency with an incompatible licence.',
     ],
     sim: [
-      'The flight-controller screen is a homage of Configurator 10.10: tab names, 4.5.1 fields, dark grey and orange. It is not that app. No Vue, no MSP, no iframe. Save writes CLI text. Readback dumps the live parameter groups so the screen cannot lie.',
+      'The flight-controller screen is modelled on Configurator 10.10: tab names, 4.5.1 fields, dark grey and orange. It is not that app. No Vue, no MSP, no iframe. Save writes CLI text. Readback dumps the live parameter groups so the screen cannot lie.',
     ],
     related: ['control-pid', 'start-honesty', 'cli-index'],
     source: 'CLAUDE.md, src/native/bf/bf_glue.c, patches/',
@@ -211,15 +211,15 @@ export const ARTICLES = [
     figure: 'anatomy',
     air: [
       'In the air is the version you can tell someone at the field. In the lab is the version you could defend in a review. In this simulator is the seam: which file, which status, which check, which thing is not modelled.',
-      'Figures animate unless you asked the browser for reduced motion. They are arguments, not photographs. The caption says what they are arguing.',
-      'Flight feel itself is not verifiable here. npm run verify is the honest signal for the plant. A wiki page that cites a check is citing a number from that harness, not a vibe.',
+      'Every figure has a control under it. Drag it, and the numbers and the drawing move together. Figures animate unless you asked the browser for reduced motion. They are arguments rather than photographs, and the caption says what each one is arguing.',
+      'Flight feel is not verifiable here. npm run verify is the signal for the plant. A page that cites a check is citing a number out of that harness.',
     ],
     lab: [
       'Related links at the foot of a page are the intended path, not a graph of every mention. CLI pages link back to the family article (PID, rates, filters) so a single gain is never an orphan number.',
       'Sources listed on a page are file paths in the simulator repository. They are not citations of textbooks. Where a textbook result is used (Glauert inflow, momentum-theory figure of merit, VRS gap shape), the plant comment is the citation, because that is where the implementation chose a form.',
     ],
     sim: [
-      'This wiki is a page on the landing site, not a screen inside the simulator. It does not step the integrator. Opening it does not change a flight. It is documentation, not a second physics.',
+      'This wiki is a page on the landing site, not a screen inside the simulator. It does not step the integrator, and opening it does not change a flight.',
     ],
     related: ['start-welcome', 'physics-timestep', 'cli-index'],
     source: 'src/wiki/',
@@ -233,8 +233,8 @@ export const ARTICLES = [
     lede: 'One 5 inch freestyle quad. Mass, motors, props and pack are constants in plant.c, not Betaflight fields.',
     figure: 'quadx',
     air: [
-      'Imagine a 650 gram machine on a 6S 1300 pack, 1900 kV class 2207 motors, 5×4.3×3 props, 220 mm diagonal. That is a very ordinary 5 inch, and it is the only aircraft in this build. Switching a tune does not change the motors. Switching motor_kv in the configurator does not either.',
-      'Thrust to weight at full charge is about 9.2 to 1, measured, which is what that class of quad actually has. Hover sits near a fifth of the stick. That is why racers use a throttle limit: four fifths of the stick is climb, and the hover band is a few percent.',
+      'A 650 gram machine on a 6S 1300 pack, 1900 kV class 2207 motors, 5×4.3×3 props, 220 mm diagonal. That is an ordinary 5 inch, and it is the only aircraft in this build. Switching a tune does not change the motors. Switching motor_kv in the configurator does not either.',
+      'Thrust to weight at full charge is 9.2 to 1, measured, which is what that class of quad has. Hover sits near a fifth of the stick. That is why racers use a throttle limit: four fifths of the stick is climb, and the hover band is a few percent.',
     ],
     lab: [
       'PlantParams: mass 0.65 kg; inertia diagonal 0.0035, 0.0038, 0.0068 kg m² (roll, pitch, yaw); arm_x = arm_y = 0.110/sqrt(2) m; kt = 1.98e-6 N/(rad/s)²; kq = 2.80e-8 N m/(rad/s)²; ke = 0.006336 V s/rad; r_motor = 0.1825 ohm; j_rotor = 8.0e-6 kg m²; 6 cells at 2.5 mOhm each; rho = 1.225 kg/m³; prop radius 0.0635 m.',
@@ -242,7 +242,7 @@ export const ARTICLES = [
       'Figure of merit is enforced: kq = kt^1.5 / (FM sqrt(2 rho A)) with FM = 0.565, inside 0.4 to 0.6. An earlier pair produced FM 2.01, which is thermodynamically impossible. sim_bf_debug case 12 recomputes FM from the compiled constants.',
     ],
     sim: [
-      'These numbers are not exposed as CLI. Pack charge in Settings sets cell open-circuit voltage (4.2, 3.8, 3.5 V). Everything else is the plant. A different airframe is a physics-shape change and is out of scope for a wiki page to "add."',
+      'These numbers are not exposed as CLI. Pack charge in Settings sets cell open-circuit voltage (4.2, 3.8, 3.5 V). Everything else is the plant. A different airframe is a change to the shape of the physics model, not something a wiki page can add.',
     ],
     related: ['physics-motor', 'physics-fm', 'physics-sag', 'start-honesty'],
     source: 'src/native/plant.c PlantParams, STAGE1.md',
@@ -257,7 +257,7 @@ export const ARTICLES = [
     figure: 'timestep',
     air: [
       'The world on screen is a movie of a calculation that does not care how fast your computer draws. If the movie stutters, the quad in the calculation is still where it would have been. That is why a replay file can be bit-identical on two machines.',
-      'If physics used the time between animation frames, a slow frame would be a different flight. Racers would farm luck. Verification would be theatre.',
+      'If physics used the time between animation frames, a slow frame would be a different flight, a slow machine would be a different lap, and no check would mean anything.',
     ],
     lab: [
       'sim.c steps at SIM_STEP_HZ 1000. sim_step(n) advances n milliseconds of simulated time. The host (src/main.js) accumulates real frame delta and spends it in 1 ms ticks. Render interpolates the two most recent physics states. Quaternion update subdivides so the small-angle libm stays inside its accurate range, then renormalises.',
@@ -279,12 +279,12 @@ export const ARTICLES = [
     lede: 'Throttle is not thrust. Throttle is a duty cycle. Thrust is what a spinning prop does after the bell has accelerated.',
     figure: 'motor',
     air: [
-      'When you punch the stick, the flight controller tells the ESC to apply more of the pack to the winding. The motor does not instantly reach the new speed. The bell has mass. The prop has mass. For a few hundredths of a second you are waiting on inertia, and that wait is a lot of what "crisp" versus "soft" feels like.',
-      'Current is whatever the voltage difference across the winding resistance says, until the back EMF of the spinning motor catches up. A real ESC also has inductance and a current ceiling. This plant does not. For a couple of milliseconds a punch draws a silly current. The rotor\'s own time constant eats it before it becomes thrust. It is honest in the state block and it is not a feel defect.',
+      'When you punch the stick, the flight controller tells the ESC to apply more of the pack to the winding. The motor does not instantly reach the new speed. The bell has mass. The prop has mass. For a few hundredths of a second you are waiting on inertia, and that wait is most of the difference between a quad that feels crisp and one that feels soft.',
+      'Current is whatever the voltage difference across the winding resistance says, until the back EMF of the spinning motor catches up. A real ESC also has inductance and a current ceiling. This plant does not. For a couple of milliseconds a punch therefore draws an unrealistically large current. The rotor time constant absorbs it before it becomes thrust: it shows in the state block and it does not reach the feel.',
     ],
     lab: [
       'Average applied voltage is duty times pack voltage under load. i = (d V_load − ke ω) / R. Rotor: j dw/dt = ke i − spin * kq ω_rel |ω_rel|. Duty is clamped to [0, 1]. ω is clamped at 0 (no reverse on this airframe).',
-      'j_rotor is 8.0e-6 kg m² against a real 2207 bell plus 5 inch triblade near 9e-6. Check 8 (0 to 100 percent duty, time to 63 percent of final RPM) wants 10 to 30 ms. 9e-6 read about 29 ms. 8.0e-6 leaves margin. An ESC current ceiling of 48 A was built, measured (peak pack 410 A to 192 A) and withdrawn because it pushed t63 to 51 ms, out of band. The limit is commented in plant.c with those numbers, not quietly omitted.',
+      'j_rotor is 8.0e-6 kg m² against a real 2207 bell plus 5 inch triblade near 9e-6. Check 8 (0 to 100 percent duty, time to 63 percent of final RPM) wants 10 to 30 ms. 9e-6 read about 29 ms. 8.0e-6 leaves margin. An ESC current ceiling of 48 A was built, measured (peak pack 410 A to 192 A) and withdrawn because it pushed t63 to 51 ms, out of band. The limit is commented in plant.c with those numbers.',
       'Pack voltage and motor current are an algebraic loop. With real resistances a one-step lag oscillates. The plant solves it closed form: V = (Voc + Rp B / R) / (1 + Rp A / R) with A = sum d_i², B = sum d_i ke ω_i.',
     ],
     sim: [
@@ -302,7 +302,7 @@ export const ARTICLES = [
     lede: 'Thrust goes as RPM squared. Shaft torque goes as RPM squared. They are a physical pair, not two knobs.',
     figure: 'figmerit',
     air: [
-      'A prop is a device for throwing air. How hard it throws (thrust) and how hard it is to turn (torque) are linked by the power going into that air. If you invent a prop that makes lots of thrust and needs almost no torque, you have invented a perpetual motion machine. Early in this project the numbers did that. They do not any more.',
+      'A prop is a device for throwing air. How hard it throws (thrust) and how hard it is to turn (torque) are linked by the power going into that air. A prop that makes lots of thrust and needs almost no torque is a perpetual motion machine. Early in this project the constants did that, and they were refitted.',
       'Figure of merit is the ratio of ideal induced power to actual shaft power. A perfect actuator disc is 1.0. A real 5 inch lives around 0.4 to 0.6. This plant is 0.565.',
     ],
     lab: [
@@ -310,7 +310,7 @@ export const ARTICLES = [
       'Thrust after aero corrections is T = kt ω² * axial, with axial from the advance-ratio / VRS / wash / translational-lift stack. Prop drag torque uses ω_rel = spin ω + r (body yaw), so a yawing craft loads one pair and unloads the other. That residual is real yaw damping.',
     ],
     sim: [
-      'Yaw authority is paid in this torque. Starve kq and yaw is mush. The old FM 2.01 plant had to fake other constants to compensate. Do not split kt and kq again.',
+      'Yaw authority is paid in this torque. Starve kq and yaw goes soft. The FM 2.01 plant had to distort other constants to compensate. Do not set kt and kq independently again.',
     ],
     related: ['physics-motor', 'physics-advance', 'physics-vrs', 'physics-yaw'],
     source: 'src/native/plant.c, PROGRESS.md OPEN QUESTIONS (historical FM 2.01)',
@@ -324,15 +324,15 @@ export const ARTICLES = [
     lede: 'The pack is a voltage behind a resistor. Draw current and the voltage the motors see falls. Available RPM falls with it.',
     figure: 'sag',
     air: [
-      'A freshly charged pack punches harder than one you have been flying for two minutes, even before capacity is gone, because voltage sags under load. Pilots feel this as "the pack falling off." It is a large part of what reads as authentic, and it is why punch-out at 3.6 V per cell is a verification check, not a flavour text.',
-      'Settings, Pack charge, is the open-circuit voltage per cell: 4.2 full, 3.8 mid, 3.5 empty. It is not a fuel gauge simulation. Capacity is not modelled. You will not "run out" mid-lap. You will fly a softer motor.',
+      'A freshly charged pack punches harder than one you have been flying for two minutes, even before capacity is gone, because voltage sags under load. Pilots call it the pack falling off. Punch-out at 3.6 V per cell is check 11 for that reason.',
+      'Settings, Pack charge, is the open-circuit voltage per cell: 4.2 full, 3.8 mid, 3.5 empty. Capacity is not modelled, so you will not run out mid-lap. A low setting gives you a softer motor for the whole flight.',
     ],
     lab: [
       'r_cell = 0.0025 ohm, six cells, so r_pack = 0.015 ohm. V_load from the implicit solve above. Motor current summed as d * i when that product is positive. Check 11: identical punch-out at 4.20 V and 3.60 V per cell, peak RPM lower by 4 to 15 percent on the sagged pack.',
       'vbat_* CLI keys are INERT. The plant owns the pack. Betaflight\'s vbat_sag_compensation is LIVE: it is firmware that scales PID with a voltage it is told. The glue feeds it the plant\'s sagged cell voltage. Compensation is a controller trick, not a bigger pack.',
     ],
     sim: [
-      'There is no thermal model of the pack, no C-rating, no connector resistance separate from r_cell. The 2.5 mOhm figure is "a real 6S 1300 race pack" as written in plant.c.',
+      'There is no thermal model of the pack, no C-rating, no connector resistance separate from r_cell. The 2.5 mOhm figure is plant.c\'s stated value for a 6S 1300 race pack.',
     ],
     related: ['physics-motor', 'cli-vbat_sag_compensation', 'physics-airframe'],
     source: 'src/native/plant.c battery solve, tests/thresholds.json check 11',
@@ -346,7 +346,7 @@ export const ARTICLES = [
     lede: 'A prop is a screw. Screw it into air that is already moving along its axis and it produces less thrust. Screw it fast enough through that air and thrust crosses zero.',
     figure: 'thrustmu',
     air: [
-      'Climbing hard, the craft is chasing the air it just threw. The props bite less. That is why a punch does not keep accelerating forever, and why a dive at full throttle does not keep speeding up without bound in the thrust column (drag still matters).',
+      'Climbing hard, the craft is chasing the air it just threw. The props bite less. That is why a punch does not keep accelerating forever, and why a dive at full throttle does not accelerate without bound before drag is even counted.',
       'The axial speed each rotor sees is the craft\'s up-through-the-disc speed plus the bit from rolling or pitching (the rising motor is climbing through the air, the falling motor is descending). The rising side loses thrust. That is aerodynamic rate damping. Without it the PID is the only thing stopping a rotation, and the craft snaps back when you centre the stick.',
     ],
     lab: [
@@ -354,7 +354,7 @@ export const ARTICLES = [
       'ω is floored at 60 rad/s in the pitch-speed denominator so a stopped rotor does not divide by zero. Blade-element linearisation: thrust crosses zero when axial speed reaches pitch speed. That is a model, not a CFD of a 5×4.3×3.',
     ],
     sim: [
-      'STAGE1.md originally deferred "inflow and advance ratio" to Stage 2. The code has it. The wiki describes the code. A comment in plant.c records an older paragraph that claimed only the rotational part was used; both parts have been used since this model landed.',
+      'STAGE1.md deferred inflow and advance ratio to Stage 2. The code has both. A comment in plant.c records an older paragraph claiming only the rotational part was used; both parts have been used since this model landed.',
     ],
     related: ['physics-vrs', 'physics-wash', 'physics-damping', 'physics-fm'],
     source: 'src/native/plant.c advance ratio block',
@@ -365,14 +365,14 @@ export const ARTICLES = [
     chapter: 'physics',
     title: 'Vortex ring state',
     kicker: 'The plant',
-    lede: 'Descend into the air you just pushed and the disc can start eating a doughnut of its own wake. Thrust falls. The craft sinks. Pilots call the ugly edge of this "falling through."',
+    lede: 'Descend into the air you just pushed and the disc can start eating a doughnut of its own wake. Thrust falls. The craft sinks. Pilots call the worst of it falling through.',
     figure: 'vrs',
     air: [
-      'Helicopters have a famous version of this. Multirotors have it too, just on four small discs. A gentle descent can actually make more thrust (the props are being helped by air coming from below). Past a point that smooth picture breaks. The wake recirculates. You lose authority, often while the motors sound like they are still working.',
+      'Helicopters have a well known version of this. Multirotors have it on four small discs. A gentle descent makes more thrust, because air is arriving from below and the props are being helped. Past a point the wake stops clearing the disc and folds back over it. Authority falls away while the motors still sound like they are working.',
       'The recovery is the same as a helicopter\'s: stop descending into it. Pitch out, add power on a disc that is moving into clean air, or accept that a props-level drop will get mushy in the middle of the sink.',
     ],
     lab: [
-      'Onset mu = −0.30, full at −1.20, floor axial = 0.75. Between onset and full, axial interpolates linearly from (1 + 0.30) down to 0.75, then holds. That is the shape of the momentum-theory gap, not a fitted "feel" curve. An earlier model used axial = 1 − va/pitch_speed clamped at 1.35 for every descent, which handed the craft more thrust the faster it fell (measured T/W 1.063 hover to 1.434 at 6.2 m/s sink) and deleted rate damping because a clamp has zero derivative.',
+      'Onset mu = −0.30, full at −1.20, floor axial = 0.75. Between onset and full, axial interpolates linearly from (1 + 0.30) down to 0.75, then holds. That is the shape of the momentum-theory gap, not a curve fitted to feel. An earlier model used axial = 1 − va/pitch_speed clamped at 1.35 for every descent, which handed the craft more thrust the faster it fell (measured T/W 1.063 hover to 1.434 at 6.2 m/s sink) and deleted rate damping because a clamp has zero derivative.',
       'PLANT_INFLOW_ASYM = {0.031, −0.017, −0.028, 0.014} is applied when axial < 1, scaled by depth. Four rotors in a recirculating field do not stall together. Without this the losses cancel into a pure heave. The four values sum to zero so a fully symmetric deep descent does not invent net extra thrust.',
     ],
     sim: [
@@ -395,11 +395,11 @@ export const ARTICLES = [
     ],
     lab: [
       'Depth is not mu. Depth is descent rate against induced velocity v_h = sqrt(T / (2 rho A)). Recirculation begins around 0.25 v_h, is worst near 1.0, and is carried out to 3.0 v_h because the frame, pack and arms shed wake the discs sit in (a clean isolated rotor would be done by ~2). Triangle: (rw − 0.25)/0.75 up to 1, then (3 − rw)/2 down.',
-      'Unsteady field: one channel per rotor, xorshift32, two one-pole filters at 30 Hz and 3 Hz (coefficients 0.171796 and 0.018673 at 1 kHz), RMS 0.16730 measured over four million samples, clamp 3 sigma. Applied as axial += axial * k_propwash * depth * wash, k_propwash = 0.08. 0.30 put peak-to-peak gyro near 45 to 59 deg/s and a pilot called it too hot. 0.08 is a feel constant. The mechanism is not.',
+      'Unsteady field: one channel per rotor, xorshift32, two one-pole filters at 30 Hz and 3 Hz (coefficients 0.171796 and 0.018673 at 1 kHz), RMS 0.16730 measured over four million samples, clamp 3 sigma. Applied as axial += axial * k_propwash * depth * wash, k_propwash = 0.08. 0.30 put peak-to-peak gyro near 45 to 59 deg/s and a pilot called it too hot. 0.08 is a chosen feel constant; the mechanism it scales is not chosen.',
       'The field runs every step so flying into the wash does not restart the turbulence. It is applied only in proportion to depth. Below ~3 Hz an I term trims it. Above ~30 Hz the D filter eats it. Neither is what wash feels like.',
     ],
     sim: [
-      'Grass flattening in the renderer is a picture of downwash, not this model. Do not tune k_propwash from the grass. STAGE1.md deferred propwash; the plant has it. Render wash and plant wash are cousins, not a coupling.',
+      'Grass flattening in the renderer is a picture of downwash, not this model. Do not tune k_propwash from the grass. STAGE1.md deferred propwash; the plant has it. The renderer and the plant model wash separately and neither reads the other.',
     ],
     related: ['physics-vrs', 'physics-gyro', 'physics-damping'],
     source: 'src/native/plant.c PROPWASH comment and wash filters',
@@ -413,7 +413,7 @@ export const ARTICLES = [
     lede: 'A hovering disc flies in its own downwash. Move it sideways and it meets fresh air. Thrust rises at the same RPM. Helicopter pilots call this ETL. It is real on a quad.',
     figure: 'etl',
     air: [
-      'Accelerate out of a hover without touching the throttle and the craft gets lighter. A fast pass needs less stick to hold altitude than a hover does. That is not a bug in the radio. The discs are working in cleaner air.',
+      'Accelerate out of a hover without touching the throttle and the craft gets lighter. A fast pass needs less stick to hold altitude than a hover does, because the discs are working in cleaner air.',
       'If a sim misses this, the hover and the cruise feel like two different aircraft glued together, and you will hunt the throttle in a way a real 5 inch does not ask for.',
     ],
     lab: [
@@ -435,7 +435,7 @@ export const ARTICLES = [
     lede: 'The dominant damping at race speed. Quadratic body drag fitted to top speed is too slippery in the middle. This is the term that makes a corner follow the nose.',
     figure: 'hforce',
     air: [
-      'A spinning disc moving sideways through the air pulls backward. Helicopter people call it H-force. On a quad it is why the craft decelerates when you level off, why a sideways slide dies, and why a 45 degree flare actually brakes instead of skating.',
+      'A spinning disc moving sideways through the air pulls backward. Helicopter people call it H-force. On a quad it is why the craft decelerates when you level off, why a sideways slide dies, and why a 45 degree flare brakes instead of skating.',
       'Without it, measured on an earlier build: levelled at 20 m/s on hover throttle, half the speed was still there 3.2 seconds later, and a 50 degree bank flew a 29 m radius because the craft kept sliding out. Pilots called that floaty.',
     ],
     lab: [
@@ -476,17 +476,17 @@ export const ARTICLES = [
     chapter: 'physics',
     title: 'Pitch up at speed',
     kicker: 'The plant',
-    lede: 'The discs sit above the centre of gravity. Rearward rotor drag is therefore a nose-up moment. Every multirotor carries this. A sim that flies fast with the stick centred is telling on itself.',
+    lede: 'The discs sit above the centre of gravity. Rearward rotor drag is therefore a nose-up moment. Every multirotor carries this. A sim that flies fast with the stick centred has not modelled it.',
     figure: 'noseup',
     air: [
       'Go fast, hands off pitch, and a real quad wants to lift the nose. You trim it with a little forward stick, the way you trim a tail-heavy model. Chop throttle at speed and the nose attitude change is part of the deceleration, not just drag.',
-      'If the motors are modelled in the same plane as the CG, thrust and H-force have no pitch lever from z. The craft is a flat plate. That was this plant. It is not any more.',
+      'If the motors are modelled in the same plane as the CG, thrust and H-force have no pitch lever from z, and the craft behaves like a flat plate. This plant did that until PLANT_POS_Z was added.',
     ],
     lab: [
       'PLANT_POS_Z = 0.020 m for all four. Geometry: arms at the mid plate, disc about 28 mm above that after bell and hub, CG of a 650 g machine with a 250 g pack on top about 8 mm above the plate, difference ~20 mm. A pure z force at (x, y, z) has moment (y F, −x F, 0): hover and punch checks cannot move. In-plane H at that z is the couple.',
     ],
     sim: [
-      'Measured before this term: pitching moment in forward flight identically zero at every speed. That is one of the loudest tells that a simulator is not a quad.',
+      'Measured before this term: pitching moment in forward flight identically zero at every speed.',
     ],
     related: ['physics-hforce', 'physics-cant', 'physics-airframe'],
     source: 'src/native/plant.c PLANT_POS_Z comment',
@@ -500,7 +500,7 @@ export const ARTICLES = [
     lede: 'A perfectly symmetric QUADX cannot yaw from a roll at this modelling order. Real frames are not symmetric. The coupling you trim with yaw is build tolerance.',
     figure: 'cant',
     air: [
-      'Roll hard and a real quad yaws a little. You carry a bit of yaw trim, or you ride it. Sims that show zero are not "clean." They are too perfect. The motors are never aimed at the sky to a tenth of a degree.',
+      'Roll hard and a real quad yaws a little. You carry a bit of yaw trim, or you ride it. A sim that shows zero coupling is flying a frame built to a tolerance no factory holds: the motors are never aimed to a tenth of a degree.',
       'This plant gives each motor a fixed misalignment, less than two degrees, the sort of thing a moulded arm and four screws produce. Hover I-term trims the tiny leftover the way a real machine does.',
     ],
     lab: [
@@ -527,7 +527,7 @@ export const ARTICLES = [
       'That is why yaw feels late on a badly set idle, why it dies in a punch when the motors are pinned, and why airmode matters: at zero throttle without airmode, the mixer has nothing to work with.',
     ],
     lab: [
-      'Stator reaction on the frame is −spin * ke * i along the motor axis (canted). Prop drag is kq ω_rel |ω_rel|. Mixer yaw column with yaw_motors_reversed off: RR −1, FR +1, RL +1, FL −1, and mixer.c negates the yaw PID sum. Glue gyro yaw feed is +r. The comment on PLANT_SPIN is the sign-chain bible. Flip one link and the loop runs away.',
+      'Stator reaction on the frame is −spin * ke * i along the motor axis (canted). Prop drag is kq ω_rel |ω_rel|. Mixer yaw column with yaw_motors_reversed off: RR −1, FR +1, RL +1, FL −1, and mixer.c negates the yaw PID sum. Glue gyro yaw feed is +r. The comment on PLANT_SPIN is the record of that sign chain. Flip one link and the loop runs away.',
       'Integrated yaw (use_integrated_yaw) is a Betaflight mixer option that treats yaw as an integral of motor difference. It is LIVE if compiled. Default off on this airframe\'s dumps unless a preset sets it.',
     ],
     sim: [
@@ -572,7 +572,7 @@ export const ARTICLES = [
       'tau includes − omega × (I omega + h_prop). h_prop is sum spin * j_rotor * ω along each motor axis. I is diagonal, so the body term is the usual product-of-inertia-free Euler coupling. Opposed props keep net h_prop small in a hover and not small during a roll, when one pair is wound up.',
     ],
     sim: [
-      'This is not "precession feel" as a slider. It falls out. If someone wants it stronger they need heavier bells or a different spin map, which is an airframe change.',
+      'There is no precession slider. The effect falls out of the integration. Making it stronger needs heavier bells or a different spin map, which is an airframe change.',
     ],
     related: ['physics-yaw', 'physics-cant', 'physics-motor'],
     source: 'src/native/plant.c section 4 omega × (I omega + h)',
@@ -586,7 +586,7 @@ export const ARTICLES = [
     lede: 'A perfectly clean gyro makes the whole filter chain decorative and makes D gain free. Neither is true on a real 5 inch, so it is not true here.',
     figure: 'gyronoise',
     air: [
-      'The flight controller is bolted to a vibrating frame. Props are never perfectly balanced. What the gyro reports is rotation plus shake. Filters exist to keep the PID from chasing the shake. If you turn the filters down on a quiet sim, you will look like a hero and then oscillate on grass.',
+      'The flight controller is bolted to a vibrating frame. Props are never perfectly balanced. What the gyro reports is rotation plus shake. Filters exist to keep the PID from chasing the shake. Turn the filters down on a quiet sim and the tune you export will oscillate on a real machine.',
       'This sim adds shake to the sensor reading, not to the rigid body. The airframe is still a rigid body. The only way vibration reaches the trajectory is the way it does in life: the controller reacting to it.',
     ],
     lab: [
@@ -595,7 +595,7 @@ export const ARTICLES = [
       'The device path is SITL-style: float deg/s, then int16 counts at 2000 deg/s full scale, then Betaflight\'s own gyro.c filter chain.',
     ],
     sim: [
-      'This is why gyro_lpf and rpm_filter are not vanity. Dynamic notch still will not arm at 1 kHz; the lines are there for the RPM filter and for any future loop-rate debate. The yaw-share 0.5 is the one chosen number in this block and is labelled as such in the glue comment.',
+      'This is what gyro_lpf and rpm_filter are working against. Dynamic notch still will not arm at 1 kHz; the lines are there for the RPM filter and for any future loop-rate debate. The yaw-share 0.5 is the one chosen number in this block and is labelled as such in the glue comment.',
     ],
     related: ['control-filters', 'physics-wash', 'cli-rpm_filter_harmonics', 'cli-gyro_lpf1_static_hz'],
     source: 'src/native/bf/bf_glue.c GYRO VIBRATION',
@@ -610,7 +610,7 @@ export const ARTICLES = [
     figure: 'radio',
     air: [
       'Your sticks are not wired to the flight controller. A packet leaves the radio, spends a few milliseconds in the air and in the receiver, and sometimes never arrives. ELRS at 250 Hz is a common race setup: about 4 ms of delay, a fraction of a millisecond of jitter, rare losses.',
-      'A perfect link feels slightly too sharp, like the craft is glued to your fingers. Turn on ELRS in Settings if you want the radio you actually own. Leave Perfect on if you are chasing a time or running the harness.',
+      'A perfect link feels slightly too sharp, like the craft is glued to your fingers. Turn on ELRS in Settings if you want the radio you own. Leave Perfect on if you are chasing a time or running the harness.',
     ],
     lab: [
       'src/input/link.js. Presets: perfect (250 Hz, 0 delay, 0 jitter, 0 loss), elrs500, elrs250, elrs150, crossfire. Jitter uniform in ±jitterMs. Loss in parts per million. Seeded xorshift32, same discipline as wash. The module never sees the generator: it sees timestamped samples. A .rec file captures what was delivered.',
@@ -632,7 +632,7 @@ export const ARTICLES = [
     figure: 'collide',
     air: [
       'You can land. A gentle arrival onto grass or a deck is a landing: the craft sits, the integrator stops, and you can spool up again. A fast arrival or a bad attitude is a crash. Hitting a gate frame, a tree, a wall is a hit, and enough hits end the run.',
-      'You cannot hover in ground effect. There is no cushion over the grass. That is a real aerodynamic phenomenon this plant does not have, and the wiki will not pretend the landing logic is that cushion.',
+      'There is no ground effect. A real rotor gains thrust within about one radius of the ground; this one does not, so a hover at ankle height takes the same throttle as a hover at head height. The landing logic in the shell is not a stand-in for it.',
     ],
     lab: [
       'collide.js: one primitive, a capsule. Swept sphere (craft radius derived from the 220 mm diagonal plus 5 inch props) against capsules, closed-form segment-to-segment distance, no allocation in the query. Broadphase grid. Optional sim_deflect writes a velocity change into the module without stepping frame time into the integrator.',
@@ -650,18 +650,18 @@ export const ARTICLES = [
     chapter: 'physics',
     title: 'What this plant does not do',
     kicker: 'The plant',
-    lede: 'A list of absences, so a scientist does not have to reverse-engineer silence.',
+    lede: 'A list of absences, so nobody has to infer them from silence.',
     figure: 'missing',
     air: [
       'No wind. No ground cushion. No blade-element theory with azimuthal stations. No aeroelasticity. No motor inductance. No ESC current limit. No thermal model of windings, packs or ESCs. No flexible arms. No camera latency separate from the radio. No video compression. No goggle overlay from Betaflight OSD.',
-      'Some of those are coming if the project grows. Some are structurally refused (a general-purpose physics engine). This page is the contract as of the code this wiki was written against.',
+      'Some of those may arrive if the project grows. A general-purpose physics engine will not. This page is the contract as of the code this wiki was written against.',
     ],
     lab: [
       'No reverse motor direction (3D). No servos. No GPS / mag / baro / accelerometer hardware (attitude for ANGLE comes from the plant quaternion). No dual gyro. No dynamic notch at 1 kHz. No blade-passing harmonics. No trailing-vortex interaction beyond the VRS / wash / inflow-asymmetry stack. No ground-effect inflow image system.',
       'Collision is not a contact Jacobian in the plant. It is a shell query. The plant can be stood on a hinge (launch stand) inside sim.c; that is a constraint, not an aero model.',
     ],
     sim: [
-      'If you need a phenomenon for a paper, read the source, do not assume a textbook rotor. The Glauert and momentum-theory pieces are labelled. The feel constants (k_propwash, gyro line/hump amplitudes, cant table) are labelled as chosen. Mixing those two categories is how a wiki becomes fiction.',
+      'If you need a phenomenon for a paper, read the source, do not assume a textbook rotor. The Glauert and momentum-theory pieces are labelled. The feel constants (k_propwash, gyro line/hump amplitudes, cant table) are labelled as chosen. Keep the two categories apart.',
     ],
     related: ['physics-vrs', 'physics-wash', 'physics-motor', 'start-honesty'],
     source: 'STAGE1.md Not in Stage 1, plant.c ESC ceiling comment, catalog.js INERT_REASONS',
@@ -670,20 +670,20 @@ export const ARTICLES = [
   page({
     id: 'physics-lens',
     chapter: 'physics',
-    title: 'The camera, which is not the plant',
+    title: 'The camera',
     kicker: 'The plant',
     lede: 'FOV and tilt are how you see the world, not how the world flies. They still change what you can fly, because a racer flies a picture.',
     figure: 'lens',
     air: [
-      'Camera angle is the TPU mount. Zero looks along the nose. 30 is a cruise. 45 to 55 is race. It does not change thrust. It changes where "forward" is on your face, so you will fly a different line.',
-      'Field of view in this sim is not the number printed on an FPV lens. Those lenses are fisheyes. The renderer is rectilinear. Matching the printed 150 degrees makes gates look tiny. The default 85 degrees vertical is a centre-magnification match to a ~155 degree fisheye, with a little extra width so you can see the next gate.',
+      'Camera angle is the TPU mount. Zero looks along the nose. 30 is a cruise. 45 to 55 is race. It does not change thrust. It changes where forward sits in the picture, so you fly a different line.',
+      'Field of view in this sim is not the number printed on an FPV lens. Those lenses are fisheyes and the renderer is rectilinear. Typing in the printed 150 to 160 degrees makes gates look tiny. The default 85 degrees vertical is a centre-magnification match to a ~155 degree fisheye, with a little extra width so you can see the next gate.',
     ],
     lab: [
       'src/render/lens.js. Equidistant fisheye r = f θ versus rectilinear r = f tan θ. Equal centre scale: tan(v/2) = θ_V. A 155° diagonal on 4:3 has vertical half angle 46.5° = 0.8116 rad, so v ≈ 78°. Default 85° on 16:9 is about 117° wide. GATE_SCALE and WORLD_SCALE cannot fix apparent size: a bigger gate seen from proportionally further away is the same picture.',
-      'Coordinate conversion in frame.js: x_three = −y_sim, y_three = z_sim, z_three = −x_sim. Get this wrong and yaw signs rot for a month.',
+      'Coordinate conversion in frame.js: x_three = −y_sim, y_three = z_sim, z_three = −x_sim. Get this wrong and every yaw sign downstream of it is wrong.',
     ],
     sim: [
-      'Settings owns tilt and FOV. Betaflight fpv_mix_degrees is APPLIED_INERT: BOXFPVANGLEMIX is never raised, so rc.c never mixes camera angle into roll/yaw. Your neck does that. The FC does not.',
+      'Settings owns tilt and FOV. Betaflight fpv_mix_degrees is APPLIED_INERT: BOXFPVANGLEMIX is never raised, so rc.c never mixes camera angle into roll/yaw. In this sim that compensation is yours to make.',
     ],
     related: ['cli-fpv_mix_degrees', 'start-nowings', 'physics-timestep'],
     source: 'src/render/lens.js, src/render/frame.js',
@@ -739,7 +739,7 @@ export const ARTICLES = [
     chapter: 'control',
     title: 'Filters: delay versus noise',
     kicker: 'The controller',
-    lede: 'Every filter you add makes the PID later. Every filter you remove makes the PID chase shake. The art is spending delay where noise would have cost more.',
+    lede: 'Every filter you add makes the PID later. Every filter you remove makes the PID chase shake. Tuning a filter chain is deciding where to spend the delay.',
     figure: 'filters',
     air: [
       'Gyro low-pass: smooth the sensor before anyone else sees it. D-term low-pass: extra smoothing on the branch that is most allergic to hash. Static notches: cut a known whistle. RPM filter: cut the whistle that moves with motor speed. Dynamic notch: hunt peaks in a spectrogram. At 1 kHz Betaflight will not run that last one.',
@@ -761,18 +761,18 @@ export const ARTICLES = [
     chapter: 'control',
     title: 'Feedforward',
     kicker: 'The controller',
-    lede: 'Start the motors when the stick moves, before the error exists. It is why a good tune feels connected rather than waiting to be wrong.',
+    lede: 'Start the motors when the stick moves, before the error exists. It is most of what makes a tune feel connected.',
     figure: 'ff',
     air: [
       'P waits for a mistake. Feedforward watches the stick and assumes you meant that rotation. Raise it and the craft leads. Too much and it overshoots, especially on a radio with jitter, because jitter looks like a violent stick.',
-      'Smoothing, averaging, jitter reduction and max-rate limiting exist because raw d(setpoint)/dt on a 250 Hz packet stream is a spiky mess. A perfect link in this sim under-stresses those clauses. Try ELRS 250 Hz if you are tuning F.',
+      'Smoothing, averaging, jitter reduction and max-rate limiting exist because raw d(setpoint)/dt on a 250 Hz packet stream is spiky. A perfect link in this sim under-stresses those clauses. Try ELRS 250 Hz if you are tuning F.',
     ],
     lab: [
       'f_roll / f_pitch / f_yaw are the gains. feedforward_averaging is a 2/3/4 point moving average on the derivative. feedforward_smooth_factor is a further low-pass. feedforward_jitter_factor attenuates small spikes. feedforward_boost emphasises the start of a move. feedforward_max_rate_limit keeps FF from asking more than the rates curve. feedforward_transition blends FF in as the stick leaves centre.',
       'All LIVE, pid.c and rc.c, compiled.',
     ],
     sim: [
-      'Keyboard flight in angle mode does not need race FF. Radio acro does. If FF feels "too good to be true" on Perfect, that is the link page, not a superhuman plant.',
+      'Keyboard flight in angle mode does not need race FF. Radio acro does. If FF feels too good to be true on Perfect, that is the link page, not a superhuman plant.',
     ],
     related: ['physics-radio', 'control-pid', 'cli-f_roll', 'cli-feedforward_jitter_factor'],
     source: 'vendor/betaflight flight/pid.c feedforward, src/input/link.js',
@@ -787,15 +787,15 @@ export const ARTICLES = [
     figure: 'tpa',
     air: [
       'TPA (throttle PID attenuation): at high throttle the props bite harder and P/D that were right in a hover become too much. TPA turns them down above a breakpoint. tpa_low does the opposite at very low throttle, where authority is scarce.',
-      'Anti-gravity: punch the throttle and the craft would bow (pitch or roll error while I is too slow). AG boosts I, and optionally P, during a fast throttle change. It is not a gravity sensor. It is a high-pass on throttle.',
-      'Airmode: keep PID authority when you chop throttle, so a flip at zero throttle still has motors that can speed up and slow down around idle. Without it, zero throttle is "all motors at idle" and you are a brick with a camera.',
+      'Anti-gravity: punch the throttle and the craft would bow (pitch or roll error while I is too slow). AG boosts I, and optionally P, during a fast throttle change. No gravity sensor is involved: it is a high-pass on throttle.',
+      'Airmode: keep PID authority when you chop throttle, so a flip at zero throttle still has motors that can speed up and slow down around idle. Without it, zero throttle puts all four motors at idle and you have no control until you add throttle.',
     ],
     lab: [
       'TPA in pid.c, modes PD or D. Anti-gravity is a feature flag plus gain, cutoff Hz, P gain; mixTable updates the throttle filter that drives it. Airmode is a feature flag plus airmode_start_throttle_percent. Mixer applies PID at min throttle when pid_at_min_throttle is on, which airmode needs.',
       'Features AIRMODE and ANTI_GRAVITY are LIVE CLI feature lines, not valueTable keys.',
     ],
     sim: [
-      'Turn airmode off and fly a flip at zero throttle if you want to feel why it exists. Do it over grass. The plant will happily let you.',
+      'Turn airmode off and fly a flip at zero throttle to feel why it exists. Do it over grass.',
     ],
     related: ['control-mixer', 'cli-tpa_rate', 'cli-anti_gravity_gain', 'cli-airmode_start_throttle_percent'],
     source: 'flight/pid.c, flight/mixer.c, catalog.js FEATURES',
@@ -811,7 +811,7 @@ export const ARTICLES = [
     air: [
       'Mixer type LEGACY is the classic add-up. LINEAR and DYNAMIC change how throttle and PID share the motor range, especially when you are asking for more than 100 percent on one corner. EZLANDING is a landing helper, not a race default.',
       'DShot idle is a few percent of motor range so the bells never stall in airmode. Too low and yaw disappears at the bottom. Too high and you cannot descend. Dynamic idle watches RPM and raises the floor if a motor would droop, which protects desyncs on a real ESC. Here the plant cannot desync in the ESC sense, but the RPM loop still runs because the plant feeds rotor Hz.',
-      'Launch control holds attitude at idle until you punch through a throttle trigger. L on the start line in this sim. It is a race toy and a first-flight friend.',
+      'Launch control holds attitude at idle until you punch through a throttle trigger. L on the start line in this sim.',
     ],
     lab: [
       'mixTable in mixer.c, compiled. dshot_idle_value is the digital idle offset. dyn_idle_* writes the PID profile and mixer_init; getMotorFrequencyHz is the telemetry. Launch control state machine lives in bf_glue.c because fc/core.c is not compiled; the PID profile fields are still the real ones.',
@@ -853,7 +853,7 @@ export const ARTICLES = [
     lede: 'Acro is rates. Angle is "the stick is a tilt." Keyboard flight raises angle because a key cannot be a good rate stick.',
     figure: 'angle',
     air: [
-      'In angle, pushing pitch asks for a nose-up attitude, not a flip. Release and the craft levels. It is how most people survive a first hover. It is also how you learn bad habits for racing. Horizon mode, which blends the two, is stored here but never raised. There is no half-self-level in this shell.',
+      'In angle, pushing pitch asks for a nose-up attitude, not a flip. Release and the craft levels. It is how most people survive a first hover, and it teaches habits a racer then has to unlearn. Horizon mode, which blends the two, is stored here but never raised.',
       'Launch control and angle can coexist on a start line. Race laps are acro.',
     ],
     lab: [

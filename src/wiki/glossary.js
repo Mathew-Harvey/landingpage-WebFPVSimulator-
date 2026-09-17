@@ -133,7 +133,7 @@ export const GLOSSARY = [
   {
     term: 'arm',
     also: ['armed', 'disarm', 'disarmed'],
-    short: 'Arming is the deliberate switch flip that allows the motors to spin at all. A disarmed quad ignores the throttle, which is what stops it taking your fingers off on the bench.',
+    short: 'Arming is the deliberate switch flip that allows the motors to spin at all. A disarmed quad ignores the throttle, which is what makes it safe to handle on the bench.',
   },
   {
     term: 'idle',
@@ -152,7 +152,7 @@ export const GLOSSARY = [
   },
   {
     term: 'airmode',
-    short: 'A rule that keeps the motors able to push against each other even at zero throttle, so you still have control while falling. Without it, chopping the throttle makes the aircraft a brick.',
+    short: 'A rule that keeps the motors able to push against each other even at zero throttle, so you still have control while falling. Without it, chopping the throttle leaves you with no control until you add throttle again.',
     see: 'control-tpa',
   },
   {
@@ -162,7 +162,7 @@ export const GLOSSARY = [
   },
   {
     term: 'downwash',
-    short: 'The column of air a propeller throws downwards. It is what holds the aircraft up, and descending into it is what causes most of the trouble on this site.',
+    short: 'The column of air a propeller throws downwards. It is what holds the aircraft up, and descending into it is what causes vortex ring state.',
     see: 'physics-vrs',
   },
   {
@@ -183,7 +183,7 @@ export const GLOSSARY = [
   },
   {
     term: 'flare',
-    short: 'Pitching the nose up hard to stop, so the props push against where you were going. It is how a quad brakes, because it has no brakes.',
+    short: 'Pitching the nose up hard to stop, so the props push against where you were going. It is how a quad slows down, since it has nothing else to brake with.',
   },
   {
     term: 'pitch speed',
