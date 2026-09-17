@@ -76,7 +76,7 @@ export const GLOSSARY = [
   {
     term: 'five inch',
     also: ['5 inch', '5-inch'],
-    short: 'The whole class of racing quad is named after the diameter of its propellers, so a five inch is a quad with props five inches across, about the width of your hand.',
+    short: 'The class is named after propeller diameter, so a five inch is a quad with props five inches across, about the width of your hand.',
     see: 'physics-airframe',
   },
   {
@@ -101,7 +101,7 @@ export const GLOSSARY = [
   },
   {
     term: 'back EMF',
-    short: 'A spinning motor also acts as a generator and pushes voltage back the way it came. The faster it spins, the more it pushes back, and the less current gets through.',
+    short: 'A spinning motor also acts as a generator, pushing voltage back the way it came. The faster it spins, the more it pushes back and the less current gets through.',
     see: 'physics-motor',
   },
   {
@@ -133,16 +133,16 @@ export const GLOSSARY = [
   {
     term: 'arm',
     also: ['armed', 'disarm', 'disarmed'],
-    short: 'Arming is the deliberate switch flip that allows the motors to spin at all. A disarmed quad ignores the throttle, which is what makes it safe to handle on the bench.',
+    short: 'The deliberate switch flip that lets the motors spin at all. A disarmed quad ignores the throttle, which is what makes it safe to handle on the bench.',
   },
   {
     term: 'idle',
-    short: 'The slowest the motors are allowed to turn while armed. They are never quite stopped in flight, because a motor that has stopped takes far too long to come back.',
+    short: 'The slowest the motors may turn while armed. They are never quite stopped in flight, because a stopped motor takes far too long to come back.',
     see: 'control-mixer',
   },
   {
     term: 'setpoint',
-    short: 'What you asked for, as a number. Move the stick and the flight controller turns that into a setpoint in degrees per second, then spends every millisecond trying to match it.',
+    short: 'What you asked for, as a number. Move the stick and the flight controller turns it into a setpoint in degrees per second, then spends every millisecond matching it.',
     see: 'control-rates',
   },
   {
@@ -152,7 +152,7 @@ export const GLOSSARY = [
   },
   {
     term: 'airmode',
-    short: 'A rule that keeps the motors able to push against each other even at zero throttle, so you still have control while falling. Without it, chopping the throttle leaves you with no control until you add throttle again.',
+    short: 'Keeps the motors able to push against each other at zero throttle, so you keep control while falling. Without it, chopping the throttle leaves you with none.',
     see: 'control-tpa',
   },
   {
@@ -183,11 +183,11 @@ export const GLOSSARY = [
   },
   {
     term: 'flare',
-    short: 'Pitching the nose up hard to stop, so the props push against where you were going. It is how a quad slows down, since it has nothing else to brake with.',
+    short: 'Pitching the nose up hard to stop, so the props push against where you were going. It is how a quad slows, having nothing else to brake with.',
   },
   {
     term: 'pitch speed',
-    short: 'How fast a propeller would move forward in one turn if it were a screw going through a solid, which is the speed it stops being able to grip the air.',
+    short: 'How far a propeller would advance in one turn if it were a screw in a solid, which is the speed at which it stops gripping the air.',
     see: 'physics-advance',
   },
   {

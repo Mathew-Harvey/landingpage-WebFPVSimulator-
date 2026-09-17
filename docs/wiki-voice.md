@@ -1,14 +1,15 @@
 # The wiki's voice
 
-The wiki should read like a feature in Scientific American or National
-Geographic: written for an intelligent reader who is not a specialist, by
-somebody who knows the subject and is pleased to explain it. This file is the
+Tight, technical, straight to the point, and easy to read. A Scientific
+American feature written by somebody with a word budget: the concrete opening
+and the varied rhythm of a magazine, none of its wind-up. This file is the
 working definition, because "make it sound better" is not an instruction
 anybody can act on twice the same way.
 
 The register applies to the article chapters, meaning The journey, The aircraft
 and The controller. The 696 catalog pages are reference, and reference has its
-own register, covered at the bottom.
+own register, covered at the bottom. Both were tightened in the September
+no-fluff pass; the difference between them is density, not care.
 
 ## The eight rules
 
@@ -51,6 +52,16 @@ never a definition parked in a box the reader has to go and find.
 **8. Do not lose a fact to make a sentence nicer.** This is documentation. Every
 number, file path, status and check that was in the old copy is still in the new
 copy. Narrative is a delivery mechanism here, not a licence.
+
+**9. Cut anything that is not carrying.** Four habits to delete on sight. An
+announcement sentence, which tells the reader what the next sentence will do
+("The evidence for its importance is what happened without it", "The algebra is
+worth following, because"): delete it and let the content land. A decorative
+tail, the clause after the point is already made. A restatement, where the
+second half of a sentence says the first half again. And an expletive opener,
+"there is" or "it is the", where a subject and a verb would do. Nothing here
+argues for terseness as a virtue: a 60 word sentence full of coefficients earns
+its length, and a 12 word one that announces the next paragraph does not.
 
 ## What each column is for
 
