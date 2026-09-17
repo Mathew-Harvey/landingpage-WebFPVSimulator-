@@ -117,3 +117,50 @@ Three catalog pages were rendered and read to confirm the rewritten templates
 still interpolate: `cli-adc_device`, `cli-osd_vbat_pos` and `feature-AIRMODE`.
 No page was read on the served wiki, and no lint can see whether a paragraph is
 any good.
+
+## Served check, same day
+
+The pattern sweep above was static analysis. This is what the served page showed
+that no lint and no metric had caught.
+
+`npm run serve`, then every module the wiki loads fetched directly: twelve files,
+all 200, all with the right content type. Then headless Chromium against
+`http://127.0.0.1:8080/wiki/` at 1440, 900, 899 and 430 px, reading the rendered
+DOM rather than the source.
+
+Clean: zero console errors, zero page errors and zero failed requests across
+every page visited. No horizontal page scroll at any of the four widths. The rail
+becomes the Contents drawer below 900 px, which is the breakpoint CLAUDE.md
+names. Figure canvases are not clipped at any width, so the August D4 fix holds,
+and at 430 px the stage scrolls sideways with its swipe hint visible. Dragging
+the vortex ring slider moved its readout from 0.0 to 22.0, so the figures are
+computing rather than drawing from memory.
+
+Then four defects, all on the catalog fallback page, all invisible to the lints
+because none of them is a missing figure or a broken link:
+
+- **Sentences with no full stop, on 706 pages.** `catalog.js` is a snapshot of
+  the simulator's catalog and its reason strings carry no terminal punctuation,
+  so every page ended "In this simulator" mid air: "INERT. Would need the
+  matching Betaflight subsystem compiled". Fixed with a `period()` helper at the
+  point the page composes the line, rather than by hand-editing generated data.
+  Three composition paths needed it, the family fallback, the ABSENT branch and
+  the feature pages, which is why the first fix left 18 pages still open.
+- **The reason printed twice.** The fallback's "If you raise it" repeated the
+  same catalog reason the page had already given two boxes above.
+- **The template explaining itself to the reader.** That same text read "Here it
+  does not fly unless status is LIVE (and this family is the fallback, so it is
+  not)", which is implementation detail about the page generator.
+- **The key named three times before any information.** Heading, code chip and
+  then the meta line's "CLI key adc_device." The meta line now drops that prefix
+  when the heading is already the key, and keeps it everywhere it earns its
+  place: on "OSD: vbat" the line still tells you the key is `osd_vbat_pos`.
+
+Verified after the fix by re-rendering: zero terminal-stop failures across all
+706 pages, no browser errors, and the fallback, ABSENT and feature pages read
+correctly on screen.
+
+The general lesson is the one the CLAUDE.md ladder already states. The static
+sweep was worth running and found six sentences. Looking at the page found four
+defects on several hundred pages, three of which had been shipped through every
+previous pass this week.

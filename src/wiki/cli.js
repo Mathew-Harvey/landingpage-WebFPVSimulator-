@@ -1643,7 +1643,7 @@ function featurePage(feat) {
     title: `Feature ${feat.name}`,
     air: `A Betaflight feature flag named ${feat.name}. On a real board this turns a whole subsystem on.`,
     lab: 'Features are CLI commands, not valueTable keys.',
-    sim: `${feat.status}. ${feat.reason}`,
+    sim: period(`${feat.status}. ${feat.reason}`),
     upAir: 'Would enable that subsystem in life.',
     upLab: 'Feature bit.',
     downAir: 'Would disable it.',
@@ -1663,10 +1663,18 @@ function prettyOsd(key) {
   return key.replace(/^osd_/, '').replace(/_pos$/, '').replace(/_/g, ' ');
 }
 
+// catalog.js is a snapshot of the simulator's catalog and its reasons carry no
+// terminal stop, so several hundred pages ended a sentence without one. Close it
+// here rather than hand-editing generated data.
+function period(s) {
+  const v = String(s || '').trim();
+  return v && !/[.!?]$/.test(v) ? `${v}.` : v;
+}
+
 function family(field) {
   const k = field.key;
   const reason = field.reason || '';
-  const inert = `${field.status}. ${reason}`.trim();
+  const inert = period(`${field.status}. ${reason}`.trim());
   if (k.startsWith('osd_')) {
     const elName = prettyOsd(k);
     return copy({
@@ -1814,7 +1822,7 @@ function family(field) {
       related: ['start-honesty'],
       air: 'A Configurator tab or painter that is not a CLI key in 4.5.1 firmware. Flasher, cloud backups, LED painter, autotune as an app: none of those are this WASM module.',
       lab: 'ABSENT in catalog.js. Grey tab, named reason.',
-      sim: `${STATUS.ABSENT}. ${reason}`,
+      sim: period(`${STATUS.ABSENT}. ${reason}`),
       upAir: 'There is nothing to raise. The tab is grey.',
       upLab: 'Not a set line.',
       downAir: 'Same.',
@@ -1827,8 +1835,8 @@ function family(field) {
     air: 'A real Betaflight 4.5.1 key, carried in this catalog so a dump round-trips unchanged.',
     lab: field.pg ? `Parameter group ${field.pg}.` : 'No PG mapping in the live table.',
     sim: inert || `${field.status}. Would need the matching Betaflight subsystem compiled.`,
-    upAir: 'On a board that implements this key, the labelled quantity would increase. Here it does not fly unless status is LIVE (and this family is the fallback, so it is not).',
-    upLab: reason || 'Not in the LIVE write path that pidController/mixTable read every 1 ms.',
+    upAir: 'On a board that implements this key, the labelled quantity goes up. Here it round-trips in a dump and changes nothing.',
+    upLab: 'Not in the LIVE write path that pidController and mixTable read every 1 ms.',
     downAir: 'Same in reverse.',
     downLab: 'Same.',
   });
@@ -1882,7 +1890,8 @@ export function pageForField(field) {
   const typeText = field.type ? `Firmware type ${field.type}.` : '';
   const pgText = field.pg ? `Parameter group ${field.pg}.` : '';
   const metaLine = [
-    field.key.startsWith('#') ? 'Configurator chrome, not a set line.' : `CLI key ${field.key}.`,
+    field.key.startsWith('#') ? 'Configurator chrome, not a set line.'
+      : (spec.title === field.key ? '' : `CLI key ${field.key}.`),
     field.status,
     pgText,
     typeText,
