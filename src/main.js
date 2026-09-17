@@ -196,7 +196,15 @@ const CITY_BEATS = [
   {
     at: 0.42,
     k: 'The map',
-    t: 'A Japanese town, and a freestyle map.',
+    /* THIS BEAT USED TO BE THE ACT'S OWN LEDE, WORD FOR WORD: "A Japanese
+     * town, and a freestyle map." The lede says that at T 3.02, this beat
+     * said it again at T 3.42, and a line that repeats one three screens
+     * behind it is asking the reader to nod rather than telling them
+     * anything. It says what is in frame instead. At 0.42 of the act the
+     * pace ramp in CITY_S has finished, so the aircraft is out of the
+     * corridor, which is about a sixth of the line, and on to the road:
+     * the two places the act flies, in the order it flies them. */
+    t: 'A shopping street, then the main road.',
   },
   {
     at: 0.64,

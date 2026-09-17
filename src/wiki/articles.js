@@ -115,7 +115,7 @@ export const ARTICLES = [
     chapter: 'start',
     title: 'A quad has no wings',
     kicker: 'The journey',
-    lede: 'A quadcopter has one force it can point, and no way to point it except by rotating the whole aircraft. Every manoeuvre follows from that.',
+    lede: 'A quadcopter has one force it can point, and no way to point it except by rotating the whole aircraft. To slow down it has to point away from where it is going.',
     figure: 'tilt',
     air: [
       'An aeroplane holds itself up with wings and turns with surfaces that bite the oncoming air. A quadcopter holds itself up by aiming four propellers at the ground and turns by rotating its body. Roll right: the two right motors slow, the two left speed up, the aircraft rotates, and thrust that was holding it up now pulls it sideways. Pitch and yaw work the same way on the other axes. The thrust vector is bolted to the airframe, so pointing it means pointing the airframe.',
