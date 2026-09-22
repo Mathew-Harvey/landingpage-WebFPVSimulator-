@@ -4,6 +4,12 @@ The sellable units, assembled out of what `inventory.md` and
 `attribution.md` establish is actually built. This is the draft a
 conversation with a sponsor can be held from.
 
+## Sponsorship only
+
+This file is the sponsorship offering. The other revenue line, Patreon, is
+live, priced and separate, and it is in `supporters.md`. The two are not
+tiers of one thing and should never be presented as though they were.
+
 ## There are no prices in this file, and that is on purpose
 
 Nothing in any of the three repositories implies a price, a tier or a term.

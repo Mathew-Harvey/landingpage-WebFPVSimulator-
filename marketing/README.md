@@ -26,6 +26,7 @@ a slide deck is evidence until somebody changes the code.
 | `attribution.md` | The sponsor link, what is counted, and the large amount that deliberately is not. |
 | `brand-assets.md` | The creative that already exists: the sticker pack, the share card, the icons, the palette. |
 | `package-outline.md` | The sellable units assembled from the above. Prices are not in it, and the file says why. |
+| `supporters.md` | Patreon: the other revenue line, and the only one here with real prices. |
 
 ## Where the claims come from
 
@@ -67,9 +68,15 @@ document that says course is how the word gets back in.
 
 ## What is deliberately not here
 
-**Prices, tiers and terms.** Those are the owner's to set and no line of
-code implies one. `package-outline.md` lays out the units and leaves the
-number blank rather than inventing one that would then get quoted back.
+**Sponsorship prices, tiers and terms.** Those are the owner's to set and
+no line of code implies one. `package-outline.md` lays out the units and
+leaves the number blank rather than inventing one that would then get
+quoted back.
+
+Patreon is the exception, and it is not an exception anybody chose here:
+its three memberships are priced, published in a hover label on all three
+sites, and therefore facts rather than proposals. They are in
+`supporters.md` exactly as the product states them.
 
 **Audience figures.** The board counts pilots, sessions, laps, flight time
 and crashes per UTC day, and those counters are public on the statistics
