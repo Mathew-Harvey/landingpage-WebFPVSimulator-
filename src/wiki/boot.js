@@ -20,7 +20,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { destinations, simOrigin } from '../config.js';
+import { bindPatreonLinks, destinations, simOrigin } from '../config.js';
 import { mountWiki } from './wiki.js';
 
 {
@@ -31,6 +31,7 @@ import { mountWiki } from './wiki.js';
       a.href = d.href;
     }
   }
+  bindPatreonLinks();
 }
 
 const host = document.getElementById('wiki');

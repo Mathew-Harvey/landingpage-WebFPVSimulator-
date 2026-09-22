@@ -52,6 +52,34 @@ export const REPOS = {
   board: 'https://github.com/Mathew-Harvey/WebFPVSimulator-LeaderBoard',
 };
 
+/*
+ * The public Patreon page, and the hover line. The same two strings are
+ * set in the simulator's src/share/patreon.js and the board's public/app.js.
+ */
+export const PATREON_URL = 'https://www.patreon.com/c/webfpv';
+
+export const PATREON_NOTE = 'Support WebFPV on Patreon. Keep the lights on, $5. Hosting + runway, $12. Build the sim, $25. USD, plus GST on join.';
+
+export function bindPatreonLinks(root = document) {
+  for (const a of root.querySelectorAll('[data-patreon]')) {
+    a.title = PATREON_NOTE;
+    a.setAttribute('aria-label', PATREON_NOTE);
+    if (PATREON_URL) {
+      a.href = PATREON_URL;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      delete a.dataset.patreonPending;
+      continue;
+    }
+    a.href = '#';
+    a.removeAttribute('target');
+    a.dataset.patreonPending = '1';
+    a.addEventListener('click', (event) => {
+      event.preventDefault();
+    });
+  }
+}
+
 function isLocal() {
   const h = window.location.hostname;
   return h === 'localhost' || h === '127.0.0.1' || h === '' || h === '[::1]';

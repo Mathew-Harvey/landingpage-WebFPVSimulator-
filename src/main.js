@@ -44,7 +44,7 @@ import { buildCity, flightLine, CITY_ORIGIN, BUILT_R, TREE_R } from './city.js';
 import { buildRoom, ROOM_AIR } from './room.js';
 import { buildWhoop, WHOOP_FOV, WHOOP_MOUNT_FORWARD, WHOOP_MOUNT_UP, WHOOP_CAM_TILT_DEG } from './whoop.js';
 import { buildPetals } from './petals.js';
-import { destinations } from './config.js';
+import { bindPatreonLinks, destinations } from './config.js';
 import { FONTCSS, STICKERS } from './stickers-data.js';
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1160,6 +1160,7 @@ const SLAPS = [...document.querySelectorAll('.slap')]
       a.href = d.href;
     }
   }
+  bindPatreonLinks();
 }
 
 /* The act ledger down the left edge. */

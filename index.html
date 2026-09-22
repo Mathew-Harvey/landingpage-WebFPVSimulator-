@@ -265,8 +265,32 @@
         font-weight: 700;
       }
       .nav a.is-primary:hover { background: #9dffc7; color: var(--deep); }
+      /*
+       * Support. Patreon's symbol in their coral, the name in this page's
+       * type. Fly now stays the mint button. The mark is the only coral
+       * on the page.
+       */
+      a.patreon {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        height: 30px;
+        padding: 0 11px 0 8px;
+        border-radius: 3px;
+        background: rgba(16, 22, 17, 0.55);
+        box-shadow: inset 0 0 0 1px rgba(244, 236, 214, 0.18);
+        color: var(--cream);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-transform: none;
+        text-decoration: none;
+        text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
+      }
+      a.patreon svg { width: 14px; height: 14px; display: block; flex: 0 0 auto; }
+      a.patreon:hover { color: var(--cream); box-shadow: inset 0 0 0 1px #FF424D; background: rgba(16, 22, 17, 0.72); }
       @media (max-width: 720px) {
-        .nav a:not(.is-primary):not(.is-wiki) { display: none; }
+        .nav a:not(.is-primary):not(.is-wiki):not(.patreon) { display: none; }
       }
 
       /* ------------------------------------------------------------------
@@ -1423,6 +1447,7 @@
       }
       footer a { color: rgba(243, 234, 212, 0.78); text-decoration: none; }
       footer a:hover { color: var(--sakura); }
+      footer a.patreon:hover { color: var(--cream); box-shadow: inset 0 0 0 1px #FF424D; }
       footer a:focus-visible { outline: 2px solid var(--sakura); outline-offset: 3px; }
 
       .foot-legal {
@@ -1817,6 +1842,10 @@
         <a href="https://webfpv.org/sim/src/trackbuilder/index.html" data-dest="builder">Track builder</a>
         <a href="https://webfpv.org/board/" data-dest="board">Tracks and Times</a>
         <a href="https://github.com/Mathew-Harvey/WebFPVSimulator" rel="noreferrer">Source</a>
+        <a class="patreon" data-patreon href="https://www.patreon.com/c/webfpv" target="_blank" rel="noopener noreferrer" aria-label="Support WebFPV on Patreon. Keep the lights on, $5. Hosting + runway, $12. Build the sim, $25. USD, plus GST on join." title="Support WebFPV on Patreon. Keep the lights on, $5. Hosting + runway, $12. Build the sim, $25. USD, plus GST on join.">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#FF424D" d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003"/></svg>
+          <span>Patreon</span>
+        </a>
         <a class="is-primary" href="https://webfpv.org/sim/?map=field" data-dest="sim">Fly now</a>
       </nav>
     </header>
@@ -2304,6 +2333,10 @@
           <a href="https://github.com/Mathew-Harvey/WebFPVSimulator-LeaderBoard" rel="noreferrer">Leaderboard repo</a>
           <a href="https://betaflight.com" rel="noreferrer">Betaflight</a>
           <a href="https://www.gnu.org/licenses/gpl-3.0.html" rel="noreferrer">GPLv3</a>
+          <a class="patreon" data-patreon href="https://www.patreon.com/c/webfpv" target="_blank" rel="noopener noreferrer" aria-label="Support WebFPV on Patreon. Keep the lights on, $5. Hosting + runway, $12. Build the sim, $25. USD, plus GST on join." title="Support WebFPV on Patreon. Keep the lights on, $5. Hosting + runway, $12. Build the sim, $25. USD, plus GST on join.">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#FF424D" d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003"/></svg>
+            <span>Patreon</span>
+          </a>
         </div>
       </div>
     </footer>
