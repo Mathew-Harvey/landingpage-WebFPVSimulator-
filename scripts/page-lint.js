@@ -59,6 +59,7 @@ async function exists(rel) {
 
 const index = await readFile(join(root, 'index.html'), 'utf8');
 const wiki = await readFile(join(root, 'wiki/index.html'), 'utf8');
+const notes = await readFile(join(root, 'notes/index.html'), 'utf8');
 const wikiJs = await readFile(join(root, 'src/wiki/wiki.js'), 'utf8');
 const mainJs = await readFile(join(root, 'src/main.js'), 'utf8');
 const pack = await readFile(join(root, 'stickers/index.html'), 'utf8');
@@ -175,7 +176,7 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
     check('robots.txt names the sitemap', /^Sitemap:\s*https:\/\/\S+sitemap\.xml/m.test(robots), 'the line a crawler reads');
     /* Every page the family has, and no page it does not. A sitemap that
      * lists a 404 is worse than no sitemap. */
-    const want = ['https://webfpv.org/', 'https://webfpv.org/sim/', 'https://webfpv.org/wiki/', 'https://webfpv.org/stickers/', 'https://webfpv.org/board/'];
+    const want = ['https://webfpv.org/', 'https://webfpv.org/sim/', 'https://webfpv.org/wiki/', 'https://webfpv.org/notes/', 'https://webfpv.org/stickers/', 'https://webfpv.org/board/'];
     const missing = want.filter((u) => !map.includes(`<loc>${u}</loc>`));
     check('sitemap lists every page of the family', missing.length === 0, missing.length ? `missing ${missing.join(', ')}` : `${want.length} pages plus the builder`);
     check('sitemap is well formed', /<\?xml/.test(map) && /sitemaps\.org\/schemas\/sitemap\/0\.9/.test(map), 'declaration and the real namespace URL');
@@ -209,7 +210,7 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
  */
 {
   const bad = [];
-  for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['stickers/index.html', pack], ['src/main.js', mainJs], ['src/wiki/wiki.js', wikiJs]]) {
+  for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['notes/index.html', notes], ['stickers/index.html', pack], ['src/main.js', mainJs], ['src/wiki/wiki.js', wikiJs]]) {
     if (/[\u2013\u2014]/.test(src)) {
       bad.push(name);
     }

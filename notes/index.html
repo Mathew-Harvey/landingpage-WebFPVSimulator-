@@ -1,0 +1,365 @@
+<!doctype html>
+<!--
+  Patch notes. A page on the landing site, the same chrome as the wiki,
+  and none of the film. The words are for a pilot, so a commit about a
+  collider becomes a sentence about whether you can fly the gap.
+
+  This file is part of the WebFPVSimulator landing page.
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or (at
+  your option) any later version.
+
+  This program is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Patch notes, WebFPV</title>
+    <meta
+      name="description"
+      content="A month of WebFPV patch notes for pilots: new places, whoop rooms, and the bugs that were getting in the way of a lap."
+    />
+    <meta name="theme-color" content="#141c16" />
+    <link rel="canonical" href="https://webfpv.org/notes/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="WebFPV" />
+    <meta property="og:url" content="https://webfpv.org/notes/" />
+    <meta property="og:title" content="WebFPV patch notes" />
+    <meta property="og:description" content="What changed this week. The town, the sticks, and the trick list, written for pilots." />
+    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="A five inch racing quad on a lit studio deck, its frame open and the stack visible." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="WebFPV patch notes" />
+    <meta name="twitter:description" content="What changed this week. The town, the sticks, and the trick list, written for pilots." />
+    <meta name="twitter:image" content="https://webfpv.org/og.png" />
+    <link rel="icon" href="../icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="../favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
+    <style>
+      :root {
+        --cream: #f3ead4;
+        --sakura: #e8a8b8;
+        --amber: #ffd45c;
+        --mint: #7dffb4;
+        --slate: #9db3c8;
+        --deep: #141c16;
+        --line: rgba(244, 236, 214, 0.12);
+        --line-2: rgba(244, 236, 214, 0.06);
+        --ui-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        --track-label: 0.16em;
+        --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+        --gutter: clamp(20px, 5vw, 72px);
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        background: radial-gradient(120% 90% at 50% 6%, #1e2a20, #101610 60%) fixed;
+        color: var(--cream);
+        font-family: var(--ui-font);
+        -webkit-font-smoothing: antialiased;
+      }
+      body {
+        min-height: 100svh;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+      }
+      a { color: inherit; }
+      ::selection { background: rgba(232, 168, 184, 0.28); }
+      .chequer {
+        position: fixed; top: 0; left: 0; right: 0; z-index: 30; height: 5px;
+        background: repeating-linear-gradient(90deg, #23272f 0 14px, #eae6dd 14px 28px);
+        opacity: 0.9; pointer-events: none;
+      }
+      #topbar {
+        display: flex; align-items: center; justify-content: space-between; gap: 16px;
+        padding: 20px var(--gutter) 12px;
+        border-bottom: 1px solid var(--line-2);
+      }
+      .mark {
+        font-size: 15px; font-weight: 800; letter-spacing: 0.18em;
+        color: var(--cream); text-decoration: none;
+      }
+      .mark .fpv { color: var(--sakura); }
+      .nav { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+      .nav a {
+        padding: 8px 13px; border-radius: 3px;
+        font-size: 12px; letter-spacing: var(--track-label); text-transform: uppercase;
+        color: rgba(243, 234, 212, 0.72); text-decoration: none;
+      }
+      .nav a:hover { color: var(--cream); background: rgba(243, 234, 212, 0.07); }
+      .nav a.is-current { color: var(--cream); box-shadow: inset 0 -2px 0 var(--sakura); }
+      .nav a.is-primary { color: var(--deep); background: var(--mint); font-weight: 700; }
+      .nav a.is-primary:hover { background: #9dffc7; color: var(--deep); }
+      a.patreon {
+        display: inline-flex; align-items: center; gap: 7px;
+        height: 30px; padding: 0 11px 0 8px; border-radius: 3px;
+        background: rgba(16, 22, 17, 0.55);
+        box-shadow: inset 0 0 0 1px rgba(244, 236, 214, 0.18);
+        color: var(--cream); font-size: 12px; font-weight: 600;
+        letter-spacing: 0.02em; text-transform: none; text-decoration: none;
+      }
+      a.patreon svg { width: 14px; height: 14px; display: block; }
+      a.patreon:hover { color: var(--cream); box-shadow: inset 0 0 0 1px #FF424D; }
+      @media (max-width: 860px) {
+        .nav a:not(.is-primary):not(.is-current):not(.patreon) { display: none; }
+      }
+      main {
+        width: min(42rem, 100%);
+        margin: 0 auto;
+        padding: 36px var(--gutter) 72px;
+      }
+      .kicker {
+        margin: 0 0 10px;
+        font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+        color: var(--sakura);
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(36px, 6vw, 56px);
+        letter-spacing: 0.02em; line-height: 0.95;
+      }
+      .lede {
+        margin: 0 0 36px;
+        max-width: 38em;
+        font-size: 18px; line-height: 1.5;
+        color: rgba(243, 234, 212, 0.82);
+      }
+      section { margin: 0 0 34px; }
+      .weeks {
+        display: flex; flex-wrap: wrap; gap: 8px 14px;
+        margin: 0 0 40px;
+      }
+      .weeks a {
+        color: var(--slate); text-decoration: none;
+        font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase;
+        border-bottom: 1px solid rgba(232, 168, 184, 0.45);
+      }
+      .weeks a:hover { color: var(--cream); }
+      section { scroll-margin-top: 18px; }
+      h2 {
+        margin: 8px 0 4px;
+        font-size: 28px; letter-spacing: 0.01em; text-transform: none;
+        color: var(--cream);
+      }
+      .when {
+        margin: 0 0 16px;
+        font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+        color: var(--sakura);
+      }
+      h3 {
+        margin: 18px 0 10px;
+        font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase;
+        color: var(--amber);
+      }
+      ul { margin: 0; padding: 0; list-style: none; }
+      li {
+        margin: 0 0 16px;
+        padding-left: 16px;
+        border-left: 2px solid rgba(232, 168, 184, 0.45);
+        font-size: 16.5px; line-height: 1.55;
+        color: rgba(243, 234, 212, 0.9);
+      }
+      li strong { color: var(--cream); font-weight: 700; }
+      footer {
+        display: flex; flex-wrap: wrap; gap: 8px 26px;
+        align-items: center; justify-content: space-between;
+        padding: 14px var(--gutter) 18px;
+        border-top: 1px solid var(--line-2);
+        font-size: 12px; color: var(--slate);
+      }
+      footer a { color: rgba(243, 234, 212, 0.78); text-decoration: none; }
+      footer a:hover { color: var(--sakura); }
+      footer a.patreon:hover { color: var(--cream); }
+      .foot-links { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+    </style>
+  </head>
+  <body>
+    <div class="chequer" aria-hidden="true"></div>
+    <header id="topbar">
+      <a class="mark" href="../">WEB<span class="fpv">FPV</span></a>
+      <nav class="nav">
+        <a href="../wiki/">Wiki</a>
+        <a class="is-current" href="./" aria-current="page">Patch notes</a>
+        <a href="https://webfpv.org/sim/src/trackbuilder/index.html" data-dest="builder">Track builder</a>
+        <a href="https://webfpv.org/board/" data-dest="board">Tracks and Times</a>
+        <a href="https://github.com/Mathew-Harvey/WebFPVSimulator" rel="noreferrer">Source</a>
+        <a class="patreon" data-patreon href="https://www.patreon.com/c/webfpv" target="_blank" rel="noopener noreferrer" aria-label="Support WebFPV on Patreon. Keep the lights on, $5. Hosting + runway, $12. Build the sim, $25. USD, plus GST on join." title="Support WebFPV on Patreon. Keep the lights on, $5. Hosting + runway, $12. Build the sim, $25. USD, plus GST on join.">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#FF424D" d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003"/></svg>
+          <span>Patreon</span>
+        </a>
+        <a class="is-primary" href="https://webfpv.org/sim/?map=field" data-dest="sim">Fly now</a>
+      </nav>
+    </header>
+
+    <main>
+      <p class="kicker">22 August to 22 September 2026</p>
+      <h1>Patch notes</h1>
+      <p class="lede">A month of flying, newest week first. Each note is one week's branches after they landed on the live sim.</p>
+      <nav class="weeks" aria-label="Weeks">
+        <a href="#sep22">22 September</a>
+        <a href="#sep15">15 September</a>
+        <a href="#sep8">8 September</a>
+        <a href="#sep1">1 September</a>
+        <a href="#aug22">22 August</a>
+      </nav>
+
+      <section id="sep22">
+        <h2>22 September</h2>
+        <p class="when">16 to 22 September</p>
+        <h3>New</h3>
+        <ul>
+          <li><strong>Help keep the sim online.</strong> Patreon sits under the WebFPV name on the title screen, and in the bar at the top of this site. Three memberships: Keep the lights on, $5. Hosting + runway, $12. Build the sim, $25. US dollars, plus GST when you join.</li>
+          <li><strong>Weight, while you are flying.</strong> A slider on the flight screen. Drag right and the quad gets heavier: it drops when you chop the throttle and stops hanging at the top of a jump. Drag left and it floats. The middle is the quad we ship.</li>
+          <li><strong>Your rates, saved in this browser.</strong> Open Rates from the pause menu. The throttle cap is saved with them, so a track can have its own limit. Changing rates in the air keeps you where you are: the run used to restart and put you back on the ground.</li>
+          <li><strong>Stick mode.</strong> Mode 1 and Mode 2, for a radio, a game controller, or the keyboard. The throttle stays on the hand you already fly with.</li>
+          <li><strong>Statistics on the board.</strong> Tracks and Times has a second tab. It counts how the site is being flown, including crashes, and a crashflip is a flip, so it stays out of the flight time.</li>
+        </ul>
+        <h3>The town</h3>
+        <ul>
+          <li><strong>Fly the gap you can see.</strong> Openings that looked clear were solid. A missing ceiling let you into a room that should have had a lid. A hip roof had no peak. A roof deck you can stand on is a place you can land.</li>
+          <li><strong>The bridge, the canal, the mountains.</strong> The bridge deck had a slot you fell through. The canal was a solid floor. The mountains were hollow, and the bore had no roof. Bushes were sitting in the air on a crest. Cafe tables were a metre and a half past the rail, so you hit a table you could not see.</li>
+          <li><strong>A wall lets go.</strong> Hitting a wall was a pinball: two spots, bouncing forever, and the only way out was a restart. The props were pushing you into the face. You can back away.</li>
+        </ul>
+        <h3>Sticks</h3>
+        <ul>
+          <li><strong>A game controller stays on the ground.</strong> Its throttle springs back to the middle. The sim was reading that spring as a punch, and the quad took off by itself. It waits until you mean it.</li>
+          <li><strong>The stick wizard can be finished, and it says what it is waiting for.</strong> You can hold the throttle the whole way through. A radio with four axes can reach the end. A three position switch does not have to come back to the middle, because it has no middle to come back to. A gimbal that sits a little off centre keeps that as its centre, so the quad does not slide with the sticks let go.</li>
+          <li><strong>Three stick faults from the same week.</strong> A channel that ran backwards. The sticks on the wrong hands. A stick that stayed down after you let go.</li>
+          <li><strong>Camera angle moves the camera.</strong> The slider was moving the quad along with the picture.</li>
+        </ul>
+        <h3>Fixes</h3>
+        <ul>
+          <li><strong>The rooms are named what they are.</strong> Settings is Settings. The calibrate screen the menus pointed at is a real screen you can open.</li>
+          <li><strong>Menu rows stay under the pointer.</strong> Moving the mouse down the list was sliding the row out from under it.</li>
+          <li><strong>A frozen picture says why.</strong> If the frame stops, the screen tells you what it is waiting on.</li>
+          <li><strong>Crashes count the same way everywhere.</strong> The board was reading nought, because it only heard the glitch catch and missed a real hit. Race and freestyle now share one crash line. A turtle after a hard hit is the same crash, counted once. A crashflip stays out of the flight time. A visit's country was coming through as Unknown. It comes through now.</li>
+          <li><strong>A board that cannot load says so.</strong> An earlier message for a different fault was telling people the board was empty while the tracks were sitting there. A failed load says the board could not be reached. An empty board says it is empty.</li>
+          <li><strong>A saved rate set that had lost its id</strong> could be seen in the list and could not be loaded or deleted. The id is what the list uses now.</li>
+          <li><strong>A feel report records the sticks.</strong> Five reports said twitchy, stiff, floppy or soft. Two were phones, one was a keyboard, one was a radio. The form now writes down which, along with the tune, so the next one is about the quad.</li>
+          <li><strong>Tune is one list, inside Quad.</strong> Two old tunes came off it. Choosing the aircraft happens in that room, as one choice.</li>
+          <li><strong>Five new songs, three retired.</strong> The music that plays while you fly.</li>
+          <li><strong>The wiki says each thing once.</strong> The same page used to explain a part twice. It explains it once now.</li>
+        </ul>
+        <h3>Held back</h3>
+        <ul>
+          <li><strong>The trick list is off.</strong> Before the doors came off, the screen itself was broken: one trick on it, a wheel that did nothing, and a panel stuck on the first row. The list was also naming tricks wrong. A wrong name teaches the wrong thing about the trick you just flew. Both doors are gone, on the title and in the Freestyle room. It comes back when the name matches what you did.</li>
+        </ul>
+      </section>
+
+      <section id="sep15">
+        <h2>15 September</h2>
+        <p class="when">13 to 15 September</p>
+        <h3>New</h3>
+        <ul>
+          <li><strong>The whoop is a whoop.</strong> Its own motors, its own weight, its own camera. It parks about a centimetre off the floor, and nothing on the screen calls it by a five inch's name.</li>
+          <li><strong>Whoop racing is a set of rooms.</strong> Four laps to start, then the RaceGOW Season 5 tracks, each one named for the person who drew it. A room card plays the lap.</li>
+          <li><strong>Dive gates stand on a short pipe.</strong> In a whoop room they are whoop gates. You can fly a gap in the frame instead of a full five inch footing.</li>
+          <li><strong>The designer gets the credit.</strong> On the board, the person who built the track is named, and you can search for them. The corner mark on the board is the way back to this site.</li>
+          <li><strong>RaceGOW Season 5 is in.</strong> Eight rooms, read off the track animations, each credited to the person who drew it. Track 6 is MrE's, the first with no sill. Track 7 is FPVBean's.</li>
+        </ul>
+        <h3>Fixes</h3>
+        <ul>
+          <li><strong>A whoop room can be finished.</strong> The scoring square on a pole was measured in the author's metres, so a clean pass did not count. It counts now.</li>
+          <li><strong>Tracks 1, 3 and 4 on the board were the old layouts.</strong> They were replaced in place. The times stayed. Track 1 had also been mirrored, so the lap ran the wrong way around.</li>
+          <li><strong>Touching the floor does not fail the gate.</strong> Rolling onto your side does. The bottom third of a whoop gate was being called dirt and refused. It scores.</li>
+          <li><strong>The whoop was dragging a canopy it does not have.</strong> The body size was being read as a radius, so the hit box hung underneath. It is a width now. The whoop also shows its ducts, and a pole's foot is solid.</li>
+          <li><strong>The whoop was shaking like a five inch, and the floor was giving it free lift.</strong> The gyro noise was scaled to a five inch motor. In a hover the whoop was buzzing several times harder than the big quad at full throttle. Both of those are gone.</li>
+          <li><strong>The whoop was flying the five inch's tune, in a room that grew to fit the big quad.</strong> The tune follows the machine. The room stays a room. The card says which aircraft you are on.</li>
+          <li><strong>An upload finds the track.</strong> If the board has given your track a new id, posting the time still lands on it.</li>
+          <li><strong>A line was flying through a gate it was not scoring,</strong> and a steering rule was forcing the line off Track 7. Tracks 3 and 4 were retuned to the animations.</li>
+          <li><strong>A gate stands up, or it lies flat.</strong> One pass had invented a third pose, half tilted, that no track uses.</li>
+        </ul>
+      </section>
+
+      <section id="sep8">
+        <h2>8 September</h2>
+        <p class="when">8 to 12 September</p>
+        <h3>New</h3>
+        <ul>
+          <li><strong>The Track room is the tracks.</strong> The board, and the tracks saved in this browser, including the shipped rooms. One list. A card plays the lap from a three quarter view, at one pace, so a long lap is a long clip and a short lap is a short one.</li>
+          <li><strong>Export the lap.</strong> The builder's More menu writes a looping animation of the track you just drew. The racing line can close on the first gate, with no start pads in the way.</li>
+          <li><strong>Whoop gates are 28 inches.</strong> Tracks 5 and 8 were rebuilt on that size. Six guessed tracks, which were never the real ones, came out.</li>
+          <li><strong>The way back is a row.</strong> The corner of the screen is clear. Mute is the name on the music control. The bug button is back on every screen except the title. The title used to hide it, and a rename of that button had left some browsers with a dead chip until the page was reloaded.</li>
+          <li><strong>The front door flies a whoop.</strong> The film indoors is RaceGOW Track 1, on a 6S five inch the instrument agrees with. Stickers on the glass are slapped on, not faded in.</li>
+        </ul>
+        <h3>Fixes</h3>
+        <ul>
+          <li><strong>The racing line stays on your gates.</strong> It was going wide around a stack and through gates you had not put in the order.</li>
+          <li><strong>The loading bar sat at fifteen percent, then jumped to done.</strong> The long part of loading the world had nothing to say and no way to move the bar while it worked. It moves, and it says what it is doing.</li>
+          <li><strong>Whoop rooms have no floor paint and no gate numbers.</strong> A whoop room is the gates and the lap.</li>
+          <li><strong>The board can take a track down.</strong> An admin can remove one from the page. The whoop list is named for the aircraft.</li>
+        </ul>
+      </section>
+
+      <section id="sep1">
+        <h2>1 September</h2>
+        <p class="when">30 August to 7 September</p>
+        <h3>New</h3>
+        <ul>
+          <li><strong>Freestyle scoring is a choice, and it tells you the scorer is unfinished.</strong> Off, which is what you get until you ask: no names, no clock, no board. Free flight, where tricks are named and nothing is posted. Or a two minute run that can go to the board.</li>
+          <li><strong>A training field</strong> north of the works, laid out for five skills. The bars there are solid.</li>
+          <li><strong>Freestyle is the town.</strong> One place. The front page flies that town, the real one, and ends over it. A painted copy of the town had been standing in, and a bug was moving the real one twice so the shops disappeared.</li>
+          <li><strong>The board has a freestyle side,</strong> an arcade cabinet next to the race times.</li>
+        </ul>
+        <h3>Fixes</h3>
+        <ul>
+          <li><strong>A Split-S was being paid as a Half Matty.</strong> One clean orbit was being paid as nothing, then as a yaw spin. A street of posts silenced the scorer for the whole run. The training mast was not an obstacle, so a path trick around it could never count. A wall tap stuck because the direction ignored which way you had spawned.</li>
+          <li><strong>A rail was assumed to mean a flip,</strong> so the scorer invented pitches nobody flew. The lap subtraction in the real sim was backwards. A Maverick Loop was paying 250 for a trick the sheet prices lower.</li>
+          <li><strong>The intro camera stayed up after you had left the ground.</strong> Taking off ended the shot, even on a throttle that never crossed the old line. The boot also stopped waiting forever on a board that was asleep.</li>
+        </ul>
+        <h3>Held back</h3>
+        <ul>
+          <li><strong>Trick names landed here, and the 22 September note is the current one.</strong> Powerloops, mattys, split-S, immelmanns, orbits and wall taps were being scored. The list stays hidden until the name matches the trick.</li>
+        </ul>
+      </section>
+
+      <section id="aug22">
+        <h2>22 August</h2>
+        <p class="when">22 to 30 August</p>
+        <h3>New</h3>
+        <ul>
+          <li><strong>Turtle.</strong> A crash can end on the props, and you can flip back over.</li>
+          <li><strong>New places.</strong> The municipal baths, The Kiln, a dressed Industrial bando, Bardwell's yard, and the cement works as one machine. Blossom is back over the works road.</li>
+          <li><strong>A ghost to chase.</strong> Your best lap, or the lap before this one.</li>
+          <li><strong>Credits, and a wiki.</strong> The people who flew it are named. The FPV wiki lives on this website.</li>
+          <li><strong>The next flag glows</strong> on the side you are meant to pass, and only that flag is lit.</li>
+          <li><strong>Menus on a phone and a tablet.</strong> A radio with no buttons can still press a row.</li>
+          <li><strong>Arcade or expert</strong> while you fly, a wider camera out to 115 degrees, and a way to drop the resolution or cap the frame rate when a machine is struggling. Throttle mid and expo are on the rates screen. They were already in the firmware and the menu had no row for them.</li>
+          <li><strong>The front page offers the flight out loud, once,</strong> then leaves it in the corner. The boot bar is a workshop rail.</li>
+        </ul>
+        <h3>Fixes</h3>
+        <ul>
+          <li><strong>A crash is a bounce, a slide, or a roll.</strong> Takeoff is a takeoff. The bang at the start line was two separate bugs. Flying a gate upside down, or skimming the dirt and bouncing upright, does not finish the lap. Grass is a dead thump. A hard hit flat on the base stays down. A small tap is something you fly out of. Turtle snaps you upright when you ask.</li>
+          <li><strong>First flight was throwing away your track</strong> and putting you on the old race field. It keeps the track you came in with.</li>
+          <li><strong>The city lets you through.</strong> You can fly the overbridge stairs, with the colliders on the treads rather than a ramp through them. The cage is open. Gaps between posts stay gaps. Parked cars stay on the ground instead of lifting into the air above them. The pavilion is a shell you can enter, and the bins are a line you can fly along. A tilted dive gate stands on two posts. The racing line stops visiting the pads.</li>
+          <li><strong>The baths hopper is a cellar you can enter.</strong> The cement works is one machine, and the drawing is what you hit. The bug chip was covering the track name, and a mouse could not leave a map. A mirror was blocking a gate.</li>
+          <li><strong>Menus stopped jittering.</strong> The bold label was changing width under the cursor. The title note was drawing on top of the keep note. A failed boot says what to do. The bug report keeps what you typed. Music starts on a different track each visit.</li>
+          <li><strong>Yaw was climbing, and the motors had gone quiet.</strong> Part of the climb was a rotor. Prop wash had been turned down until a pilot said it disappeared, and it was brought back. The five inch picked up the weight that was on the scales. A Precision tune landed for a feel report that asked for one.</li>
+          <li><strong>A failed board no longer breaks every link on the page.</strong> Credits on the board open the simulator's credits. A pole on a plan is drawn as a pole, and a link to fly a track carries which aircraft it is for.</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer>
+      <span>GPLv3 &#183; 22 August to 22 September 2026</span>
+      <div class="foot-links">
+        <a href="../">The film</a>
+        <a href="../wiki/">FPV wiki</a>
+        <a class="is-primary" href="https://webfpv.org/sim/?map=field" data-dest="sim">Fly now</a>
+      </div>
+    </footer>
+    <script type="module" src="boot.js"></script>
+  </body>
+</html>

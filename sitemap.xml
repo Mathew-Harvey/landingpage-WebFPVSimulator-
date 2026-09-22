@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  The six pages of webfpv.org, which are three separate services behind one
-  domain: this landing page, its wiki and the sticker pack are a static site,
+  The pages of webfpv.org, which are three separate services behind one
+  domain: this landing page, its wiki, its patch notes and the sticker pack are a static site,
   /sim/ is the simulator's Render static site and /board/ is the board's
   Render web service, joined by the Cloudflare Worker in the simulator's
   edge/router.js.
@@ -10,8 +10,8 @@
   here as URLs of their own. What makes them findable is the per article
   document.title in src/wiki/wiki.js and the links out of /wiki/ itself.
 
-  Hand maintained, and short enough that it should be. If a seventh page
-  ever appears, it goes here.
+  Hand maintained, and short enough that it should be. A new page of this
+  site goes here, and into the list in scripts/page-lint.js.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
@@ -26,6 +26,11 @@
   </url>
   <url>
     <loc>https://webfpv.org/wiki/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://webfpv.org/notes/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
