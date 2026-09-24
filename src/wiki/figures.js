@@ -132,7 +132,7 @@ const FIGURES = {
     controls: [
       { key: 'demand', label: 'Roll demand', min: 100, max: 670, step: 10, value: 400, fmt: (v) => `${f0(v)} deg/s` },
     ],
-    caption: 'A stick position becomes a packet, a demanded rate, a duty spread across four motors, thrust, rotation, and finally a gyro reading subtracted from where it started. That subtraction makes it a loop. The error trace is the only thing the controller ever sees.',
+    caption: 'The boxes follow one roll command round the loop: the stick position, the radio packet that carries it, the target roll rate Betaflight calculates, the difference in duty cycle between the motors, the total thrust, and the rotation rate the gyro measures. Every millisecond the measured rate is subtracted from the target rate. The result is the error, shown on the right, and the PID controller changes the motor power to reduce it. In the graph the dashed line is the rate asked for and the solid line is the rate the quad reaches.',
     reset: (s, sc) => {
       sc.loop = rateLoop({});
       sc.trace = new Trace(1800);
@@ -164,7 +164,7 @@ const FIGURES = {
 
       const stages = [
         ['Stick', f2(sp / 670), 'of full throw', C.sakura],
-        ['Packet', '250 Hz', 'on the grid', C.sakura],
+        ['Packet', '250 Hz', 'packet rate', C.sakura],
         ['Betaflight', f0(sp), 'deg/s asked', C.mint],
         ['Mixer', `±${f3(spread)}`, 'duty spread', C.amber],
         ['Props', f1(HOVER_T * 4), 'N of thrust', C.amber],
@@ -234,7 +234,7 @@ const FIGURES = {
     w: 680,
     h: 356,
     still: 2.4,
-    ask: 'A small nudge tips the aircraft. How many corrections a second does it take to hold it level? Answer before you drag.',
+    ask: 'A small push tips the quad. How many corrections a second does it take to hold it level? Answer before you choose.',
     controls: [
       {
         key: 'hz',
@@ -246,11 +246,11 @@ const FIGURES = {
           { label: '20', value: 20 },
           { label: '50', value: 50 },
           { label: '200', value: 200 },
-          { label: '1000, the real one', value: 1000 },
+          { label: '1000, Betaflight', value: 1000 },
         ],
       },
     ],
-    caption: 'An aeroplane left alone flies straight, because its wings and tail pull it back. A quadcopter has nothing that does that. With all four motors equal nothing returns it to level, and every real frame carries small crooked pushes that tip it over. The question is how fast something has to correct. A very good human manages five a second, the left hand setting. The flight controller does a thousand.',
+    caption: 'The graph shows how far the quad tips after a small push, for a controller that corrects it at the chosen rate. An aeroplane returns to level by itself, because its wings and tail push it back. A quadcopter has nothing that does this: with all four motors equal no angle is preferred, and small steady pushes from build errors tip it further and further. A skilled pilot can correct about five times a second, the left hand setting. The flight controller corrects 1,000 times a second.',
     reset: (s, sc) => {
       /* Sample and hold PD on attitude, against the sort of steady bias a
          slightly canted motor leaves. Same airframe constants as the rest. */
@@ -315,10 +315,10 @@ const FIGURES = {
 
       const ax = new Axes(ctx, {
         x: 250, y: 54, w: W - 280, h: 172, xmin: 0, xmax: span, ymin: -190, ymax: 190,
-        xlabel: 'seconds after the nudge', ylabel: 'how far it has tipped, degrees',
+        xlabel: 'seconds after the push', ylabel: 'how far it has tipped, degrees',
       });
       ax.frame({ xticks: [0, 1, 2, 3, 4], yticks: [-180, -45, 0, 45, 180], fmtX: f0, fmtY: f0 });
-      ax.hline(45, alpha(C.sakura, 0.4), [4, 4], 'past here you are not flying, you are falling', 0.02);
+      ax.hline(45, alpha(C.sakura, 0.4), [4, 4], 'past 45 degrees the quad is out of control', 0.02);
       ax.hline(-45, alpha(C.sakura, 0.4), [4, 4]);
       ax.series(sc.tr, sc.t45 == null ? C.mint : C.sakura, 2.6);
       if (at < sc.tr.length) {
@@ -330,10 +330,10 @@ const FIGURES = {
         fill: good ? C.mint : C.sakura, size: 14, weight: 700,
       });
       wrapText(ctx, good
-        ? 'Corrections arrive faster than the aircraft can tip, so the nudge never becomes anything.'
-        : 'Between one correction and the next the aircraft tips further than the next correction can undo.',
+        ? 'Corrections arrive before the quad can tip far, so the small push never grows.'
+        : 'Between one correction and the next, the quad tips further than the next correction can undo.',
       250, 296, W - 280, { fill: C.slate, size: 11.5, lead: 15 });
-      note(ctx, 24, H - 11, 'the same airframe, and a steady crooked push of the size a slightly canted motor leaves');
+      note(ctx, 24, H - 11, 'the five inch, and a steady push the size a slightly canted motor makes');
     },
   }),
 
@@ -343,7 +343,7 @@ const FIGURES = {
    */
   tilt: () => makeFigure({
     id: 'tilt',
-    label: 'Bank angle buys acceleration and costs thrust',
+    label: 'Bank angle, the sideways acceleration it gives and the extra thrust it needs',
     eyebrow: 'One force, one direction',
     w: 680,
     h: 320,
@@ -351,7 +351,7 @@ const FIGURES = {
     controls: [
       { key: 'bank', label: 'Bank angle', min: 0, max: 70, step: 1, value: 35, fmt: (v) => `${f0(v)} deg` },
     ],
-    caption: 'A quad has one force it can point, so going anywhere means tilting, and tilting shrinks the vertical share. Sideways acceleration is g tan(theta); thrust to stay level is W / cos(theta). Both run away near vertical. It is also why there is no brake: slowing down is the same manoeuvre pointed the other way.',
+    caption: 'The thrust arrow splits into a vertical part, which holds the weight up, and a horizontal part, which accelerates the quad sideways. A quad has only this one force to aim, so to go anywhere it must tilt, and tilting shrinks the vertical part. At a bank angle θ, the thrust needed to stay level is W / cos θ, where W is the weight, and the sideways acceleration is g tan θ. Both grow without limit as the bank approaches 90 degrees. For the same reason a quad has no brake: to slow down, it tilts the other way. The numbers on the right are for the five inch at Earth gravity.',
     draw(ctx, W, H, s) {
       const th = (s.bank * Math.PI) / 180;
       const tw = 1 / Math.cos(th);
@@ -400,7 +400,7 @@ const FIGURES = {
       text(ctx, 'holds the weight up', cx - 10, (cy + legY) / 2, {
         fill: C.cream, size: 11, align: 'right', baseline: 'middle',
       });
-      text(ctx, 'takes you somewhere', (cx + tipX) / 2, legY - 10, {
+      text(ctx, 'accelerates the quad', (cx + tipX) / 2, legY - 10, {
         fill: C.sakura, size: 11, align: 'center',
       });
       ctx.save();
@@ -415,11 +415,11 @@ const FIGURES = {
       });
 
       panel(ctx, 392, 44, W - 416, 234, C.sakura);
-      eyebrow(ctx, 'what that bank costs and buys', 408, 66);
+      eyebrow(ctx, 'what this bank angle does', 408, 66);
       const rows = [
         ['Thrust needed to stay level', `${f2(tw)} x hover`, tw > maxTw ? C.sakura : C.cream],
         ['Sideways acceleration', `${f2(ah)} g`, C.mint],
-        ['Of the airframe\'s 9.2 to 1', `${f0((tw / maxTw) * 100)} percent used`, tw / maxTw > 0.8 ? C.sakura : C.slate],
+        [`Of the airframe's ${f1(maxTw)} to 1`, `${f0((tw / maxTw) * 100)} percent used`, tw / maxTw > 0.8 ? C.sakura : C.slate],
         ['Level speed drag will allow', `${f0(v * 3.6)} km/h`, C.amber],
       ];
       rows.forEach(([k, val, color], i) => {
@@ -443,12 +443,12 @@ const FIGURES = {
    */
   boundary: () => makeFigure({
     id: 'boundary',
-    label: 'Compiled Betaflight and the plant, and the four things that cross',
-    eyebrow: 'The seam',
+    label: 'Compiled Betaflight and the physics model, and the four things that pass between them',
+    eyebrow: 'Two programs, one module',
     w: 680,
     h: 320,
     still: 0.9,
-    caption: 'Betaflight is compiled, not reimplemented, so the left half is vendor source running as itself. The plant is C written for this project. Four things cross each millisecond, and neither side speaks the other\'s units: the controller never sees a newton, the plant never sees a PID. Anything wrong is in one half or in the crossing, never in a vague middle.',
+    caption: 'The left half is Betaflight 4.5.1, compiled from its own source code, not rewritten. The right half is the physics model, written in C for this project. Four things cross the line between them every millisecond: the stick channels, the gyro reading, the four motor duty cycles and the quad\'s state in SI units. Each side keeps its own units, and the code between them converts: Betaflight never handles a force in newtons, and the physics model never runs a PID calculation. A fault is therefore either in one of the two halves or in the conversion between them.',
     draw(ctx, W, H, s, t) {
       const mid = W / 2;
       /* The seam needs a gutter of its own. The crossings used to be drawn
@@ -459,17 +459,17 @@ const FIGURES = {
       panel(ctx, 24, 52, lw, 208, C.mint);
       panel(ctx, mid + gut, 52, W - 24 - mid - gut, 208, C.amber);
 
-      eyebrow(ctx, 'compiled from vendor', 38, 74, C.mint);
+      eyebrow(ctx, 'compiled, not rewritten', 38, 74, C.mint);
       text(ctx, 'Betaflight 4.5.1', 38, 100, { fill: C.cream, size: 17, weight: 700 });
       ['pid.c', 'mixer.c', 'rc.c', 'gyro filtering', 'rpm_filter.c', 'simplified_tuning.c']
         .forEach((n, i) => {
           text(ctx, n, 38, 126 + i * 19, { fill: C.slate, size: 11.5, mono: true });
         });
-      text(ctx, 'no UART, no MSP, no OSD pixels', 38, 246, { fill: alpha(C.slate, 0.75), size: 10.5 });
+      text(ctx, 'no serial port, MSP or OSD', 38, 246, { fill: alpha(C.slate, 0.75), size: 10.5 });
 
       eyebrow(ctx, 'written for this project', mid + gut + 14, 74, C.amber);
-      text(ctx, 'The plant', mid + gut + 14, 100, { fill: C.cream, size: 17, weight: 700 });
-      ['motors', 'props', 'battery', 'aero', 'rigid body', 'plant.c']
+      text(ctx, 'The physics model', mid + gut + 14, 100, { fill: C.cream, size: 17, weight: 700 });
+      ['motors', 'props', 'battery', 'aerodynamics', 'rigid body', 'plant.c']
         .forEach((n, i) => {
           text(ctx, n, mid + gut + 14, 126 + i * 19, { fill: C.slate, size: 11.5, mono: true });
         });
@@ -482,9 +482,9 @@ const FIGURES = {
 
       /* The four crossings, animated, so the direction of each is plain. */
       const cross = [
-        ['rc channels', 1, 88, C.sakura],
+        ['stick channels', 1, 88, C.sakura],
         ['gyro, deg/s', -1, 136, C.cream],
-        ['four duties', 1, 184, C.mint],
+        ['four duty cycles', 1, 184, C.mint],
         ['state, SI', -1, 232, C.amber],
       ];
       const ph = (t * 0.5) % 1;
@@ -496,9 +496,9 @@ const FIGURES = {
         dot(ctx, x1 + (x2 - x1) * k, y, 3.6, color);
         text(ctx, label, mid, y - 10, { fill: color, size: 10.5, align: 'center', weight: 600 });
       });
-      text(ctx, 'the controller never sees a newton, and the plant never sees a PID',
+      text(ctx, 'Betaflight never sees a newton, and the physics model never runs a PID',
         mid, 288, { fill: C.slate, size: 11.5, align: 'center' });
-      note(ctx, 24, H - 11, 'one wasm module, stepped together at 1 kHz');
+      note(ctx, 24, H - 11, 'one WebAssembly module, stepped together at 1 kHz');
     },
   }),
 
@@ -508,8 +508,8 @@ const FIGURES = {
    */
   status: () => makeFigure({
     id: 'status',
-    label: 'Every catalog key, one dot, coloured by whether it flies',
-    eyebrow: 'The catalog, honestly',
+    label: 'Every setting in the catalog as one dot, coloured by whether it has an effect in the simulator',
+    eyebrow: 'Every setting, by status',
     w: 680,
     h: 320,
     animated: false,
@@ -521,15 +521,15 @@ const FIGURES = {
         value: 'all',
         options: [
           { label: 'All', value: 'all' },
-          { label: 'Live', value: STATUS.LIVE },
-          { label: 'Gated', value: STATUS.GATED },
-          { label: 'Applied inert', value: STATUS.APPLIED_INERT },
-          { label: 'Inert', value: STATUS.INERT },
-          { label: 'Absent', value: STATUS.ABSENT },
+          { label: 'Works here', value: STATUS.LIVE },
+          { label: 'Off at 1 kHz', value: STATUS.GATED },
+          { label: 'Stored, not used', value: STATUS.APPLIED_INERT },
+          { label: 'Not simulated', value: STATUS.INERT },
+          { label: 'Configurator only', value: STATUS.ABSENT },
         ],
       },
     ],
-    caption: 'Every field the Configurator screen accepts, one dot each, from the same catalog the simulator greys its rows with. The large pale block is the part that does not fly: most of a flight controller is video, OSD, GPS and LEDs, none of which exists here. A grey key still stores and exports, so a dump you drop in is not eaten.',
+    caption: 'Each dot is one setting that Betaflight Configurator accepts, taken from the same catalog the simulator uses to grey out settings that have no effect. The large pale block is the settings marked Not simulated: most of a flight controller\'s settings are for video, the on-screen display, GPS and LEDs, and this simulator has none of those. A grey setting is still stored and exported, so a Betaflight diff file you load keeps all of its lines. The legend under the dots uses the catalog\'s own codes: live is Works here; gated is Off at 1 kHz; applied inert is Stored, not used; inert is Not simulated; absent is Configurator only.',
     draw(ctx, W, H, s) {
       const order = [STATUS.LIVE, STATUS.GATED, STATUS.APPLIED_INERT, STATUS.INERT, STATUS.ABSENT];
       const color = {
@@ -575,7 +575,7 @@ const FIGURES = {
    */
   anatomy: () => makeFigure({
     id: 'anatomy',
-    label: 'The parts of a wiki page and what each one promises',
+    label: 'The parts of a wiki page and what each one contains',
     eyebrow: 'How a page is built',
     w: 680,
     h: 330,
@@ -587,22 +587,22 @@ const FIGURES = {
         type: 'pick',
         value: 'air',
         options: [
-          { label: 'Status', value: 'chip' },
-          { label: 'In the air', value: 'air' },
-          { label: 'In the lab', value: 'lab' },
+          { label: 'Status label', value: 'chip' },
+          { label: 'The idea', value: 'air' },
+          { label: 'How it works', value: 'lab' },
           { label: 'In this simulator', value: 'sim' },
           { label: 'Figure', value: 'fig' },
         ],
       },
     ],
-    caption: 'The two columns are not the same sentence at two lengths. In the air is what you could tell somebody at the field. In the lab is what you could defend in a review. In this simulator is the seam, and the part that tells you a key does nothing. Pick a part to read what it promises.',
+    caption: 'Every article has three sections and a figure. The idea explains what happens and why, in plain words. How it works gives the equations and numbers the simulator uses, each one explained. In this simulator says which file does the work, which parts are not modelled, and whether a setting has any effect. Settings pages have What it does, How it works and In this simulator, then If you raise it and If you lower it. Choose a part to read what it contains.',
     draw(ctx, W, H, s) {
       const notes = {
-        chip: ['The status chip', 'LIVE reaches compiled firmware. GATED writes, then this firmware ignores it at 1 kHz. APPLIED INERT stores in a real parameter group nothing here reads. A chip is a promise about behaviour, not about importance.'],
-        air: ['In the air', 'Plain language, no equation, no apology. Written for somebody who has never held a radio. If you can only read one column, read this one.'],
-        lab: ['In the lab', 'The equation, the units, the constant and the file it lives in. Written for somebody who wants to check the claim rather than take it.'],
-        sim: ['In this simulator', 'The seam. Which file, which status, which check, and which thing is not modelled. This is where a page admits something.'],
-        fig: ['The figure', 'Computed from the plant\'s own constants, so it can be wrong and can be checked. An argument, not a photograph. The caption says what it is arguing.'],
+        chip: ['The status label', 'Each settings page shows one of five labels. Works here: the setting reaches Betaflight code that runs. Off at 1 kHz: Betaflight ignores it at this loop rate. Stored, not used: nothing in the flight reads it. Not simulated and Configurator only: it has no effect here.'],
+        air: ['The idea', 'What happens and why, in plain words and without equations, for a reader who has never flown a quad. On a settings page it is called What it does. If you read only one section, read this one.'],
+        lab: ['How it works', 'The equations and numbers the simulator uses, each one explained in words and given with its units, so that you can check each claim against the code.'],
+        sim: ['In this simulator', 'Which file does the work, which settings have an effect, which automatic check measures it, and which parts of the real effect are not modelled.'],
+        fig: ['The figure', 'Calculated from the physics model\'s own constants, so it can be checked against the simulator. Move the control and the drawing and the numbers change together. The caption says what the figure shows.'],
       };
       const hot = s.part;
       const dim = (k) => (hot === k ? 1 : 0.26);
@@ -612,8 +612,8 @@ const FIGURES = {
 
       ctx.save();
       ctx.globalAlpha = dim('chip');
-      eyebrow(ctx, 'the plant', px + 18, 60);
-      chip(ctx, 'LIVE', px + 96, 56, C.mint);
+      eyebrow(ctx, 'aircraft', px + 18, 60);
+      chip(ctx, 'Works here', px + 96, 56, C.mint);
       ctx.restore();
       roundRect(ctx, px + 18, 70, pw * 0.62, 16, 2, alpha(C.cream, 0.55));
       roundRect(ctx, px + 18, 94, pw * 0.86, 7, 2, alpha(C.cream, 0.18));
@@ -633,14 +633,14 @@ const FIGURES = {
       ctx.save();
       ctx.globalAlpha = dim('air');
       panel(ctx, px + 18, 194, colW, 56, C.mint);
-      text(ctx, 'IN THE AIR', px + 28, 210, { fill: C.mint, size: 9, weight: 700, track: 1.2 });
+      text(ctx, 'THE IDEA', px + 28, 210, { fill: C.mint, size: 9, weight: 700, track: 1.2 });
       roundRect(ctx, px + 28, 220, colW - 24, 6, 2, alpha(C.cream, 0.2));
       roundRect(ctx, px + 28, 232, colW - 40, 6, 2, alpha(C.cream, 0.2));
       ctx.restore();
       ctx.save();
       ctx.globalAlpha = dim('lab');
       panel(ctx, px + 28 + colW, 194, colW, 56, C.amber);
-      text(ctx, 'IN THE LAB', px + 38 + colW, 210, { fill: C.amber, size: 9, weight: 700, track: 1.2 });
+      text(ctx, 'HOW IT WORKS', px + 38 + colW, 210, { fill: C.amber, size: 9, weight: 700, track: 1.2 });
       roundRect(ctx, px + 38 + colW, 220, colW - 24, 6, 2, alpha(C.cream, 0.2));
       roundRect(ctx, px + 38 + colW, 232, colW - 44, 6, 2, alpha(C.cream, 0.2));
       ctx.restore();
@@ -652,7 +652,7 @@ const FIGURES = {
 
       const nx = px + pw + 26;
       const [title, body] = notes[hot];
-      eyebrow(ctx, 'what it promises', nx, 60);
+      eyebrow(ctx, 'what it contains', nx, 60);
       text(ctx, title, nx, 88, { fill: C.cream, size: 17, weight: 700 });
       const words = body.split(' ');
       let ln = '';
@@ -680,8 +680,8 @@ const FIGURES = {
    */
   quadx: () => makeFigure({
     id: 'quadx',
-    label: 'Betaflight motor order, spin directions, and which pair answers a demand',
-    eyebrow: 'The airframe from above',
+    label: 'Betaflight motor order, spin directions, and which motors change speed for each command',
+    eyebrow: 'The five inch from above',
     w: 680,
     h: 340,
     still: 2,
@@ -699,7 +699,7 @@ const FIGURES = {
         ],
       },
     ],
-    caption: 'Four motors, two spinning each way, and every rotation you can ask for is a different pattern of the same four numbers. Roll and pitch tilt the thrust. Yaw is the odd one: nothing pushes sideways, so the frame turns by reaction to speeding the two props that spin against the direction you want. Which is why yaw is weaker and slower.',
+    caption: 'The five inch seen from above, with Betaflight\'s motor numbers and each motor\'s speed in RPM. Two propellers spin clockwise and two anticlockwise, and each rotation you can ask for is a different pattern of speeds across the same four motors. Roll and pitch make more thrust on one side than the other. Yaw works differently: no force pushes the nose sideways, so the mixer speeds up the two propellers that spin the opposite way to the turn, and the reaction to their extra drag torque turns the frame. That is why yaw is weaker and slower than roll or pitch.',
     draw(ctx, W, H, s, t) {
       /* Betaflight mixerQuadX, in the order the firmware numbers them. */
       const M = [
@@ -738,10 +738,10 @@ const FIGURES = {
       const bx = 372;
       panel(ctx, bx, 44, W - bx - 24, 250, C.sakura);
       const heads = {
-        hover: ['Hover', 'All four the same. Every clockwise prop is balanced by a counter clockwise one, so on a perfectly built frame the twists cancel. Nothing here is holding it level, though: cancel is not the same as correct, and that is what the flight controller is for.'],
-        roll: ['Roll right', 'The two left motors speed up, the two right ones slow down. Each side holds one clockwise and one counter clockwise prop, so a roll produces no yaw at this modelling order.'],
-        pitch: ['Nose up', 'The front pair slows and the rear pair speeds up. Same story as roll: the spin directions inside each pair are opposed, so nothing leaks into yaw.'],
-        yaw: ['Nose right', 'The two counter clockwise props speed up and the clockwise pair slows. The frame turns because it is absorbing the reaction to that change, and because it is paid in prop drag it is weaker than roll or pitch.'],
+        hover: ['Hover', 'All four motors at the same speed. Each clockwise propeller\'s torque is balanced by an anticlockwise one, so on a perfectly built frame the torques cancel. Nothing returns the quad to level, so the flight controller has to correct every tilt.'],
+        roll: ['Roll right', 'The two left motors speed up and the two right motors slow down. Each side has one clockwise and one anticlockwise propeller, so their torques still cancel and the roll causes no yaw on a perfectly built frame.'],
+        pitch: ['Nose up', 'The front pair slows down and the rear pair speeds up. As with roll, each pair has one propeller spinning each way, so the torques cancel and the pitch causes no yaw.'],
+        yaw: ['Nose right', 'The two anticlockwise propellers speed up and the two clockwise ones slow down. Their drag torques no longer cancel, and the reaction turns the frame. Yaw comes from drag torque alone, so it is weaker than roll or pitch.'],
       };
       const [title, body] = heads[s.ask];
       eyebrow(ctx, 'what the mixer just did', bx + 18, 68);
@@ -762,10 +762,10 @@ const FIGURES = {
       text(ctx, ln, bx + 18, y, { fill: alpha(C.cream, 0.84), size: 12.5 });
       const authority = { hover: 0, roll: 1, pitch: 0.92, yaw: 0.17 }[s.ask];
       if (authority) {
-        text(ctx, 'rough authority against roll', bx + 18, 248, { fill: C.slate, size: 11 });
+        text(ctx, 'rough strength compared with roll', bx + 18, 248, { fill: C.slate, size: 11 });
         meter(ctx, bx + 18, 258, W - bx - 60, 8, authority, s.ask === 'yaw' ? C.amber : C.mint);
       }
-      note(ctx, 24, H - 11, 'one 5 inch airframe, 220 mm, 650 g');
+      note(ctx, 24, H - 11, 'the five inch: 220 mm across, 710 g');
     },
   }),
 
@@ -775,8 +775,8 @@ const FIGURES = {
    */
   timestep: () => makeFigure({
     id: 'timestep',
-    label: 'Physics ticks at 1 kHz while frames arrive whenever they arrive',
-    eyebrow: 'Frame time never reaches the integrator',
+    label: 'Physics steps at 1 kHz while the picture is drawn at the display\'s own rate',
+    eyebrow: 'Frame time never reaches the physics',
     w: 680,
     h: 320,
     still: 1.2,
@@ -795,7 +795,7 @@ const FIGURES = {
       },
       { key: 'drop', label: 'Drop a frame', type: 'toggle', value: true, on: 'yes', off: 'no' },
     ],
-    caption: 'The trajectory is drawn once and does not move when you change the render rate, because the integrator never reads frame time. What changes is how often it is sampled. A dropped frame costs one sample, not a different flight, and a replay and a lap time both depend on that.',
+    caption: 'The green curve is a roll rate from the physics, which moves forward in fixed steps of one millisecond. It does not change when you change the render rate, because the physics never reads the time between frames. The amber dots mark the moments when a frame is drawn, and only their number changes. A dropped frame loses one picture and leaves the flight unchanged, and replays and lap times both depend on that.',
     draw(ctx, W, H, s, t) {
       const span = 0.12;
       const ax = new Axes(ctx, {
@@ -836,7 +836,7 @@ const FIGURES = {
       text(ctx, `${n} frames saw ${Math.round(span * 1000)} physics steps`, W - 24, 24, {
         fill: C.slate, size: 11.5, align: 'right',
       });
-      text(ctx, 'the green curve is identical in all four picks', W - 24, ax.y + ax.h + 26, {
+      text(ctx, 'the green curve is the same at every render rate', W - 24, ax.y + ax.h + 26, {
         fill: C.mint, size: 11.5, align: 'right', weight: 700,
       });
     },
@@ -848,7 +848,7 @@ const FIGURES = {
    */
   motor: () => makeFigure({
     id: 'motor',
-    label: 'A step in duty, and the rotor speed that chases it',
+    label: 'A step in duty cycle, and the rotor speed rising to its new value',
     eyebrow: 'Throttle is not thrust',
     w: 680,
     h: 340,
@@ -856,7 +856,7 @@ const FIGURES = {
     controls: [
       { key: 'duty', label: 'Duty step to', min: 0.15, max: 1, step: 0.01, value: 0.6, fmt: (v) => `${f0(v * 100)} percent`, resets: true },
     ],
-    caption: 'Duty sets an average voltage. The current it can push is (V minus back EMF) over resistance, and back EMF grows with speed, so current collapses as the rotor catches up. What is left is a first order rise whose time constant is rotor inertia over how hard the system resists a speed change: 20 to 30 milliseconds here, and a large part of what a D term compensates for.',
+    caption: 'The duty cycle sets the average voltage applied to the motor. The current is that voltage minus the back EMF, divided by the winding resistance. Back EMF grows with speed, so the current is largest at the start and falls as the rotor speeds up. The rotor speed reaches 63 percent of its final value after one time constant, tau, which is the rotor\'s moment of inertia divided by how strongly the motor and propeller resist a change of speed. In this figure tau is about 20 milliseconds at full duty and 29 near a hover. This delay is a large part of what the D term has to make up for.',
     reset: (s, sc) => { sc.duty = null; },
     draw(ctx, W, H, s, t, sc) {
       const V = FULL.voc;
@@ -893,7 +893,7 @@ const FIGURES = {
         xlabel: 'milliseconds after the step', ylabel: 'rad/s',
       });
       ax.frame({ yticks: [0, 1000, 2000, 3000], xticks: [0, 0.1, 0.2, 0.3], fmtX: (v) => f0(v * 1000), fmtY: f0 });
-      ax.hline(target.w, alpha(C.mint, 0.4), [4, 5], 'where it is heading');
+      ax.hline(target.w, alpha(C.mint, 0.4), [4, 5], 'final speed');
       ax.hline(target.w * 0.632, alpha(C.amber, 0.35), [3, 4], '63 percent');
       ax.vline(0.02 + tau, alpha(C.amber, 0.4), [3, 4], `tau ${f0(tau * 1000)} ms`, C.amber);
       ax.series(sc.amps.map(([x, a]) => [x, (a / 100) * 3100]), alpha(C.sakura, 0.7), 1.8);
@@ -915,7 +915,7 @@ const FIGURES = {
         text(ctx, v, bx, y + 20, { fill: c, size: 17, weight: 700, mono: true });
       });
       note(ctx, 24, H - 11, 'one motor, 6S at 4.2 V a cell');
-      text(ctx, 'j dw/dt = ke I minus kq w |w|.   No winding inductance, no ESC current ceiling.',
+      text(ctx, 'j dw/dt = ke I minus kq w |w|, in still air.  No winding inductance, no ESC current limit.',
         24, H - 30, { fill: C.slate, size: 11 });
     },
   }),
@@ -926,15 +926,15 @@ const FIGURES = {
    */
   figmerit: () => makeFigure({
     id: 'figmerit',
-    label: 'Thrust and shaft torque both go as RPM squared, and their ratio is fixed',
-    eyebrow: 'You cannot tune these apart',
+    label: 'Thrust and shaft torque both grow with the square of the rotor speed, so their ratio is fixed',
+    eyebrow: 'Thrust and torque are linked',
     w: 680,
     h: 360,
     animated: false,
     controls: [
       { key: 'w', label: 'Rotor speed', min: 200, max: 3000, step: 10, value: HOVER_W, fmt: (v) => `${f0(rpm(v))} rpm` },
     ],
-    caption: 'Thrust changes by a factor of two hundred across this sweep, power by three thousand, and the number at the bottom right does not move. That is the figure of merit: how much shaft power comes back as useful thrust. A real five inch manages 0.4 to 0.6, and the gap between the two power curves is everything the prop wastes. An early version of this aircraft picked its constants separately and scored 2.01, a propeller returning more power than it is given.',
+    caption: 'Across this range of speeds the thrust changes by a factor of more than 200 and the power by more than 3,000, while the figure of merit in the panel stays at 0.520. The figure of merit is the power an ideal propeller would need to make the same thrust, divided by the shaft power the real one uses. Real five inch propellers score between 0.4 and 0.6. The shaded gap between the two power curves is the power the propeller loses. An early version of this simulator set its thrust and torque constants separately and scored 2.01, which would mean the propeller gave the air more power than the motor supplied.',
     draw(ctx, W, H, s) {
       const w = s.w;
       const T = P.kt * w * w;
@@ -948,8 +948,8 @@ const FIGURES = {
        * pointed at the two curves lying on top of each other. That proves
        * nothing: any two quadratics coincide when one is scaled by the
        * ratio of their coefficients, whatever the coefficients are. It also
-       * called kt/kq the figure of merit, which it is not; kt/kq is 70.71
-       * and the figure of merit is 0.565.
+       * called kt/kq the figure of merit, which it is not; kt/kq is 65.13
+       * and the figure of merit is 0.520.
        *
        * What is actually worth showing is the gap. Shaft power is what the
        * battery pays for and ideal induced power is what the air receives,
@@ -985,8 +985,8 @@ const FIGURES = {
       ax.vline(HOVER_W, alpha(C.cream, 0.22), [3, 4], 'hover', C.slate);
       ax.vline(FULL.w, alpha(C.cream, 0.22), [3, 4], 'full stick', C.slate);
       ax.mark(w, Math.min(800, shaftP(w)), C.cream, 5);
-      ax.key([['power the battery pays for', C.amber], ['power the air receives', C.mint]]);
-      text(ctx, 'everything in here is wasted', ax.px(1500), ax.py(330), {
+      ax.key([['power into the shaft', C.amber], ['power given to the air', C.mint]]);
+      text(ctx, 'the power in here is lost', ax.px(1500), ax.py(330), {
         fill: C.sakura, size: 11, align: 'center',
       });
 
@@ -1009,15 +1009,15 @@ const FIGURES = {
       const gx = 54;
       const gy = 300;
       const gw = W - 108;
-      text(ctx, 'the band a real five inch is allowed to live in', gx, gy - 22, { fill: C.slate, size: 11 });
+      text(ctx, 'the range real five inch propellers reach', gx, gy - 22, { fill: C.slate, size: 11 });
       roundRect(ctx, gx, gy, gw, 12, 2, alpha(C.cream, 0.06));
       const at = (v) => gx + (v / 2.2) * gw;
       roundRect(ctx, at(0.4), gy, at(0.6) - at(0.4), 12, 2, alpha(C.mint, 0.35));
       line(ctx, at(fm), gy - 5, at(fm), gy + 17, C.cream, 2);
-      text(ctx, `${f3(fm)}, this plant`, at(fm), gy + 30, { fill: C.cream, size: 10.5, align: 'center' });
+      text(ctx, `${f3(fm)}, the five inch`, at(fm), gy + 30, { fill: C.cream, size: 10.5, align: 'center' });
       line(ctx, at(2.01), gy - 5, at(2.01), gy + 17, C.sakura, 2);
       text(ctx, '2.01, the bug', at(2.01), gy + 30, { fill: C.sakura, size: 10.5, align: 'center' });
-      text(ctx, '1.0 is a perfect actuator disc', at(1.0), gy - 6, { fill: C.slate, size: 10, align: 'center' });
+      text(ctx, '1.0 is an ideal propeller', at(1.0), gy - 6, { fill: C.slate, size: 10, align: 'center' });
     },
   }),
 
@@ -1027,8 +1027,8 @@ const FIGURES = {
    */
   sag: () => makeFigure({
     id: 'sag',
-    label: 'Pack voltage falling under the current the throttle asks for',
-    eyebrow: 'The pack is not a constant',
+    label: 'Battery voltage falling as the throttle draws more current',
+    eyebrow: 'Battery voltage under load',
     w: 680,
     h: 330,
     animated: false,
@@ -1046,7 +1046,7 @@ const FIGURES = {
         ],
       },
     ],
-    caption: 'Pack voltage depends on current and current depends on voltage, so the plant settles the two against each other every step. At a hover the sag is a rounding error. At full stick this airframe pulls about 130 amps through six cells of 2.5 milliohms and loses roughly two volts, which is why measured thrust to weight is 9.2 rather than the 10.5 open circuit voltage promises.',
+    caption: 'The battery voltage depends on the current, and the current depends on the voltage, so the physics model solves for both together in every step. At a hover the voltage drops by about a quarter of a volt. At full throttle on a full battery, the five inch draws about 137 A through six cells of 2.5 milliohms each and loses about 2.05 V. That is why, at Earth gravity, its calculated thrust is 8.10 times its weight, against 9.26 times if the voltage did not drop.',
     draw(ctx, W, H, s) {
       const st = packUnderLoad(s.duty, s.cell);
       const voc = packOpenCircuit(s.cell);
@@ -1088,7 +1088,7 @@ const FIGURES = {
       }
       const dropX = sx + 6 * 46 + 12;
       text(ctx, `${f2(st.sag)} V lost inside the pack`, dropX, sy + 15, { fill: C.sakura, size: 12, weight: 700 });
-      note(ctx, 24, H - 11, 'settings pack charge sets the open circuit voltage, not this curve');
+      note(ctx, 24, H - 11, 'the Pack charge setting sets the open circuit voltage, not this curve');
     },
   }),
 
@@ -1098,7 +1098,7 @@ const FIGURES = {
    */
   thrustmu: () => makeFigure({
     id: 'thrustmu',
-    label: 'Thrust against axial advance ratio, including the vortex ring gap',
+    label: 'Thrust against the axial advance ratio, including the vortex ring state',
     eyebrow: 'One curve, three behaviours',
     w: 680,
     h: 360,
@@ -1106,7 +1106,7 @@ const FIGURES = {
     controls: [
       { key: 'va', label: 'Axial air speed', min: -18, max: 12, step: 0.2, value: -5, fmt: (v) => `${v > 0 ? 'climb ' : v < 0 ? 'descend ' : ''}${f1(Math.abs(v))} m/s` },
     ],
-    caption: 'A prop is a screw, and mu is how fast it is dragged along its own axis against how fast it screws. Climb and the air is already leaving, so thrust falls. Descend gently and the air is arriving, so thrust rises. Past mu of minus 0.30 the momentum theory behind the rising part has no solution, and the plant bridges that gap down to a floor of 0.75 rather than continuing the curve.',
+    caption: 'The advance ratio, mu, is the speed of the air along the propeller\'s axis divided by its pitch speed: the distance the blades would move along the axis in one turn, times the number of turns per second. In a climb, air is already moving through the propeller in the direction it pushes, so the thrust falls. In a gentle descent, air arrives from below, so the thrust rises. Below mu = −0.30, momentum theory, which gives the rising part, has no solution, and the physics model joins the curve down to a floor of 0.75 instead of continuing it.',
     draw(ctx, W, H, s) {
       const vp = P.pitchSpeed(HOVER_W);
       const mu = s.va / vp;
@@ -1130,8 +1130,8 @@ const FIGURES = {
       text(ctx, 'momentum theory has no solution in here', ax.px((P.vrsFull + P.vrsOnset) / 2), ax.y + 18, {
         fill: C.sakura, size: 10.5, align: 'center',
       });
-      text(ctx, 'thrust crosses zero when the screw', ax.px(0.62), ax.y + 42, { fill: C.slate, size: 10.5, align: 'center' });
-      text(ctx, 'cannot outrun the air', ax.px(0.62), ax.y + 56, { fill: C.slate, size: 10.5, align: 'center' });
+      text(ctx, 'thrust reaches zero when axial', ax.px(0.62), ax.y + 42, { fill: C.slate, size: 10.5, align: 'center' });
+      text(ctx, 'air speed reaches pitch speed', ax.px(0.62), ax.y + 56, { fill: C.slate, size: 10.5, align: 'center' });
 
       const bx = 56;
       const by = 300;
@@ -1156,15 +1156,15 @@ const FIGURES = {
    */
   vrs: () => makeFigure({
     id: 'vrs',
-    label: 'A descending rotor catching up with its own wake',
-    eyebrow: 'Eating your own downwash',
+    label: 'A descending propeller moving down into its own wake, and the thrust it makes',
+    eyebrow: 'Descending into your own downwash',
     w: 680,
     h: 340,
     still: 3,
     controls: [
       { key: 'sink', label: 'Descent rate', min: 0, max: 22, step: 0.2, value: 0, fmt: (v) => `${f1(v)} m/s, ${f0(v * 3.6)} km/h` },
     ],
-    caption: 'A hovering rotor throws air down and flies away from it. Descend and you follow that air instead, until the wake has nowhere to go and folds back over the disc as a closed ring. Nothing about the motors changes: the prop turns at the same speed throughout and thrust still falls by a quarter. Which is why the recovery is sideways into clean air rather than more power.',
+    caption: 'A hovering propeller pushes air down, and that air moves away below it. When the quad descends, it follows that air. At a fast enough descent the air cannot move away, and it flows back up around the tips and down through the propeller again, in a closed ring. In this figure the propeller speed is held at its hover value, and at the fastest descents the thrust falls to three quarters of the hover thrust. In the simulator the motors also speed up a little in a descent, because the air flowing up through each propeller makes it easier to turn. Before the onset, descending faster raises the thrust, so the quad seems fine. Past the onset, descending faster lowers it. To recover, move sideways into air the propellers have not pushed down.',
     draw(ctx, W, H, s, t) {
       const vp = P.pitchSpeed(HOVER_W);
       const mu = -s.sink / vp;
@@ -1233,14 +1233,14 @@ const FIGURES = {
         text(ctx, `falling`, cx - 156, cy - 44, { fill: C.slate, size: 10.5, align: 'center' });
         text(ctx, `${f1(s.sink)} m/s`, cx - 156, cy + 100, { fill: C.slate, size: 11, align: 'center', mono: true });
       }
-      const state = depth <= 0 ? 'clean, the wake leaves' : depth < 1 ? 'the ring is forming' : 'fully in the ring';
+      const state = depth <= 0 ? 'the wake flows away' : depth < 1 ? 'the ring is forming' : 'fully in the ring';
       text(ctx, state, cx, 44, { fill: depth > 0 ? C.sakura : C.mint, size: 14, weight: 700, align: 'center' });
 
       const bx = W * 0.60;
       panel(ctx, bx, 44, W - bx - 24, 254, depth > 0 ? C.sakura : C.mint);
-      eyebrow(ctx, 'what the plant computes', bx + 18, 68);
+      eyebrow(ctx, 'the physics model computes', bx + 18, 68);
       const rows = [
-        ['Pitch speed at this RPM', `${f1(vp)} m/s`, C.slate],
+        ['Pitch speed at hover RPM', `${f1(vp)} m/s`, C.slate],
         ['mu', f2(mu), C.amber],
         ['Thrust factor', f2(factor), depth > 0 ? C.sakura : C.mint],
         ['Thrust, all four', `${f1(HOVER_T * 4 * factor)} N`, C.cream],
@@ -1263,12 +1263,12 @@ const FIGURES = {
       const dF = axialFactor(-(s.sink + 0.25) / vp) - factor;
       const worsening = dF < -1e-4;
       const verdict = worsening
-        ? 'Descend faster now and thrust FALLS. This is the trap.'
-        : 'Descend faster and thrust still rises. This is the bait.';
+        ? 'Descend faster from here and the thrust falls.'
+        : 'Descend faster from here and the thrust does not fall.';
       wrapText(ctx, verdict, bx + 18, 286, W - bx - 40, {
         fill: worsening ? C.sakura : C.amber, size: 12, weight: 700, lead: 15,
       });
-      note(ctx, 24, H - 11, 'onset at mu = -0.30, floor 0.75, from plant_vrs in plant.c');
+      note(ctx, 24, H - 11, 'onset at mu = -0.30, floor 0.75, from PLANT_VRS_* in plant.c');
     },
   }),
 
@@ -1279,14 +1279,14 @@ const FIGURES = {
   wash: () => makeFigure({
     id: 'wash',
     label: 'Four independent bands of unsteady thrust, one per rotor',
-    eyebrow: 'The living part of a descent',
+    eyebrow: 'The unsteady part of a descent',
     w: 680,
     h: 330,
     still: 2.4,
     controls: [
       { key: 'depth', label: 'How deep in the wake', min: 0, max: 1, step: 0.01, value: 0.7, fmt: (v) => `${f0(v * 100)} percent` },
     ],
-    caption: 'An I term trims out a steady asymmetry. Recirculating flow is not steady: four channels of 3 to 30 Hz noise, one per disc, applied only while that disc is in its own wake, reaching 8 percent of thrust at full depth. No gain cancels a disturbance different on every rotor and every millisecond. The seed is fixed, so the same run is the same mess twice.',
+    caption: 'Each coloured line is the unsteady part of one propeller\'s thrust while it is in its own wake: a random signal that changes between 3 and 30 times a second, different for each propeller. The figure scales each signal by k_propwash times the depth, so at full depth the dashed lines mark 15 percent of the thrust. An I term can correct a steady difference between the propellers, but no gain can cancel four signals that differ from each other and change this quickly. The signals start from a fixed seed, so the same flight shakes in the same way every time.',
     reset: (s, sc) => {
       const rnd = xorshift(0x5eed1);
       sc.ch = [];
@@ -1336,10 +1336,10 @@ const FIGURES = {
       ax.hline(amp, alpha(C.cream, 0.2), [3, 4], `${f0(amp * 100)} percent of thrust`);
       ax.hline(-amp, alpha(C.cream, 0.2), [3, 4]);
       ax.key(names.map((n, m) => [n, cols[m]]));
-      text(ctx, 'An I term can trim a constant. It cannot trim four of these.', 232, H - 34, {
+      text(ctx, 'An I term corrects a steady error. It cannot correct these four.', 232, H - 34, {
         fill: C.cream, size: 12,
       });
-      note(ctx, 24, H - 11, 'k_propwash 0.08, a chosen constant, not a measurement');
+      note(ctx, 24, H - 11, `k_propwash ${P.kPropwash}, a chosen constant, not a measurement`);
     },
   }),
 
@@ -1348,7 +1348,7 @@ const FIGURES = {
    */
   etl: () => makeFigure({
     id: 'etl',
-    label: 'Induced velocity collapsing as the disc meets fresh air',
+    label: 'Induced velocity falling as the propeller moves sideways into fresh air',
     eyebrow: 'Translational lift',
     w: 680,
     h: 344,
@@ -1356,7 +1356,7 @@ const FIGURES = {
     controls: [
       { key: 'v', label: 'Speed across the disc', min: 0, max: 30, step: 0.2, value: 8, fmt: (v) => `${f1(v)} m/s, ${f0(v * 3.6)} km/h` },
     ],
-    caption: 'A hovering disc flies in the air it just pushed down, working against its own downwash. Move sideways and it meets air that has not been through it, and the induced velocity collapses. At a given thrust the induced power is proportional to that velocity, so the curve is the saving as well as the cause. Helicopter pilots feel it as a shudder at walking pace; on a quad it is the same equation on four smaller discs.',
+    caption: 'The curve shows the induced velocity, the speed the propeller adds to the air to make its thrust, as the quad moves sideways. A hovering propeller works in air it has already pushed down. Moving sideways, it meets air that has not passed through it, and the induced velocity falls. At a fixed thrust the induced power is proportional to the induced velocity, so the curve also shows how much power is saved. Helicopter pilots feel this as a shudder at about walking pace, and the four smaller propellers of a quad follow the same equation.',
     draw(ctx, W, H, s) {
       const vh = hoverInduced(HOVER_T);
       const x = s.v / vh;
@@ -1378,7 +1378,7 @@ const FIGURES = {
       ax.fn((vx) => glauert(vx / vh), C.sakura, 2.8);
       ax.mark(s.v, g, C.cream, 5);
       ax.vline(vh, alpha(C.amber, 0.4), [3, 4], 'hover induced speed', C.amber);
-      ax.key([['induced velocity, and the induced power it costs', C.sakura]]);
+      ax.key([['induced velocity, and the induced power it needs', C.sakura]]);
 
       /* The two pictures the curve is about. */
       const draw1 = (px, py, speed, label, col) => {
@@ -1414,7 +1414,7 @@ const FIGURES = {
         text(ctx, k, px, by - 17, { fill: C.slate, size: 10.5 });
         text(ctx, v, px, by + 3, { fill: c, size: 16, weight: 700, mono: true });
       });
-      note(ctx, 24, H - 11, 'glauert inflow. zero correction in a pure climb, so the hover checks do not move');
+      note(ctx, 24, H - 11, 'Glauert inflow: no correction in a straight climb, so the hover checks are unchanged');
     },
   }),
 
@@ -1425,14 +1425,14 @@ const FIGURES = {
   hforce: () => makeFigure({
     id: 'hforce',
     label: 'Rotor drag against body drag, across the speed range',
-    eyebrow: 'The missing drag in the middle',
+    eyebrow: 'Rotor drag against body drag',
     w: 680,
     h: 330,
     animated: false,
     controls: [
       { key: 'v', label: 'Speed', min: 0, max: 40, step: 0.5, value: 12, fmt: (v) => `${f0(v * 3.6)} km/h` },
     ],
-    caption: 'Body drag goes as speed squared, so a value fitted to top speed is almost nothing in the middle, and a quad tuned that way floats through corners. An edgewise disc also pulls backwards, nearly linear in speed before it saturates. Below the crossover marked here the rotors do more of the braking than the airframe, which is why the two are modelled separately.',
+    caption: 'Body drag grows with the square of the speed, so a value chosen to give the right top speed gives very little drag at medium speed, and a quad modelled with body drag alone slides through corners. A propeller moving sideways through the air also pulls backwards, and this rotor drag grows almost in proportion to speed before it levels off. Below the speed marked on the graph, 49 km/h, the propellers slow the quad more than its body does, which is why the two are modelled separately.',
     draw(ctx, W, H, s) {
       const hTot = (v) => 4 * hForce(v, HOVER_T);
       const bTot = (v) => bodyDrag(v, P.cdaFront);
@@ -1449,7 +1449,7 @@ const FIGURES = {
       for (let v = 0.5; v < 40; v += 0.05) {
         if (bTot(v) >= hTot(v)) { cross = v; break; }
       }
-      ax.vline(cross, alpha(C.cream, 0.25), [3, 4], `they swap at ${f0(cross * 3.6)} km/h`, C.slate);
+      ax.vline(cross, alpha(C.cream, 0.25), [3, 4], `they are equal at ${f0(cross * 3.6)} km/h`, C.slate);
       ax.mark(s.v, hTot(s.v), C.sakura, 5);
       ax.mark(s.v, bTot(s.v), C.amber, 5);
       ax.key([
@@ -1494,8 +1494,8 @@ const FIGURES = {
    */
   drag: () => makeFigure({
     id: 'drag',
-    label: 'Quadratic body drag on three different presented areas',
-    eyebrow: 'A bluff object, three ways round',
+    label: 'Body drag, growing with the square of speed, for three different areas facing the air',
+    eyebrow: 'One body, three drag areas',
     w: 680,
     h: 320,
     animated: false,
@@ -1503,7 +1503,7 @@ const FIGURES = {
       { key: 'v', label: 'Speed', min: 0, max: 40, step: 0.5, value: 20, fmt: (v) => `${f0(v * 3.6)} km/h` },
       {
         key: 'face',
-        label: 'Presenting',
+        label: 'Facing the air',
         type: 'pick',
         value: 'front',
         options: [
@@ -1513,7 +1513,7 @@ const FIGURES = {
         ],
       },
     ],
-    caption: 'The three areas are different on purpose. Nose in is a small pile of projected structure. The belly is the whole airframe. Sideways adds the battery, longer than it is wide. One number on all three makes a machine that flares no harder than it cruises, which no real five inch does. The belly figure is not allowed to stand in for rotor drag either.',
+    caption: 'The three drag areas are different on purpose. From the front, the air meets only the parts seen nose on. From below, it meets the whole frame. From the side, it also meets the battery, which is longer than it is wide. With one value for all three, a quad would slow no harder in a flare, when the pilot pitches up so the underside faces the air, than in a cruise, and no real five inch behaves like that. The underside area does not include rotor drag, which is calculated separately.',
     draw(ctx, W, H, s) {
       const areas = { plan: P.cdaPlan, front: P.cdaFront, side: P.cdaSide };
       const names = { plan: 'belly', front: 'nose in', side: 'sideways' };
@@ -1526,7 +1526,7 @@ const FIGURES = {
       for (const k of ['plan', 'side', 'front']) {
         ax.fn((v) => bodyDrag(v, areas[k]), alpha(cols[k], k === s.face ? 1 : 0.32), k === s.face ? 3 : 2);
       }
-      ax.hline(P.weight, alpha(C.cream, 0.2), [3, 5], 'the craft\'s own weight');
+      ax.hline(P.weight, alpha(C.cream, 0.2), [3, 5], 'the quad\'s own weight');
       ax.mark(s.v, bodyDrag(s.v, areas[s.face]), C.cream, 5);
       ax.key(Object.keys(areas).map((k) => [`${names[k]}, CdA ${areas[k].toFixed(4)} m2`, alpha(cols[k], k === s.face ? 1 : 0.4)]));
 
@@ -1551,8 +1551,8 @@ const FIGURES = {
       text(ctx, `${f0((bodyDrag(s.v, areas[s.face]) / P.weight) * 100)} percent of its own weight`, bx, 252, {
         fill: C.slate, size: 11,
       });
-      text(ctx, 'These were one number for all three axes before the H-force existed,', 56, 288, { fill: C.slate, size: 11 });
-      text(ctx, 'and they were doing two jobs. Re-fit against the top speed procedure.', 56, 297, { fill: C.slate, size: 11 });
+      text(ctx, 'These were one value for all three axes before rotor drag was added,', 56, 288, { fill: C.slate, size: 11 });
+      text(ctx, 'so they did two jobs. They were fitted again against the top speed test.', 56, 297, { fill: C.slate, size: 11 });
       note(ctx, 24, H - 11, 'F = -0.5 rho CdA v |v|, per body axis');
     },
   }),
@@ -1563,7 +1563,7 @@ const FIGURES = {
    */
   noseup: () => makeFigure({
     id: 'noseup',
-    label: 'Rotor drag acting above the centre of gravity, as a pitching couple',
+    label: 'Rotor drag acting above the centre of gravity, which turns the nose up',
     eyebrow: 'Why the nose lifts at speed',
     w: 680,
     h: 320,
@@ -1571,7 +1571,7 @@ const FIGURES = {
     controls: [
       { key: 'v', label: 'Speed', min: 0, max: 40, step: 0.5, value: 25, fmt: (v) => `${f0(v * 3.6)} km/h` },
     ],
-    caption: 'The discs sit about 20 mm above the centre of gravity, so the rearward pull they make in fast flight is a couple as well as drag. Every real multirotor carries it, and every real pilot trims it out with forward stick or lets the I term hold it. Before this term existed the pitching moment in forward flight was identically zero at every speed.',
+    caption: 'On the five inch the propellers sit 20 mm above the centre of gravity, so the rotor drag that pulls them backwards in fast flight also turns the quad nose up. Every real multirotor has this effect. Pilots correct it with a little forward stick, or let the I term hold it. Before this term was added to the physics model, the pitching moment in forward flight was exactly zero at every speed.',
     draw(ctx, W, H, s) {
       const hTot = 4 * hForce(s.v, HOVER_T);
       const moment = hTot * P.discZ;
@@ -1618,10 +1618,10 @@ const FIGURES = {
 
       const bx = W * 0.60;
       panel(ctx, bx, 44, W - bx - 24, 234, C.mint);
-      eyebrow(ctx, 'what the couple is worth', bx + 18, 68);
+      eyebrow(ctx, 'size of the nose-up moment', bx + 18, 68);
       const rows = [
         ['Rotor drag, all four', `${f2(hTot)} N`, C.sakura],
-        ['Lever above the CG', `${f0(P.discZ * 1000)} mm`, C.amber],
+        ['Height above the CG', `${f0(P.discZ * 1000)} mm`, C.amber],
         ['Pitching moment', `${f3(moment)} N m`, C.cream],
         ['Nose up acceleration', `${f0((accel * 180) / Math.PI)} deg/s2`, C.mint],
       ];
@@ -1631,8 +1631,8 @@ const FIGURES = {
         text(ctx, v, W - 40, y, { fill: c, size: 16, weight: 700, mono: true, align: 'right' });
         line(ctx, bx + 18, y + 13, W - 40, y + 13, alpha(C.cream, 0.06), 1);
       });
-      text(ctx, 'This is what an I term holds for you.', bx + 18, 268, { fill: C.mint, size: 12, weight: 700 });
-      note(ctx, 24, H - 11, 'a pure z force at (x, y, z) has moment (y F, -x F, 0). in-plane H at that z is the couple');
+      text(ctx, 'The I term holds this moment for you.', bx + 18, 268, { fill: C.mint, size: 12, weight: 700 });
+      note(ctx, 24, H - 11, 'a force along z at (x, y, z) has moment (y F, -x F, 0). the sideways H at height z makes the moment');
     },
   }),
 
@@ -1642,8 +1642,8 @@ const FIGURES = {
    */
   cant: () => makeFigure({
     id: 'cant',
-    label: 'Build tolerance motor cant, and the yaw it leaks during a roll',
-    eyebrow: 'Nothing is built straight',
+    label: 'Small motor misalignments from building the frame, and the yaw they cause in a roll',
+    eyebrow: 'No frame is built perfectly',
     w: 680,
     h: 330,
     animated: false,
@@ -1651,7 +1651,7 @@ const FIGURES = {
       { key: 'roll', label: 'Roll demand', min: 0, max: 0.5, step: 0.01, value: 0.3, fmt: (v) => `${f0(v * 100)} percent` },
       { key: 'scale', label: 'Cant, x the table', min: 0, max: 3, step: 0.05, value: 1, fmt: (v) => `${f2(v)} x` },
     ],
-    caption: 'On a perfect QUADX every roll pair holds one clockwise and one counter clockwise motor, so drag torque, spin-up reaction and angular momentum all cancel, and a roll cannot produce yaw. Real frames are not perfect. About a degree of tangential cant per arm turns some of each rotor\'s thrust into a yaw lever, and because the roll makes the four thrusts unequal, that lever stops cancelling. Set the cant to zero and the coupling vanishes.',
+    caption: 'On a perfectly built quad each side holds one clockwise and one anticlockwise motor, so in a roll the drag torques, the reactions to the motors changing speed and the propellers\' angular momentum all cancel, and a roll cannot cause yaw. Real frames are not perfect. A motor tilted sideways by about a degree, called tangential cant, turns a small part of its thrust into a yaw torque. In a hover the four torques nearly cancel, but a roll makes the four thrusts unequal, so they stop cancelling. Set the cant to zero and the coupling disappears.',
     draw(ctx, W, H, s) {
       const M = [
         { tag: 'RR', x: 1, y: 1, roll: -1, cant: P.cantDeg.RR },
@@ -1706,9 +1706,9 @@ const FIGURES = {
         text(ctx, k, px, 250, { fill: C.slate, size: 10 });
         text(ctx, v, px, 270, { fill: c, size: 13, weight: 700, mono: true });
       });
-      wrapText(ctx, s.scale === 0 ? 'Perfectly built: no coupling at all.' : 'Small, constant, and exactly what a yaw I term trims.',
+      wrapText(ctx, s.scale === 0 ? 'Perfectly built: no coupling at all.' : 'Small and steady, so the yaw I term corrects it.',
         W * 0.56, 296, W - W * 0.56 - 26, { fill: s.scale === 0 ? C.mint : C.slate, size: 11.5, lead: 15 });
-      note(ctx, 24, H - 11, 'radial cant cancels the hover side force. it cannot yaw');
+      note(ctx, 24, H - 11, 'radial cant cancels the hover side force and cannot cause yaw');
     },
   }),
 
@@ -1719,7 +1719,7 @@ const FIGURES = {
   yawtorque: () => makeFigure({
     id: 'yawtorque',
     label: 'Yaw authority against throttle, and where it runs out',
-    eyebrow: 'Paid for in prop drag',
+    eyebrow: 'Yaw comes from drag torque',
     w: 680,
     h: 330,
     animated: false,
@@ -1727,7 +1727,7 @@ const FIGURES = {
       { key: 'throttle', label: 'Throttle', min: 0.1, max: 1, step: 0.01, value: 0.5, fmt: (v) => `${f0(v * 100)} percent` },
       { key: 'yaw', label: 'Yaw demand', min: 0, max: 0.3, step: 0.01, value: 0.2, fmt: (v) => `${f0(v * 100)} percent` },
     ],
-    caption: 'There is no tail rotor. To turn right the mixer speeds the two counter clockwise props and slows the two clockwise, and the frame turns by the difference in drag torque they absorb. Push the throttle up and the motors that were to speed up have nowhere to go, the demand becomes one sided, and authority collapses. That is why yaw dies in a punch, and why airmode exists at the other end.',
+    caption: 'A quad has no tail rotor. To turn the nose right, the mixer speeds up the two anticlockwise propellers and slows the two clockwise ones, and the difference in their drag torque turns the frame. As the throttle rises, the motors that should speed up reach full power and can go no faster, so the yaw torque falls short of what was asked for. That is why yaw becomes weak at full throttle. Airmode deals with the same problem at zero throttle.',
     draw(ctx, W, H, s) {
       const V = FULL.voc;
       const net = (thr, yawCmd) => {
@@ -1778,9 +1778,9 @@ const FIGURES = {
         }
       });
       const lost = want > 1e-9 ? 1 - now / want : 0;
-      text(ctx, 'Authority lost to the ceiling', bx, 250, { fill: C.slate, size: 10.5 });
+      text(ctx, 'Yaw torque lost at full power', bx, 250, { fill: C.slate, size: 10.5 });
       text(ctx, `${f0(lost * 100)} percent`, bx, 274, { fill: lost > 0.2 ? C.sakura : C.mint, size: 20, weight: 700, mono: true });
-      note(ctx, 24, H - 11, 'prop drag torque is kq w |w|, and it is all the yaw there is');
+      note(ctx, 24, H - 11, 'drag torque, kq w |w| in still air, is where all the yaw comes from');
     },
   }),
 
@@ -1795,9 +1795,9 @@ const FIGURES = {
     h: 320,
     still: 1.4,
     controls: [
-      { key: 'aero', label: 'Aero damping', type: 'toggle', value: true, on: 'modelled', off: 'deleted' },
+      { key: 'aero', label: 'Aerodynamic damping', type: 'toggle', value: true, on: 'modelled', off: 'removed' },
     ],
-    caption: 'Roll, and one side\'s props climb while the other side\'s sink, so through the advance ratio curve they make different thrust, and the difference is a torque opposing the roll. It is not large, but it is what makes letting go of the stick feel like letting go rather than releasing a rubber band. An older plant clamped the descent case and deleted this derivative; a tune that felt right there had a D term standing in for physics.',
+    caption: 'The graph shows the roll rate before and after the stick is released at 0.4 seconds, with no flight controller acting. With aerodynamic damping the rate dies away by itself. Without it, the quad keeps rolling at the same rate until something stops it. The damping comes from the propellers: in a roll, those on one side move up through the air and those on the other side move down, so through the advance ratio curve the rising side makes less thrust and the falling side more. The difference is a torque that opposes the roll. An older version of the physics model held the descent thrust at a fixed limit, which removed this effect, and a tune that felt right there was using its D term to do the job of the physics.',
     reset: (s, sc) => {
       /* Solved in one pass, so the toggle answers immediately and a still
          frame carries the whole decay rather than the start of one. */
@@ -1856,7 +1856,7 @@ const FIGURES = {
       });
       text(ctx, 'derived, not chosen: from the arm,', cx, 252, { fill: C.slate, size: 10.5, align: 'center' });
       text(ctx, 'the thrust and the pitch speed', cx, 266, { fill: C.slate, size: 10.5, align: 'center' });
-      note(ctx, 24, H - 11, 'yaw has the drag torque version of the same argument');
+      note(ctx, 24, H - 11, 'yaw has a version of the same effect, through drag torque');
     },
   }),
 
@@ -1884,7 +1884,7 @@ const FIGURES = {
         ],
       },
     ],
-    caption: 'Each bell is a small gyroscope, and the four are opposed so they cancel at a hover. The question is which demands break the cancellation. Roll and pitch split the airframe into pairs holding one clockwise and one counter clockwise prop, so the net stays near zero. Yaw does not: it speeds both props spinning the same way. The rigid body\'s own Euler coupling is separate and never cancels.',
+    caption: 'Each spinning motor bell and propeller is a small gyroscope. Two spin each way, so at a hover their angular momentum cancels. The figure shows which commands stop it cancelling. Roll and pitch speed up one pair of motors and slow the other, and each pair holds one clockwise and one anticlockwise propeller, so the total stays at zero. Yaw speeds up both propellers that spin one way and slows the other two, so the total no longer cancels. The rigid body\'s own Euler coupling, which turns rotation about two axes into a moment about the third, is a separate effect and never cancels.',
     draw(ctx, W, H, s, t) {
       const M = [
         { tag: '0 RR', x: 1, y: 1, cw: 1, roll: -1, pitch: 1, yaw: -1 },
@@ -1928,7 +1928,7 @@ const FIGURES = {
         Math.abs(netH) > 1e-4 ? C.sakura : C.mint);
       text(ctx, `at a hover it is ${(hoverH * 1000).toFixed(2)}`, bx + 18, 208, { fill: C.slate, size: 11 });
       text(ctx, Math.abs(netH) > 1e-4
-        ? 'Not cancelling. This one tugs on the other axes.'
+        ? 'Not cancelling. It acts on the other axes.'
         : 'Still cancelling. The pairs are opposed.',
       bx + 18, 240, { fill: Math.abs(netH) > 1e-4 ? C.sakura : C.mint, size: 12, weight: 700 });
       note(ctx, 24, H - 11, 'tau includes minus omega x (I omega + h_prop). The Euler part never cancels.');
@@ -1941,16 +1941,16 @@ const FIGURES = {
    */
   gyronoise: () => makeFigure({
     id: 'gyronoise',
-    label: 'Rotor lines and a broadband hump, in the gyro but not in the airframe',
-    eyebrow: 'What the gyro says happened',
+    label: 'Vibration lines at each propeller\'s frequency and a broad band from the frame, in the gyro reading but not in the quad\'s motion',
+    eyebrow: 'What the gyro reports',
     w: 680,
     h: 348,
     still: 1.1,
     controls: [
       { key: 'throttle', label: 'Throttle', min: 0.15, max: 1, step: 0.01, value: 0.45, fmt: (v) => `${f0(v * 100)} percent` },
-      { key: 'lpf', label: 'Gyro low pass', min: 40, max: 500, step: 5, value: 250, fmt: (v) => `${f0(v)} Hz` },
+      { key: 'lpf', label: 'Gyro low-pass', min: 40, max: 500, step: 5, value: 250, fmt: (v) => `${f0(v)} Hz` },
     ],
-    caption: 'The airframe is rotating smoothly. The gyro is not reporting that. Imbalance puts a line at each rotor\'s own frequency, climbing with throttle, and the frame adds a broad hump between 80 and 350 Hz. None of it is in the rigid body: it is injected into the reading, which is where it lives on a real aircraft. Without it, D gain would be free and the filter chain decorative.',
+    caption: 'The quad\'s body rotates smoothly, but the gyro reading also contains vibration. Imbalance in each propeller puts a line at that propeller\'s rotation frequency, which rises with throttle, and the frame adds a broad band between 80 and 350 Hz. The simulator adds the vibration to the gyro reading, not to the motion of the body. On a real quad, too, vibration reaches the flight path only through the controller reacting to it. Without it, a high D gain would cause no problems and the filters would have nothing to remove. The lower graph shows the same signal over 80 milliseconds, with the body\'s real rotation dashed.',
     draw(ctx, W, H, s, t) {
       const V = FULL.voc;
       const base = motorSteady(s.throttle, V).w;
@@ -1972,10 +1972,10 @@ const FIGURES = {
       }
       ax.fn((hz) => resp(hz), alpha(C.amber, 0.7), 1.8, 200, [5, 4]);
       ax.vline(s.lpf, alpha(C.amber, 0.45), [3, 4], `cut ${f0(s.lpf)} Hz`, C.amber);
-      text(ctx, 'four rotor lines, nearly on top of each other',
+      text(ctx, 'four propeller lines, close together',
         ax.px(lines[0]) + 16, ax.py(0.92), { fill: C.sakura, size: 10.5 });
-      text(ctx, 'frame hump', ax.px(90), ax.py(0.30), { fill: C.sakura, size: 10.5, align: 'right' });
-      ax.key([['what the gyro sees', alpha(C.sakura, 0.5)], ['what survives the filter', C.mint], ['filter response', alpha(C.amber, 0.7)]]);
+      text(ctx, 'frame band', ax.px(90), ax.py(0.30), { fill: C.sakura, size: 10.5, align: 'right' });
+      ax.key([['what the gyro reads', alpha(C.sakura, 0.5)], ['after the filter', C.mint], ['filter response', alpha(C.amber, 0.7)]]);
 
       /* The same story in time, because that is what a D term differentiates. */
       const ax2 = new Axes(ctx, {
@@ -1999,10 +1999,10 @@ const FIGURES = {
       ax2.series(pts, alpha(C.sakura, 0.45), 1.4);
       ax2.series(ptsT, C.mint, 2);
       ax2.fn(truth, alpha(C.cream, 0.4), 1.6, 120, [4, 4]);
-      text(ctx, 'dashed is what the airframe did', ax2.x + ax2.w, ax2.y - 10, {
+      text(ctx, 'dashed is the body\'s real rotation', ax2.x + ax2.w, ax2.y - 10, {
         fill: alpha(C.cream, 0.6), size: 10.5, align: 'right',
       });
-      note(ctx, 24, H - 11, `rotor lines at ${f0(lines[0])} Hz and up, climbing with throttle`);
+      note(ctx, 24, H - 11, `propeller lines at ${f0(lines[0])} Hz and up, rising with throttle`);
     },
   }),
 
@@ -2012,8 +2012,8 @@ const FIGURES = {
    */
   radio: () => makeFigure({
     id: 'radio',
-    label: 'A packet grid with delay, jitter and loss, and what feedforward does with it',
-    eyebrow: 'Perfect is a setting',
+    label: 'Radio packets with delay, jitter and loss, and what feedforward does with them',
+    eyebrow: 'Radio timing and feedforward',
     w: 680,
     h: 340,
     animated: false,
@@ -2030,12 +2030,12 @@ const FIGURES = {
         ],
       },
     ],
-    caption: 'Feedforward and RC smoothing both work on the rate of change of the stick, which means they work on the packet grid rather than on your hand. A perfect grid makes that derivative unnaturally clean and a high F gain look free. Turn a real link on and the same gain becomes motor activity. Perfect is the default so a lap time never moves underneath you, not because it is realistic.',
+    caption: 'Feedforward and RC smoothing both use the rate of change of the stick, which the flight controller calculates from the packets that arrive, not from your hand directly. With a perfect link the packets arrive at exactly even times, so that rate of change is smoother than any real radio gives, and a high feedforward gain seems to cost nothing. With a real link\'s delay, jitter and lost packets, the same gain makes the motors work harder. The perfect link is the default so that a lap time never changes because of a simulated radio, not because it is realistic.',
     draw(ctx, W, H, s, t) {
       const cfg = {
-        perfect: { hz: 250, delay: 0, jitter: 0, loss: 0, name: 'an exact 4 ms grid, no delay, nothing lost' },
+        perfect: { hz: 250, delay: 0, jitter: 0, loss: 0, name: 'packets exactly 4 ms apart, no delay, none lost' },
         elrs: { hz: 250, delay: 0.004, jitter: 0.0008, loss: 0.05, name: 'ELRS 250 Hz: 4 ms of delay, 0.8 ms of jitter' },
-        crsf: { hz: 150, delay: 0.0067, jitter: 0.0015, loss: 0.08, name: 'Crossfire 150 Hz: 6.7 ms of delay, 1.5 ms of jitter' },
+        crsf: { hz: 150, delay: 0.0075, jitter: 0.0018, loss: 0.08, name: 'Crossfire 150 Hz: 7.5 ms of delay, 1.8 ms of jitter' },
       }[s.link];
       const span = 0.14;
       /*
@@ -2081,7 +2081,7 @@ const FIGURES = {
           fill: C.sakura, size: 15, align: 'center', baseline: 'middle', weight: 700,
         });
       }
-      ax.key([['your hand', alpha(C.cream, 0.55)], ['what the FC received', C.mint]]);
+      ax.key([['your hand', alpha(C.cream, 0.55)], ['what Betaflight received', C.mint]]);
 
       /*
        * The derivative between consecutive packets. This is the quantity
@@ -2104,14 +2104,14 @@ const FIGURES = {
         line(ctx, px, ax2.py(0), px, ax2.py(Math.min(62, rate)), cfg.jitter ? C.sakura : C.amber, 2.4);
       }
       text(ctx, cfg.name, W - 26, 34, { fill: C.slate, size: 11.5, align: 'right' });
-      text(ctx, `biggest step the FC saw: ${f0(worst)} per second`, W - 26, ax2.y - 10, {
+      text(ctx, `largest rate of change seen: ${f0(worst)} per second`, W - 26, ax2.y - 10, {
         fill: cfg.jitter ? C.sakura : C.amber, size: 11.5, align: 'right', weight: 700,
       });
       text(ctx, cfg.jitter
-        ? 'Uneven bars from an even hand. This is what the averaging and smoothing clauses are for.'
-        : 'Even bars, because the grid is exact. A high F gain looks free here, and is not.',
+        ? 'Uneven bars from a smooth stick movement. The averaging and smoothing settings exist for this.'
+        : 'Even bars from exact timing. A high F gain looks harmless here but not on a real link.',
       54, ax2.y + ax2.h + 22, { fill: C.slate, size: 11.5 });
-      note(ctx, 24, H - 11, 'shaped in the shell. the wasm module stays bit identical for a given stream');
+      note(ctx, 24, H - 11, 'the link runs outside the WebAssembly module, so a recorded stream replays bit for bit');
     },
   }),
 
@@ -2121,15 +2121,15 @@ const FIGURES = {
    */
   collide: () => makeFigure({
     id: 'collide',
-    label: 'Collision as a shell query, and the ground cushion that is not modelled',
-    eyebrow: 'Outside the integrator',
+    label: 'Contact between the quad and a tree trunk, solved inside the physics model, and ground effect, which the five inch does not have',
+    eyebrow: 'Contact and ground effect',
     w: 680,
     h: 320,
     still: 1,
     controls: [
       { key: 'pass', label: 'Pass distance', min: 0, max: 90, step: 1, value: 22, fmt: (v) => `${f0(v)} cm` },
     ],
-    caption: 'The integrator does not know that trees exist. It integrates a rigid body in free air, and the shell separately sweeps a sphere against capsules and may hand the state back deflected. The right hand panel is the more useful half: a real rotor gains thrust within about one radius of the ground, and this plant does not, so a hover at ankle height takes the same throttle as one at head height.',
+    caption: 'The left panel shows the quad passing a tree trunk, which the physics model treats as a capsule: a cylinder with rounded ends. The circle is the quad\'s reach, a sphere around its centre of gravity that holds the frame, the propellers and the camera, and only objects near it are tested in detail. When the capsule comes within reach, the physics model checks three things against it: the frame, which is a box; a small bumper sphere around the camera; and, on the five inch, soft contact points on each propeller. Any that touch are pushed back out. This happens inside the physics step, 1,000 times a second, for the ground, roofs, walls, gates, trees and the train. The right panel shows ground effect: close to the ground a propeller makes more thrust. The dashed curve is the shape of the effect on a real rotor. The five inch does not have it, so its thrust is the flat line at every height. The whoop does have it: 16 mm above the floor its thrust is 1.33 times its value in free air.',
     draw(ctx, W, H, s, t) {
       const cx = 44;
       const cy = 158;
@@ -2164,9 +2164,9 @@ const FIGURES = {
       ctx.arc(px, pathY, r, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
-      text(ctx, 'swept sphere', cx + 6, pathY - r - 10, { fill: C.amber, size: 10.5 });
+      text(ctx, 'reach of the quad', cx + 6, pathY - r - 10, { fill: C.amber, size: 10.5 });
       const gap = Math.abs(pathY - cy) - 11 - r;
-      text(ctx, hit ? 'hit, sim_deflect may be called' : `misses by ${f0(Math.max(0, gap) * 0.6)} cm`,
+      text(ctx, hit ? 'in reach: frame, props, lens tested' : `misses by ${f0(Math.max(0, gap) * 0.6)} cm`,
         cx + 6, cy + 122, { fill: hit ? C.sakura : C.mint, size: 12, weight: 700 });
 
       const ax = new Axes(ctx, {
@@ -2176,9 +2176,14 @@ const FIGURES = {
       ax.frame({ xticks: [0, 1, 2, 3], yticks: [1, 1.1, 1.2], fmtX: f0, fmtY: (v) => v.toFixed(1) });
       ax.fn((x) => 1 + 0.22 * Math.exp(-x * 1.7), alpha(C.sakura, 0.5), 2.2, 120, [5, 4]);
       ax.fn(() => 1, C.mint, 2.8);
-      ax.key([['a real rotor', alpha(C.sakura, 0.5)], ['this plant', C.mint]], ax.y + ax.h + 26, ax.x);
-      text(ctx, 'no ground effect, on purpose and on the record', 404, 268, { fill: C.slate, size: 11 });
-      note(ctx, 24, H - 11, 'a landing stops the integrator. a crash is a penalty, not a bounce');
+      /* In the empty band under the 1.0 line: below the axis it ran into the x
+       * axis label. */
+      ax.key([['a real rotor', alpha(C.sakura, 0.5)], ['five inch', C.mint]], ax.py(0.95), ax.px(0.9));
+      /* Inside the plot, where it is empty, rather than under it: at y 268 it
+       * sat on top of the key and the x axis label. */
+      text(ctx, 'five inch: no ground effect', ax.px(0.7), ax.py(1.21), { fill: C.slate, size: 11 });
+      text(ctx, 'the whoop has it', ax.px(0.7), ax.py(1.15), { fill: C.slate, size: 11 });
+      note(ctx, 24, H - 11, 'contact is solved in the physics model, 1,000 times a second');
     },
   }),
 
@@ -2189,35 +2194,35 @@ const FIGURES = {
   missing: () => makeFigure({
     id: 'missing',
     label: 'What is modelled, what is chosen, and what is absent',
-    eyebrow: 'The contract',
+    eyebrow: 'Textbook, chosen and missing',
     w: 680,
     h: 340,
     animated: false,
-    caption: 'Three categories, and mixing them up is how a wiki becomes fiction. A textbook result can be checked against the textbook. A chosen constant is somebody\'s judgement about feel and can only be checked against a flight. An absence cannot be reasoned about at all, which is why it is named rather than left to be inferred from silence.',
+    caption: 'The first column lists results taken from textbooks and published research, which can be checked against those sources. The second lists constants chosen by judgement, mostly about how the quad feels, which can only be checked by flying. The third lists effects that are not modelled at all. A missing effect leaves nothing in the simulator to look at, so it is named here and not left for the reader to guess.',
     draw(ctx, W, H) {
       const cols = [
         ['From the literature', C.mint, [
           'Momentum theory figure of merit',
           'Glauert inflow in edgewise flow',
-          'The vortex ring gap shape',
+          'The vortex ring state shape',
           'Rigid body Euler equations',
-          'Quadratic bluff body drag',
+          'Body drag rising with speed squared',
           'First order rotor dynamics',
         ]],
         ['Chosen, for feel', C.amber, [
-          'k_propwash, 0.08 of thrust',
-          'Gyro line and hump amplitudes',
+          `k_propwash, ${P.kPropwash} of thrust`,
+          'Gyro vibration sizes',
           'The motor cant table',
           'H-force constant k = 0.43842',
-          'Inflow asymmetry set',
+          'Per-propeller inflow differences',
         ]],
         ['Not modelled at all', C.sakura, [
-          'Wind, and ground effect',
+          'Wind, and ground effect on the five inch',
           'Blade element theory',
           'Motor inductance, ESC limits',
-          'Thermal models of anything',
-          'Flexible arms, aeroelasticity',
-          'GPS, mag, baro, dual gyro',
+          'Temperature of any part',
+          'Bending of arms and propellers',
+          'GPS, compass, barometer, second gyro',
           'Dynamic notch at 1 kHz',
         ]],
       ];
@@ -2245,7 +2250,7 @@ const FIGURES = {
           text(ctx, ln, x + 32, yy, { fill: alpha(C.cream, 0.82), size: 11.5 });
         });
       });
-      text(ctx, 'A phenomenon you need for a paper is in the source or it is in this third column.', 24, H - 14, {
+      text(ctx, 'If you need an effect for research, look for it in the source code and in this third column.', 24, H - 14, {
         fill: C.slate, size: 11,
       });
     },
@@ -2257,7 +2262,7 @@ const FIGURES = {
   lens: () => makeFigure({
     id: 'lens',
     label: 'What a field of view number does to the size of a gate',
-    eyebrow: 'The camera is not the plant',
+    eyebrow: 'The camera is not part of the physics',
     w: 680,
     h: 330,
     animated: false,
@@ -2265,7 +2270,7 @@ const FIGURES = {
       { key: 'fov', label: 'Vertical field of view', min: 55, max: 150, step: 1, value: 85, fmt: (v) => `${f0(v)} deg` },
       { key: 'tilt', label: 'Camera tilt', min: 0, max: 55, step: 1, value: 30, fmt: (v) => `${f0(v)} deg` },
     ],
-    caption: 'An FPV lens is a fisheye and this renderer is rectilinear, so the number printed on the lens is not the number to type in. Matching a 155 degree fisheye by its printed figure makes every gate tiny and unflyable; matching its centre magnification lands near 85 degrees, the default. Camera tilt changes nothing about the flight and everything about the line you fly.',
+    caption: 'An FPV camera has a fisheye lens, and this renderer is rectilinear, which means it keeps straight lines straight. So the field of view printed on the lens is not the number to set here. Setting a printed figure of 150 degrees makes every gate look tiny. Matching the size of objects at the centre of a 155 degree fisheye gives a figure near 85 degrees, the default. Camera tilt changes no force on the quad, but it moves where straight ahead appears in the picture, and so it changes the line you fly.',
     draw(ctx, W, H, s) {
       const gateH = 1.5;
       const dist = 10;
@@ -2313,7 +2318,7 @@ const FIGURES = {
       text(ctx, `${f0(s.fov)} deg`, cx, cy - 124, { fill: C.mint, size: 12, align: 'center', weight: 700 });
 
       const rows = [
-        ['The gate subtends', `${f1(ang)} deg`, C.slate],
+        ['Angle the gate covers', `${f1(ang)} deg`, C.slate],
         ['Of the picture height', `${f1(frac * 100)} percent`, C.amber],
         ['At the 85 degree default', `${f1((ang / 85) * 100)} percent`, C.mint],
         ['At a printed 150', `${f1((ang / 150) * 100)} percent`, C.sakura],
@@ -2342,10 +2347,10 @@ const FIGURES = {
       { key: 'p', label: 'P roll', min: 0, max: 140, step: 1, value: 45, fmt: f0, resets: true },
       { key: 'i', label: 'I roll', min: 0, max: 200, step: 1, value: 80, fmt: f0, resets: true },
       { key: 'd', label: 'D roll', min: 0, max: 90, step: 1, value: 30, fmt: f0, resets: true },
-      { key: 'relax', label: 'iterm relax', type: 'toggle', value: true, on: 'on', off: 'off' },
+      { key: 'relax', label: 'I-term relax', type: 'toggle', value: true, on: 'on', off: 'off' },
       { key: 'noise', label: 'Gyro noise', type: 'toggle', value: false, on: 'real', off: 'clean' },
     ],
-    caption: 'These are the CLI numbers, through Betaflight\'s own scale factors, driving this airframe\'s real inertia and its real 30 millisecond rotor lag. Take D to zero and it rings, because the actuator is slower than the loop wants. Take I to zero and it never quite arrives. Turn iterm relax off and a stick move winds the accumulator into an overshoot, the bounce people report coming out of a flip. Turn the gyro noise on and watch what D costs.',
+    caption: 'The sliders are the gains you type in Betaflight\'s CLI. The figure passes them through Betaflight\'s own scale factors and applies them to the five inch\'s moment of inertia about the roll axis and its rotor time constant of 29 milliseconds. Set D to zero and the roll rate overshoots and oscillates, because the motors respond more slowly than the loop corrects. Set I to zero and the rate settles slightly below the target. Turn I-term relax off and the I term builds up during the stick movement, which causes an overshoot: the bounce pilots report at the end of a flip. Turn the gyro noise on to see how D magnifies it.',
     /*
      * Solve the whole seven hundred millisecond step in one pass whenever a
      * gain changes, then draw all of it. Building the trace frame by frame
@@ -2418,7 +2423,7 @@ const FIGURES = {
         text(ctx, k, x, 18, { fill: C.slate, size: 10, align: 'right' });
         text(ctx, v, x, 36, { fill: c, size: 16, weight: 700, mono: true, align: 'right' });
       });
-      note(ctx, 24, H - 11, 'compiled pid.c scale factors on this airframe\'s real inertia and rotor lag');
+      note(ctx, 24, H - 11, 'scale factors from pid.c, on the five inch\'s inertia and rotor delay');
     },
   }),
 
@@ -2429,7 +2434,7 @@ const FIGURES = {
   rates: () => makeFigure({
     id: 'rates',
     label: 'Betaflight ACTUAL rates: what the stick asks for at every position',
-    eyebrow: 'Yours, not the airframe\'s',
+    eyebrow: 'Rates belong to the pilot',
     w: 680,
     h: 346,
     still: 1.6,
@@ -2438,7 +2443,7 @@ const FIGURES = {
       { key: 'sr', label: 'Max rate', min: 10, max: 120, step: 1, value: 67, fmt: (v) => `${f0(v * 10)} deg/s` },
       { key: 'expo', label: 'Expo', min: 0, max: 100, step: 1, value: 0, fmt: (v) => f2(v / 100) },
     ],
-    caption: 'ACTUAL rates are the curve whose two ends mean what they say: centre sensitivity is degrees per second per unit of stick at the middle, max rate is what full stick gives. Expo bends the middle down without touching either end, which is how you aim precisely and keep the top. The dot is a stick sweeping; watch how much travel lives in the calm part as expo comes up.',
+    caption: 'With ACTUAL rates both numbers mean exactly what they say. Centre sensitivity is the slope of the curve at the centre, in degrees per second for each unit of stick movement, and max rate is the rotation rate at full stick. Expo lowers the middle of the curve without changing either end, so small stick movements give gentle rotation and full stick still gives the maximum. The dot follows a stick sweeping from side to side: as expo rises, more of the stick travel gives slow rotation.',
     draw(ctx, W, H, s, t) {
       /*
        * Betaflight's ACTUAL curve takes stickMovement as max(0, srate*10 -
@@ -2471,7 +2476,7 @@ const FIGURES = {
       /* The centre tangent, which is what the first number literally means. */
       const c = s.rc * 10;
       line(ctx, ax.px(-0.3), ax.py(-0.3 * c), ax.px(0.3), ax.py(0.3 * c), alpha(C.amber, 0.6), 1.6, [4, 4]);
-      text(ctx, 'the slope at centre is the first number', ax.px(0.32), ax.py(0.32 * c), { fill: C.amber, size: 10.5 });
+      text(ctx, 'this slope is the centre sensitivity', ax.px(0.32), ax.py(0.32 * c), { fill: C.amber, size: 10.5 });
 
       const cells = [
         ['Stick right now', f2(stick), C.slate],
@@ -2484,7 +2489,7 @@ const FIGURES = {
         text(ctx, k, x, 296, { fill: C.slate, size: 10.5 });
         text(ctx, v, x, 318, { fill: col, size: 15, weight: 700, mono: true });
       });
-      note(ctx, 24, H - 11, 'applyActualRates from fc/rc.c. rates live in a rate profile, not in a tune');
+      note(ctx, 24, H - 11, 'applyActualRates from fc/rc.c. rates are kept in a rate profile, not in a tune');
     },
   }),
 
@@ -2494,8 +2499,8 @@ const FIGURES = {
    */
   filters: () => makeFigure({
     id: 'filters',
-    label: 'What a low pass removes, and what it costs in delay',
-    eyebrow: 'You are spending delay',
+    label: 'What a low-pass filter removes, and the delay it adds',
+    eyebrow: 'Less noise, more delay',
     w: 680,
     h: 372,
     still: 0.9,
@@ -2513,7 +2518,7 @@ const FIGURES = {
         ],
       },
     ],
-    caption: 'Every filter buys quiet with lateness, and lateness in a feedback loop is phase margin you no longer have. A steeper shape kills more noise at the same cutoff and costs proportionally more delay, which is why PT2 and PT3 are not simply better. The two numbers underneath are the whole trade.',
+    caption: 'A low-pass filter lets slow changes through and removes fast ones. Every filter that removes noise also delays the signal, and delay in a feedback loop brings the loop closer to oscillating, which engineers call losing phase margin. A steeper shape removes more noise at the same cutoff frequency and adds proportionally more delay, so PT2 and PT3 are not simply better than PT1. The two numbers on the right show the noise left and the delay added.',
     draw(ctx, W, H, s, t) {
       const dt = 0.001;
       const a = pt1Gain(s.hz, dt);
@@ -2549,7 +2554,7 @@ const FIGURES = {
       /* Drawn last, because the whole question is how far the green one has
          been dragged away from it. */
       ax.fn(truth, C.cream, 2, 200, [6, 5]);
-      ax.key([['gyro as read', alpha(C.sakura, 0.3)], ['the airframe', C.cream], ['after the filter', C.mint]]);
+      ax.key([['gyro as read', alpha(C.sakura, 0.3)], ['true rotation', C.cream], ['after the filter', C.mint]]);
       /* The delay, drawn where it happens rather than only stated. */
       const tm = 0.34;
       const shift = groupMs / 1000;
@@ -2563,7 +2568,7 @@ const FIGURES = {
       const pct = (noiseLeft / n / 118) * 100;
       text(ctx, `${f0(Math.min(100, pct))} percent`, bx, 100, { fill: pct < 25 ? C.mint : C.sakura, size: 19, weight: 700, mono: true });
       meter(ctx, bx, 110, W - bx - 28, 8, Math.min(1, pct / 100), pct < 25 ? C.mint : C.sakura);
-      text(ctx, 'Delay you just bought', bx, 156, { fill: C.slate, size: 10.5 });
+      text(ctx, 'Delay added', bx, 156, { fill: C.slate, size: 10.5 });
       text(ctx, `${f1(groupMs)} ms`, bx, 180, { fill: groupMs > 3 ? C.sakura : C.mint, size: 19, weight: 700, mono: true });
       meter(ctx, bx, 190, W - bx - 28, 8, Math.min(1, groupMs / 8), groupMs > 3 ? C.sakura : C.mint);
       text(ctx, 'One millisecond of delay is', bx, 232, { fill: C.slate, size: 11 });
@@ -2576,7 +2581,7 @@ const FIGURES = {
       ax3.frame({ xticks: [0, 100, 200, 300, 400, 500], yticks: [], fmtX: f0 });
       ax3.fn((hz) => (1 / Math.sqrt(1 + (hz / s.hz) ** 2)) ** s.order, C.amber, 2);
       ax3.vline(s.hz, alpha(C.amber, 0.4), [3, 4]);
-      note(ctx, 24, H - 8, 'lower hertz is quieter and later. the dynamic notch will not arm at 1 khz');
+      note(ctx, 24, H - 8, 'a lower cutoff is quieter and later. the dynamic notch will not run at 1 kHz');
     },
   }),
 
@@ -2587,7 +2592,7 @@ const FIGURES = {
   ff: () => makeFigure({
     id: 'ff',
     label: 'Feedforward leading the stick, next to P waiting for the error',
-    eyebrow: 'Before the mistake',
+    eyebrow: 'Before the error',
     w: 680,
     h: 348,
     still: 0.42,
@@ -2595,7 +2600,7 @@ const FIGURES = {
       { key: 'f', label: 'Feedforward', min: 0, max: 250, step: 5, value: 120, fmt: f0, resets: true },
       { key: 'jitter', label: 'Link', type: 'toggle', value: false, on: 'ELRS', off: 'perfect' },
     ],
-    caption: 'P cannot act until the craft is already wrong, because error is its only input. Feedforward watches how fast the stick is moving and starts the motors on the assumption you meant it, so the timing differs completely: the amber contribution arrives during the stick move and is gone by the time the green one peaks. It is also the term a jittery link ruins, because jitter looks like a violent stick.',
+    caption: 'P cannot act until the quad is already behind the target, because the error is its only input. Feedforward measures how fast the stick is moving and changes the motor power straight away, on the assumption that you want that rotation. The two act at different times: the amber feedforward contribution comes during the stick movement and has ended by the time the green P contribution peaks. A link with uneven timing makes feedforward worse, because uneven timing looks to feedforward like very fast stick movement.',
     reset: (s, sc) => {
       /* Solved in one pass for the same reason the PID figure is. */
       const loop = rateLoop({ f: s.f });
@@ -2623,7 +2628,7 @@ const FIGURES = {
       ax.series(sc.set, alpha(C.sakura, 0.65), 1.8);
       ax.series(sc.tr, C.mint, 2.6);
       ax.mark(cursor, sc.tr[Math.min(700, Math.round(cursor * 1000))][1], C.cream, 4);
-      ax.key([['stick, as received', alpha(C.sakura, 0.65)], ['what the craft did', C.mint]]);
+      ax.key([['stick, as received', alpha(C.sakura, 0.65)], ['what the quad did', C.mint]]);
 
       /* The two contributions, side by side, which is the whole argument. */
       const ax2 = new Axes(ctx, {
@@ -2642,8 +2647,8 @@ const FIGURES = {
       }, C.mint, 2.6);
       ax2.key([['feedforward, from the stick', C.amber], ['P, from the error that followed', C.mint]]);
       note(ctx, 24, H - 11, s.jitter
-        ? 'a jittery link makes that amber spike out of nothing'
-        : 'a perfect grid makes this derivative unnaturally clean');
+        ? 'a jittery link makes amber spikes without a real stick move'
+        : 'perfect packet timing makes this rate of change unusually smooth');
     },
   }),
 
@@ -2654,7 +2659,7 @@ const FIGURES = {
   tpa: () => makeFigure({
     id: 'tpa',
     label: 'Throttle PID attenuation, and what airmode does at the bottom',
-    eyebrow: 'The plant changes with throttle',
+    eyebrow: 'The quad changes with throttle',
     w: 680,
     h: 330,
     animated: false,
@@ -2663,7 +2668,7 @@ const FIGURES = {
       { key: 'brk', label: 'tpa_breakpoint', min: 1000, max: 2000, step: 10, value: 1350, fmt: f0 },
       { key: 'airmode', label: 'Airmode', type: 'toggle', value: true, on: 'on', off: 'off' },
     ],
-    caption: 'Props bite harder at high throttle, so gains that were right at a hover are too much at full stick, and TPA turns them down above a breakpoint. Airmode is the same problem at the other end: chop the throttle and some motors would need to go below idle for the mixer to keep authority, so airmode lets them go negative in arithmetic and clips against the real floor. Without it, zero throttle is four motors at idle and no control.',
+    caption: 'At high motor speed a small change in motor power changes the thrust more, so gains that suit a hover are too strong at full throttle. TPA reduces P and D above a throttle point called the breakpoint. Airmode deals with the same kind of problem at zero throttle. When the throttle is cut, some motors would need to go below idle for the mixer to keep control, so airmode raises all four together until the difference between them fits above the idle floor. Without airmode, zero throttle leaves all four motors at idle and the pilot has no control.',
     draw(ctx, W, H, s) {
       const atten = (thr) => {
         const bp = (s.brk - 1000) / 1000;
@@ -2699,11 +2704,11 @@ const FIGURES = {
         }
       });
       const after = wrapText(ctx, s.airmode
-        ? 'Airmode lifted the whole set so the difference survives. You still have roll.'
+        ? 'Airmode raised all four motors, so the difference remains. You still have roll.'
         : 'Two motors are already at the floor. The difference is gone, and so is the roll.',
       bx, 262, W - bx - 26, { fill: s.airmode ? C.mint : C.sakura, size: 11.5, weight: 700, lead: 16 });
       text(ctx, 'the pink line is the real idle floor', bx, after + 2, { fill: C.slate, size: 10.5 });
-      note(ctx, 24, H - 11, 'anti gravity is a third clause: a high pass on throttle that boosts I during a punch');
+      note(ctx, 24, H - 11, 'anti-gravity is a third feature: it raises I while the throttle changes quickly');
     },
   }),
 
@@ -2713,7 +2718,7 @@ const FIGURES = {
   mixer: () => makeFigure({
     id: 'mixer',
     label: 'Throttle plus three PID sums, resolved into four motor duties',
-    eyebrow: 'Four numbers, live',
+    eyebrow: 'Four motor outputs',
     w: 680,
     h: 356,
     animated: false,
@@ -2723,7 +2728,7 @@ const FIGURES = {
       { key: 'pitch', label: 'Pitch', min: -0.5, max: 0.5, step: 0.01, value: 0, fmt: (v) => f2(v) },
       { key: 'yaw', label: 'Yaw', min: -0.5, max: 0.5, step: 0.01, value: 0, fmt: (v) => f2(v) },
     ],
-    caption: 'The whole mixer: throttle plus three signed columns, once per motor. Push any demand far enough and a motor hits the end of its range, at which point the mixer cannot produce the rotation asked for, whatever the PID says. That ceiling is why yaw dies in a punch, and why a quad at full throttle has no reserve to correct with.',
+    caption: 'Each motor\'s output is the throttle plus the roll, pitch and yaw commands, each multiplied by +1 or −1 for that motor. Push any command far enough and a motor reaches idle or full power, and then the mixer cannot produce the rotation asked for, whatever the PID controller calculates. That limit is why yaw becomes weak at full throttle, and why a quad at full throttle has no spare power to correct with.',
     draw(ctx, W, H, s) {
       const M = [
         { tag: '0 RR', roll: -1, pitch: 1, yaw: -1 },
@@ -2826,7 +2831,7 @@ const FIGURES = {
       });
       text(ctx, 'duty', W - 24, 30, { fill: C.slate, size: 10, align: 'right', weight: 700, track: 1.2 });
 
-      text(ctx, anyClip ? 'The mixer ran out of room.' : 'Every demand fits.', bx, 312, {
+      text(ctx, anyClip ? 'A motor is at its limit.' : 'Every command fits.', bx, 312, {
         fill: anyClip ? C.sakura : C.mint, size: 13, weight: 700,
       });
       text(ctx, anyClip
@@ -2847,7 +2852,7 @@ const FIGURES = {
   simplified: () => makeFigure({
     id: 'simplified',
     label: 'A simplified slider, and the real gains the firmware writes from it',
-    eyebrow: 'A shape, not a second PID',
+    eyebrow: 'Sliders write the real gains',
     w: 680,
     h: 320,
     animated: false,
@@ -2855,7 +2860,7 @@ const FIGURES = {
       { key: 'master', label: 'Master multiplier', min: 50, max: 200, step: 1, value: 100, fmt: (v) => f2(v / 100) },
       { key: 'dgain', label: 'D slider', min: 50, max: 200, step: 1, value: 100, fmt: (v) => f2(v / 100) },
     ],
-    caption: 'The sliders are not a second tuning model in front of the real one. Betaflight\'s own simplified_tuning.c is compiled here, so moving a slider writes p_roll and its eleven relatives exactly as the firmware would. That is the catch: type gains, then apply a slider, and the slider wins. A dump ending with a simplified tuning apply line overwrites what you typed.',
+    caption: 'The sliders are Betaflight\'s own code: simplified_tuning.c is compiled here, so moving a slider writes p_roll and the other eleven gains as the firmware would. The order matters. If you type gains and then apply a slider, the slider\'s values replace the typed ones, and a diff file that ends with a simplified tuning apply line replaces any gains typed above it.',
     draw(ctx, W, H, s) {
       const m = s.master / 100;
       const dg = s.dgain / 100;
@@ -2885,7 +2890,7 @@ const FIGURES = {
       const warn = m !== 1 || dg !== 1;
       text(ctx, warn ? 'These are now the gains. Anything you typed has been overwritten.' : 'Sliders at the middle: the typed gains stand.',
         sx, 282, { fill: warn ? C.amber : C.mint, size: 12, weight: 700 });
-      text(ctx, 'simplified_pids_mode is OFF, RP or RPY. The preset files in configs/ depend on this path existing.',
+      text(ctx, 'simplified_pids_mode is OFF, RP or RPY. The tune presets in configs/ need this code to load.',
         sx, 302, { fill: C.slate, size: 11 });
     },
   }),
@@ -2904,7 +2909,7 @@ const FIGURES = {
     controls: [
       { key: 'hold', label: 'Stick held for', min: 0.2, max: 2, step: 0.05, value: 0.8, fmt: (v) => `${f1(v)} s` },
     ],
-    caption: 'In acro the stick is a rate: hold it and the craft keeps rotating, let go and it stops wherever it is pointing. In angle the stick is an attitude: hold it and the craft sits at that tilt, let go and it levels. Acro is what a racer flies, and it is why hands off does not mean upright. Keyboard flight here forces angle, because a key cannot be a good rate stick.',
+    caption: 'In acro mode the stick sets a rotation rate: hold it and the quad keeps rotating, let go and it stops at whatever angle it has reached. In angle mode the stick sets a tilt: hold it and the quad stays at that tilt, let go and it returns to level. Racers fly acro, so letting go of the sticks does not bring the quad upright. Racing with a keyboard starts in angle mode, because a key is either pressed or not, and pressing M in flight switches between angle and acro.',
     draw(ctx, W, H, s, t) {
       const period = 3.2;
       const ph = t % period;
@@ -2940,7 +2945,7 @@ const FIGURES = {
       roundRect(ctx, sx, sy - 8, stick * 220, 16, 8, alpha(C.amber, 0.75));
       text(ctx, on ? 'held' : 'released', sx + 232, sy + 1, { fill: on ? C.amber : C.slate, size: 11.5, baseline: 'middle', weight: 700 });
       line(ctx, W / 2, 76, W / 2, 244, alpha(C.cream, 0.08), 1.2);
-      note(ctx, 24, H - 11, 'horizon mode is stored here but never raised. there is no half self level');
+      note(ctx, 24, H - 11, 'horizon mode is stored here but never switched on, so there is no half self-levelling');
     },
   }),
 };

@@ -38,7 +38,9 @@
 
 import { stopFigures } from './anim.js';
 import { ARTICLES, ARTICLE_BY_ID, CHAPTERS } from './articles.js';
-import { allCliPages, cliIndexPage, cliPageId } from './cli.js';
+import {
+  STATUS_LABEL, allCliPages, cliIndexPage, cliPageId,
+} from './cli.js';
 import { wikiFigure } from './figures.js';
 import { FIELDS, TABS } from '../fc/catalog.js';
 
@@ -183,11 +185,18 @@ function hitScore(row, q) {
   return s;
 }
 
+/*
+ * The chip says the status in words a reader can follow, from STATUS_LABEL
+ * in cli.js. The catalog's own code stays on it as a tooltip, for the reader
+ * who is matching a page against catalog.js.
+ */
 function statusChip(status) {
   if (!status) {
     return null;
   }
-  return el('span', `wiki-chip wiki-chip-${status.toLowerCase().replace(/_/g, '-')}`, status.replace(/_/g, ' '));
+  const chip = el('span', `wiki-chip wiki-chip-${status.toLowerCase().replace(/_/g, '-')}`, STATUS_LABEL[status] || status.replace(/_/g, ' '));
+  chip.title = `Catalog status ${status}`;
+  return chip;
 }
 
 /* Highlight the query inside a result, so a hit says why it is a hit. */
@@ -523,7 +532,7 @@ export class WikiView {
     const hits = ranked.slice(0, 40).map((x) => x.row);
     this.results.append(el('p', 'wiki-results-cap', ranked.length
       ? `${hits.length}${ranked.length > 40 ? ` of ${ranked.length}` : ''} matches`
-      : 'No matches. Try a CLI key, or a word from an article.'));
+      : 'No matches. Try a setting name, or a word from an article.'));
     for (const hit of hits) {
       const b = btn('wiki-hit');
       const top = el('span', 'wiki-hit-top');
@@ -610,7 +619,7 @@ export class WikiView {
     }
     if (page.reason && page.status && page.status !== 'LIVE') {
       const note = el('p', 'wiki-reason');
-      note.append(el('strong', null, 'Catalog reason. '), document.createTextNode(page.reason));
+      note.append(el('strong', null, 'Why, from the settings catalog: '), document.createTextNode(page.reason));
       this.article.append(note);
     }
     if (page.kind === 'cli' && this.simHref && page.key && !String(page.key).startsWith('feature ')) {
@@ -686,7 +695,7 @@ export class WikiView {
       const n = id === 'all' ? FIELDS.length : FIELDS.filter((f) => f.status === id).length;
       const b = btn(this.filter === id ? 'wiki-filter on' : 'wiki-filter');
       b.setAttribute('aria-pressed', String(this.filter === id));
-      b.append(el('span', null, id === 'all' ? 'All' : id.replace(/_/g, ' ')));
+      b.append(el('span', null, id === 'all' ? 'All' : (STATUS_LABEL[id] || id.replace(/_/g, ' '))));
       b.append(el('span', 'wiki-filter-n', String(n)));
       b.addEventListener('click', () => {
         this.filter = id;
@@ -760,7 +769,7 @@ export class WikiView {
       }
       return true;
     });
-    this.cliList.append(el('p', 'wiki-results-cap', `${rows.length} keys`));
+    this.cliList.append(el('p', 'wiki-results-cap', `${rows.length} settings`));
     for (const f of rows) {
       const b = btn('wiki-cli-row');
       b.append(el('span', 'wiki-cli-key', f.key));

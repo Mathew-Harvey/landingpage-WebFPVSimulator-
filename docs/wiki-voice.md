@@ -1,108 +1,80 @@
 # The wiki's voice
 
-Tight, technical, straight to the point, and easy to read. A Scientific
-American feature written by somebody with a word budget: the concrete opening
-and the varied rhythm of a magazine, none of its wind-up. This file is the
-working definition, because "make it sound better" is not an instruction
-anybody can act on twice the same way.
+A physics textbook for Year 10 students: plain English, every term explained
+where it first appears, no analogies, and nothing left out. This file is the
+working definition, because "make it clearer" is not an instruction anybody
+can act on twice the same way.
 
-The register applies to the article chapters, meaning The journey, The aircraft
-and The controller. The 696 catalog pages are reference, and reference has its
-own register, covered at the bottom. Both were tightened in the September
-no-fluff pass; the difference between them is density, not care.
+## Where this came from
 
-## The eight rules
+On 24 September 2026 the owner asked for the whole wiki to be rewritten with
+the humanizer skill (github.com/blader/humanizer, version 3.0.0) so that it
+"makes sense" and "reads like a text book aimed at yr 10 students, plain
+english. get rid of the analogies". That replaced the magazine register this
+file described earlier in September, in which every analogy had to predict
+something. There are no analogies now, predictive or not.
+`docs/wiki-textbook-2026-09.md` records the rewrite itself.
 
-**1. Open on something concrete, not a definition.** A magazine feature earns
-the reader's attention in its first sentence and then spends it. So: "A five
-inch racing quadcopter weighs about as much as a can of soft drink and will
-accelerate straight up faster than a sports car accelerates forward." Not: "A
-racing quad is a small rigid body with four spinning discs."
+## The rules
 
-**2. The lede opens a gap.** One or two sentences that make the reader want the
-next paragraph. "Throw a paper aeroplane and it flies. Throw a quadcopter and
-it tumbles. Everything else on this site follows from that one difference."
+**1. Write for a reader aged 15 or 16.** They know forces, Newton's second
+law, weight, speed and acceleration, energy and power, voltage, current and
+resistance, graphs, squares and square roots, ratios and percentages. They do
+not know control theory, filters, quaternions, parameter groups or any FPV
+slang. Anything outside the first list is explained before it is used.
 
-**3. Vary sentence length on purpose.** The failure this replaced was a wall of
-short declaratives, every one the same length, which reads as a machine
-emptying a buffer. Build a long sentence through its subordinate clauses, then
-land a short one. Rhythm is not decoration; it is how a reader knows which
-sentence carried the point.
+**2. Explain a term in the sentence that introduces it, then use it.** "The
+bell, which is the spinning outer case the propeller is fixed to, has mass."
+Never a bare piece of jargon, and never a definition the reader has to go and
+find. A setting name, a file path or a function name stays exactly as it is,
+because readers search for it, with a few words saying what it is.
 
-**4. Every analogy must predict.** A comparison earns its place if it lets the
-reader anticipate the next paragraph, not if it merely paints a picture. "A
-propeller is a device for throwing air downward" predicts that thrust and
-torque are linked. "The quad danced through the gate" predicts nothing.
+**3. No analogies and no figures of speech.** Say what a thing is and what it
+does. A propeller is not a screw, the D term is not a brake, the I term is not
+a memory, and a quad does not bite, eat, chase or wade. A real example of the
+same physics is allowed: helicopters do have vortex ring state, and a spinning
+wheel is a gyroscope. A comparison that stands in for an explanation is not.
 
-**5. Connect paragraphs.** Each paragraph after the first opens by taking hold
-of the one before it. "That is only half of a descent." "The evidence for its
-importance is what happened without it." "That coupling explains several things
-pilots notice." Without these, a page is a list of facts wearing paragraph
-indentation.
+**4. Keep every fact, and check it.** This is documentation. Every number,
+file path, status and check that was in the old copy is still in the new copy,
+unless the simulator's code has changed, in which case the page follows the
+code. The code in the simulator repository wins every disagreement. A number
+in a figure caption must be one the figure computes (see `src/wiki/model.js`).
 
-**6. Anchor every number to something a person can feel.** 9.2 to 1 thrust to
-weight means nothing until it is "the kind of margin a fighter aircraft has in
-afterburner, on a machine you can hold in one hand". Keep the number exact and
-add the referent.
+**5. Keep the maths at Year 10 level, and keep the maths.** Ratios, squares,
+straight-line graphs, percentages and simple formulas stay, written with
+their units and explained in words. Detail that needs more than that (a
+numerical method, a derivation step) is either explained in plain words or
+left in the code comment it came from.
 
-**7. Introduce a term in apposition and then use it.** "the bell, which is the
-spinning outer can the propeller bolts to". Never a bare piece of jargon, and
-never a definition parked in a box the reader has to go and find.
+**6. Plain structure.** Short and medium sentences, active voice, one idea
+per sentence where possible. Each article has three sections, The idea, How
+it works and In this simulator. Each settings page has What it does, How it
+works, In this simulator, If you raise it and If you lower it, and each of
+those is one to three sentences, because a settings page is looked up rather
+than read through.
 
-**8. Do not lose a fact to make a sentence nicer.** This is documentation. Every
-number, file path, status and check that was in the old copy is still in the new
-copy. Narrative is a delivery mechanism here, not a licence.
-
-**9. Cut anything that is not carrying.** Four habits to delete on sight. An
-announcement sentence, which tells the reader what the next sentence will do
-("The evidence for its importance is what happened without it", "The algebra is
-worth following, because"): delete it and let the content land. A decorative
-tail, the clause after the point is already made. A restatement, where the
-second half of a sentence says the first half again. And an expletive opener,
-"there is" or "it is the", where a subject and a verb would do. Nothing here
-argues for terseness as a virtue: a 60 word sentence full of coefficients earns
-its length, and a 12 word one that announces the next paragraph does not.
-
-## What each column is for
-
-**In the air** gets the full treatment: scene, analogy, rhythm, transitions. It
-is the magazine feature.
-
-**In the lab** stays dense and technical. Scientific American does not write its
-equations in the voice of its opening paragraph either. What it does get is a
-topic sentence and connective tissue, so that it reads as an argument rather
-than as a spilled drawer of constants. Keep the units, keep the coefficients,
-explain why the form was chosen.
-
-**In this simulator** is provenance: which file, which status, which check, what
-is deliberately absent. Plain and short.
-
-**Figure captions** state what the reader is looking at and what it means, in
-that order, and end on the consequence. They are already close to the right
-register and were mostly left alone.
+**7. No humanizer tells.** No "not X but Y" contrast unless both halves
+carry information or the negative half corrects something a reader would
+actually believe. No one-line closer that repeats the paragraph. No staged
+opener ("Here is the thing"), no forced group of three, no inflated words, no
+bold, no filler adverbs (really, quietly, very as an intensifier). History of
+earlier versions of the model belongs in PROGRESS.md and the code comments,
+not in an article, except where it is the evidence that a term is needed.
 
 ## Still true from before
 
 - No em dashes or en dashes anywhere. The minus signs in the equations are
   U+2212 and `wiki-lint` knows the difference.
-- No filler adverbs used as intensifiers: really, quietly, very, extremely. The
-  exception is a word marking a genuine contrast between the ideal and the real
-  case, as in "the shaft power actually consumed" against the ideal power, or
-  "the radio you actually own" against the perfect link. Eight of those survive
-  and they are all doing work.
 - No scare quotes around ordinary words. Quotation marks are for quoting.
-- Do not end every paragraph on an aphorism. One good closing line per page is
-  a voice; one per paragraph is a tic, and they cancel each other out.
-- `X, not Y` is for disambiguating two things a reader might confuse. It is not
-  a way to end a sentence with a flourish.
+- Straight quotes only.
+- A status is said in words a reader can follow. The catalog's codes (LIVE,
+  GATED, APPLIED_INERT, INERT, ABSENT) are shown on the page as Works here,
+  Off at 1 kHz, Stored, not used, Not simulated and Configurator only
+  (`STATUS_LABEL` in `src/wiki/cli.js`).
 
-## The catalog pages are reference, not features
+## Figure captions
 
-`src/wiki/cli.js` holds 696 pages, one per Betaflight setting, in five short
-sections each. Nobody wants a narrative essay about `gyro_soft_notch_cutoff_2`,
-and somebody looking that key up at a race wants the answer in one screen. Those
-pages stay terse, imperative and scannable. They were cleaned of filler in the
-September pass and the register is correct as it stands.
-
-The dividing line is the reader's posture. Articles are read; the catalog is
-consulted.
+A caption says what the reader is looking at, then what it means, then the
+consequence, in plain words. It quotes no number the figure does not compute,
+and it describes the figure it sits under, not the article.

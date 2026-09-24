@@ -3,10 +3,18 @@
  *
  * A figure that draws a curve from memory is an illustration. A figure that
  * solves the same equation the simulator solves is an argument. These are
- * the Stage 1 airframe's real numbers, snapshotted from the comment block at
- * the top of src/native/plant.c the same way src/fc snapshots the catalog.
- * If these and the simulator disagree, the simulator wins and this file is
- * stale.
+ * the five inch's real numbers, snapshotted from SIM_AIRFRAME_5IN in the
+ * airframe table of src/native/plant.c the same way src/fc snapshots the
+ * catalog. The whoop is not modelled here. Last checked against plant.c on
+ * 24 September 2026, when the mass (0.71 kg, raised from 0.65 by the owner),
+ * kq (figure of merit 0.520) and k_propwash (0.15) were brought up to date.
+ * The block comment at the top of plant.c still quotes the full throttle
+ * figures of the older kq and mass, 2723 rad/s and a thrust to weight of
+ * 9.21; with the current constants the same equations give 2669 rad/s and
+ * 8.10. Everything here is at Earth gravity. The simulator's Weight slider
+ * scales gravity, 1.62 times at its normal setting on the five inch, and no
+ * figure models that. If these and the simulator disagree, the simulator
+ * wins and this file is stale.
  *
  * Nothing here is a physics engine. There is no integrator, no quaternion
  * and no collision. It is the handful of closed forms a diagram needs to be
@@ -31,13 +39,13 @@
  */
 
 export const P = {
-  mass: 0.65,
+  mass: 0.71,
   g: 9.80665,
   inertia: { roll: 0.0035, pitch: 0.0038, yaw: 0.0068 },
   arm: 0.110 / Math.SQRT2,
   discZ: 0.020,
   kt: 1.98e-6,
-  kq: 2.80e-8,
+  kq: 3.04e-8,
   ke: 0.006336,
   rMotor: 0.1825,
   jRotor: 8.0e-6,
@@ -46,14 +54,14 @@ export const P = {
   rho: 1.225,
   propR: 0.0635,
   propPitch: 4.3 * 0.0254,
-  fm: 0.565,
+  fm: 0.520,
   cdaPlan: 0.0225,
   cdaFront: 0.0130,
   cdaSide: 0.0147,
   vrsOnset: -0.30,
   vrsFull: -1.20,
   vrsFloor: 0.75,
-  kPropwash: 0.08,
+  kPropwash: 0.15,
   hK: 0.43842,
   cantDeg: { RR: -0.9, FR: 1.4, RL: 0.6, FL: -1.2 },
 };
