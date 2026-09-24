@@ -119,7 +119,10 @@ and now follow the code:
   0.30 floor, not 1.5, 0.8 and 0.2.
 - **Contact is inside the physics module.** Ground, roofs, walls, gates, trees
   and the train are solved in `world.c` at 1 kHz. "The integrator does not
-  know that trees exist" is gone.
+  know that trees exist" is gone. A crash on the ground ends flat on the belly
+  or the back (TUMBLE FLAT in `sim.c`, which reached the simulator's main
+  while this pass was being written and is described as the chosen stand-in
+  it is).
 - **Ground effect** is modelled for the whoop (Cheeseman and Bennett), not for
   the five inch.
 - **Turtle.** The automatic flip for a quad resting upside down is the
