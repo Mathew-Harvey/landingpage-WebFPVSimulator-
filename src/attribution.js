@@ -3,7 +3,7 @@
  * attribution.
  *
  * Captures document.referrer and ?ref= query parameter on landing page load,
- * stores them, and provides them for any subsequent tracking calls. First-party
+ * normalizes and sanitizes them, and stores in sessionStorage. First-party
  * only: no third-party scripts or trackers.
  *
  * This file is part of the WebFPVSimulator landing page.
@@ -22,13 +22,44 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-const STORAGE_KEY = 'webfpv_attribution';
-const SESSION_KEY = 'webfpv_session_start';
-const SESSION_DURATION_MS = 30 * 60 * 1000; /* 30 minutes */
+const STORAGE_KEY = 'webfpv.session.attribution';
 
 /*
- * Extract the domain from a URL. Returns null for invalid URLs or
- * same-origin referrers (internal navigation).
+ * Canonical short tags for known sources. Server-side closed list is the
+ * source of truth; this mirrors the board's normalizer.
+ */
+const CANONICAL_REFS = new Set([
+  'reddit', 'yt', 'youtube', 'hn', 'x', 'twitter',
+  'facebook', 'instagram', 'github', 'discord',
+]);
+
+/*
+ * Normalize a ref tag to a safe, canonical form. Max 16 chars, alphanumeric
+ * and hyphens only. Known aliases (youtube->yt, twitter->x) are canonicalized.
+ */
+function normalizeRef(raw) {
+  if (!raw || typeof raw !== 'string') {
+    return null;
+  }
+  
+  let normalized = raw.toLowerCase().trim();
+  
+  /* Apply known aliases */
+  if (normalized === 'youtube') {
+    normalized = 'yt';
+  } else if (normalized === 'twitter') {
+    normalized = 'x';
+  }
+  
+  /* Strip to alphanumeric and hyphens, max 16 chars */
+  normalized = normalized.replace(/[^a-z0-9-]/g, '').slice(0, 16);
+  
+  return normalized || null;
+}
+
+/*
+ * Extract hostname from a URL. Returns null for invalid URLs or same-host
+ * referrers (internal navigation).
  */
 function extractDomain(url) {
   if (!url) {
@@ -36,8 +67,8 @@ function extractDomain(url) {
   }
   try {
     const u = new URL(url);
-    /* Same origin is internal navigation, not an external referrer */
-    if (u.origin === window.location.origin) {
+    /* Same hostname is internal navigation, not an external referrer */
+    if (u.hostname === window.location.hostname) {
       return null;
     }
     return u.hostname;
@@ -47,38 +78,30 @@ function extractDomain(url) {
 }
 
 /*
- * Get the current session's attribution data. If this is a new session or
- * the session has expired, capture new attribution data.
+ * Get the current session's attribution data. Reads from sessionStorage
+ * if available, otherwise captures fresh attribution from URL and referrer.
  */
 export function getAttribution() {
   try {
-    const now = Date.now();
-    const sessionStart = window.sessionStorage.getItem(SESSION_KEY);
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    
-    /* Check if we're in an active session */
-    const isActiveSession = sessionStart && (now - Number(sessionStart)) < SESSION_DURATION_MS;
-    
-    if (isActiveSession && stored) {
-      /* Return existing attribution for this session */
+    /* Check for existing session attribution */
+    const stored = window.sessionStorage.getItem(STORAGE_KEY);
+    if (stored) {
       return JSON.parse(stored);
     }
     
-    /* New session: capture fresh attribution */
+    /* New session: capture and normalize attribution */
     const params = new URLSearchParams(window.location.search);
-    const ref = params.get('ref') || null;
-    const referrerDomain = extractDomain(document.referrer) || null;
+    const rawRef = params.get('ref');
+    const ref = normalizeRef(rawRef);
+    const referrerDomain = extractDomain(document.referrer);
     
     const attribution = {
       ref,
       referrerDomain,
-      landingUrl: window.location.pathname + window.location.search,
-      timestamp: now,
     };
     
-    /* Store attribution data */
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(attribution));
-    window.sessionStorage.setItem(SESSION_KEY, String(now));
+    /* Store in sessionStorage (cleared when tab closes) */
+    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(attribution));
     
     return attribution;
   } catch (e) {
@@ -86,8 +109,6 @@ export function getAttribution() {
     return {
       ref: null,
       referrerDomain: null,
-      landingUrl: window.location.pathname,
-      timestamp: Date.now(),
     };
   }
 }
