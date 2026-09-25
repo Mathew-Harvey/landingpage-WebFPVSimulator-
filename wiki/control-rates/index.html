@@ -34,7 +34,7 @@
     <meta property="og:url" content="https://webfpv.org/wiki/control-rates/" />
     <meta property="og:title" content="Rates: how the stick sets the rotation rate, FPV wiki" />
     <meta property="og:description" content="Rates decide how fast the quad rotates for each stick position. A tune belongs to the aircraft and rates belong to the pilot, so they are kept in a sepa..." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -49,14 +49,17 @@
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Rates: how the stick sets the rotation rate",
   "description": "Rates decide how fast the quad rotates for each stick position. A tune belongs to the aircraft and rates belong to the pilot, so they are kept in a sepa...",
   "url": "https://webfpv.org/wiki/control-rates/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/control-rates/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +67,54 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/control-rates';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The flight controller</p>
       <h1>Rates: how the stick sets the rotation rate</h1>
-      <p>Rates decide how fast the quad rotates for each stick position. A tune belongs to the aircraft and rates belong to the pilot, so they are kept in a separate profile.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">Rates decide how fast the quad rotates for each stick position. A tune belongs to the aircraft and rates belong to the pilot, so they are kept in a separate profile.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>The maximum rate is how fast the quad rotates at full stick, in degrees per second. Centre sensitivity is how quickly the rotation rate changes near the centre of the stick, which is not the same as the rate at half stick. Expo bends the curve so that small stick movements give gentle rotation while full stick still gives the same maximum. A pilot can then aim carefully through a gate and still flip quickly afterwards.</p>
+        <p>This simulator uses Betaflight 4.5.1&#039;s ACTUAL rates by default: 670 degrees per second at full stick, 70 degrees per second for each unit of stick movement at the centre, and no expo. ACTUAL is the easiest type to reason about, because its two numbers mean exactly what they say. The BETAFLIGHT, KISS, RACEFLIGHT and QUICK rate types all work too, using Betaflight&#039;s own functions in fc/rc.c.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>From applyActualRates: centreSensitivity = rc_rate × 10; stickMovement = max(0, srate × 10 − centreSensitivity); rate = stick × centreSensitivity + stickMovement × expof, where expof blends in the fifth power of the stick position according to the expo setting. At full stick expof is 1, so the rate is exactly srate × 10. rc_rate and srate are stored in tens of degrees per second, as whole numbers from 0 to 255.</p>
+        <p>Rates are set in Settings, and configs/rates.js is the only place the menus decide them. Tune files carry no rate profile. The rate profile page on the firmware bench points to Settings, and any rate values saved from the bench go into your own rate profile. Your rates are kept when you change aircraft, unless they are still the standard ones.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>The rates graph is drawn by src/fc/ratescurve.js, a copy of the same formulas used only for display, and the physics does not use it. Check 9 tests that full roll stick reaches the set maximum rate to within 3 percent. Check 12 tests that two diff files that differ only in srate give maximum rates in the same ratio.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/control-rates">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

@@ -34,7 +34,7 @@
     <meta property="og:url" content="https://webfpv.org/wiki/control-tpa/" />
     <meta property="og:title" content="TPA, anti-gravity and airmode, FPV wiki" />
     <meta property="og:description" content="To the flight controller, a quad in a hover and the same quad at full throttle behave like two different aircraft. Three features deal with the difference." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -49,14 +49,17 @@
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "TPA, anti-gravity and airmode",
   "description": "To the flight controller, a quad in a hover and the same quad at full throttle behave like two different aircraft. Three features deal with the difference.",
   "url": "https://webfpv.org/wiki/control-tpa/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/control-tpa/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +67,55 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/control-tpa';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The flight controller</p>
       <h1>TPA, anti-gravity and airmode</h1>
-      <p>To the flight controller, a quad in a hover and the same quad at full throttle behave like two different aircraft. Three features deal with the difference.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">To the flight controller, a quad in a hover and the same quad at full throttle behave like two different aircraft. Three features deal with the difference.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>The first is throttle PID attenuation (TPA). At high motor speed a small change in motor power changes the thrust more, so the same gain corrects harder at full throttle than in a hover, and gains that suit the hover start to oscillate at full throttle. TPA reduces P and D above a set throttle, called the breakpoint. tpa_low does the opposite at very low throttle, where the motors have little control authority.</p>
+        <p>The second is anti-gravity. When the throttle is raised suddenly, the quad tips in pitch or roll before the I term has time to correct it. Anti-gravity raises I, and can also raise P, while the throttle is changing quickly, so that the tip does not happen. It does not measure gravity: it reacts to fast changes in the throttle signal.</p>
+        <p>The third is airmode. Without airmode, cutting the throttle sends all four motors to idle, which leaves the mixer no room to speed one motor up and slow another down, so the pilot has no control until the throttle comes back. Airmode lets the mixer keep working around idle, so a flip at zero throttle still has motors to control it.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>TPA is in pid.c, in PD or D mode. Anti-gravity is a feature switch plus a gain, a cut-off frequency and a P gain, and the throttle filter behind it is updated from mixTable. Airmode is a feature switch. On a real flight controller, airmode_start_throttle_percent and pid_at_min_throttle are read by fc/core.c, which is not compiled here, so in this simulator airmode is active whenever the feature is on, and neither setting has an effect.</p>
+        <p>AIRMODE and ANTI_GRAVITY are CLI feature lines rather than ordinary settings, and both work here.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>To see why airmode exists, turn it off and try a flip at zero throttle.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/control-tpa">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

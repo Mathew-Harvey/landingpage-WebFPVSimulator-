@@ -34,7 +34,7 @@
     <meta property="og:url" content="https://webfpv.org/wiki/start-nowings/" />
     <meta property="og:title" content="A quad has no wings, FPV wiki" />
     <meta property="og:description" content="A quadcopter has one force it can aim, the total thrust of its propellers, and the only way to aim it is to rotate the whole quad. To slow down, it must..." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -49,14 +49,17 @@
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "A quad has no wings",
   "description": "A quadcopter has one force it can aim, the total thrust of its propellers, and the only way to aim it is to rotate the whole quad. To slow down, it must...",
   "url": "https://webfpv.org/wiki/start-nowings/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/start-nowings/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +67,56 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/start-nowings';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">Getting started</p>
       <h1>A quad has no wings</h1>
-      <p>A quadcopter has one force it can aim, the total thrust of its propellers, and the only way to aim it is to rotate the whole quad. To slow down, it must aim that force against the direction it is moving.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">A quadcopter has one force it can aim, the total thrust of its propellers, and the only way to aim it is to rotate the whole quad. To slow down, it must aim that force against the direction it is moving.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>An aeroplane is held up by its wings and steered by control surfaces, which are hinged flaps that turn the air flowing past them. A quadcopter is held up by four propellers that push air downwards, and it steers by rotating its whole body. To roll right, the two motors on the right slow down and the two on the left speed up. The quad rotates to the right, and part of the thrust that was holding it up now pulls it to the right. Pitch and yaw work in the same way about the other axes. The propellers are fixed to the frame, so the only way to point the thrust is to point the frame.</p>
+        <p>This is why a quadcopter has no brakes. To slow down, the pilot pitches the nose up, or rolls away from the direction of travel, so that the thrust works against the quad&#039;s speed. The drag of the propellers and the body helps. Cutting the throttle does not slow the quad down. It removes the only force the pilot controls and lets the quad fall into the column of air it has just pushed down.</p>
+        <p>Racing pilots fly in a mode called acro. In acro the sticks set a rotation rate in degrees per second, and centring the stick means stop rotating, not return to level. If you let go of the sticks while upside down, the quad stays upside down. Angle mode works differently: it returns the quad to level when the stick is centred. When you race with a keyboard the simulator starts in angle mode, because a key is either pressed or not, which makes it a poor way to set a rotation rate.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>The physics model applies Newton&#039;s second law to a rigid body. For motion in a straight line, mass times acceleration equals the total force, m a = ΣF. For rotation, the matching law links the change in the rotation rate to the total torque, or turning force, through the quad&#039;s moment of inertia, with an extra term for a spinning body that the Gyroscopic coupling page explains. The quad&#039;s orientation is stored as a quaternion, a set of four numbers that describes a rotation. Every millisecond (dt = 0.001 s) the model updates the velocity from the forces first and then the position from the new velocity, a method called semi-implicit Euler. Gravity, 9.80665 m/s², acts straight down after the forces on the body have been turned into world directions.</p>
+        <p>The simulator uses one sign convention for rotation rates, set in sim_abi.h: a positive roll rate rolls the quad right, a positive pitch rate pitches the nose down, and a positive yaw rate turns the nose left. Radio sticks use a different convention, in which positive pitch is nose up and positive yaw is nose right. The code that connects Betaflight to the physics model, called the glue, converts one into the other. If one sign in that chain were reversed, the controller would push the wrong way and make every error larger, which is called positive feedback. The comments on PLANT_SPIN in plant.c record the whole chain.</p>
+        <p>Nothing on a quadcopter works like a wing. Apart from gravity and thrust, the only forces that act against its movement through the air are the drag of its body and the rotor drag of its propellers. Body drag is calculated separately for the underside, front and side of the quad as 0.5 ρ CdA v², where ρ is the density of the air, v is the speed and CdA is the drag area in that direction. Nothing in the physics turns the nose to follow the direction of travel, so in a banked turn the quad&#039;s nose and its path can point in different directions, as they do on a real acro quad.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>The How to fly screen shows these controls with live sticks. If the quad in this simulator ever flies like an aeroplane, for example by turning its nose to follow its path, the fault is in the drag model or the rotor drag. That would be a bug in the physics model, not something a setting should fix.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/start-nowings">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

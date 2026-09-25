@@ -34,7 +34,7 @@
     <meta property="og:url" content="https://webfpv.org/wiki/physics-airframe/" />
     <meta property="og:title" content="The two airframes, FPV wiki" />
     <meta property="og:description" content="The simulator has two aircraft, a five inch racing quad and a 65 mm indoor whoop. Every number that describes them is a constant in the physics source c..." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -49,14 +49,17 @@
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "The two airframes",
   "description": "The simulator has two aircraft, a five inch racing quad and a 65 mm indoor whoop. Every number that describes them is a constant in the physics source c...",
   "url": "https://webfpv.org/wiki/physics-airframe/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/physics-airframe/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +67,58 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/physics-airframe';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The aircraft</p>
       <h1>The two airframes</h1>
-      <p>The simulator has two aircraft, a five inch racing quad and a 65 mm indoor whoop. Every number that describes them is a constant in the physics source code, not a setting you can change.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">The simulator has two aircraft, a five inch racing quad and a 65 mm indoor whoop. Every number that describes them is a constant in the physics source code, not a setting you can change.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>The five inch is a 710 gram racing quad. Its frame measures 220 mm between opposite motors. It has four 2207 motors rated at about 1900 kV, which means each motor would turn at about 1,900 revolutions per minute for every volt if nothing were attached to it. Its propellers are 5×4.3×3: five inches across, with a pitch of 4.3 inches and three blades. Its battery has six lithium polymer cells (6S) and a capacity of 1300 mAh. This is an ordinary racing specification.</p>
+        <p>With a full battery and Earth&#039;s gravity, the five inch makes about 8.1 times its own weight in thrust. The simulator also has a Weight slider on the flight screen, which scales gravity to change how heavy the quad feels. At its normal setting the five inch flies with 1.62 times Earth&#039;s gravity, a value the simulator&#039;s owner chose by flying it, so a hover needs about 35 percent of the throttle stick and the thrust is about five times the weight. Many pilots set a throttle limit so that the useful part of the throttle is spread over more of the stick, which makes fine control easier.</p>
+        <p>The whoop is a 65 mm brushless quad with guards, called ducts, around its propellers. It is the kind of quad flown indoors on RaceGOW tracks. With its one-cell battery it weighs 23.4 grams, and its propellers are 31 mm across. On a fresh battery it makes 4.7 times its own weight in thrust under Earth&#039;s gravity, and about 3.8 times on a tired one. Its normal Weight setting is 2.025 times Earth&#039;s gravity, where a hover needs about 40 percent of the stick. Its battery voltage falls by nearly a quarter at full throttle, against about 8 percent on the five inch, so every hard input costs the whoop some of its power.</p>
+        <p>You choose the aircraft with the Aircraft row at the top of the Quad screen. Changing it also loads that aircraft&#039;s tune, battery and camera settings, and switches the track builder between a sixty metre field for the five inch and a room for the whoop.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>Five inch constants, from SIM_AIRFRAME_5IN in the airframe table of plant.c: mass 0.71 kg, raised by the owner from 0.65 kg for a bigger battery and an HD camera; moments of inertia 0.0035, 0.0038 and 0.0068 kg m² about the roll, pitch and yaw axes; each motor 0.110/√2 = 0.078 m from the centre both forwards and sideways (arm_x and arm_y); thrust coefficient kt = 1.98 × 10⁻⁶ N per (rad/s)²; torque coefficient kq = 3.04 × 10⁻⁸ N m per (rad/s)²; motor constant ke = 0.006336 V s/rad; winding resistance r_motor = 0.1825 Ω; rotor moment of inertia 8.0 × 10⁻⁶ kg m²; six cells of r_cell = 2.5 mΩ each; air density 1.225 kg/m³; propeller radius 0.0635 m.</p>
+        <p>The motor constant is not the value the 1900 kV rating suggests, 60/(2π × 1900). It is 0.006336, the constant of a 1507 kV motor. Manufacturers measure kV with nothing attached to the motor. Under load, real 2207 motors produce 10 to 20 percent more torque for each amp than the rating implies, which is why a thrust stand measures 33 A per motor at full throttle where the rating predicts 41 A. Using the rated value would also need a torque coefficient low enough to put the figure of merit at 0.67, above the range any real propeller reaches. The reasoning is written out at the top of plant.c.</p>
+        <p>The torque coefficient is calculated from the thrust coefficient through the figure of merit, a measure of how efficiently a propeller turns shaft power into thrust: kq = kt^1.5 / (FM √(2ρA)), where A is the area swept by the propeller. The five inch uses FM = 0.520, the value measured for five inch three-blade propellers (0.50 to 0.53). The page Thrust, torque and figure of merit explains this. The simulator reads the value back from the compiled constants through sim_bf_debug case 12, and an automatic check keeps it between 0.4 and 0.6.</p>
+        <p>Whoop constants, from SIM_AIRFRAME_WHOOP65: mass 0.0234 kg; moments of inertia 6.0, 7.4 and 12.5 × 10⁻⁶ kg m²; propeller radius 0.0155 m; one cell of 55 mΩ, which includes the connector and the wires; figure of merit 0.310. The figure of merit is much lower than the five inch&#039;s because air friction on small blades turning at high speed wastes a larger share of the power. The moments of inertia are estimates, and plant.c lists the published sources for the other numbers.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>None of these numbers are CLI settings. Pack charge sets the starting voltage of each cell, from 4.20 V down to 3.50 V on the five inch and from 4.35 V down to 3.60 V on the whoop, and everything else is fixed in the physics model. A new airframe would be a new entry in the airframe table.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/physics-airframe">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

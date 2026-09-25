@@ -25,7 +25,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Settings that work, and settings that do not, FPV wiki</title>
-    <meta name="description" content="Most of a flight controller's settings have nothing to do with flying. This simulator keeps them, shows them in grey and labels them, so it is always cl..." />
+    <meta name="description" content="Most of a flight controller&#039;s settings have nothing to do with flying. This simulator keeps them, shows them in grey and labels them, so it is always cl..." />
     <meta name="robots" content="noindex">
     <meta name="theme-color" content="#141c16" />
     <link rel="canonical" href="https://webfpv.org/wiki/start-honesty/" />
@@ -33,15 +33,15 @@
     <meta property="og:site_name" content="WebFPV" />
     <meta property="og:url" content="https://webfpv.org/wiki/start-honesty/" />
     <meta property="og:title" content="Settings that work, and settings that do not, FPV wiki" />
-    <meta property="og:description" content="Most of a flight controller's settings have nothing to do with flying. This simulator keeps them, shows them in grey and labels them, so it is always cl..." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:description" content="Most of a flight controller&#039;s settings have nothing to do with flying. This simulator keeps them, shows them in grey and labels them, so it is always cl..." />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="A five inch racing quad on a lit studio deck, its frame open and the stack visible." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Settings that work, and settings that do not, FPV wiki" />
-    <meta name="twitter:description" content="Most of a flight controller's settings have nothing to do with flying. This simulator keeps them, shows them in grey and labels them, so it is always cl..." />
+    <meta name="twitter:description" content="Most of a flight controller&#039;s settings have nothing to do with flying. This simulator keeps them, shows them in grey and labels them, so it is always cl..." />
     <meta name="twitter:image" content="https://webfpv.org/og.png" />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
@@ -49,14 +49,17 @@
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Settings that work, and settings that do not",
   "description": "Most of a flight controller's settings have nothing to do with flying. This simulator keeps them, shows them in grey and labels them, so it is always cl...",
   "url": "https://webfpv.org/wiki/start-honesty/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/start-honesty/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +67,55 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/start-honesty';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">Getting started</p>
       <h1>Settings that work, and settings that do not</h1>
-      <p>Most of a flight controller's settings have nothing to do with flying. This simulator keeps them, shows them in grey and labels them, so it is always clear which settings have an effect.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">Most of a flight controller&#039;s settings have nothing to do with flying. This simulator keeps them, shows them in grey and labels them, so it is always clear which settings have an effect.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>On a real quad, Betaflight Configurator also sets the video transmitter channel, the layout of the on-screen display, GPS rescue and the colours of the LEDs. This simulator has no video transmitter, no Betaflight on-screen display over the camera view, no GPS and no LEDs. The settings still exist, so the firmware bench can show and export a complete Betaflight settings file. They are shown in grey. If you change one and export, the new value is in the file, but the quad flies the same.</p>
+        <p>A second group of settings has no effect because of Betaflight&#039;s own rules. The dynamic notch filter will not start unless the gyro loop runs at 2 kHz or faster. This simulator runs at 1 kHz, like a slower real flight controller. The settings are stored and the code is compiled, but the calculation the filter depends on, a sliding discrete Fourier transform (SDFT), never starts. The firmware is working as designed. These settings are called gated.</p>
+        <p>A third group looks as if it should work but does not. The motor_kv setting is stored in a real Betaflight setting group, but nothing in the flight calculation reads it, because the physics model has its own motor constants for each aircraft. These settings are called applied but inert.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>The file src/fc/catalog.js decides the status of every setting, and nothing else does. There are five statuses, and each has a label on its page. LIVE, labelled Works here: the setting is written into Betaflight code that is compiled into the simulator and runs. GATED, labelled Off at 1 kHz: the setting is written, and Betaflight ignores it at this loop rate. APPLIED_INERT, labelled Stored, not used: the setting is written to a real setting group that nothing in the flight calculation reads. INERT, labelled Not simulated: a real Betaflight 4.5 CLI setting whose part of the firmware is not compiled. ABSENT, labelled Configurator only: a control in Configurator that is not a CLI setting at all.</p>
+        <p>The function sim_bf_key_status does not tell you whether a setting does anything. A result of 0 only means the setting is in the table of settings the module can write, and that table includes gated and applied but inert settings. The catalog decides which settings are shown in grey.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>Every setting in the catalog has a page in this wiki. Pages for settings that work here say what raising or lowering the value does to the quad. Pages for grey settings say what the setting does on a real quad and then say that it has no effect here. If a page for a working setting and a flight disagree, the catalog is wrong, and that is worth reporting as a bug.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/start-honesty">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

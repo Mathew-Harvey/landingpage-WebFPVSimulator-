@@ -34,7 +34,7 @@
     <meta property="og:url" content="https://webfpv.org/wiki/control-pid/" />
     <meta property="og:title" content="PID: the three main gains, FPV wiki" />
     <meta property="og:description" content="PID is the calculation the flight controller uses to turn the error into motor commands. The error is the difference between the rotation rate you asked..." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -49,14 +49,17 @@
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "PID: the three main gains",
   "description": "PID is the calculation the flight controller uses to turn the error into motor commands. The error is the difference between the rotation rate you asked...",
   "url": "https://webfpv.org/wiki/control-pid/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/control-pid/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +67,57 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/control-pid';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The flight controller</p>
       <h1>PID: the three main gains</h1>
-      <p>PID is the calculation the flight controller uses to turn the error into motor commands. The error is the difference between the rotation rate you asked for and the rate the gyro measures. PID has three parts, called P, I and D, and Betaflight adds a fourth, called F.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">PID is the calculation the flight controller uses to turn the error into motor commands. The error is the difference between the rotation rate you asked for and the rate the gyro measures. PID has three parts, called P, I and D, and Betaflight adds a fourth, called F.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>P stands for proportional. P makes a correction in proportion to the error: twice the error gives twice the correction. With too little P the quad is slow to respond. With too much P it vibrates rapidly, and you hear a buzz from the motors, because P also magnifies any noise that gets past the filters.</p>
+        <p>I stands for integral. The I term adds up the error over time, so if a small error lasts, the I term keeps growing until the error is gone. A lasting error can come from the nose pitching up at high speed, or from a motor mounted at a slight angle. Wind is another cause on a real quad, but this simulator has no wind. With too little I, the quad slowly drifts away from where you point it. With too much I, the stored correction grows large and is then released suddenly, so the quad lurches. A feature called I-term relax stops the I term growing during a fast stick movement. Without it, a flip would store up a correction that pushes the quad on when you stop.</p>
+        <p>D stands for derivative. D responds to how fast the rotation rate is changing and acts against fast changes. This reduces overshoot, which is when the quad rotates past the point where you stopped the stick. D also magnifies vibration in the gyro signal, so it has its own filter. A feature called D max lets the quad use a lower D while hovering and a higher D when you move the stick quickly. In Betaflight 4.5 the lower value is still stored under the name d_min.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>On every step the flight controller calculates an error for each axis (roll, pitch and yaw): the target rate, called the setpoint, minus the filtered gyro rate, in degrees per second. The P term is the P gain multiplied by the error. The I term is the I gain multiplied by a running total of the error from every step. Betaflight limits how large the total can grow. Two options change it further: I-term relax holds it back during fast stick movements, and I-term rotation moves the stored total between the roll and pitch axes as the quad yaws.</p>
+        <p>The D term is the D gain multiplied by how fast the filtered gyro rate is changing. It uses the gyro rate, not the error, so D reacts only to the quad&#039;s measured movement. Moving the stick changes the setpoint, and D does not react to that change directly. The F term, feedforward, is calculated from how fast the setpoint is changing.</p>
+        <p>TPA (throttle PID attenuation) reduces P and D, or only D, as the throttle rises. Anti-gravity raises I, and can also raise P, when the throttle changes quickly, so that the quad does not tip in pitch or roll when you suddenly add power.</p>
+        <p>The gains are numbers in Betaflight&#039;s own units, not SI units, and each axis has its own values. On real five inch quads yaw D is often low or zero, because the yaw measurement is noisier and the quad has a larger moment of inertia about the yaw axis, which means a larger turning effect is needed to change its yaw rate. A setting called pidsum_limit caps the sum of the terms before it reaches the mixer, so that one axis cannot use up the whole range of the motors.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>Every P, I, D and F setting works here. When you change one and save, the value is written into Betaflight&#039;s PID profile (pidProfiles(0)), and the flight controller restarts through sim_init and flies with it. There is no PID written in JavaScript: the controller is Betaflight&#039;s own code, and it uses the gyro reading after filtering, never the exact rotation rate from the physics model. Betaflight&#039;s onboard blackbox recorder is not included. Instead, the Flight log setting records the whole flight in memory and saves it as a Betaflight blackbox CSV file.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/control-pid">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

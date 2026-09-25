@@ -34,7 +34,7 @@
     <meta property="og:url" content="https://webfpv.org/wiki/start-welcome/" />
     <meta property="og:title" content="How a racing drone flies, FPV wiki" />
     <meta property="og:description" content="A racing quadcopter has no wings and no control surfaces, and its four propellers point in fixed directions. It controls everything it does by changing ..." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -49,14 +49,17 @@
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "How a racing drone flies",
   "description": "A racing quadcopter has no wings and no control surfaces, and its four propellers point in fixed directions. It controls everything it does by changing ...",
   "url": "https://webfpv.org/wiki/start-welcome/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/start-welcome/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +67,60 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/start-welcome';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">Start here</p>
       <h1>How a racing drone flies</h1>
-      <p>A racing quadcopter has no wings and no control surfaces, and its four propellers point in fixed directions. It controls everything it does by changing how fast the four propellers spin.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">A racing quadcopter has no wings and no control surfaces, and its four propellers point in fixed directions. It controls everything it does by changing how fast the four propellers spin.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>A quadcopter, or quad, is a drone with four motors, each turning a propeller. The racing quad this wiki describes is called a five inch, because its propellers are five inches (12.7 cm) across. It has a mass of 710 grams. The pilot stands on the ground wearing goggles that show the picture from a camera on the front of the quad. This is called first-person view, or FPV, because the pilot sees what the quad sees.</p>
+        <p>The pilot holds a radio with two sticks. In the Mode 2 layout, which almost every pilot uses, the left stick controls throttle and yaw and the right stick controls roll and pitch. Throttle is the total power sent to the motors. Roll tips the quad to the left or right, pitch tips its nose up or down, and yaw turns it to face a new direction. A quad has no brake. To move in a direction, the pilot tilts the whole quad, so that some of the thrust that was holding it up now pushes it sideways.</p>
+        <p>With a fully charged battery, the four propellers together can make about eight times the quad&#039;s weight in thrust under Earth&#039;s gravity. The same propellers can also lose thrust suddenly. If the quad descends quickly into the air its own propellers have just pushed down, that air circulates back through the propellers and the thrust falls, even though the motors are still running. Both effects come from the same physics, and this simulator calculates both.</p>
+        <p>The How to fly screen in the simulator teaches the sticks. This wiki explains why the quad responds to them the way it does, and which parts of that response come from the physics of the airframe and which come from the flight controller software.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>The simulator runs two programs together inside one WebAssembly module. WebAssembly is a format that lets compiled code run in a web browser at close to full speed. The first program is Betaflight 4.5.1, the flight controller software used on most racing quads. The parts of it that control flight (the rates curves, the PID controller, the filters, the mixer and the handling of stick input) are compiled from Betaflight&#039;s own source code in vendor/betaflight. They have not been rewritten. The second program is the physics model of the aircraft, written in the C language in src/native/plant.c. It models the motors, propellers, battery, air resistance and the motion of the quad as a rigid body. Engineers call the thing a controller controls the plant, which is where the file gets its name.</p>
+        <p>The two programs take turns in fixed steps of one millisecond, 1,000 steps every second. The picture on the screen is drawn separately, from the two most recent physics steps, so the speed of the computer&#039;s display never affects the flight.</p>
+        <p>All the physics uses SI units: metres, kilograms, seconds, radians, newtons, volts and amps. Degrees appear only where a person reads them, such as the settings screens and Betaflight&#039;s own configuration values, and they are converted at that point. The quad&#039;s own axes follow Betaflight and the standard flight dynamics textbooks: x points forward, y points left and z points up. Three.js, the library that draws the picture, uses y for up, so the simulator converts between the two in exactly one place, src/render/frame.js.</p>
+        <p>The simulator is deterministic, which means the same stick inputs always produce exactly the same flight, on any computer. Without this, a lap time would mean nothing. The physics therefore does not use JavaScript&#039;s built-in sine, cosine or power functions, because different browsers calculate them slightly differently. The module carries its own maths library instead. Random effects, such as vibration, come from a seeded random number generator called xorshift32, which produces the same sequence every time it starts from the same seed. The same inputs must produce the same record of the flight, bit for bit, in Node and in the Chrome browser.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>The simulator began as a grey ground plane and one quad. It has grown to include maps, a screen for Betaflight&#039;s settings and a track builder. It now has two aircraft: the five inch described above and a 65 mm whoop, a small indoor quad with guards around its propellers. You choose between them with the Aircraft row at the top of the Quad screen.</p>
+        <p>Some settings reach the physics and some do not. The Pack charge setting changes the battery voltage in the physics model, and the Weight slider on the flight screen changes how heavy the quad feels by scaling gravity. The motor_kv setting stores a number that nothing in the flight calculation reads. The settings screens show the settings that have no effect in grey, so the difference is visible.</p>
+        <p>Read the aircraft chapter before changing PID numbers. Much of what pilots call a quad&#039;s tune comes from the airframe itself: the battery voltage falling under load, the propellers losing thrust as air moves through them, the drag of the propellers, and propwash. The flight controller chapter covers what Betaflight does with that airframe. The last chapter has a page for every setting, including several hundred that are stored but have no effect in this simulator.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/start-welcome">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

@@ -34,21 +34,91 @@
     <meta property="og:url" content="https://webfpv.org/wiki/cli-use_vbat_alerts/" />
     <meta property="og:title" content="use_vbat_alerts, FPV wiki" />
     <meta property="og:description" content="Not simulated. Parameter group BATTERY_CONFIG. Firmware type UINT8. Values: OFF, ON." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
-    <script type="module">
-      window.location.href = '/wiki/#wiki/cli-use_vbat_alerts';
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "use_vbat_alerts",
+  "description": "Not simulated. Parameter group BATTERY_CONFIG. Firmware type UINT8. Values: OFF, ON.",
+  "url": "https://webfpv.org/wiki/cli-use_vbat_alerts/",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/cli-use_vbat_alerts/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
+  },
+  "about": {
+    "@type": "Thing",
+    "name": "Betaflight CLI settings reference"
+  }
+}
     </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      code { background: rgba(204, 255, 192, 0.1); padding: 0.125rem 0.25rem; border-radius: 3px; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">Betaflight 4.5.1 settings reference</p>
       <h1>use_vbat_alerts</h1>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">Not simulated. Parameter group BATTERY_CONFIG. Firmware type UINT8. Values: OFF, ON.</p>
+      <section class="wiki-section">
+        <h2>What it does</h2>
+        <p>A setting for the flight controller&#039;s battery meter: its scale, warnings and capacity. In this simulator the physics model calculates the battery voltage and current, and the Pack charge setting sets the starting voltage. These meter settings do not.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>This is part of BATTERY_CONFIG and the ADC setting groups. The number of cells and each cell&#039;s resistance are fixed in the physics model.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>Not simulated. This part of Betaflight is not compiled into the simulator, so the value is stored and has no effect. The settings catalog&#039;s own note is at the end of this page.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>If you raise it</h2>
+        <p>On a real flight controller this would change the battery warnings. Here, use Pack charge to change the battery.</p>
+        <p>The physics model owns the battery, so the meter settings are not read.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>If you lower it</h2>
+        <p>Lowering it has no effect here either.</p>
+        <p>The physics model owns the battery, so the meter settings are not read.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This page is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/cli-use_vbat_alerts">View in the interactive wiki</a> for full navigation and related articles.</p>
+    </div>
   </body>
 </html>

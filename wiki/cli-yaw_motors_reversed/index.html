@@ -34,21 +34,91 @@
     <meta property="og:url" content="https://webfpv.org/wiki/cli-yaw_motors_reversed/" />
     <meta property="og:title" content="Yaw motors reversed, FPV wiki" />
     <meta property="og:description" content="CLI setting yaw_motors_reversed. Works here. Parameter group MIXER_CONFIG. Firmware type INT8. Values: OFF, ON." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
-    <script type="module">
-      window.location.href = '/wiki/#wiki/cli-yaw_motors_reversed';
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Yaw motors reversed",
+  "description": "CLI setting yaw_motors_reversed. Works here. Parameter group MIXER_CONFIG. Firmware type INT8. Values: OFF, ON.",
+  "url": "https://webfpv.org/wiki/cli-yaw_motors_reversed/",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/cli-yaw_motors_reversed/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
+  },
+  "about": {
+    "@type": "Thing",
+    "name": "Betaflight CLI settings reference"
+  }
+}
     </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      code { background: rgba(204, 255, 192, 0.1); padding: 0.125rem 0.25rem; border-radius: 3px; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">Betaflight 4.5.1 settings reference</p>
       <h1>Yaw motors reversed</h1>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">CLI setting yaw_motors_reversed. Works here. Parameter group MIXER_CONFIG. Firmware type INT8. Values: OFF, ON.</p>
+      <section class="wiki-section">
+        <h2>What it does</h2>
+        <p>Reverses the sign of yaw in the mixer, for propellers that spin &quot;props out&quot; instead of &quot;props in&quot;. If it does not match the direction the motors spin on the quad, yaw runs away: the yaw correction pushes the wrong way and the quad spins faster and faster.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>yaw_motors_reversed. When it is OFF, mixer.c reverses the sign of the yaw PID output, which matches the props-in motor directions in the physics model.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>Works here. The physics model&#039;s motor spin directions do not change with this setting, so turning it on makes yaw run away. Betaflight and the physics model then disagree about which way the motors spin, and fixing that disagreement on a real quad is what this setting is for.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>If you raise it</h2>
+        <p>Turned ON, yaw is reversed compared with the motor directions in the physics model, and yaw runs away. Do not turn it on here.</p>
+        <p>It flips one sign. The comment above the motor spin table in plant.c traces the whole chain of signs.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>If you lower it</h2>
+        <p>Turned OFF, it matches the motor spin directions the physics model uses.</p>
+        <p>OFF is the setting for props-in motors.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This page is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/cli-yaw_motors_reversed">View in the interactive wiki</a> for full navigation and related articles.</p>
+    </div>
   </body>
 </html>

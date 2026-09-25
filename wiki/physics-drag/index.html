@@ -34,7 +34,7 @@
     <meta property="og:url" content="https://webfpv.org/wiki/physics-drag/" />
     <meta property="og:title" content="Body drag, FPV wiki" />
     <meta property="og:description" content="The body of a quad meets the air with a different area from the front, the side and underneath. With a single drag value it would be equally slippery in..." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -49,14 +49,17 @@
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Body drag",
   "description": "The body of a quad meets the air with a different area from the front, the side and underneath. With a single drag value it would be equally slippery in...",
   "url": "https://webfpv.org/wiki/physics-drag/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/physics-drag/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +67,55 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/physics-drag';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The aircraft</p>
       <h1>Body drag</h1>
-      <p>The body of a quad meets the air with a different area from the front, the side and underneath. With a single drag value it would be equally slippery in every direction, and no real quad is.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">The body of a quad meets the air with a different area from the front, the side and underneath. With a single drag value it would be equally slippery in every direction, and no real quad is.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>Flying belly first into the air, as in a flare, where the pilot pitches up hard to slow down, presents far more area than flying nose first. Flying sideways is different again, because the battery is longer than it is wide and adds area that is not seen from the front. With one drag value for all three directions, a quad would slow down no harder in a flare than in a cruise. The simulator uses three different areas.</p>
+        <p>Body drag also grows with the square of the speed. A value chosen to give the right top speed therefore gives very little drag at medium speeds. Something else must slow the quad in corners, and on a quadcopter that is the rotor drag of the propellers.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>The drag force along each body axis is F = 0.5 ρ CdA v |v|, acting against the motion, where CdA is the drag area in that direction. On the five inch the underside (plan) area cda_plan is 0.0225 m², the front area cda_front 0.0130 m² and the side area cda_side 0.0147 m². The front is about 0.011 m² of frame and parts seen from the front, with a drag coefficient near 1.2. The side adds the battery&#039;s extra 35 mm by 75 mm face, about 0.0017 m² of drag area. The plan area is the underside only. It does not include the rotor drag of the propellers, which is calculated separately.</p>
+        <p>Before the H-force was added, all three areas were 0.016 m², doing two jobs at once. They were fitted again afterwards against the maximum level speed test, which measured 128 km/h, inside its range of 120 to 165 km/h.</p>
+        <p>The whoop&#039;s drag areas are 0.00253 m² underneath, 0.00084 m² at the front and 0.00092 m² at the side. The underside value is what stops a whoop falling flat at about 10 m/s instead of 40 m/s.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>Because body drag grows with the square of the speed, it is weak at medium speed and strong at the top, and the H-force fills the gap. Body drag, the advance ratio and battery sag together set the top speed.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/physics-drag">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

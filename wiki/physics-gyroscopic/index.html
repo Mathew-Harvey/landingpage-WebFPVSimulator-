@@ -34,7 +34,7 @@
     <meta property="og:url" content="https://webfpv.org/wiki/physics-gyroscopic/" />
     <meta property="og:title" content="Gyroscopic coupling, FPV wiki" />
     <meta property="og:description" content="Each spinning motor bell and propeller is a small gyroscope. The four are arranged so that their effects cancel, and some manoeuvres stop them cancelling." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -49,14 +49,17 @@
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Gyroscopic coupling",
   "description": "Each spinning motor bell and propeller is a small gyroscope. The four are arranged so that their effects cancel, and some manoeuvres stop them cancelling.",
   "url": "https://webfpv.org/wiki/physics-gyroscopic/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/physics-gyroscopic/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +67,52 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/physics-gyroscopic';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The aircraft</p>
       <h1>Gyroscopic coupling</h1>
-      <p>Each spinning motor bell and propeller is a small gyroscope. The four are arranged so that their effects cancel, and some manoeuvres stop them cancelling.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">Each spinning motor bell and propeller is a small gyroscope. The four are arranged so that their effects cancel, and some manoeuvres stop them cancelling.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>A spinning wheel resists being tilted, and if it is tilted anyway, it pushes back at right angles to the push. So forcing a spinning propeller to pitch produces a turning effect in yaw. Two propellers spin one way and two spin the other, so most of this cancels, which is an advantage of the quadcopter layout. It does not cancel completely when the four propellers spin at different speeds, which happens in every roll.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>The torque on the body includes the term −ω × (I ω + h), where ω is the quad&#039;s rotation rate, I is its moment of inertia and h is the total angular momentum of the four propellers: the sum of spin × j_rotor × ω along each motor&#039;s axis. I is diagonal, so the body part is the standard Euler coupling of a rigid body, and it never cancels: a rigid body spinning about one axis while it rotates about another produces a moment about the third, with or without propellers. The opposite spins keep h small in a hover, but not during a roll, when one diagonal pair of propellers spins faster and the other slower.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>There is no setting for this effect. It comes out of the physics, and making it stronger would need heavier motor bells or a different arrangement of spin directions, which would be a change to the airframe.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/physics-gyroscopic">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

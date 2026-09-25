@@ -34,7 +34,7 @@
     <meta property="og:url" content="https://webfpv.org/wiki/start-whyacomputer/" />
     <meta property="og:title" content="Why a quad needs a computer, FPV wiki" />
     <meta property="og:description" content="An aeroplane that is tipped by a gust returns to level flight by itself. A quadcopter does not, so it needs a computer to keep it the right way up." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -49,14 +49,17 @@
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Why a quad needs a computer",
   "description": "An aeroplane that is tipped by a gust returns to level flight by itself. A quadcopter does not, so it needs a computer to keep it the right way up.",
   "url": "https://webfpv.org/wiki/start-whyacomputer/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/start-whyacomputer/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +67,58 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/start-whyacomputer';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">Getting started</p>
       <h1>Why a quad needs a computer</h1>
-      <p>An aeroplane that is tipped by a gust returns to level flight by itself. A quadcopter does not, so it needs a computer to keep it the right way up.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">An aeroplane that is tipped by a gust returns to level flight by itself. A quadcopter does not, so it needs a computer to keep it the right way up.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>An aeroplane is stable. This means that when a gust tips it, the shape of the aircraft pushes it back. Its wings slope slightly upwards from the body, so when one wing drops, that wing meets the air at a steeper angle and makes more lift than the raised wing, which rolls the aircraft back towards level. The tailplane, a small wing at the end of a long tail, pushes the nose back into line if it swings away. A folded paper aeroplane is stable for the same reasons.</p>
+        <p>A quadcopter has none of these features. Its four motors are the same distance from the centre and push equally, so no angle is preferred over any other. If the quad is tipped by 10 degrees, nothing pushes it back. In practice it does not stay at 10 degrees either, because no real quad is built perfectly. One motor is mounted a fraction of a degree crooked and one propeller is slightly heavier than the others, and together these small errors make a steady push in one direction. The quad tips further and further. This is called being unstable.</p>
+        <p>So something has to measure the tilt and correct it all the time. The figure on this page asks how often those corrections must happen. A skilled pilot, reacting to what they see, can correct about five times a second. That is too slow: by the time the pilot has noticed the tilt and moved a stick, the quad has already tipped too far. The flight controller corrects 1,000 times a second, which is fast enough to keep the quad steady.</p>
+        <p>This changes what flying a quad means. The pilot does not balance the quad. The pilot tells the flight controller how fast to rotate, and the flight controller does the balancing.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>In a hover the four thrusts are equal, so the total moment, or turning effect, about the centre of gravity is zero at every angle. Nothing pushes the quad back towards level. Any small steady moment, from a build error, an unbalanced propeller or a gust, first changes the rotation rate and then the angle, so the angle keeps growing. A fixed wing aeroplane is different: the upward slope of its wings, called dihedral, and its tailplane both create moments that push it back. This is called positive static stability.</p>
+        <p>The figure simulates a simple controller that measures the angle at a fixed rate, holds its correction constant until the next measurement, and works against a steady disturbance of 1.5 millinewton metres. It uses this quad&#039;s moment of inertia about the roll axis, 0.0035 kg m², which measures how hard the quad is to start rotating, and the real moment its motors can produce. When the controller updates too slowly it becomes unstable, because it keeps pushing in the old direction after the quad has already responded. For these settings the change from stable to unstable happens between 50 and 100 updates a second. That is why 1,000 updates a second is comfortable and five a second is not.</p>
+        <p>Holding a position is harder than holding an angle. A quad tilted by an angle θ accelerates sideways at g tan θ, where g is 9.81 m/s². A small error in angle therefore becomes a growing sideways speed, and then a growing distance from where the pilot wanted the quad to be.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>The physics model contains nothing that returns the quad to level, because a real airframe has nothing that does. All the steadiness you feel in this simulator comes from Betaflight&#039;s control loop, running 1,000 times a second on the gyro readings. If you turn the PID gains far enough down, the quad behaves the way this page describes.</p>
+        <p>The steady disturbance used in the figure comes from the motor cant table, which gives each motor a small fixed misalignment to model how real quads are built. It is a chosen model, not a measurement, and the page Motor cant and roll-to-yaw coupling explains it. In the Arcade flight style the misalignment is turned off.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/start-whyacomputer">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

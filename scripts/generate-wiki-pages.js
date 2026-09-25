@@ -55,6 +55,30 @@ function shouldIndex(articleId) {
   return indexConfig.allowIndexing.includes(articleId);
 }
 
+/* HTML escape for content safety */
+function escapeHtml(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/* Render article sections as HTML */
+function renderSections(article) {
+  if (!article.sections) return '';
+  
+  return article.sections.map(section => {
+    const paras = (section.paras || []).map(p => `        <p>${escapeHtml(p)}</p>`).join('\n');
+    return `      <section class="wiki-section">
+        <h2>${escapeHtml(section.title)}</h2>
+${paras}
+      </section>`;
+  }).join('\n');
+}
+
 function generateArticlePage(article) {
   const slug = slugify(article.id);
   const url = `https://webfpv.org/wiki/${slug}/`;
@@ -65,6 +89,27 @@ function generateArticlePage(article) {
   const robotsMeta = indexed 
     ? '' 
     : '    <meta name="robots" content="noindex">\n';
+
+  const sectionsHtml = renderSections(article);
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": article.title,
+    "description": description,
+    "url": url,
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": url
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "WebFPV"
+    },
+    "about": {
+      "@type": "Thing",
+      "name": "FPV drone racing physics and flight controller"
+    }
+  };
 
   const html = `<!doctype html>
 <!--
@@ -92,56 +137,66 @@ function generateArticlePage(article) {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${title}</title>
-    <meta name="description" content="${description}" />
+    <title>${escapeHtml(title)}</title>
+    <meta name="description" content="${escapeHtml(description)}" />
 ${robotsMeta}    <meta name="theme-color" content="#141c16" />
     <link rel="canonical" href="${url}" />
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="WebFPV" />
     <meta property="og:url" content="${url}" />
-    <meta property="og:title" content="${title}" />
-    <meta property="og:description" content="${description}" />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:title" content="${escapeHtml(title)}" />
+    <meta property="og:description" content="${escapeHtml(description)}" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="A five inch racing quad on a lit studio deck, its frame open and the stack visible." />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="${title}" />
-    <meta name="twitter:description" content="${description}" />
+    <meta name="twitter:title" content="${escapeHtml(title)}" />
+    <meta name="twitter:description" content="${escapeHtml(description)}" />
     <meta name="twitter:image" content="https://webfpv.org/og.png" />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
     <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Article",
-  "headline": "${article.title}",
-  "description": "${description.replace(/"/g, '\\"')}",
-  "url": "${url}",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
-  },
-  "about": {
-    "@type": "Thing",
-    "name": "FPV drone racing physics and flight controller"
-  }
-}
+${JSON.stringify(jsonLd, null, 2)}
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/${article.id}';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
-      <h1>${article.title}</h1>
-      <p>${article.lede}</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+    <article>
+      <p class="wiki-kicker">${escapeHtml(article.kicker || '')}</p>
+      <h1>${escapeHtml(article.title)}</h1>
+      <p class="wiki-lede">${escapeHtml(article.lede || '')}</p>
+${sectionsHtml}
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/${article.id}">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>
 `;
@@ -185,6 +240,27 @@ for (const page of cliPages) {
     ? '' 
     : '    <meta name="robots" content="noindex">\n';
 
+  const sectionsHtml = renderSections(page);
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": page.title,
+    "description": description,
+    "url": url,
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": url
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "WebFPV"
+    },
+    "about": {
+      "@type": "Thing",
+      "name": "Betaflight CLI settings reference"
+    }
+  };
+
   const html = `<!doctype html>
 <!--
   FPV wiki settings page: ${page.title}
@@ -211,31 +287,62 @@ for (const page of cliPages) {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${title}</title>
-    <meta name="description" content="${description}" />
+    <title>${escapeHtml(title)}</title>
+    <meta name="description" content="${escapeHtml(description)}" />
 ${robotsMeta}    <meta name="theme-color" content="#141c16" />
     <link rel="canonical" href="${url}" />
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="WebFPV" />
     <meta property="og:url" content="${url}" />
-    <meta property="og:title" content="${title}" />
-    <meta property="og:description" content="${description}" />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:title" content="${escapeHtml(title)}" />
+    <meta property="og:description" content="${escapeHtml(description)}" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
-    <script type="module">
-      window.location.href = '/wiki/#wiki/${page.id}';
+    <script type="application/ld+json">
+${JSON.stringify(jsonLd, null, 2)}
     </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      code { background: rgba(204, 255, 192, 0.1); padding: 0.125rem 0.25rem; border-radius: 3px; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
-      <h1>${page.title}</h1>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+    <article>
+      <p class="wiki-kicker">Betaflight 4.5.1 settings reference</p>
+      <h1>${escapeHtml(page.title)}</h1>
+      <p class="wiki-lede">${escapeHtml(page.lede || '')}</p>
+${sectionsHtml}
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This page is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/${page.id}">View in the interactive wiki</a> for full navigation and related articles.</p>
+    </div>
   </body>
 </html>
 `;

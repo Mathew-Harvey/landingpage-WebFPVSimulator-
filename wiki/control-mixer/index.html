@@ -34,7 +34,7 @@
     <meta property="og:url" content="https://webfpv.org/wiki/control-mixer/" />
     <meta property="og:title" content="Mixer, idle, dynamic idle, launch control and turtle mode, FPV wiki" />
     <meta property="og:description" content="The mixer turns three rotation commands and a throttle into four motor outputs. It is also where the quad runs out of room to do what it is asked." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -49,14 +49,17 @@
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Mixer, idle, dynamic idle, launch control and turtle mode",
   "description": "The mixer turns three rotation commands and a throttle into four motor outputs. It is also where the quad runs out of room to do what it is asked.",
   "url": "https://webfpv.org/wiki/control-mixer/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/control-mixer/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +67,56 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/control-mixer';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The flight controller</p>
       <h1>Mixer, idle, dynamic idle, launch control and turtle mode</h1>
-      <p>The mixer turns three rotation commands and a throttle into four motor outputs. It is also where the quad runs out of room to do what it is asked.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">The mixer turns three rotation commands and a throttle into four motor outputs. It is also where the quad runs out of room to do what it is asked.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>Mixer type LEGACY adds the throttle and the roll, pitch and yaw commands for each motor. LINEAR and DYNAMIC change how the throttle and the PID share the motor range when one motor is asked for more than 100 percent, which decides whether the command is followed or cut off. EZLANDING helps with landing and is not meant for racing.</p>
+        <p>DShot idle sets a minimum motor speed a few percent above stopped, so that the motors keep turning while airmode works. If it is too low, yaw disappears at the bottom of the throttle, because the motors that need to slow down cannot. If it is too high, the quad will not descend. Dynamic idle watches the motor speeds and raises the minimum when a motor would slow too much, which on a real quad prevents an ESC losing track of its motor, called a desync. The physics model cannot desync, but dynamic idle still runs, because the physics model reports real motor speeds back to Betaflight.</p>
+        <p>Launch control holds the quad&#039;s attitude at idle until the throttle passes a set point, so that a racer can leave the start gate cleanly. Press L on the start line to use it.</p>
+        <p>Betaflight&#039;s turtle mode, called crashflip, is also part of the mixer. While you hold the T key, the pitch and roll sticks spin the motors on one side to push the quad over, and the crashflip settings control how those motors respond. When the quad rests upside down, the simulator also offers its own automatic flip, which does not use the mixer.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>mixTable in mixer.c is compiled. dshot_idle_value is the digital idle setting. The dyn_idle_* settings write to the PID profile and mixer_init, with getMotorFrequencyHz supplying the motor speeds that telemetry would supply on a real quad. The launch control logic is in bf_glue.c, because fc/core.c is not compiled, but the PID profile settings it reads are Betaflight&#039;s own.</p>
+        <p>yaw_motors_reversed reverses the sign of the mixer&#039;s yaw column. isFlipOverAfterCrashActive, which switches the mixer into turtle mode, is raised while the T key is held (setManualFlip in src/main.js), and the I term is cleared when turtle mode starts and when it ends. DShot reverse, which reverses the motors in turtle mode on a real quad, is not modelled.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>motor_output_limit works here and limits the motor range to a percentage. It is similar to throttle_limit, but it belongs to the PID profile rather than the rate profile, and it limits the PID output as well as the throttle. Use one of them on purpose, not both by accident.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/control-mixer">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

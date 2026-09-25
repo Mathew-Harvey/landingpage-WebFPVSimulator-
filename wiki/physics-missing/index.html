@@ -34,7 +34,7 @@
     <meta property="og:url" content="https://webfpv.org/wiki/physics-missing/" />
     <meta property="og:title" content="What the physics model leaves out, FPV wiki" />
     <meta property="og:description" content="A missing effect is easy to overlook, so this page lists the effects the simulator does not model." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -49,14 +49,17 @@
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "What the physics model leaves out",
   "description": "A missing effect is easy to overlook, so this page lists the effects the simulator does not model.",
   "url": "https://webfpv.org/wiki/physics-missing/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/physics-missing/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +67,54 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/physics-missing';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The aircraft</p>
       <h1>What the physics model leaves out</h1>
-      <p>A missing effect is easy to overlook, so this page lists the effects the simulator does not model.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">A missing effect is easy to overlook, so this page lists the effects the simulator does not model.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>The physics model has no wind; no blade element theory that divides each blade into sections around its turn; no bending of the propellers or the arms; no motor inductance; no ESC current limit; no temperature model of the motors, battery or ESCs; no camera delay separate from the radio; no video compression; and no Betaflight on-screen display in the goggles. Ground effect is modelled for the whoop only.</p>
+        <p>Some of these may be added as the project grows. A general purpose physics engine will not be, because none of the available ones is designed for a rotorcraft stepped 1,000 times a second. This page describes the code as it was when the page was last checked, on 24 September 2026.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>Also absent: motors that reverse for 3D flight or for turtle mode (DShot reverse); servos; GPS, magnetometer, barometer and accelerometer hardware, so angle mode takes the quad&#039;s attitude from the physics model instead; a second gyro; the dynamic notch filter at 1 kHz; vibration at the blade passing frequency; and any interaction between the propellers&#039; wakes beyond the vortex ring, propwash and inflow difference models.</p>
+        <p>Contact with the ground and with solid objects is calculated inside the physics module (see The ground, walls and ground effect). The launch stand holds the quad in place with a constraint in sim.c, which fixes its position and is not an aerodynamic model.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>If you need an effect for a research project, read the source rather than assuming a textbook propeller. The parts that come from Glauert&#039;s model and momentum theory are labelled. The feel constants, k_propwash, the gyro vibration sizes and the motor cant table, are labelled as chosen. Keep the two kinds separate.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/physics-missing">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

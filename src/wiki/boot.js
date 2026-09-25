@@ -41,10 +41,40 @@ if (!host) {
 
 const wiki = mountWiki(host);
 wiki.simHref = `${simOrigin()}/?map=field`;
+
 /*
- * Listener first. It used to be registered after the initial openDefault(),
- * so anything that threw on the way in took deep linking down with it for
- * the rest of the session, and did it silently.
+ * Hash URL redirect: if someone lands on #wiki/<id>, redirect them to the
+ * static /wiki/<id>/ page instead. Static pages are canonical; the SPA is
+ * for in-app navigation only.
  */
-window.addEventListener('hashchange', () => wiki.openDefault());
-wiki.openDefault();
+function redirectHashToStatic() {
+  const hash = (window.location.hash || '').replace(/^#/, '');
+  let id = '';
+  if (hash.startsWith('wiki/')) {
+    id = hash.slice(5);
+  } else if (hash && hash !== '') {
+    id = hash;
+  }
+  
+  if (id && id !== '') {
+    /* Redirect to static page with location.replace (no history entry) */
+    window.location.replace(`/wiki/${id}/`);
+    return true;
+  }
+  return false;
+}
+
+/* Check for hash redirect on initial load */
+if (!redirectHashToStatic()) {
+  /*
+   * Listener first. It used to be registered after the initial openDefault(),
+   * so anything that threw on the way in took deep linking down with it for
+   * the rest of the session, and did it silently.
+   */
+  window.addEventListener('hashchange', () => {
+    if (!redirectHashToStatic()) {
+      wiki.openDefault();
+    }
+  });
+  wiki.openDefault();
+}

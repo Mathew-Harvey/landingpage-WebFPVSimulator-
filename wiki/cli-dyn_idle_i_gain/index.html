@@ -34,21 +34,91 @@
     <meta property="og:url" content="https://webfpv.org/wiki/cli-dyn_idle_i_gain/" />
     <meta property="og:title" content="Dynamic idle I gain, FPV wiki" />
     <meta property="og:description" content="CLI setting dyn_idle_i_gain. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 1 to 250." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
-    <script type="module">
-      window.location.href = '/wiki/#wiki/cli-dyn_idle_i_gain';
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Dynamic idle I gain",
+  "description": "CLI setting dyn_idle_i_gain. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 1 to 250.",
+  "url": "https://webfpv.org/wiki/cli-dyn_idle_i_gain/",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/cli-dyn_idle_i_gain/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
+  },
+  "about": {
+    "@type": "Thing",
+    "name": "Betaflight CLI settings reference"
+  }
+}
     </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      code { background: rgba(204, 255, 192, 0.1); padding: 0.125rem 0.25rem; border-radius: 3px; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">Betaflight 4.5.1 settings reference</p>
       <h1>Dynamic idle I gain</h1>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">CLI setting dyn_idle_i_gain. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 1 to 250.</p>
+      <section class="wiki-section">
+        <h2>What it does</h2>
+        <p>The I gain of dynamic idle&#039;s controller. It adds up the speed shortfall over time, so that a shortfall that lasts is corrected.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>dyn_idle_i_gain is a whole number from 1 to 250. In mixer.c the running total rises quickly and falls slowly, and it is kept between zero and the maximum increase.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>Works here. It has an effect only when dyn_idle_min_rpm is above 0.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>If you raise it</h2>
+        <p>A lasting shortfall in motor speed is removed faster. The running total can also build up and keep the idle raised after it is no longer needed.</p>
+        <p>A higher I makes the running total grow faster.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>If you lower it</h2>
+        <p>A lasting shortfall is corrected less.</p>
+        <p>A lower I makes the running total grow more slowly.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This page is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/cli-dyn_idle_i_gain">View in the interactive wiki</a> for full navigation and related articles.</p>
+    </div>
   </body>
 </html>

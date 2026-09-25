@@ -34,21 +34,91 @@
     <meta property="og:url" content="https://webfpv.org/wiki/cli-throttle_limit_percent/" />
     <meta property="og:title" content="Throttle limit percent, FPV wiki" />
     <meta property="og:description" content="CLI setting throttle_limit_percent. Works here. Parameter group CONTROL_RATE_PROFILES. Firmware type UINT8. Range 25 to 100 %." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
-    <script type="module">
-      window.location.href = '/wiki/#wiki/cli-throttle_limit_percent';
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Throttle limit percent",
+  "description": "CLI setting throttle_limit_percent. Works here. Parameter group CONTROL_RATE_PROFILES. Firmware type UINT8. Range 25 to 100 %.",
+  "url": "https://webfpv.org/wiki/cli-throttle_limit_percent/",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/cli-throttle_limit_percent/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
+  },
+  "about": {
+    "@type": "Thing",
+    "name": "Betaflight CLI settings reference"
+  }
+}
     </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      code { background: rgba(204, 255, 192, 0.1); padding: 0.125rem 0.25rem; border-radius: 3px; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">Betaflight 4.5.1 settings reference</p>
       <h1>Throttle limit percent</h1>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">CLI setting throttle_limit_percent. Works here. Parameter group CONTROL_RATE_PROFILES. Firmware type UINT8. Range 25 to 100 %.</p>
+      <section class="wiki-section">
+        <h2>What it does</h2>
+        <p>The cap on the throttle. 100 means no cap. With SCALE and no throttle expo, hover moves up the stick in proportion to the cap: a hover that needs 35 percent of the stick with no cap needs about 58 percent with a cap of 60.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>throttle_limit_percent, from 25 to 100, used with SCALE or CLIP.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>Works here. It is the Throttle limit row on the Rates menu in Settings, which offers caps from 40 to 100 and shows where hover sits on the stick. At the normal Weight setting the five inch hovers at about 35 percent of the stick and has thrust to spare, which is why the row exists.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>If you raise it</h2>
+        <p>Toward 100 the quad has more punch, and the throttle around hover gets twitchier.</p>
+        <p>A higher cap lets full stick command more of the motors&#039; range.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>If you lower it</h2>
+        <p>Less punch, and more stick travel around hover. You will not win a full-throttle climbing contest at 40 percent, and that is the intention.</p>
+        <p>A lower cap reduces the throttle at full stick. Check 6 is a full-throttle climb for 3 seconds that must gain 55 to 85 m, so a very low cap would fail it. The automatic checks use their own diff file, not your settings.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This page is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/cli-throttle_limit_percent">View in the interactive wiki</a> for full navigation and related articles.</p>
+    </div>
   </body>
 </html>

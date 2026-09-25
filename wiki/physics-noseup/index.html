@@ -34,7 +34,7 @@
     <meta property="og:url" content="https://webfpv.org/wiki/physics-noseup/" />
     <meta property="og:title" content="Pitching up at speed, FPV wiki" />
     <meta property="og:description" content="On the five inch the propellers are 20 mm above the centre of gravity. Because of that height difference, rotor drag tips the nose up, and every real mu..." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -49,14 +49,17 @@
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Pitching up at speed",
   "description": "On the five inch the propellers are 20 mm above the centre of gravity. Because of that height difference, rotor drag tips the nose up, and every real mu...",
   "url": "https://webfpv.org/wiki/physics-noseup/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/physics-noseup/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +67,53 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/physics-noseup';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The aircraft</p>
       <h1>Pitching up at speed</h1>
-      <p>On the five inch the propellers are 20 mm above the centre of gravity. Because of that height difference, rotor drag tips the nose up, and every real multirotor has this effect.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">On the five inch the propellers are 20 mm above the centre of gravity. Because of that height difference, rotor drag tips the nose up, and every real multirotor has this effect.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>Fly a real quad fast with the pitch stick centred and its nose rises. Pilots correct it with a little forward stick, or let the I term hold it. The same effect means that cutting the throttle at speed changes the quad&#039;s angle as well as its thrust, so part of the slowing you feel is the quad rotating.</p>
+        <p>A force that does not act through the centre of gravity produces a moment, or turning effect, about it. Rotor drag pulls backwards at the height of the propellers, 20 mm above the centre of gravity, so it rotates the quad nose up. If the propellers were modelled at the same height as the centre of gravity, this moment would disappear.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>Each propeller is placed 0.020 m above the centre of gravity on the five inch, and 0.006 m on the whoop (pos_z in the airframe table). On the five inch the arms are fixed to the middle plate of the frame, the propeller sits about 28 mm above that plate once the motor bell and hub are included, and plant.c works out that the centre of gravity of a 650 g quad with a 250 g battery on top is about 8 mm above the plate, a difference of about 20 mm. A force straight along the z axis acting at a point (x, y, z) has a moment of (y F, −x F, 0), which does not depend on z, so the hover and punch checks cannot change. The nose-up moment comes from the sideways H-force acting at that height.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>Before this term was added, the pitching moment in forward flight was exactly zero at every speed.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/physics-noseup">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

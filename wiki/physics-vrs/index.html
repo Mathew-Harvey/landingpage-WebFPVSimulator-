@@ -34,7 +34,7 @@
     <meta property="og:url" content="https://webfpv.org/wiki/physics-vrs/" />
     <meta property="og:title" content="Vortex ring state, FPV wiki" />
     <meta property="og:description" content="When a quad descends into the air its own propellers have just pushed down, that air starts to circulate around the propellers in a ring. The propellers..." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -49,14 +49,17 @@
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Vortex ring state",
   "description": "When a quad descends into the air its own propellers have just pushed down, that air starts to circulate around the propellers in a ring. The propellers...",
   "url": "https://webfpv.org/wiki/physics-vrs/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/physics-vrs/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +67,59 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/physics-vrs';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The aircraft</p>
       <h1>Vortex ring state</h1>
-      <p>When a quad descends into the air its own propellers have just pushed down, that air starts to circulate around the propellers in a ring. The propellers lose thrust, the quad sinks faster, and the sticks have less effect. Pilots call the worst of this falling through.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">When a quad descends into the air its own propellers have just pushed down, that air starts to circulate around the propellers in a ring. The propellers lose thrust, the quad sinks faster, and the sticks have less effect. Pilots call the worst of this falling through.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>Helicopters are known for this effect, and a quadcopter has it on each of its four propellers. A slow descent causes no trouble. Air flows up through the propellers from below, and they make slightly more thrust than they do in a hover. At a faster descent this steady flow breaks down. Some of the air the propellers have pushed down flows back up around the outside of each propeller and is pushed down through it again, forming a ring of circulating air. The propellers lose thrust, and the pilot loses control authority, which means the sticks have less effect than usual.</p>
+        <p>The motors can sound as if they are working normally, or even speed up. In a descent the air flowing up through each propeller makes it easier to turn, so at the same throttle the motor spins faster.</p>
+        <p>The way out is the same as for a helicopter: stop descending into your own downwash. Pitch or roll so that the quad moves sideways into air that has not been pushed down, and add power once the propellers are in that clean air. If you drop straight down with the propellers level, expect control to become weak partway through the fall.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>The simulator describes a descent with the advance ratio μ from the previous page, which is negative when the quad is descending. It uses three ranges. From 0 to −0.30 the descent is shallow: the upward air helps the propeller, and the thrust rises in a straight line as the descent gets faster, up to 1.30 times the thrust the same propeller speed gives in a hover.</p>
+        <p>From −0.30 to −1.20 the propeller is in the vortex ring state, and the thrust falls in a straight line from 1.30 times the hover value to 0.75 times. Beyond −1.20 the thrust stays at 0.75 times the hover value.</p>
+        <p>This shape matches the range of descent speeds where momentum theory, the simple model of a propeller used elsewhere in the simulator, stops giving valid answers. It was not fitted to make the quad feel a particular way.</p>
+        <p>On a real quad the four propellers do not lose thrust together, because each one sits in a different part of the air moving around the other three and around the frame. The simulator makes each propeller&#039;s loss slightly different, by up to about 3 percent, which is about how much one propeller differs from another on a real quad. The four differences add up to zero. Without them, all four propellers would lose exactly the same thrust, and the quad would lose height with no other disturbance, which is not what pilots feel on a real quad.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>This page covers the average loss of thrust. The shaking that comes with it is called propwash and has its own page. Propwash is switched on only in a descent into the downwash. The simulator&#039;s automatic flight checks (checks 5 to 12) were measured with this thrust loss in place, and propwash does not change their results.</p>
+        <p>In the Arcade flight style the differences between the four propellers and the propwash shaking are turned off. The average loss of thrust is the same in Arcade and Expert. The motor load also follows the air flow, which is why the motors speed up in a descent (see Motors: voltage, current and delay).</p>
+        <p>The values are set in plant.c. The loss starts at μ = −0.30, is complete at μ = −1.20, and leaves 75 percent of the thrust. Of the four propellers, one loses 3.1 percent less than the average, one 1.7 percent more, one 2.8 percent more and one 1.4 percent less.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/physics-vrs">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

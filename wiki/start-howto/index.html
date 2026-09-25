@@ -34,7 +34,7 @@
     <meta property="og:url" content="https://webfpv.org/wiki/start-howto/" />
     <meta property="og:title" content="How to read this wiki, FPV wiki" />
     <meta property="og:description" content="Every article has three sections and a figure you can control. The sections move from the general idea to the details of this simulator." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -49,14 +49,17 @@
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "How to read this wiki",
   "description": "Every article has three sections and a figure you can control. The sections move from the general idea to the details of this simulator.",
   "url": "https://webfpv.org/wiki/start-howto/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/start-howto/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +67,55 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/start-howto';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">Getting started</p>
       <h1>How to read this wiki</h1>
-      <p>Every article has three sections and a figure you can control. The sections move from the general idea to the details of this simulator.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">Every article has three sections and a figure you can control. The sections move from the general idea to the details of this simulator.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>The idea explains what happens and why, in plain words. How it works gives the equations and numbers the simulator uses. In this simulator says which file does the work, which settings have an effect, which automatic check measures it, and which parts of the real effect are not modelled. Pages about a single setting also have If you raise it and If you lower it, which describe what changes when you move the value.</p>
+        <p>Every figure has a control below it. When you drag the control, the drawing and the numbers change together, because the figure calculates the relationship the page describes from the simulator&#039;s own constants. Figures are animated unless your browser is set to reduce motion. Each caption says what the figure shows.</p>
+        <p>How a quad feels cannot be checked by reading a page. The simulator has a set of automatic checks, run with npm run verify, that measure the physics model. When a page mentions a check by number, it means a result from those checks.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>The related links at the end of a page are the suggested next pages, not a list of every page that mentions the topic. Each page about a single setting links back to the article about its family, such as PID, rates or filters, so that no setting is explained in isolation.</p>
+        <p>The sources listed on a page are files in the simulator&#039;s repository, not textbooks. Where the simulator uses a result from a textbook, such as Glauert&#039;s inflow model, the figure of merit from momentum theory or the shape of the vortex ring state, the comment in the physics source code is the reference, because that is where the simulator chose the form of the equation.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>This wiki is part of the website, not a screen inside the simulator. Reading it does not affect a flight in progress.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/start-howto">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

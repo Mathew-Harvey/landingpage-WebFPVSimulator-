@@ -25,7 +25,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Simplified tuning sliders, FPV wiki</title>
-    <meta name="description" content="The sliders are Betaflight's own code. They calculate the real PID gains from a few slider positions." />
+    <meta name="description" content="The sliders are Betaflight&#039;s own code. They calculate the real PID gains from a few slider positions." />
     <meta name="robots" content="noindex">
     <meta name="theme-color" content="#141c16" />
     <link rel="canonical" href="https://webfpv.org/wiki/control-simplified/" />
@@ -33,15 +33,15 @@
     <meta property="og:site_name" content="WebFPV" />
     <meta property="og:url" content="https://webfpv.org/wiki/control-simplified/" />
     <meta property="og:title" content="Simplified tuning sliders, FPV wiki" />
-    <meta property="og:description" content="The sliders are Betaflight's own code. They calculate the real PID gains from a few slider positions." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:description" content="The sliders are Betaflight&#039;s own code. They calculate the real PID gains from a few slider positions." />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="A five inch racing quad on a lit studio deck, its frame open and the stack visible." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Simplified tuning sliders, FPV wiki" />
-    <meta name="twitter:description" content="The sliders are Betaflight's own code. They calculate the real PID gains from a few slider positions." />
+    <meta name="twitter:description" content="The sliders are Betaflight&#039;s own code. They calculate the real PID gains from a few slider positions." />
     <meta name="twitter:image" content="https://webfpv.org/og.png" />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
@@ -49,14 +49,17 @@
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Simplified tuning sliders",
   "description": "The sliders are Betaflight's own code. They calculate the real PID gains from a few slider positions.",
   "url": "https://webfpv.org/wiki/control-simplified/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/control-simplified/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +67,53 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/control-simplified';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The flight controller</p>
       <h1>Simplified tuning sliders</h1>
-      <p>The sliders are Betaflight's own code. They calculate the real PID gains from a few slider positions.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">The sliders are Betaflight&#039;s own code. They calculate the real PID gains from a few slider positions.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>The sliders are Master, P, I, D, D Max, feedforward and pitch compared with roll. They let a pilot change a tune as a whole instead of as twelve separate numbers, and the firmware calculates p_roll and the other gains from the slider positions. The order matters: if you type gains and then move a slider, the slider&#039;s values replace the typed ones. A diff file that ends with a simplified tuning apply line replaces any gains typed above it.</p>
+        <p>The filter sliders do the same for the gyro and D term filter frequencies. Turn the simplified filter switch off if you want typed frequencies to stay.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>simplified_pids_mode can be OFF, RP or RPY, and applySimplifiedTuning is compiled. The sliders on the PIDs screen write the simplified_* settings and then send a simplified tuning apply line, so without this code the sliders would change nothing. The tunes that ship with the simulator type their gains directly.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>The sliders work here. If moving a slider changes nothing, the apply line was not read. That happened once, and it is why bf_settings.c uses a table of settings instead of a chain of text comparisons that reported success for settings it did not know.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/control-simplified">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

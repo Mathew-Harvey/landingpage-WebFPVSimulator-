@@ -34,7 +34,7 @@
     <meta property="og:url" content="https://webfpv.org/wiki/physics-yaw/" />
     <meta property="og:title" content="Yaw: how a quad turns its nose, FPV wiki" />
     <meta property="og:description" content="A quadcopter has no tail rotor. It turns its nose by making one pair of propellers harder to turn than the other pair, and the reaction turns the frame." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -49,14 +49,17 @@
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Yaw: how a quad turns its nose",
   "description": "A quadcopter has no tail rotor. It turns its nose by making one pair of propellers harder to turn than the other pair, and the reaction turns the frame.",
   "url": "https://webfpv.org/wiki/physics-yaw/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/physics-yaw/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +67,54 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/physics-yaw';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The aircraft</p>
       <h1>Yaw: how a quad turns its nose</h1>
-      <p>A quadcopter has no tail rotor. It turns its nose by making one pair of propellers harder to turn than the other pair, and the reaction turns the frame.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">A quadcopter has no tail rotor. It turns its nose by making one pair of propellers harder to turn than the other pair, and the reaction turns the frame.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>Two of the propellers spin clockwise and two spin anticlockwise. In steady flight the torques needed to turn them cancel out. To turn the nose right, the mixer speeds up the pair that spins one way and slows down the other pair. The torques no longer cancel, and the reaction on the motors turns the frame. Yaw is weaker and slower than roll or pitch, and it affects everything else, because the motors that make it also hold the quad up.</p>
+        <p>This explains several things pilots notice. Yaw feels slow when the idle setting is low, because the motors that need to slow down are already close to their minimum. Yaw becomes weak at full throttle, because the motors that need to speed up are already at their maximum. Airmode matters for the same reason: at zero throttle without airmode, the mixer has no room to change any motor&#039;s speed.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>The reaction on the frame from each motor is −spin × ke × i along the motor&#039;s axis, which is slightly tilted by the cant. The propeller&#039;s drag torque is kq ωrel |ωrel| in still air (the Motors page explains how it changes with the air flow). With yaw_motors_reversed off, the mixer&#039;s yaw column is −1, +1, +1, −1 for the rear right, front right, rear left and front left motors, and mixer.c reverses the sign of the yaw PID output. The code that connects Betaflight to the physics model passes the gyro&#039;s yaw rate as +r. The comment on PLANT_SPIN in plant.c lists the whole chain of signs, and reversing any one of them makes the loop run away.</p>
+        <p>Integrated yaw (use_integrated_yaw) is a Betaflight mixer option that treats yaw as the integral of the difference between the motor pairs, instead of a direct torque command. It works here, and it is off in this simulator&#039;s tunes unless a preset turns it on.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>yaw_motors_reversed works here, but the physics model&#039;s table of spin directions does not change with it. Turning it on makes the firmware and the physics disagree about which way the propellers spin, and the quad spins out of control in yaw. The setting exists to tell the firmware which way the propellers spin, so it must match the aircraft.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/physics-yaw">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

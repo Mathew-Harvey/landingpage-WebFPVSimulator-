@@ -34,7 +34,7 @@
     <meta property="og:url" content="https://webfpv.org/wiki/physics-wash/" />
     <meta property="og:title" content="Propwash, FPV wiki" />
     <meta property="og:description" content="In a descent the propellers lose thrust on average, and the air through them also becomes unsteady. The unsteady part makes the quad shake, and no contr..." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -49,14 +49,17 @@
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Propwash",
   "description": "In a descent the propellers lose thrust on average, and the air through them also becomes unsteady. The unsteady part makes the quad shake, and no contr...",
   "url": "https://webfpv.org/wiki/physics-wash/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/physics-wash/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +67,56 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/physics-wash';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The aircraft</p>
       <h1>Propwash</h1>
-      <p>In a descent the propellers lose thrust on average, and the air through them also becomes unsteady. The unsteady part makes the quad shake, and no controller setting can remove it completely.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">In a descent the propellers lose thrust on average, and the air through them also becomes unsteady. The unsteady part makes the quad shake, and no controller setting can remove it completely.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>When a real quad dives into the air it has just pushed down, pulls out of a dive, or cuts the throttle at the top of a flip, it shakes. The pilot sees it in the video and feels it through the sticks, as the flight controller keeps correcting a gyro reading that will not settle. A simulator without propwash is unrealistically smooth, and one with too much shakes all the time.</p>
+        <p>In this simulator propwash appears only where the physics says it should: when the quad descends into its own downwash. When the quad climbs, its propellers are in clean air. In a hover it is not descending through its wake at all. The model switches the shaking on according to how deep the descent is, so it starts and stops where it does on a real quad.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>The depth of the descent is measured against the induced velocity, vh = √(T / (2ρA)), the speed at which the propeller pushes air down in a hover. The ratio rw is the descent speed divided by vh. Recirculation starts at rw = 0.25, is strongest at rw = 1.0 and ends at rw = 3.0. The range is that wide because the frame, battery and arms also leave a wake that the propellers sit in; a single propeller on its own would be clear by about rw = 2. The strength rises in a straight line from 0 at rw = 0.25 to 1 at rw = 1.0, then falls in a straight line to 0 at rw = 3.0.</p>
+        <p>The unsteady air is made from four separate random signals, one per propeller, from xorshift32 generators. Each signal passes through two simple filters at 30 Hz and 3 Hz, so that it contains changes between about 3 and 30 times a second. The filter coefficients at 1 kHz are 0.171796 and 0.018673. The signal&#039;s average size (its root mean square) is 0.16730, measured over four million samples, and it is limited to three times that. Each propeller&#039;s thrust factor becomes axial + axial × k_propwash × depth × wash, where wash is that propeller&#039;s signal. k_propwash is 0.15 on the five inch and 0.05 on the whoop.</p>
+        <p>The frequency range is chosen for a reason. Slower changes, below about 3 Hz, are removed by the I term, and faster ones, above about 30 Hz, are removed by the D term filter, so neither would feel like propwash. The random signals run every step whether or not the quad is in its wake, so flying into the wake does not restart them from zero, and only the part scaled by depth is applied.</p>
+        <p>k_propwash is a feel constant: its value was chosen by pilots flying the simulator and reporting whether the shaking felt right. The mechanism it scales comes from the physics.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>The flattening of the grass under the quad is drawn by the renderer to show downwash. It is not connected to this model, so it cannot be used to judge k_propwash. In the Arcade flight style propwash is turned off.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/physics-wash">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

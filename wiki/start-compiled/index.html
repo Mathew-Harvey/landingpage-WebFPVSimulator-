@@ -34,7 +34,7 @@
     <meta property="og:url" content="https://webfpv.org/wiki/start-compiled/" />
     <meta property="og:title" content="The controller is compiled, not rewritten, FPV wiki" />
     <meta property="og:description" content="A simulator can use its own simple controller or compile the real flight controller software. This simulator compiles the real one, Betaflight, and that..." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -49,14 +49,17 @@
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "The controller is compiled, not rewritten",
   "description": "A simulator can use its own simple controller or compile the real flight controller software. This simulator compiles the real one, Betaflight, and that...",
   "url": "https://webfpv.org/wiki/start-compiled/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/start-compiled/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +67,54 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/start-compiled';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">Getting started</p>
       <h1>The controller is compiled, not rewritten</h1>
-      <p>A simulator can use its own simple controller or compile the real flight controller software. This simulator compiles the real one, Betaflight, and that choice affects everything else.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">A simulator can use its own simple controller or compile the real flight controller software. This simulator compiles the real one, Betaflight, and that choice affects everything else.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>The quick way to build a drone simulator is to write a simple PID controller in the game code. It takes a few dozen lines, and its graphs look reasonable, but it flies like a different aircraft. Betaflight is much more than three PID gains. It includes a chain of filters on the D term, throttle PID attenuation, I-term relax, anti-gravity, feedforward averaging, the mixer, airmode and many other rules. Most of these were added because a pilot crashed in an unusual situation and a developer wrote code to handle it. A controller that copies only the three gains leaves all of that behaviour out.</p>
+        <p>This simulator includes a copy of the Betaflight 4.5.1 source code and compiles its control loop to WebAssembly. When you change a setting, Betaflight&#039;s own code reads the value. The simplified tuning sliders run Betaflight&#039;s simplified_tuning.c. The rates graph on the settings screen is only a preview. The quad itself is flown by applyRates in fc/rc.c, the same function a real flight controller runs.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>The compiled source files include pid.c, pid_init.c, mixer.c, mixer_init.c, rc.c, rc_controls.c, controlrate_profile.c, the gyro filter chain, rpm_filter, dyn_notch_filter and simplified_tuning.c. The dynamic notch filter is compiled but refuses to start at a loop rate of 1 kHz, as it does on a slower real flight controller. The parts that talk to hardware are replaced by stand-ins: there is no serial port (UART), no MSP communication, no on-screen display and no GPS. Every change to the Betaflight source is kept as a patch file in patches/ and applied when the module is built, so the copy in vendor/betaflight stays exactly as Betaflight published it. After a build, git diff --stat vendor/betaflight must show no changes.</p>
+        <p>The licence is the GNU General Public License, version 3 (GPLv3). Compiling someone else&#039;s GPL code into a program makes the program a derivative work, which must use the same licence. Every file carries a GPLv3 header, and no library with an incompatible licence can be added.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>The firmware bench on the Quad screen is laid out like Betaflight Configurator 10.10, with the same tab names, the 4.5.1 settings and the dark grey and orange colours. It is a separate program: it does not use Vue, MSP or an embedded copy of Configurator. Saving writes the settings as CLI text, and the screen reads the values back from the running firmware, so it cannot show a value the firmware does not hold. The bench has no box for pasting CLI text, and the simulator does not load a diff file dropped onto its page: you choose a tune from the menu, set rates on the Rates screen, and edit the rest on the bench, which can export the result.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/start-compiled">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

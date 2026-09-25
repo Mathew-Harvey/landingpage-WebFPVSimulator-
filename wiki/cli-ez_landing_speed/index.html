@@ -34,21 +34,91 @@
     <meta property="og:url" content="https://webfpv.org/wiki/cli-ez_landing_speed/" />
     <meta property="og:title" content="EZ landing speed, FPV wiki" />
     <meta property="og:description" content="CLI setting ez_landing_speed. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 0 to 250." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
-    <script type="module">
-      window.location.href = '/wiki/#wiki/cli-ez_landing_speed';
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "EZ landing speed",
+  "description": "CLI setting ez_landing_speed. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 0 to 250.",
+  "url": "https://webfpv.org/wiki/cli-ez_landing_speed/",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/cli-ez_landing_speed/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
+  },
+  "about": {
+    "@type": "Thing",
+    "name": "Betaflight CLI settings reference"
+  }
+}
     </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      code { background: rgba(204, 255, 192, 0.1); padding: 0.125rem 0.25rem; border-radius: 3px; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">Betaflight 4.5.1 settings reference</p>
       <h1>EZ landing speed</h1>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">CLI setting ez_landing_speed. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 0 to 250.</p>
+      <section class="wiki-section">
+        <h2>What it does</h2>
+        <p>Used when mixer_type is EZLANDING. The speed, measured by GPS, at which EZ landing stops limiting the mixer, so that a fast-moving quad keeps its full control authority.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>In mixer.c the limit relaxes in proportion to the GPS speed and is gone at 2 × ez_landing_speed / 10 metres per second, so 50 means 10 m/s. At 0 the speed is not used.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>The settings catalog marks this as working here, but it has no effect. The mixer reads it when mixer_type is EZLANDING, but the speed comes from GPS, which the simulator does not have, so the speed is always zero and this setting does not change the flight. It does not affect the simulator&#039;s own crash count either, which uses the impact speed in metres per second.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>If you raise it</h2>
+        <p>On a real quad with GPS, EZ landing keeps limiting the mixer up to a higher speed. In this simulator nothing changes.</p>
+        <p>A higher value means the quad must move faster before the limit is lifted.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>If you lower it</h2>
+        <p>On a real quad with GPS, the limit is lifted at a lower speed. In this simulator nothing changes.</p>
+        <p>A lower value lifts the limit at a lower speed.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This page is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/#wiki/cli-ez_landing_speed">View in the interactive wiki</a> for full navigation and related articles.</p>
+    </div>
   </body>
 </html>
