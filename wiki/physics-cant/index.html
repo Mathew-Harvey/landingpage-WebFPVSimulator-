@@ -34,29 +34,33 @@
     <meta property="og:url" content="https://webfpv.org/wiki/physics-cant/" />
     <meta property="og:title" content="Motor cant and roll-to-yaw coupling, FPV wiki" />
     <meta property="og:description" content="A perfectly symmetrical quad in the X layout (QUADX) would not yaw when it rolls, at the level of detail this model works to. Real frames are not perfec..." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="A five inch racing quad on a lit studio deck, its frame open and the stack visible." />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Motor cant and roll-to-yaw coupling, FPV wiki" />
     <meta name="twitter:description" content="A perfectly symmetrical quad in the X layout (QUADX) would not yaw when it rolls, at the level of detail this model works to. Real frames are not perfec..." />
-    <meta name="twitter:image" content="https://webfpv.org/og.png" />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Motor cant and roll-to-yaw coupling",
   "description": "A perfectly symmetrical quad in the X layout (QUADX) would not yaw when it rolls, at the level of detail this model works to. Real frames are not perfec...",
   "url": "https://webfpv.org/wiki/physics-cant/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/physics-cant/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +68,55 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/physics-cant';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The aircraft</p>
       <h1>Motor cant and roll-to-yaw coupling</h1>
-      <p>A perfectly symmetrical quad in the X layout (QUADX) would not yaw when it rolls, at the level of detail this model works to. Real frames are not perfectly symmetrical, so a real quad yaws a little in a roll, and the simulator models that with small motor misalignments.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">A perfectly symmetrical quad in the X layout (QUADX) would not yaw when it rolls, at the level of detail this model works to. Real frames are not perfectly symmetrical, so a real quad yaws a little in a roll, and the simulator models that with small motor misalignments.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>Roll a real quad hard and it turns its nose a little at the same time. Pilots either add a touch of yaw stick or accept it. A quad with no coupling at all would be built more accurately than any factory builds: motors are never aimed to a tenth of a degree, moulded arms are never exactly square, and four screws never pull a motor down perfectly flat.</p>
+        <p>Each motor in this simulator is therefore given a fixed misalignment, called cant, of less than two degrees. That is the size of error a moulded arm and four screws produce. A roll then leaves a small yaw turning effect behind, and in a hover the I term corrects what is left, as it would on a real quad.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>Symmetry explains why the cant is needed. In the mixer the roll column is (−1, −1, +1, +1), and each side has one clockwise and one anticlockwise motor, so for any effect f that depends on the roll command, the sum over the four motors of SPIN[m] f(roll[m]) is zero. Drag torque, the reaction on the motors, the angular momentum of the propellers and the advance ratio all cancel in pairs. The inflow differences of the vortex ring model do not create coupling on a symmetrical frame either.</p>
+        <p>On the five inch the sideways (tangential) cant of the four motors is −0.9, +1.4, +0.6 and −1.2 degrees. Their sum, −0.1 degrees, gives a small yaw drift in a hover. Their sum weighted by the roll column, −1.1 degrees, gives the coupling. A right roll turns the nose to the right, the direction check 10 expects. The outward (radial) cant of 1.4, 0.85, 1.15 and 0.6 degrees is chosen so that the sideways forces from the tangential cant cancel in a hover. Radial cant cannot cause yaw, because a force pointing straight out from the centre has no turning effect about the vertical axis. The whoop uses a smaller set.</p>
+        <p>These values are a model of how accurately quads are built. They were chosen, not measured on a real frame. Check 10 rolls the quad for one second at half throttle and requires between 0.04 and 0.6 degrees of yaw in the expected direction.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>No yaw-on-roll term is written into the simulator. The coupling comes out of the physics. In the Arcade flight style the cant is turned off and every motor points straight up.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

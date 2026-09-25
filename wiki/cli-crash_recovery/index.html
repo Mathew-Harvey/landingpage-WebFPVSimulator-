@@ -34,21 +34,97 @@
     <meta property="og:url" content="https://webfpv.org/wiki/cli-crash_recovery/" />
     <meta property="og:title" content="Crash recovery, FPV wiki" />
     <meta property="og:description" content="CLI setting crash_recovery. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Values: OFF, ON, BEEP, DISARM." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Crash recovery, FPV wiki" />
+    <meta name="twitter:description" content="CLI setting crash_recovery. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Values: OFF, ON, BEEP, DISARM." />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
-    <script type="module">
-      window.location.href = '/wiki/#wiki/cli-crash_recovery';
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Crash recovery",
+  "description": "CLI setting crash_recovery. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Values: OFF, ON, BEEP, DISARM.",
+  "url": "https://webfpv.org/wiki/cli-crash_recovery/",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/cli-crash_recovery/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
+  },
+  "about": {
+    "@type": "Thing",
+    "name": "Betaflight CLI settings reference"
+  }
+}
     </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      code { background: rgba(204, 255, 192, 0.1); padding: 0.125rem 0.25rem; border-radius: 3px; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">Betaflight 4.5.1 settings reference</p>
       <h1>Crash recovery</h1>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">CLI setting crash_recovery. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Values: OFF, ON, BEEP, DISARM.</p>
+      <section class="wiki-section">
+        <h2>What it does</h2>
+        <p>Chooses what Betaflight does when it detects a crash: OFF, ON, BEEP or DISARM. With ON, it tries to level a quad that has been hit hard or knocked upside down. Racers leave it off.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>In pid.c, ON levels the quad after a detected crash, BEEP does the same and sounds the buzzer, and DISARM stops the motors instead. This simulator has no buzzer and never disarms, so BEEP acts like ON and DISARM does nothing.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>Works here. The crash recovery code in pid.c runs whenever crash_recovery is not OFF. It levels the quad from Betaflight&#039;s record of the roll and pitch angles, which this simulator updates only in angle mode and during launch control, so in acro mode those angles are out of date. The simulator&#039;s own flip for a quad resting upside down, Betaflight&#039;s crashflip mixer (which runs only while you hold T) and the simulator setting a stuck quad down nearby are all separate from crash recovery.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>If you raise it</h2>
+        <p>What changes depends on which setting this is, and none of them has any effect while crash_recovery is OFF. Raising crash_dthreshold or crash_gthreshold means a harder hit is needed before Betaflight counts a crash; raising crash_time or crash_delay makes recovery last longer or start later.</p>
+        <p>The code is the crash recovery section of pid.c. The values are in Betaflight&#039;s own units, based on degrees and milliseconds, not SI units.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>If you lower it</h2>
+        <p>Lowering crash_dthreshold or crash_gthreshold makes smaller disturbances count as crashes. Lowering crash_time or crash_delay makes recovery shorter or start sooner.</p>
+        <p>Setting crash_recovery to OFF, the usual choice for racing, turns the whole feature off.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This page is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for full navigation and related articles.</p>
+    </div>
   </body>
 </html>

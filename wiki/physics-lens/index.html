@@ -34,29 +34,33 @@
     <meta property="og:url" content="https://webfpv.org/wiki/physics-lens/" />
     <meta property="og:title" content="The camera, FPV wiki" />
     <meta property="og:description" content="The camera lens is not part of the flight model, but it changes how you fly, because a pilot flies by the picture." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="A five inch racing quad on a lit studio deck, its frame open and the stack visible." />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="The camera, FPV wiki" />
     <meta name="twitter:description" content="The camera lens is not part of the flight model, but it changes how you fly, because a pilot flies by the picture." />
-    <meta name="twitter:image" content="https://webfpv.org/og.png" />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "The camera",
   "description": "The camera lens is not part of the flight model, but it changes how you fly, because a pilot flies by the picture.",
   "url": "https://webfpv.org/wiki/physics-lens/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/physics-lens/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +68,54 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/physics-lens';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The aircraft</p>
       <h1>The camera</h1>
-      <p>The camera lens is not part of the flight model, but it changes how you fly, because a pilot flies by the picture.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">The camera lens is not part of the flight model, but it changes how you fly, because a pilot flies by the picture.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>Camera angle is the angle at which the camera is tilted up on its mount. At 0 degrees it looks straight along the nose, 30 degrees suits cruising, and racers use 45 to 55 degrees, because at speed the quad is pitched steeply forward and a tilted camera then looks where the quad is going. The angle changes no force in the model. It changes where straight ahead appears in the picture, and so it changes the line you fly.</p>
+        <p>The field of view printed on an FPV camera lens cannot be used directly here. FPV lenses are fisheye lenses, which map the angle from the centre almost in proportion to distance on the picture. The simulator&#039;s renderer is rectilinear: it keeps straight lines straight and maps by the tangent of the angle. Setting a rectilinear camera to the printed 150 to 160 degrees makes the centre of the picture so small that gates look tiny. The default of 85 degrees vertical makes the centre of the picture the same size as a 155 degree fisheye would, with a little extra width so that the next gate is visible.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>The calculation is in src/render/lens.js. An equidistant fisheye lens has r = f θ, and a rectilinear lens has r = f tan θ, where r is the distance from the centre of the image, θ is the angle from the camera&#039;s axis and f is the focal length. Making the two agree at the centre requires tan(v/2) = θV, where v is the rectilinear field of view and θV is the fisheye&#039;s vertical half angle. A 155 degree diagonal lens on a 4:3 sensor has a vertical half angle of 46.5 degrees (0.8116 rad), which gives v of about 78 degrees. The default of 85 degrees on a 16:9 screen is about 117 degrees wide. Making the gates or the world bigger (GATE_SCALE and WORLD_SCALE) cannot change how large things look, because a bigger gate seen from proportionally further away gives the same picture.</p>
+        <p>The conversion between the simulator&#039;s axes and the renderer&#039;s is in src/render/frame.js: x_three = −y_sim, y_three = z_sim, z_three = −x_sim. A mistake here would reverse the sign of every yaw after it.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>Camera angle and field of view are on the Quad screen, and changing aircraft changes them too: the whoop starts with a 95 degree lens. Betaflight&#039;s fpv_mix_degrees is stored but not used, because BOXFPVANGLEMIX is never switched on, so rc.c never mixes the camera angle into roll and yaw.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

@@ -52,16 +52,16 @@
     <meta property="og:url" content="https://webfpv.org/" />
     <meta property="og:title" content="WebFPV, free FPV drone racing simulator in your browser" />
     <meta property="og:description" content="Free FPV drone racing simulator. Real Betaflight 4.5.1 compiled to WebAssembly. No install, no account. Fly with a radio or game controller." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="The race field in the WebFPV simulator: a lit start gate on mown grass, a five inch quad parked beside it, flags and track markers running away under a low sun." />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="WebFPV, free FPV drone racing simulator in your browser" />
     <meta name="twitter:description" content="Free FPV drone racing simulator. Real Betaflight 4.5.1 compiled to WebAssembly. No install, no account." />
-    <meta name="twitter:image" content="https://webfpv.org/og.png" />
-    <meta name="twitter:image:alt" content="The race field in the WebFPV simulator: a lit start gate on mown grass, a five inch quad parked beside it, flags and track markers running away under a low sun." />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
 
     <!--
       The page's own background is the radial gradient below, not this colour,
@@ -673,6 +673,11 @@
         color: rgba(243, 234, 212, 0.78);
         letter-spacing: 0.01em;
         text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+      }
+
+      @media (min-width: 901px) and (max-height: 760px) {
+        .wordmark { font-size: clamp(48px, 7vw, 96px); }
+        .copy[data-copy="assemble"] .rule { margin: 14px 0; }
       }
 
       h2 {
@@ -1935,7 +1940,7 @@
     <div id="grain"></div>
 
     <header id="topbar">
-      <a class="mark" href="#top">WEB<span class="fpv">FPV</span></a>
+      <a class="mark" href="#top" aria-label="WebFPV, back to top">WEB<span class="fpv">FPV</span></a>
       <nav class="nav" id="nav">
         <a class="is-wiki" href="wiki/">Wiki</a>
         <a href="notes/">Patch notes</a>
@@ -2416,7 +2421,7 @@
     <section id="close">
       <div class="close-copy">
         <p class="eyebrow eyebrow-lit" style="justify-content: center">07 &#183; The point</p>
-        <!-- h2, not h1. The wordmark at the top of the page is the h1, and a
+        <!-- h2, not h1. The SEO line under the hero wordmark is the h1, and a
              document with two of them has no single heading a crawler or a
              screen reader can name it by. The type is unchanged: .shout is
              what sizes this, not the tag. -->

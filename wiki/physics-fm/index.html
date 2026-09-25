@@ -34,29 +34,33 @@
     <meta property="og:url" content="https://webfpv.org/wiki/physics-fm/" />
     <meta property="og:title" content="Thrust, torque and figure of merit, FPV wiki" />
     <meta property="og:description" content="The thrust of a propeller and the torque needed to turn it both grow with the square of its speed. They are linked by the power the propeller gives to t..." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="A five inch racing quad on a lit studio deck, its frame open and the stack visible." />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Thrust, torque and figure of merit, FPV wiki" />
     <meta name="twitter:description" content="The thrust of a propeller and the torque needed to turn it both grow with the square of its speed. They are linked by the power the propeller gives to t..." />
-    <meta name="twitter:image" content="https://webfpv.org/og.png" />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Thrust, torque and figure of merit",
   "description": "The thrust of a propeller and the torque needed to turn it both grow with the square of its speed. They are linked by the power the propeller gives to t...",
   "url": "https://webfpv.org/wiki/physics-fm/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/physics-fm/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +68,56 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/physics-fm';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The aircraft</p>
       <h1>Thrust, torque and figure of merit</h1>
-      <p>The thrust of a propeller and the torque needed to turn it both grow with the square of its speed. They are linked by the power the propeller gives to the air, and the figure of merit measures how well it does that.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">The thrust of a propeller and the torque needed to turn it both grow with the square of its speed. They are linked by the power the propeller gives to the air, and the figure of merit measures how well it does that.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>A propeller pushes air downwards. The force this makes is the thrust. The turning force needed to spin the propeller is the torque. The two are linked by energy: the power put into the shaft has to supply the power carried away by the moving air. A propeller that made a lot of thrust for very little torque would give out more energy than it took in, which is impossible. An early version of this simulator used constants that did exactly that, and they were calculated again.</p>
+        <p>The figure of merit measures this efficiency. It is the power an ideal propeller would need to hover, divided by the shaft power the real propeller uses. An ideal propeller scores 1.0. Real five inch racing propellers score between about 0.4 and 0.6. The rest of the power is lost to the friction of the air on the blades, the swirl of the air behind them and the air that spills round the blade tips. The five inch in this simulator uses 0.520, the value measured for five inch three-blade propellers. The whoop uses 0.310, because its small blades lose more to friction.</p>
+        <p>The figure of merit also affects yaw, because a quad turns its nose using the torque of its propellers. If the figure of merit is too high, the torque is too low, and the quad has to move more air than a real one to turn its nose.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>For one propeller in a hover, the ideal power is T^1.5 / √(2ρA), where T is the thrust, ρ is the air density and A is the area swept by the propeller. The shaft power is torque times angular speed, kq ω³. The figure of merit is FM = ideal power / shaft power. Putting T = kt ω² into these gives kq = kt^1.5 / (FM √(2ρA)), with A = π × 0.0635² m² for the five inch. The simulator calculates kq from kt in this way, so the two can never be set independently.</p>
+        <p>The value 0.520 was checked against thrust stand measurements, which are independent of the simulator. A 2207 1900 kV motor on 6S with a 5×4.3×3 propeller makes about 1.5 kgf of thrust (14.7 N) using about 600 W of shaft power at 26,000 RPM. That is a torque of 0.22 N m, and a ratio of torque to thrust of 0.0150 m. This ratio is kq / kt. The simulator&#039;s value is 0.01536, the closest any figure of merit between 0.4 and 0.6 comes to the measurement.</p>
+        <p>Thrust after the air flow corrections is T = kt ω² × axial, where axial is a factor from the advance ratio, vortex ring state, propwash and translational lift pages. The drag torque uses the propeller&#039;s speed relative to the air, which includes the quad&#039;s own yaw rate r: ωrel = spin × ω + r, where spin is +1 or −1 depending on which way the propeller turns. When the quad yaws, one pair of propellers is loaded more and the other less, and the difference opposes the yaw. This is called yaw damping. The Motors page explains how the torque also changes with the air flowing through the propeller.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>Yaw authority comes from this torque, so a torque coefficient that is too small makes yaw weak. When the figure of merit was 2.01, other constants had to be distorted to make up for it. The simulator now derives kq from kt in its code, so the two cannot drift apart, and sim_bf_debug case 12 reads the figure of merit back from the compiled constants: 0.5202 for the five inch.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

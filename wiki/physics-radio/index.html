@@ -34,29 +34,33 @@
     <meta property="og:url" content="https://webfpv.org/wiki/physics-radio/" />
     <meta property="og:title" content="The radio link, FPV wiki" />
     <meta property="og:description" content="No radio link delivers stick positions at perfectly even times. Feedforward and RC smoothing both depend on those timings, so the radio link is part of ..." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="A five inch racing quad on a lit studio deck, its frame open and the stack visible." />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="The radio link, FPV wiki" />
     <meta name="twitter:description" content="No radio link delivers stick positions at perfectly even times. Feedforward and RC smoothing both depend on those timings, so the radio link is part of ..." />
-    <meta name="twitter:image" content="https://webfpv.org/og.png" />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "The radio link",
   "description": "No radio link delivers stick positions at perfectly even times. Feedforward and RC smoothing both depend on those timings, so the radio link is part of ...",
   "url": "https://webfpv.org/wiki/physics-radio/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/physics-radio/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +68,54 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/physics-radio';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The aircraft</p>
       <h1>The radio link</h1>
-      <p>No radio link delivers stick positions at perfectly even times. Feedforward and RC smoothing both depend on those timings, so the radio link is part of the control loop.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">No radio link delivers stick positions at perfectly even times. Feedforward and RC smoothing both depend on those timings, so the radio link is part of the control loop.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>The sticks are not wired to the flight controller. A packet leaves the transmitter, spends a few milliseconds in the air and in the receiver, and now and then does not arrive at all. ExpressLRS (ELRS) at 250 packets a second is a common racing setup. It has about 4 ms of delay, less than a millisecond of variation in timing, which is called jitter, and loses a few packets in every ten thousand.</p>
+        <p>The default in this simulator is a perfect link, which feels slightly sharper than a real radio. To fly with the timing of the radio you own, choose an ELRS or Crossfire preset in the Radio link setting. Keep the perfect link when you are trying to set a lap time, so that a record never changes because a simulated packet went missing.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>The link model is in src/input/link.js, with five presets: perfect (250 Hz, with no delay, jitter or loss); ELRS 500 Hz (3.0 ms of delay, 0.4 ms of jitter, 200 lost packets per million); ELRS 250 Hz (4.0 ms, 0.8 ms, 400 per million); ELRS 150 Hz (6.0 ms, 1.4 ms, 800 per million); and Crossfire 150 Hz (7.5 ms, 1.8 ms, 1,200 per million). Jitter is spread evenly within plus or minus the jitter value. The random numbers come from a seeded xorshift32 generator, as the propwash noise does. The WebAssembly module never sees the generator, only stick samples with their times attached, and a recording stores what was delivered.</p>
+        <p>Feedforward uses the change in the setpoint divided by the time between radio packets. With perfectly even packets that division is smoother than any real hardware gives. RC smoothing adds to the effect, because it sets its filter frequencies from the measured time between packets, so a perfect interval chooses a filter that no real link would get.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>The link model runs outside the WebAssembly module on purpose. If it ran inside, the record of every flight would depend on the link&#039;s random seed, and every existing recording would stop replaying correctly. The automatic checks run with the link turned off.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

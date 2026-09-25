@@ -1157,8 +1157,8 @@ const SLAPS = [...document.querySelectorAll('.slap')]
   const byDest = new Map(destinations().map((d) => [d.id, d]));
   for (const a of document.querySelectorAll('[data-dest]')) {
     const d = byDest.get(a.dataset.dest);
-    if (d && a.getAttribute('href') !== d.href) {
-      /* Append attribution parameters when linking to sim or board */
+    if (d) {
+      /* Always append attribution parameters when linking to sim or board */
       a.href = appendAttribution(d.href);
     }
   }

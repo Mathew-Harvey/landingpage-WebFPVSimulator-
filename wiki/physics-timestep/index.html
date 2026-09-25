@@ -34,29 +34,33 @@
     <meta property="og:url" content="https://webfpv.org/wiki/physics-timestep/" />
     <meta property="og:title" content="Fixed time steps and repeatable flights, FPV wiki" />
     <meta property="og:description" content="The physics does not depend on how fast your computer draws the picture. That is why a recorded flight replays exactly and a lap time can be compared wi..." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="A five inch racing quad on a lit studio deck, its frame open and the stack visible." />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Fixed time steps and repeatable flights, FPV wiki" />
     <meta name="twitter:description" content="The physics does not depend on how fast your computer draws the picture. That is why a recorded flight replays exactly and a lap time can be compared wi..." />
-    <meta name="twitter:image" content="https://webfpv.org/og.png" />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Fixed time steps and repeatable flights",
   "description": "The physics does not depend on how fast your computer draws the picture. That is why a recorded flight replays exactly and a lap time can be compared wi...",
   "url": "https://webfpv.org/wiki/physics-timestep/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/physics-timestep/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +68,55 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/physics-timestep';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The aircraft</p>
       <h1>Fixed time steps and repeatable flights</h1>
-      <p>The physics does not depend on how fast your computer draws the picture. That is why a recorded flight replays exactly and a lap time can be compared with anyone else's.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">The physics does not depend on how fast your computer draws the picture. That is why a recorded flight replays exactly and a lap time can be compared with anyone else&#039;s.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>The physics moves forward in fixed steps of one millisecond, whatever the screen is doing, and the picture is drawn from the results. If the picture stutters, the quad in the calculation is still exactly where it would have been. A recorded flight therefore replays identically, bit for bit, on a different computer.</p>
+        <p>The other approach is to move the physics forward by however long the last frame took to draw. Then a slow frame would produce a different flight, a faster computer would produce a different lap time, and the automatic checks would mean nothing, because the same stick inputs would no longer give the same result.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>sim.c runs at SIM_STEP_HZ = 1000 steps a second, and sim_step(n) moves the simulation forward by n milliseconds. The host program in src/main.js adds up the real time between frames and spends it in whole 1 ms steps. The renderer then draws the quad at a position between the two most recent physics states, which is called interpolation. The update of the quad&#039;s orientation is split into smaller parts, so that the simulator&#039;s own maths library stays within the range where its sine and cosine are accurate, and the result is then scaled back to unit length.</p>
+        <p>Straight-line motion uses semi-implicit Euler integration: the velocity is updated first, then the position is updated using the new velocity. Gravity is added along the world&#039;s vertical axis after the forces on the body have been turned into world directions. The order of the operations never changes. The module is compiled with the options -fno-fast-math and -ffp-contract=off, which stop the compiler from reordering or combining decimal (floating point) operations, and without relaxed SIMD, a feature whose results can vary between computers.</p>
+        <p>The random noise used for propwash and gyro vibration comes from xorshift32 generators, seeded in the simulation state and in the code that connects Betaflight to the physics, and reset at the start of every run. They use whole-number operations only, turned into a decimal number in a fixed range at the end. Math.random is never used.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>Checks 2, 3 and 4 measure this. Check 2 runs the same flight twice in one process. Check 3 runs it in Node and in Chrome. Check 4 runs it at simulated frame rates of 30, 60, 144 and 240 frames a second. Each time, a fingerprint (hash) of the full record of the flight must be identical. If a change to the rendering changes the fingerprint, a frame time or a JavaScript maths call has reached the physics. If a change to the physics does not change it, the check itself is broken.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

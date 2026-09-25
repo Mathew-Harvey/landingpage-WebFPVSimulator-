@@ -34,29 +34,33 @@
     <meta property="og:url" content="https://webfpv.org/wiki/physics-hforce/" />
     <meta property="og:title" content="Rotor drag (the H-force), FPV wiki" />
     <meta property="og:description" content="At racing speed the propellers slow the quad down more than its body does. Without this rotor drag, a simulated quad slides through corners." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="A five inch racing quad on a lit studio deck, its frame open and the stack visible." />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Rotor drag (the H-force), FPV wiki" />
     <meta name="twitter:description" content="At racing speed the propellers slow the quad down more than its body does. Without this rotor drag, a simulated quad slides through corners." />
-    <meta name="twitter:image" content="https://webfpv.org/og.png" />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Rotor drag (the H-force)",
   "description": "At racing speed the propellers slow the quad down more than its body does. Without this rotor drag, a simulated quad slides through corners.",
   "url": "https://webfpv.org/wiki/physics-hforce/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/physics-hforce/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +68,55 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/physics-hforce';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The aircraft</p>
       <h1>Rotor drag (the H-force)</h1>
-      <p>At racing speed the propellers slow the quad down more than its body does. Without this rotor drag, a simulated quad slides through corners.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">At racing speed the propellers slow the quad down more than its body does. Without this rotor drag, a simulated quad slides through corners.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>A spinning propeller that moves sideways through the air does not only push downwards. It also pulls backwards, because the blade moving forwards into the oncoming air meets it faster than the blade moving back, and the difference produces a force in the plane of the propeller. Helicopter engineers call this the H-force. On a quadcopter it is why the quad slows down when it levels out, why a sideways slide stops, and why pitching up to 45 degrees slows the quad quickly.</p>
+        <p>An earlier version of this simulator had no H-force. There, a quad levelled off at 20 m/s on hover throttle still had half of that speed 3.2 seconds later, and a 50 degree banked turn followed a circle of 29 m radius because the quad kept sliding outwards. Pilots described it as floaty.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>For each propeller, H = k ρ A vi V, where V is the speed of the air across the propeller disc and vi is the induced velocity from Glauert&#039;s model: vi = vh² / √(V² + vi²). The simulator calculates this in a rearranged form, y² = 2 / (√(x⁴ + 4) + x²) with x = V / vh and y = vi / vh, which avoids losing accuracy when x is large. At low speed y is close to 1, and H grows in proportion to V. At high speed y approaches 1/x and H levels off at k T / 2, so it does not cut the top speed too much. A version in which H grew in proportion to speed at every speed reduced the top level speed from 139 km/h to 87 km/h.</p>
+        <p>On the five inch, k = 0.43842. It comes from a published measurement of about 0.30 per second of drag in proportion to speed, at hover, for a 0.6 kg five inch quad: 4ρA vh = 0.444787 kg/s, so k = 0.65 × 0.30 / 0.444787. That published value already includes some body drag, so k is an upper limit, and the body drag areas were reduced afterwards so that the same drag is not counted twice. The whoop uses k = 0.70, because its ducts turn more of the air.</p>
+        <p>The force acts at the height of the propellers, 0.020 m above the centre of gravity on the five inch. It therefore produces a nose-up turning effect in forward flight, and a rolling effect away from the direction of a sideways slide. The turning effects about the vertical axis from the four propellers cancel, except for a small part caused by the quad&#039;s rotation, which damps yaw.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>Rolling and pitching move the propellers up and down, not sideways, so they produce no H-force and do not change the rate response. Climbs and punches move air straight through the propellers, so they are not affected either. That is why this term could be added without changing the results of checks 5 to 12.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

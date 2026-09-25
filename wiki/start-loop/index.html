@@ -34,29 +34,33 @@
     <meta property="og:url" content="https://webfpv.org/wiki/start-loop/" />
     <meta property="og:title" content="The closed loop, FPV wiki" />
     <meta property="og:description" content="The sticks do not control the motors directly. They set a target rotation rate, and the flight controller measures the actual rotation rate and changes ..." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="A five inch racing quad on a lit studio deck, its frame open and the stack visible." />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="The closed loop, FPV wiki" />
     <meta name="twitter:description" content="The sticks do not control the motors directly. They set a target rotation rate, and the flight controller measures the actual rotation rate and changes ..." />
-    <meta name="twitter:image" content="https://webfpv.org/og.png" />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "The closed loop",
   "description": "The sticks do not control the motors directly. They set a target rotation rate, and the flight controller measures the actual rotation rate and changes ...",
   "url": "https://webfpv.org/wiki/start-loop/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/start-loop/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +68,57 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/start-loop';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">Getting started</p>
       <h1>The closed loop</h1>
-      <p>The sticks do not control the motors directly. They set a target rotation rate, and the flight controller measures the actual rotation rate and changes the power to the four motors to close the gap, 1,000 times a second. A system that measures its own output and corrects it like this is called a closed loop.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">The sticks do not control the motors directly. They set a target rotation rate, and the flight controller measures the actual rotation rate and changes the power to the four motors to close the gap, 1,000 times a second. A system that measures its own output and corrects it like this is called a closed loop.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>When you move the roll stick, the radio in your hands sends a short digital message, called a packet, to a receiver on the quad. The flight controller reads the stick position from the packet and turns it into a target roll rate, in degrees per second, using a formula called the rates curve. It then reads the gyro, a sensor that measures how fast the quad is rotating. The target rate minus the measured rate is called the error. A calculation called PID turns the error into a power level for each of the four motors. The motors change speed, the propellers change thrust, the quad rotates, the gyro measures the new rate, and the error gets smaller. Then the cycle starts again.</p>
+        <p>If the frame vibrates, the gyro measures the vibration along with the rotation, and the flight controller corrects for movement that is not happening. The thrust also takes time to change. The spinning motor and propeller have mass, so they take time to speed up. The battery voltage falls when a large current is drawn, which is called sag, and this leaves less power for the motors. The propellers give less thrust when air is already moving through them (see Advance ratio and pitch speed). Each of these delays the thrust the flight controller asked for, so the correction arrives late and the quad rotates past its target before it settles. This is called overshoot. If you ask for a faster rotation than the quad can produce, some motors reach full power, and the quad rotates only as fast as those motors can turn it.</p>
+        <p>Betaflight, the flight controller software, also uses feedforward. Feedforward measures how fast the stick is moving and changes the motor power straight away, before any error has built up. It is smoothest when stick positions arrive at regular times. On a real radio link the packets arrive at slightly uneven times, and this makes feedforward less smooth. A simulated link with perfectly even timing would make feedforward smoother than any real radio can, so the simulator has a radio model that adds the delays and uneven timing of a real link. You can turn it on with the Radio link setting.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>The simulator runs one step of the loop every millisecond (0.001 s), in the same order that Betaflight uses on a real flight controller. First it reads the gyro. The simulated gyro takes the quad&#039;s true rotation rate from the physics model, adds simulated vibration (in the Expert flight style), and rounds the result in the same way as a real 16-bit gyro chip that measures up to 2,000 degrees per second in either direction. Next, Betaflight&#039;s gyro filters remove as much of the vibration as they can. If a new radio packet has arrived, Betaflight reads the new stick positions, and on every step it turns the latest positions into target rates. The PID controller then compares the target rates with the filtered gyro rates and calculates a correction for each axis. Last, the mixer combines the corrections with the throttle to give a power level for each motor.</p>
+        <p>The power level is a duty cycle: the fraction of the time that the motor&#039;s electronic speed controller (ESC) connects the motor to the battery. The four duty cycles go to the physics model, which works out the motor speeds, the forces on the quad, and how it moves during the next millisecond. Two Betaflight features, dynamic idle and the RPM filter, need to know how fast each motor is spinning. On a real quad the ESCs report this back to the flight controller after a short delay. The simulator passes Betaflight the motor speeds from the physics model with the same kind of delay.</p>
+        <p>Betaflight works in degrees per second. The physics model uses radians per second, the SI unit (1 radian per second is about 57.3 degrees per second). The code that connects the two, called the glue, converts between them. Two features that depend on the throttle, TPA and anti-gravity, take their throttle value from the mixer. The mixer runs after the PID controller, so the PID controller always uses the throttle value from the step before. Real hardware runs in the same order.</p>
+        <p>Each stick reading carries the time at which it was taken. The simulator applies each reading at the start of the millisecond step that contains that time. The moment the reading happened to reach the computer does not matter. If readings were applied when they arrived, the uneven timing of the computer would reach the physics, and the quad would feel floaty to pilots.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>When you press Save on the firmware bench (on the Quad screen), the simulator writes your settings out as Betaflight command line (CLI) text and restarts Betaflight with it, through sim_init. This resets the quad. The bench can also export those settings as a file. No menu sets a PID gain itself: every gain reaches the loop through Betaflight&#039;s own settings. Settings that reach Betaflight 4.5.1 code compiled into the simulator are marked as working here. Settings that have no effect are shown in grey, with the reason.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

@@ -34,29 +34,33 @@
     <meta property="og:url" content="https://webfpv.org/wiki/control-filters/" />
     <meta property="og:title" content="Filters: delay against noise, FPV wiki" />
     <meta property="og:description" content="Every filter reduces noise but adds delay, and delay in a feedback loop makes the loop less stable." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="A five inch racing quad on a lit studio deck, its frame open and the stack visible." />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Filters: delay against noise, FPV wiki" />
     <meta name="twitter:description" content="Every filter reduces noise but adds delay, and delay in a feedback loop makes the loop less stable." />
-    <meta name="twitter:image" content="https://webfpv.org/og.png" />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Filters: delay against noise",
   "description": "Every filter reduces noise but adds delay, and delay in a feedback loop makes the loop less stable.",
   "url": "https://webfpv.org/wiki/control-filters/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/control-filters/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +68,54 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/control-filters';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The flight controller</p>
       <h1>Filters: delay against noise</h1>
-      <p>Every filter reduces noise but adds delay, and delay in a feedback loop makes the loop less stable.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">Every filter reduces noise but adds delay, and delay in a feedback loop makes the loop less stable.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>Each filter deals with one problem. A low-pass filter lets slow changes through and removes fast ones. The gyro low-pass filter smooths the gyro signal before anything else uses it. The D term low-pass filter adds more smoothing to the D term, the part of the controller most sensitive to noise. Static notch filters remove noise at one fixed frequency, often a vibration of the frame. The RPM filter removes noise at the motors&#039; rotation frequencies, which change with motor speed, using the motor speeds reported by the ESCs. The dynamic notch filter searches for peaks in the noise while the quad flies, and at 1 kHz Betaflight will not run it.</p>
+        <p>The filter types differ in how sharply they cut and how much delay they add. PT1 is a gentle first-order filter. PT2 and PT3 cut more sharply and add more delay. A biquad filter can be set up as a notch or a peak. A lower frequency setting means more smoothing. On some static notch settings, 0 means the filter is off.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>The gyro filters are in sensors/gyro.c, which is compiled. The RPM filter is flight/rpm_filter.c, which gets the motor frequencies from getMotorFrequencyHz. The dynamic notch is compiled and then refused by DYN_NOTCH_UPDATE_MIN_HZ. The D term filters are in pid_init.c and pid.c. yaw_lowpass_hz adds smoothing to yaw alone, because yaw is measured with more noise than roll and pitch.</p>
+        <p>The simplified filter sliders rewrite the filter frequencies through simplified_tuning.c, and they work here. If simplified_gyro_filter is turned off, the frequencies you typed stay as they are.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>The imbalance lines added to the gyro are the signal the RPM filter was written to remove. If you turn off the RPM filter, set gyro_lpf1 to 0 and fly a full throttle climb, the D term becomes noisy. That shows the physics model and the simulated gyro working correctly. In the Arcade flight style there is no gyro noise, so the filters have almost nothing to remove.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

@@ -34,29 +34,33 @@
     <meta property="og:url" content="https://webfpv.org/wiki/physics-damping/" />
     <meta property="og:title" content="Aerodynamic rate damping, FPV wiki" />
     <meta property="og:description" content="The air resists rotation before the flight controller does anything. Without this effect in the model, the D term would have to do the job of the physics." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="A five inch racing quad on a lit studio deck, its frame open and the stack visible." />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Aerodynamic rate damping, FPV wiki" />
     <meta name="twitter:description" content="The air resists rotation before the flight controller does anything. Without this effect in the model, the D term would have to do the job of the physics." />
-    <meta name="twitter:image" content="https://webfpv.org/og.png" />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Aerodynamic rate damping",
   "description": "The air resists rotation before the flight controller does anything. Without this effect in the model, the D term would have to do the job of the physics.",
   "url": "https://webfpv.org/wiki/physics-damping/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/physics-damping/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +68,53 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/physics-damping';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The aircraft</p>
       <h1>Aerodynamic rate damping</h1>
-      <p>The air resists rotation before the flight controller does anything. Without this effect in the model, the D term would have to do the job of the physics.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">The air resists rotation before the flight controller does anything. Without this effect in the model, the D term would have to do the job of the physics.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>When a quad rolls, the propellers on one side move up through the air and those on the other side move down. The rising propellers make less thrust and the falling ones make more, at least until the falling pair reaches the vortex ring state. The difference is a torque that opposes the roll. Yaw has its own version: the quad&#039;s own yaw rate adds to the speed of one pair of propellers relative to the air and subtracts from the other pair.</p>
+        <p>Pilots notice this effect most when it is missing. A simulated quad without aerodynamic damping overshoots when the stick is centred and is then pulled back by the flight controller, which pilots call snap-back. Some of that comes from the D gain doing its job. In a model without aerodynamic damping, most of it is the controller making up for a force that should be in the physics.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>For roll and pitch, the air speed through each propeller, va, includes the terms p y − q x, so the thrust factor axial(μ) changes with the roll and pitch rates, and that change is the damping. An older model of descent held axial at a fixed limit of 1.35, which made that change zero, and that is how the damping went missing. For yaw the effect comes from ωrel = spin × ω + r, and the H-force adds a little more yaw damping through the rotation of the propeller discs.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>If a tune that is smooth on a real five inch oscillates here, check the damping and the gyro noise before lowering P. If a tune that is smooth here oscillates on a real five inch, check the filters, because this simulator&#039;s gyro is still cleaner than one on a real quad with a bent motor bell.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

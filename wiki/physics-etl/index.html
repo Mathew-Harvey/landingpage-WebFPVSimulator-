@@ -34,29 +34,33 @@
     <meta property="og:url" content="https://webfpv.org/wiki/physics-etl/" />
     <meta property="og:title" content="Translational lift, FPV wiki" />
     <meta property="og:description" content="A hovering propeller works in air it has already pushed down. When the quad moves sideways, the propellers meet fresh air, and the same throttle makes m..." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="A five inch racing quad on a lit studio deck, its frame open and the stack visible." />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Translational lift, FPV wiki" />
     <meta name="twitter:description" content="A hovering propeller works in air it has already pushed down. When the quad moves sideways, the propellers meet fresh air, and the same throttle makes m..." />
-    <meta name="twitter:image" content="https://webfpv.org/og.png" />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Translational lift",
   "description": "A hovering propeller works in air it has already pushed down. When the quad moves sideways, the propellers meet fresh air, and the same throttle makes m...",
   "url": "https://webfpv.org/wiki/physics-etl/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/physics-etl/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +68,54 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/physics-etl';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The aircraft</p>
       <h1>Translational lift</h1>
-      <p>A hovering propeller works in air it has already pushed down. When the quad moves sideways, the propellers meet fresh air, and the same throttle makes more thrust.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">A hovering propeller works in air it has already pushed down. When the quad moves sideways, the propellers meet fresh air, and the same throttle makes more thrust.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>If the quad accelerates out of a hover without any change of throttle, it rises slightly. At speed it needs less throttle to hold its height than it does in a hover, because the propellers are working in air that has not already been pushed down. Helicopter pilots call this effective translational lift, and they feel it as a shudder and a gain in lift at about walking pace. The same equation applies to the four smaller propellers of a quadcopter.</p>
+        <p>If a simulator leaves this out, hovering and fast flight feel like two different aircraft, and the pilot has to keep adjusting the throttle in a way a real five inch does not need.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>The thrust coefficient kt is set so that axial = 1 in a hover, which already includes the hover induced velocity vh. What changes as the quad moves sideways is the induced velocity vi, so the correction is axial_gain = (vh − vi) / pitch speed. It is exactly zero in a hover or in a straight vertical climb, and it is never more than 0.35, because at idle the pitch speed falls faster than vi and the ratio would grow without limit.</p>
+        <p>vi comes from Glauert&#039;s inflow model, the same one used for rotor drag, calculated from the ideal thrust kt ω², because the actual thrust is what this correction is about to produce. The model solves the same equation twice per propeller per step instead of repeating a calculation until it settles, because each 1 ms step must finish in a fixed number of operations.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>Checks 5, 6, 7 and 11 fly straight up and down, where the sideways speed is almost zero, so this term cannot affect their results.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

@@ -34,21 +34,97 @@
     <meta property="og:url" content="https://webfpv.org/wiki/cli-iterm_relax_type/" />
     <meta property="og:title" content="I-term relax type, FPV wiki" />
     <meta property="og:description" content="CLI setting iterm_relax_type. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Values: GYRO, SETPOINT." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="I-term relax type, FPV wiki" />
+    <meta name="twitter:description" content="CLI setting iterm_relax_type. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Values: GYRO, SETPOINT." />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
-    <script type="module">
-      window.location.href = '/wiki/#wiki/cli-iterm_relax_type';
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "I-term relax type",
+  "description": "CLI setting iterm_relax_type. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Values: GYRO, SETPOINT.",
+  "url": "https://webfpv.org/wiki/cli-iterm_relax_type/",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/cli-iterm_relax_type/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
+  },
+  "about": {
+    "@type": "Thing",
+    "name": "Betaflight CLI settings reference"
+  }
+}
     </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      code { background: rgba(204, 255, 192, 0.1); padding: 0.125rem 0.25rem; border-radius: 3px; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">Betaflight 4.5.1 settings reference</p>
       <h1>I-term relax type</h1>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">CLI setting iterm_relax_type. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Values: GYRO, SETPOINT.</p>
+      <section class="wiki-section">
+        <h2>What it does</h2>
+        <p>Chooses how I-term relax decides how much to hold the I term back. SETPOINT reduces the error that I adds up, by more the faster the setpoint (the target rate set by your sticks) is changing. It depends only on the sticks, so it works even if the quad has not caught up yet. GYRO compares the gyro rate with a smoothed copy of the setpoint and ignores any difference smaller than the fast part of the stick movement.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>The options are the itermRelaxType_e values in pid.h, and the calculation is applyItermRelax in pid.c. Both types use the same high-pass filtered setpoint, whose filter is set by iterm_relax_cutoff.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>Works here.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>If you raise it</h2>
+        <p>This is a choice between two options, not a number. SETPOINT is usually what pilots want for acro, and it is Betaflight&#039;s default.</p>
+        <p>SETPOINT scales down the error that I adds up, using the high-pass filtered setpoint: the fast part of the rate you ask for with the sticks.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>If you lower it</h2>
+        <p>With GYRO, the calculation depends on the gyro, so if the quad falls behind the target during a movement, the I term still builds up.</p>
+        <p>GYRO is the older of the two methods.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This page is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for full navigation and related articles.</p>
+    </div>
   </body>
 </html>

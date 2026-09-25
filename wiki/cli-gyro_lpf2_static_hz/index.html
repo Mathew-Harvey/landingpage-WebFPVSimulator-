@@ -34,21 +34,97 @@
     <meta property="og:url" content="https://webfpv.org/wiki/cli-gyro_lpf2_static_hz/" />
     <meta property="og:title" content="Gyro low-pass 2 (Hz), FPV wiki" />
     <meta property="og:description" content="CLI setting gyro_lpf2_static_hz. Works here. Parameter group GYRO_CONFIG. Firmware type UINT16. Range 0 to 1000 Hz." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Gyro low-pass 2 (Hz), FPV wiki" />
+    <meta name="twitter:description" content="CLI setting gyro_lpf2_static_hz. Works here. Parameter group GYRO_CONFIG. Firmware type UINT16. Range 0 to 1000 Hz." />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
-    <script type="module">
-      window.location.href = '/wiki/#wiki/cli-gyro_lpf2_static_hz';
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Gyro low-pass 2 (Hz)",
+  "description": "CLI setting gyro_lpf2_static_hz. Works here. Parameter group GYRO_CONFIG. Firmware type UINT16. Range 0 to 1000 Hz.",
+  "url": "https://webfpv.org/wiki/cli-gyro_lpf2_static_hz/",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/cli-gyro_lpf2_static_hz/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
+  },
+  "about": {
+    "@type": "Thing",
+    "name": "Betaflight CLI settings reference"
+  }
+}
     </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      code { background: rgba(204, 255, 192, 0.1); padding: 0.125rem 0.25rem; border-radius: 3px; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">Betaflight 4.5.1 settings reference</p>
       <h1>Gyro low-pass 2 (Hz)</h1>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">CLI setting gyro_lpf2_static_hz. Works here. Parameter group GYRO_CONFIG. Firmware type UINT16. Range 0 to 1000 Hz.</p>
+      <section class="wiki-section">
+        <h2>What it does</h2>
+        <p>A low-pass filter on the gyro signal (the second gyro low-pass filter). A low-pass filter lets slow changes through and removes fast ones. A lower cutoff frequency in Hz means more smoothing and more delay, so the PID controller reacts later and more calmly. On some of these settings, 0 turns the filter off.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>The filter type can be PT1, BIQUAD, PT2 or PT3, and the static Hz is the cutoff frequency. When the dynamic minimum, maximum and expo are set, the cutoff moves with the throttle, through the dynamic low-pass logic in gyro_init and pid_init. A 1 kHz loop cannot record anything faster than 500 Hz, so this setting trades delay against noise in the range from 0 to 500 Hz.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>Works here. The gyro filters are Betaflight&#039;s compiled gyro.c, and the D term filters are the compiled pid_init.c. The vibration they smooth is added to the gyro reading in bf_glue.c, not to the motion of the quad.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>If you raise it</h2>
+        <p>For a cutoff in Hz, raising it lets more noise through and adds less delay. The quad feels more directly connected and less smooth.</p>
+        <p>A higher cutoff gives less delay and more noise in the D term. Judge it in a full throttle climb, not in a hover.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>If you lower it</h2>
+        <p>The quad feels smoother and later, which makes it easier to fly badly. Too low, and it feels slow to respond to everything.</p>
+        <p>More delay in the loop. Pilots often raise P to make up for it and then get oscillation, so change the filter instead.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This page is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for full navigation and related articles.</p>
+    </div>
   </body>
 </html>

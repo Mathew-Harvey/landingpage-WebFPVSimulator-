@@ -34,21 +34,97 @@
     <meta property="og:url" content="https://webfpv.org/wiki/cli-rpm_filter_weights_3/" />
     <meta property="og:title" content="RPM filter weight, harmonic 3, FPV wiki" />
     <meta property="og:description" content="CLI setting rpm_filter_weights_3. Works here. Parameter group RPM_FILTER_CONFIG. Firmware type UINT8." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="RPM filter weight, harmonic 3, FPV wiki" />
+    <meta name="twitter:description" content="CLI setting rpm_filter_weights_3. Works here. Parameter group RPM_FILTER_CONFIG. Firmware type UINT8." />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
-    <script type="module">
-      window.location.href = '/wiki/#wiki/cli-rpm_filter_weights_3';
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "RPM filter weight, harmonic 3",
+  "description": "CLI setting rpm_filter_weights_3. Works here. Parameter group RPM_FILTER_CONFIG. Firmware type UINT8.",
+  "url": "https://webfpv.org/wiki/cli-rpm_filter_weights_3/",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/cli-rpm_filter_weights_3/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
+  },
+  "about": {
+    "@type": "Thing",
+    "name": "Betaflight CLI settings reference"
+  }
+}
     </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      code { background: rgba(204, 255, 192, 0.1); padding: 0.125rem 0.25rem; border-radius: 3px; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">Betaflight 4.5.1 settings reference</p>
       <h1>RPM filter weight, harmonic 3</h1>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">CLI setting rpm_filter_weights_3. Works here. Parameter group RPM_FILTER_CONFIG. Firmware type UINT8.</p>
+      <section class="wiki-section">
+        <h2>What it does</h2>
+        <p>How strongly the third harmonic notch removes its frequency. On a real quad with three-blade propellers the blade passing vibration is close to this frequency. This simulator does not add it.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>This is rpm_filter_weights[2].</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>Works here, and compiled. getMotorFrequencyHz gives Betaflight each motor&#039;s speed with a delay like real motor telemetry, and the filter can remove multiples of the once-per-revolution imbalance lines. Blade passing is not modelled, so the third harmonic aims at a line that is not there.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>If you raise it</h2>
+        <p>The third harmonic notch removes more. On a real three-blade quad this can be the most useful notch. Here it mostly adds delay.</p>
+        <p>Blade passing was deliberately not modelled, because the once-per-revolution line is the larger effect and a 1 kHz loop records little above 500 Hz.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>If you lower it</h2>
+        <p>The notch removes less, or nothing at 0.</p>
+        <p>Turning it off matches the physics model.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This page is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for full navigation and related articles.</p>
+    </div>
   </body>
 </html>

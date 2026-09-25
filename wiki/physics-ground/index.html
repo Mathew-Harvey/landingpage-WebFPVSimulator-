@@ -25,7 +25,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>The ground, walls and ground effect, FPV wiki</title>
-    <meta name="description" content="The physics model itself handles the quad's contact with the ground, roofs, walls, gates, trees and the train, 1,000 times a second. Ground effect, the ..." />
+    <meta name="description" content="The physics model itself handles the quad&#039;s contact with the ground, roofs, walls, gates, trees and the train, 1,000 times a second. Ground effect, the ..." />
     <meta name="robots" content="noindex">
     <meta name="theme-color" content="#141c16" />
     <link rel="canonical" href="https://webfpv.org/wiki/physics-ground/" />
@@ -33,30 +33,34 @@
     <meta property="og:site_name" content="WebFPV" />
     <meta property="og:url" content="https://webfpv.org/wiki/physics-ground/" />
     <meta property="og:title" content="The ground, walls and ground effect, FPV wiki" />
-    <meta property="og:description" content="The physics model itself handles the quad's contact with the ground, roofs, walls, gates, trees and the train, 1,000 times a second. Ground effect, the ..." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:description" content="The physics model itself handles the quad&#039;s contact with the ground, roofs, walls, gates, trees and the train, 1,000 times a second. Ground effect, the ..." />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="A five inch racing quad on a lit studio deck, its frame open and the stack visible." />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="The ground, walls and ground effect, FPV wiki" />
-    <meta name="twitter:description" content="The physics model itself handles the quad's contact with the ground, roofs, walls, gates, trees and the train, 1,000 times a second. Ground effect, the ..." />
-    <meta name="twitter:image" content="https://webfpv.org/og.png" />
+    <meta name="twitter:description" content="The physics model itself handles the quad&#039;s contact with the ground, roofs, walls, gates, trees and the train, 1,000 times a second. Ground effect, the ..." />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "The ground, walls and ground effect",
   "description": "The physics model itself handles the quad's contact with the ground, roofs, walls, gates, trees and the train, 1,000 times a second. Ground effect, the ...",
   "url": "https://webfpv.org/wiki/physics-ground/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/physics-ground/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +68,56 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/physics-ground';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The aircraft</p>
       <h1>The ground, walls and ground effect</h1>
-      <p>The physics model itself handles the quad's contact with the ground, roofs, walls, gates, trees and the train, 1,000 times a second. Ground effect, the extra thrust close to the floor, is modelled for the whoop.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">The physics model itself handles the quad&#039;s contact with the ground, roofs, walls, gates, trees and the train, 1,000 times a second. Ground effect, the extra thrust close to the floor, is modelled for the whoop.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>You can land on the ground or on a roof. A gentle arrival settles the quad on the surface, where it can slide or come to rest. A fast arrival bounces, and a crash on the ground always ends with the quad lying flat, on its belly or on its back. A quad that comes to rest on its side is tipped over onto one or the other.</p>
+        <p>If the quad ends up upside down on the ground, TURTLE MODE appears. Move the pitch or roll stick and the simulator flips the quad back over; you do not have to time it. Betaflight&#039;s own turtle mode, which spins the motors on one side to push the quad over, runs while you hold the T key. If the quad is still and not upright for 1.5 seconds (5 seconds in turtle mode), the simulator sets it down nearby. Pressing X does the same at any time.</p>
+        <p>Close to the floor, a propeller&#039;s downwash has nowhere to go but sideways, and the propeller makes more thrust. This is ground effect. A whoop flying low over a mat feels it as a cushion under a low hover. The five inch is out of ground effect within a second of taking off, and the simulator does not model it for the five inch.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>Contact is calculated in src/native/world.c, after each physics step and the ground. The quad&#039;s frame is a box, tested against every nearby box in the world with the separating axis test, and a flat side against a wall touches at up to eight points, so it rests as a patch rather than balancing on one point. Gates, trees and similar objects are capsules: cylinders with rounded ends. A small sphere around the camera stops the lens being pushed into a surface. On the five inch the propellers are soft. Each has thirteen contact points, and a propeller that hits a surface loses speed, 6 percent for every metre per second of closing speed, up to 70 percent. A whoop&#039;s ducts are part of its frame.</p>
+        <p>The contact forces are found with an impulse method (accumulated impulses, eight passes per step). Friction is limited to the friction coefficient times the push of the surface, and the bounce depends on the speed of the impact. A quad pushed into a surface is moved back out by at most 5 cm per step. When a crashed quad lies slowly on the ground more than 14 degrees from flat, its rotors lose half their speed every millisecond, standing in for a pilot who would switch the motors off, and it is tipped towards whichever of belly or back is nearer. That tip is a chosen stand-in, not rigid body physics: a real quad rolls off its thin, springy props and arms, and the model&#039;s frame is a box that would otherwise stand on its side. Roofs count as ground: when the centre of gravity is above the top of a box that is higher than the ground, that top is the ground for the step. The train is a box moved every step by the map&#039;s own formula, so its position depends only on the step number.</p>
+        <p>Ground effect follows Cheeseman and Bennett&#039;s formula, T / T∞ = 1 / (1 − (R / 4h)²), where T∞ is the thrust far from the ground, h is the propeller&#039;s height above the ground and R is taken as twice the propeller radius, 31 mm on the whoop, because the downwash of the four small propellers joins together before it reaches the floor. That choice is the one assumption in this term. At a height of 16 mm the thrust is 1.33 times its value far from the ground, at 50 mm it is 1.025 times, and at 80 mm the gain is 1 percent. It applies only to a propeller facing away from the ground, and it gets weaker with the cosine of the tilt.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>No wind is modelled. The Wind setting in Settings is a sound, the noise of air over the airframe, which rises with speed. It applies no force. The automatic turtle flip, the set-down and the X key belong to the simulator&#039;s interface in src/main.js. Only the T key runs Betaflight&#039;s turtle mode, through the mixer.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

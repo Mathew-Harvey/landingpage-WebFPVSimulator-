@@ -34,29 +34,33 @@
     <meta property="og:url" content="https://webfpv.org/wiki/physics-sag/" />
     <meta property="og:title" content="Battery sag, FPV wiki" />
     <meta property="og:description" content="A battery behaves like a fixed voltage in series with a small resistance. When it supplies a large current, some of its voltage is lost across that resi..." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="A five inch racing quad on a lit studio deck, its frame open and the stack visible." />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Battery sag, FPV wiki" />
     <meta name="twitter:description" content="A battery behaves like a fixed voltage in series with a small resistance. When it supplies a large current, some of its voltage is lost across that resi..." />
-    <meta name="twitter:image" content="https://webfpv.org/og.png" />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Battery sag",
   "description": "A battery behaves like a fixed voltage in series with a small resistance. When it supplies a large current, some of its voltage is lost across that resi...",
   "url": "https://webfpv.org/wiki/physics-sag/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/physics-sag/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +68,56 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/physics-sag';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The aircraft</p>
       <h1>Battery sag</h1>
-      <p>A battery behaves like a fixed voltage in series with a small resistance. When it supplies a large current, some of its voltage is lost across that resistance, so the motors receive less.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">A battery behaves like a fixed voltage in series with a small resistance. When it supplies a large current, some of its voltage is lost across that resistance, so the motors receive less.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>A freshly charged battery makes the quad accelerate harder than one that has been flying for two minutes, even though plenty of charge is left. Every battery has an internal resistance, and when a large current flows the voltage at its terminals drops. The motors then receive less voltage and cannot spin as fast. This drop is called sag, and pilots describe the result as the battery falling off.</p>
+        <p>At full throttle the five inch draws about 137 A from its battery, and the battery voltage drops by about 2 V, from 25.2 V to about 23.2 V. Because of this the quad makes about 8.1 times its weight in thrust under Earth&#039;s gravity, rather than the 9.3 times it would make if the voltage did not drop.</p>
+        <p>The Pack charge setting, on the Before you fly screen, chooses the starting voltage of each cell: on the five inch, 4.2 V for a full battery, 3.8 V halfway through a flight and 3.5 V for an almost empty one. It does not count down as you fly, because the battery&#039;s capacity is not modelled, so a flight never ends by running out of charge. A lower setting gives weaker motors for the whole flight.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>Each cell of the five inch&#039;s battery has an internal resistance r_cell of 0.0025 Ω, so the six-cell battery has 0.015 Ω. The voltage under load comes from the calculation on the Motors page, which solves for the battery voltage and the motor currents together. The battery current is the sum over the motors of the duty cycle times the motor current, wherever that product is positive.</p>
+        <p>Check 11 measures sag. It flies the same full throttle climb with the cells at 4.20 V and at 3.60 V, and the peak motor speed with the lower voltage must be between 4 and 15 percent lower. The result is 11.1 percent.</p>
+        <p>The vbat_* settings are inert, because the physics model owns the battery. Betaflight&#039;s vbat_sag_compensation works here: it scales the controller&#039;s output according to the cell voltage it is given, and the simulator gives it the physics model&#039;s sagged voltage. It changes what the controller asks for. It does not change the battery.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>There is no model of battery temperature, no C rating and no separate connector resistance: 2.5 mΩ per cell is the value plant.c gives for a real six-cell 1300 mAh race battery. The whoop&#039;s single cell is 55 mΩ including its connector and wires, and its voltage falls by 23 percent at full throttle.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

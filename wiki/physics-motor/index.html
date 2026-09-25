@@ -34,29 +34,33 @@
     <meta property="og:url" content="https://webfpv.org/wiki/physics-motor/" />
     <meta property="og:title" content="Motors: voltage, current and delay, FPV wiki" />
     <meta property="og:description" content="The throttle does not set the thrust directly. It sets a duty cycle, and the motor and propeller take time to speed up before the thrust changes." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="A five inch racing quad on a lit studio deck, its frame open and the stack visible." />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Motors: voltage, current and delay, FPV wiki" />
     <meta name="twitter:description" content="The throttle does not set the thrust directly. It sets a duty cycle, and the motor and propeller take time to speed up before the thrust changes." />
-    <meta name="twitter:image" content="https://webfpv.org/og.png" />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Motors: voltage, current and delay",
   "description": "The throttle does not set the thrust directly. It sets a duty cycle, and the motor and propeller take time to speed up before the thrust changes.",
   "url": "https://webfpv.org/wiki/physics-motor/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/physics-motor/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +68,58 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/physics-motor';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The aircraft</p>
       <h1>Motors: voltage, current and delay</h1>
-      <p>The throttle does not set the thrust directly. It sets a duty cycle, and the motor and propeller take time to speed up before the thrust changes.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">The throttle does not set the thrust directly. It sets a duty cycle, and the motor and propeller take time to speed up before the thrust changes.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>When you push the throttle up, the flight controller tells each motor&#039;s electronic speed controller (ESC) to apply more of the battery voltage to the motor&#039;s windings, the coils of wire inside it. The motor does not reach its new speed at once. The bell, which is the spinning outer case the propeller is fixed to, has mass, and so does the propeller. For a few hundredths of a second you wait while they speed up. This delay is a large part of the difference between a quad that feels crisp and one that feels soft.</p>
+        <p>The current in a motor depends on two voltages. The applied voltage drives current through the resistance of the windings. The spinning motor also works as a generator and produces a voltage that opposes the applied one, called back EMF. As the motor speeds up, the back EMF grows and the current falls. A real ESC also has inductance, which slows changes in current, and a maximum current. This physics model has neither, so for the first few milliseconds of a sudden full throttle it draws a current that would damage a real battery. The rotor takes much longer than that to speed up, so the spike has gone before it can change the thrust. It shows in the simulator&#039;s state readout but not in how the quad flies.</p>
+        <p>The load on the motor also depends on the air. In a descent, air flowing up through a propeller makes it easier to turn, so at the same throttle the motor spins faster.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>The average voltage applied to a motor is the duty cycle d times the battery voltage under load V. The current is i = (d V − ke ω) / R, where ke ω is the back EMF, ω is the motor&#039;s angular speed in radians per second and R is the winding resistance. The motor&#039;s torque is ke i. The rotor speeds up according to j dω/dt = ke i − Q, where j is the rotor&#039;s moment of inertia and Q is the torque needed to turn the propeller. The duty cycle is limited to between 0 and 1, and ω cannot go below 0, because these motors do not reverse.</p>
+        <p>In still air, Q = kq ω². When air moves through the propeller, the torque is split into two parts, as blade element theory does: a part caused by the friction of the air on the blades, which depends only on ω², and a part that depends on the thrust T and on the speed of the air through the propeller: Q = (1 − FM) kq ω² + T (va + vi) / ω. Here va is the speed of the air along the propeller&#039;s axis caused by the quad&#039;s own motion, and vi is the extra speed the propeller gives the air. In a hover this equals kq ω² exactly, so the hover and motor checks are unchanged. The result is kept between 0.90 and 1.60 times kq ω². The lower limit is a protection chosen to keep the climb check inside its measured range, not a result of the physics.</p>
+        <p>The rotor&#039;s moment of inertia is 8.0 × 10⁻⁶ kg m², a little below the value for a real 2207 motor bell with a five inch propeller, about 9 × 10⁻⁶. Check 8 applies full duty to a motor at rest and measures how long it takes to reach 63 percent of its final speed, which must be between 10 and 30 ms. With 9 × 10⁻⁶ the result was about 29 ms, too close to the limit, so 8.0 × 10⁻⁶ was chosen. The result is now 26 ms.</p>
+        <p>An ESC current limit of 48 A per motor was built and tested. It reduced the peak battery current from 410 A to 192 A, but it slowed the motor so much that check 8 took 51 ms, outside its range, so it was removed. plant.c records these measurements.</p>
+        <p>The battery voltage and the motor currents depend on each other, so the model solves for both together in every step. Using the previous step&#039;s values instead would make the numbers oscillate. V = (Voc + Rp B / R) / (1 + Rp A / R), where Voc is the battery&#039;s voltage with no current flowing, Rp is its internal resistance, A = Σ d² and B = Σ d ke ω, with the sums taken over the four motors.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>The dshot_idle_value setting works here. It sets the lowest power the mixer will send to a motor, as DShot idle does on a real flight controller. The settings min_throttle, max_throttle and min_command belong to the older PWM motor signal. They are stored but not used, because the code that connects Betaflight to the physics model uses DShot values. motor_kv is also stored but not used, because each aircraft&#039;s motor constant is fixed in the physics model.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>

@@ -34,21 +34,97 @@
     <meta property="og:url" content="https://webfpv.org/wiki/cli-rates_type/" />
     <meta property="og:title" content="Rates type, FPV wiki" />
     <meta property="og:description" content="CLI setting rates_type. Works here. Parameter group CONTROL_RATE_PROFILES. Firmware type UINT8. Values: BETAFLIGHT, RACEFLIGHT, KISS, ACTUAL, QUICK." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Rates type, FPV wiki" />
+    <meta name="twitter:description" content="CLI setting rates_type. Works here. Parameter group CONTROL_RATE_PROFILES. Firmware type UINT8. Values: BETAFLIGHT, RACEFLIGHT, KISS, ACTUAL, QUICK." />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
-    <script type="module">
-      window.location.href = '/wiki/#wiki/cli-rates_type';
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Rates type",
+  "description": "CLI setting rates_type. Works here. Parameter group CONTROL_RATE_PROFILES. Firmware type UINT8. Values: BETAFLIGHT, RACEFLIGHT, KISS, ACTUAL, QUICK.",
+  "url": "https://webfpv.org/wiki/cli-rates_type/",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/cli-rates_type/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
+  },
+  "about": {
+    "@type": "Thing",
+    "name": "Betaflight CLI settings reference"
+  }
+}
     </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      code { background: rgba(204, 255, 192, 0.1); padding: 0.125rem 0.25rem; border-radius: 3px; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">Betaflight 4.5.1 settings reference</p>
       <h1>Rates type</h1>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">CLI setting rates_type. Works here. Parameter group CONTROL_RATE_PROFILES. Firmware type UINT8. Values: BETAFLIGHT, RACEFLIGHT, KISS, ACTUAL, QUICK.</p>
+      <section class="wiki-section">
+        <h2>What it does</h2>
+        <p>Chooses the formula that turns stick position into rotation rate: BETAFLIGHT, RACEFLIGHT, KISS, ACTUAL or QUICK. The same three numbers give a different curve under each type. ACTUAL is the type whose maximum rate is exactly the number shown at full stick, and the Rates menu in Settings writes ACTUAL unless you choose another type there.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>rates_type selects one of the apply*Rates functions in fc/rc.c, and all five are compiled. The rates graph is drawn by a JavaScript copy of those formulas (src/fc/ratescurve.js), which is used only for drawing and does not fly the quad.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>Works here. Check 9, one of the automatic tests, reads the maximum roll rate from its own diff file and checks that full stick reaches it to within 3 percent. The same rc_rate, srate and expo numbers give a different curve under a different type, which is why the Rates type row in Settings loads the new type&#039;s own default numbers when you change it.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>If you raise it</h2>
+        <p>This is a choice from a list, so there is no higher or lower value. Choose the type on purpose: rate numbers written for KISS will not give 670 deg/s if you use them with ACTUAL.</p>
+        <p>rates_type is an enumeration, a setting that picks one item from a fixed list.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>If you lower it</h2>
+        <p>There is no lower value either, because the setting is a choice from a list.</p>
+        <p>Each type is its own formula, so changing the type changes the whole curve.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This page is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for full navigation and related articles.</p>
+    </div>
   </body>
 </html>

@@ -15,6 +15,10 @@
     "lint:nouns": "node scripts/noun-lint.js",
     "build:wiki": "node scripts/generate-wiki-pages.js",
     "build:sitemap": "node scripts/generate-sitemap.js",
-    "build": "npm run build:wiki && npm run build:sitemap"
+    "build": "npm run build:wiki && npm run build:sitemap",
+    "test": "node tests/attribution.test.js"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1"
   }
 }

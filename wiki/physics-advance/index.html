@@ -34,29 +34,33 @@
     <meta property="og:url" content="https://webfpv.org/wiki/physics-advance/" />
     <meta property="og:title" content="Advance ratio and pitch speed, FPV wiki" />
     <meta property="og:description" content="A propeller makes less thrust when air is already moving through it in the direction it pushes. If that air moves fast enough, the thrust falls to zero." />
-    <meta property="og:image" content="https://webfpv.org/og.png" />
+    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="A five inch racing quad on a lit studio deck, its frame open and the stack visible." />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Advance ratio and pitch speed, FPV wiki" />
     <meta name="twitter:description" content="A propeller makes less thrust when air is already moving through it in the direction it pushes. If that air moves fast enough, the thrust falls to zero." />
-    <meta name="twitter:image" content="https://webfpv.org/og.png" />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Article",
+  "@type": "TechArticle",
   "headline": "Advance ratio and pitch speed",
   "description": "A propeller makes less thrust when air is already moving through it in the direction it pushes. If that air moves fast enough, the thrust falls to zero.",
   "url": "https://webfpv.org/wiki/physics-advance/",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "WebFPV",
-    "url": "https://webfpv.org/"
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://webfpv.org/wiki/physics-advance/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebFPV"
   },
   "about": {
     "@type": "Thing",
@@ -64,16 +68,55 @@
   }
 }
     </script>
-    <script type="module">
-      /* Redirect to the wiki SPA with the article pre-loaded */
-      window.location.href = '/wiki/#wiki/physics-advance';
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #0a0f0c;
+        color: #e8e4d8;
+      }
+      h1 { color: #ffc5d0; margin-bottom: 0.5rem; }
+      h2 { color: #ccffc0; margin-top: 2rem; }
+      p { margin: 1rem 0; }
+      a { color: #ffc5d0; }
+      .wiki-kicker { color: #a8a49b; font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .wiki-lede { font-size: 1.1rem; color: #ccffc0; margin-top: 1rem; }
+      .wiki-section { margin-top: 2rem; }
+      .wiki-cta {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: rgba(255, 197, 208, 0.1);
+        border-left: 3px solid #ffc5d0;
+      }
+    </style>
   </head>
   <body>
-    <noscript>
+    <article>
+      <p class="wiki-kicker">The aircraft</p>
       <h1>Advance ratio and pitch speed</h1>
-      <p>A propeller makes less thrust when air is already moving through it in the direction it pushes. If that air moves fast enough, the thrust falls to zero.</p>
-      <p><a href="/wiki/">View in the interactive wiki</a></p>
-    </noscript>
+      <p class="wiki-lede">A propeller makes less thrust when air is already moving through it in the direction it pushes. If that air moves fast enough, the thrust falls to zero.</p>
+      <section class="wiki-section">
+        <h2>The idea</h2>
+        <p>When the quad climbs quickly, air flows down through the propellers because of the quad&#039;s own motion. The propellers then add less speed to that air, and the thrust falls. This is why a full throttle climb does not keep accelerating, and it also limits the speed of a full throttle dive, even before drag is counted.</p>
+        <p>What matters is the speed of the air through each propeller, not the speed of the quad through the sky, and rotation changes it too. When the quad rolls, the propellers on the rising side move upwards through the air and the propellers on the falling side move downwards. The rising side loses thrust and the falling side gains thrust. The difference makes a torque that opposes the roll, which is called aerodynamic rate damping. Without it, only the PID controller would stop a rotation, and a quad modelled without it overshoots and springs back when the stick is centred.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>How it works</h2>
+        <p>The speed of the air along each propeller&#039;s axis is va = vz + p y − q x, where vz is the quad&#039;s speed along its own z axis, p and q are its roll and pitch rates, and x and y give the motor&#039;s position. The pitch of a propeller is the distance its blades would move along its axis in one turn if they moved exactly in the direction the blade angle points. The pitch speed is the pitch times the number of turns per second. In the code it is max(ω, 60) × k_inflow, where k_inflow is the pitch divided by 2π: 4.3 inches / 2π = 0.017382 m per radian on the five inch.</p>
+        <p>The advance ratio μ (the Greek letter mu) is va divided by the pitch speed. When μ is 0 or more, in a climb, the thrust factor is axial = 1 − μ, and never less than 0. When μ is between −0.30 and 0, in a gentle descent, axial = 1 − μ as well, so the thrust rises. Faster descents use the vortex ring state model on the next page.</p>
+        <p>The propeller speed used for the pitch speed is never allowed below 60 rad/s, so that a stopped propeller cannot cause a division by zero. This is a simplified blade element model in which the thrust reaches zero when the air speed reaches the pitch speed. It is not a full calculation of the air flow around a real five inch propeller.</p>
+      </section>
+      <section class="wiki-section">
+        <h2>In this simulator</h2>
+        <p>STAGE1.md, the simulator&#039;s first plan, left the advance ratio for a later stage. The code has it, and uses both the part caused by the quad&#039;s movement and the part caused by its rotation. The whoop&#039;s propellers have a pitch of only 0.7 inches, so its thrust falls away much sooner in a climb.</p>
+      </section>
+    </article>
+    <div class="wiki-cta">
+      <p><strong>This article is part of the interactive FPV wiki.</strong></p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+    </div>
   </body>
 </html>
