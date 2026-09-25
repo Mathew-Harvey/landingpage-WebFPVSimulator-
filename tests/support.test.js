@@ -20,23 +20,19 @@
  */
 
 import { JSDOM } from 'jsdom';
-import { readFileSync } from 'fs';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 let testCount = 0;
 let passCount = 0;
+let failed = false;
 
-function test(name, fn) {
+async function test(name, fn) {
   testCount++;
   try {
-    fn();
+    await fn();
     passCount++;
     console.log(`✓ ${name}`);
   } catch (e) {
+    failed = true;
     console.error(`✗ ${name}`);
     console.error(`  ${e.message}`);
   }
@@ -59,65 +55,56 @@ function assertContains(haystack, needle, message) {
 }
 
 /* Test: trackSupportClick sends correct beacon body */
-test('trackSupportClick sends exact body with kind and source', async () => {
+await test('trackSupportClick sends exact body with kind and source', async () => {
   const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
   global.window = dom.window;
   global.document = dom.window.document;
-  global.navigator = {
+  global.Blob = dom.window.Blob;
+
+  let capturedBody = null;
+  
+  const mockNavigator = {
     globalPrivacyControl: false,
-    sendBeacon: null,
+    sendBeacon: (url, blob) => {
+      capturedBody = blob;
+      return true;
+    },
   };
-  global.fetch = null;
-
-  let beaconCalled = false;
-  let beaconBody = null;
-
-  global.navigator.sendBeacon = (url, blob) => {
-    beaconCalled = true;
-    const reader = new FileReader();
-    return new Promise((resolve) => {
-      reader.onload = () => {
-        beaconBody = reader.result;
-        resolve(true);
-      };
-      reader.readAsText(blob);
-    });
+  
+  Object.defineProperty(global, 'navigator', {
+    value: mockNavigator,
+    writable: true,
+    configurable: true,
+  });
+  
+  global.fetch = (url, options) => {
+    capturedBody = options.body;
+    return Promise.resolve();
   };
 
   const { trackSupportClick } = await import('../src/stats.js?t=' + Date.now());
   trackSupportClick();
 
-  await new Promise(resolve => setTimeout(resolve, 10));
-
-  if (!beaconCalled) {
-    const { trackSupportClick: tc2 } = await import('../src/stats.js?t2=' + Date.now());
-    
-    let fetchCalled = false;
-    let fetchBody = null;
-    global.fetch = (url, options) => {
-      fetchCalled = true;
-      fetchBody = options.body;
-      return Promise.resolve();
-    };
-    
-    tc2();
-    await new Promise(resolve => setTimeout(resolve, 10));
-    
-    if (fetchCalled) {
-      const parsed = JSON.parse(fetchBody);
-      assertEquals(parsed.v, 1, 'Body must have v: 1');
-      assertEquals(parsed.kind, 'support_click', 'Body must have kind: support_click');
-      assertEquals(parsed.source, 'landing', 'Body must have source: landing');
-      assertEquals(Object.keys(parsed).length, 3, 'Body must have exactly 3 keys');
-      return;
-    }
+  if (!capturedBody) {
+    throw new Error('Neither sendBeacon nor fetch was called');
   }
 
-  throw new Error('Neither sendBeacon nor fetch was called');
+  let bodyText;
+  if (typeof capturedBody === 'string') {
+    bodyText = capturedBody;
+  } else if (capturedBody instanceof Blob) {
+    bodyText = await capturedBody.text();
+  } else {
+    throw new Error('Unexpected body type: ' + typeof capturedBody);
+  }
+
+  const parsed = JSON.parse(bodyText);
+  assertEquals(parsed, { v: 1, kind: 'support_click', source: 'landing' },
+    'Body must be exactly {"v":1,"kind":"support_click","source":"landing"}');
 });
 
 /* Test: GPC true blocks all events */
-test('GPC true sends nothing', async () => {
+await test('GPC true sends nothing', async () => {
   const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
   global.window = dom.window;
   global.document = dom.window.document;
@@ -125,23 +112,28 @@ test('GPC true sends nothing', async () => {
   let beaconCalled = false;
   let fetchCalled = false;
   
-  global.navigator = {
+  const mockNavigator = {
     globalPrivacyControl: true,
     sendBeacon: () => { beaconCalled = true; return true; },
   };
+  
+  Object.defineProperty(global, 'navigator', {
+    value: mockNavigator,
+    writable: true,
+    configurable: true,
+  });
+  
   global.fetch = () => { fetchCalled = true; return Promise.resolve(); };
 
-  const { trackSupportClick } = await import('../src/stats.js?t3=' + Date.now());
+  const { trackSupportClick } = await import('../src/stats.js?t2=' + Date.now());
   trackSupportClick();
-
-  await new Promise(resolve => setTimeout(resolve, 10));
 
   assertEquals(beaconCalled, false, 'sendBeacon should not be called when GPC is true');
   assertEquals(fetchCalled, false, 'fetch should not be called when GPC is true');
 });
 
 /* Test: loadSupporters with hostile names (XSS protection) */
-test('loadSupporters escapes hostile names via textContent', async () => {
+await test('loadSupporters escapes hostile names via textContent', async () => {
   const dom = new JSDOM('<!DOCTYPE html><html><body><div id="test"></div></body></html>');
   const listElement = dom.window.document.getElementById('test');
   
@@ -174,7 +166,7 @@ test('loadSupporters escapes hostile names via textContent', async () => {
 });
 
 /* Test: loadSupporters with over-long names */
-test('loadSupporters caps names at 50 characters', async () => {
+await test('loadSupporters caps names at 50 characters', async () => {
   const dom = new JSDOM('<!DOCTYPE html><html><body><div id="test"></div></body></html>');
   const listElement = dom.window.document.getElementById('test');
   
@@ -199,7 +191,7 @@ test('loadSupporters caps names at 50 characters', async () => {
 });
 
 /* Test: loadSupporters with malformed JSON */
-test('loadSupporters fails quietly with malformed JSON', async () => {
+await test('loadSupporters fails quietly with malformed JSON', async () => {
   const dom = new JSDOM('<!DOCTYPE html><html><body><div id="test">Initial</div></body></html>');
   const listElement = dom.window.document.getElementById('test');
   const initialHTML = listElement.innerHTML;
@@ -222,7 +214,7 @@ test('loadSupporters fails quietly with malformed JSON', async () => {
 });
 
 /* Test: loadSupporters with empty array */
-test('loadSupporters leaves empty state with empty array', async () => {
+await test('loadSupporters leaves empty state with empty array', async () => {
   const dom = new JSDOM('<!DOCTYPE html><html><body><div id="test">Empty state</div></body></html>');
   const listElement = dom.window.document.getElementById('test');
   const initialHTML = listElement.innerHTML;
@@ -245,7 +237,7 @@ test('loadSupporters leaves empty state with empty array', async () => {
 });
 
 /* Test: loadSupporters with all-invalid array */
-test('loadSupporters leaves empty state with all-invalid array', async () => {
+await test('loadSupporters leaves empty state with all-invalid array', async () => {
   const dom = new JSDOM('<!DOCTYPE html><html><body><div id="test">Empty state</div></body></html>');
   const listElement = dom.window.document.getElementById('test');
   const initialHTML = listElement.innerHTML;
@@ -273,7 +265,7 @@ test('loadSupporters leaves empty state with all-invalid array', async () => {
 });
 
 /* Test: loadSupporters trims whitespace */
-test('loadSupporters trims whitespace from names', async () => {
+await test('loadSupporters trims whitespace from names', async () => {
   const dom = new JSDOM('<!DOCTYPE html><html><body><div id="test"></div></body></html>');
   const listElement = dom.window.document.getElementById('test');
   
