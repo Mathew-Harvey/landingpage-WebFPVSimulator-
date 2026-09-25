@@ -46,6 +46,7 @@ import { buildWhoop, WHOOP_FOV, WHOOP_MOUNT_FORWARD, WHOOP_MOUNT_UP, WHOOP_CAM_T
 import { buildPetals } from './petals.js';
 import { bindPatreonLinks, destinations } from './config.js';
 import { FONTCSS, STICKERS } from './stickers-data.js';
+import { captureAttribution, appendAttribution } from './attribution.js';
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -1157,7 +1158,8 @@ const SLAPS = [...document.querySelectorAll('.slap')]
   for (const a of document.querySelectorAll('[data-dest]')) {
     const d = byDest.get(a.dataset.dest);
     if (d && a.getAttribute('href') !== d.href) {
-      a.href = d.href;
+      /* Append attribution parameters when linking to sim or board */
+      a.href = appendAttribution(d.href);
     }
   }
   bindPatreonLinks();
@@ -3273,6 +3275,9 @@ window.addEventListener('resize', () => {
   lastT = -1;
 }, { passive: true });
 window.addEventListener('load', measure);
+
+/* Capture attribution on page load */
+captureAttribution();
 
 /*
  * The studio is built: the module graph has arrived, WebGL is up, and the

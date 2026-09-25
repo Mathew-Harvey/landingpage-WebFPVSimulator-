@@ -235,12 +235,16 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
   const targeted = /class="invite-fly"[^>]*data-dest="sim"/.test(index);
   /* Every script tag in the page, and the module is allowed to be one. */
   const modules = (index.match(/<script[^>]*type="module"/g) || []).length;
-  const scripts = (index.match(/<script(?![^>]*type="importmap")[^>]*>/g) || []).length;
+  /* Count executable scripts, not JSON-LD structured data */
+  const allScripts = (index.match(/<script[^>]*>/g) || []).length;
+  const jsonLd = (index.match(/<script[^>]*type="application\/ld\+json"/g) || []).length;
+  const importMaps = (index.match(/<script[^>]*type="importmap"/g) || []).length;
+  const executableScripts = allScripts - jsonLd - importMaps;
   check(
     'index.html: the invitation is static markup, not a module',
-    hasCard && hidden && targeted && modules === 1 && scripts === 2,
+    hasCard && hidden && targeted && modules === 1 && executableScripts === 2,
     hasCard
-      ? `${hidden ? 'hidden' : 'NOT hidden, so it flashes'}, ${targeted ? 'data-dest set' : 'NO data-dest, so local serving points at production'}, ${modules} module script and ${scripts - modules} plain`
+      ? `${hidden ? 'hidden' : 'NOT hidden, so it flashes'}, ${targeted ? 'data-dest set' : 'NO data-dest, so local serving points at production'}, ${modules} module, ${executableScripts - modules} plain, ${jsonLd} JSON-LD`
       : 'MISSING, so the only way in is a 12 px label in the corner',
   );
 }
