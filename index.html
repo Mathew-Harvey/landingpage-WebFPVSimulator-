@@ -2561,7 +2561,7 @@
       <div class="supporters">
         <div class="supporters-label">Supporters</div>
         <div class="supporters-list" id="supporters-list">
-          <span class="supporters-empty">No supporters listed yet. <a href="https://www.patreon.com/cw/webfpv" target="_blank" rel="noopener" id="support-link-empty">Be the first.</a></span>
+          <span class="supporters-empty">No supporters listed yet. <a href="#" target="_blank" rel="noopener noreferrer" id="support-link-empty">Be the first.</a></span>
         </div>
       </div>
 
@@ -2575,7 +2575,7 @@
           <a href="https://github.com/Mathew-Harvey/WebFPVSimulator-LeaderBoard" rel="noreferrer">Leaderboard repo</a>
           <a href="https://betaflight.com" rel="noreferrer">Betaflight</a>
           <a href="https://www.gnu.org/licenses/gpl-3.0.html" rel="noreferrer">GPLv3</a>
-          <a href="https://www.patreon.com/cw/webfpv" target="_blank" rel="noopener" id="support-link">Support</a>
+          <a href="#" target="_blank" rel="noopener noreferrer" id="support-link">Support</a>
         </div>
       </div>
     </footer>
@@ -2788,61 +2788,21 @@
 
     <script type="module">
       import { trackSupportClick } from './src/stats.js';
+      import { loadSupporters } from './src/supporters.js';
+      import { PATREON_URL, PATREON_NOTE } from './src/config.js';
 
       /*
-       * Load and render supporters from supporters.json. Render names with
-       * textContent only (never innerHTML), trim and cap length, and fail
-       * quietly if the JSON is missing or malformed.
+       * Load and render supporters from supporters.json.
        */
-      (function loadSupporters() {
-        const list = document.getElementById('supporters-list');
-        if (!list) {
-          return;
-        }
-
-        const MAX_NAME_LENGTH = 50;
-
-        fetch('supporters.json')
-          .then((response) => {
-            if (!response.ok) {
-              return;
-            }
-            return response.json();
-          })
-          .then((supporters) => {
-            if (!Array.isArray(supporters) || supporters.length === 0) {
-              return;
-            }
-
-            list.innerHTML = '';
-            
-            supporters.forEach((supporter) => {
-              if (!supporter || typeof supporter.name !== 'string') {
-                return;
-              }
-
-              const name = supporter.name.trim();
-              if (!name) {
-                return;
-              }
-
-              const span = document.createElement('span');
-              span.className = 'supporter-name';
-              span.textContent = name.length > MAX_NAME_LENGTH
-                ? name.slice(0, MAX_NAME_LENGTH) + '...'
-                : name;
-              
-              list.appendChild(span);
-            });
-          })
-          .catch(() => {
-            /* Fail quietly. Empty state stays visible. */
-          });
-      })();
+      const list = document.getElementById('supporters-list');
+      if (list) {
+        loadSupporters(list);
+      }
 
       /*
-       * Add click tracking to Support links. Uses sendBeacon with fetch
-       * keepalive fallback so it never blocks navigation.
+       * Set Support link hrefs and attributes from config constants, then
+       * add click tracking. Uses sendBeacon with fetch keepalive fallback
+       * so it never blocks navigation.
        */
       (function bindSupportLinks() {
         const links = [
@@ -2852,6 +2812,9 @@
 
         links.forEach((link) => {
           if (link) {
+            link.href = PATREON_URL;
+            link.setAttribute('aria-label', PATREON_NOTE);
+            link.title = PATREON_NOTE;
             link.addEventListener('click', trackSupportClick);
           }
         });

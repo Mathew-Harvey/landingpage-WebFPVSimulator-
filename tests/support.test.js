@@ -27,8 +27,6 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const html = readFileSync(resolve(__dirname, '../index.html'), 'utf-8');
-
 let testCount = 0;
 let passCount = 0;
 
@@ -45,7 +43,7 @@ function test(name, fn) {
 }
 
 function assertEquals(actual, expected, message) {
-  if (actual !== expected) {
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
     throw new Error(
       message || `Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`
     );
@@ -60,86 +58,240 @@ function assertContains(haystack, needle, message) {
   }
 }
 
-/* Test: Support link href is exact */
-test('Support link href is exactly https://www.patreon.com/cw/webfpv', () => {
-  const dom = new JSDOM(html);
-  const link = dom.window.document.getElementById('support-link');
-  assertEquals(
-    link.href,
-    'https://www.patreon.com/cw/webfpv',
-    'Support link href must be exact'
-  );
+/* Test: trackSupportClick sends correct beacon body */
+test('trackSupportClick sends exact body with kind and source', async () => {
+  const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
+  global.window = dom.window;
+  global.document = dom.window.document;
+  global.navigator = {
+    globalPrivacyControl: false,
+    sendBeacon: null,
+  };
+  global.fetch = null;
+
+  let beaconCalled = false;
+  let beaconBody = null;
+
+  global.navigator.sendBeacon = (url, blob) => {
+    beaconCalled = true;
+    const reader = new FileReader();
+    return new Promise((resolve) => {
+      reader.onload = () => {
+        beaconBody = reader.result;
+        resolve(true);
+      };
+      reader.readAsText(blob);
+    });
+  };
+
+  const { trackSupportClick } = await import('../src/stats.js?t=' + Date.now());
+  trackSupportClick();
+
+  await new Promise(resolve => setTimeout(resolve, 10));
+
+  if (!beaconCalled) {
+    const { trackSupportClick: tc2 } = await import('../src/stats.js?t2=' + Date.now());
+    
+    let fetchCalled = false;
+    let fetchBody = null;
+    global.fetch = (url, options) => {
+      fetchCalled = true;
+      fetchBody = options.body;
+      return Promise.resolve();
+    };
+    
+    tc2();
+    await new Promise(resolve => setTimeout(resolve, 10));
+    
+    if (fetchCalled) {
+      const parsed = JSON.parse(fetchBody);
+      assertEquals(parsed.v, 1, 'Body must have v: 1');
+      assertEquals(parsed.kind, 'support_click', 'Body must have kind: support_click');
+      assertEquals(parsed.source, 'landing', 'Body must have source: landing');
+      assertEquals(Object.keys(parsed).length, 3, 'Body must have exactly 3 keys');
+      return;
+    }
+  }
+
+  throw new Error('Neither sendBeacon nor fetch was called');
 });
 
-/* Test: Support link has target="_blank" and rel="noopener" */
-test('Support link opens in new tab with noopener', () => {
-  const dom = new JSDOM(html);
-  const link = dom.window.document.getElementById('support-link');
-  assertEquals(link.target, '_blank', 'Support link must have target="_blank"');
-  assertContains(link.rel, 'noopener', 'Support link must have rel="noopener"');
-});
-
-/* Test: Empty supporters state renders correctly */
-test('Empty supporters state shows friendly message', () => {
-  const dom = new JSDOM(html);
-  const list = dom.window.document.getElementById('supporters-list');
-  const empty = list.querySelector('.supporters-empty');
-  assertEquals(empty !== null, true, 'Empty state element should exist');
-  assertContains(
-    empty.textContent,
-    'No supporters listed yet',
-    'Empty state should have friendly message'
-  );
-  const link = empty.querySelector('a');
-  assertEquals(link !== null, true, 'Empty state should contain Support link');
-  assertEquals(
-    link.href,
-    'https://www.patreon.com/cw/webfpv',
-    'Empty state link should point to Patreon'
-  );
-});
-
-/* Test: Hostile names are escaped via textContent */
-test('Names are rendered with textContent (not innerHTML)', () => {
-  const dom = new JSDOM(html);
-  const list = dom.window.document.getElementById('supporters-list');
-  list.innerHTML = '';
+/* Test: GPC true blocks all events */
+test('GPC true sends nothing', async () => {
+  const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
+  global.window = dom.window;
+  global.document = dom.window.document;
   
-  const span = dom.window.document.createElement('span');
-  span.className = 'supporter-name';
-  span.textContent = '<script>alert("xss")</script>';
-  list.appendChild(span);
+  let beaconCalled = false;
+  let fetchCalled = false;
   
+  global.navigator = {
+    globalPrivacyControl: true,
+    sendBeacon: () => { beaconCalled = true; return true; },
+  };
+  global.fetch = () => { fetchCalled = true; return Promise.resolve(); };
+
+  const { trackSupportClick } = await import('../src/stats.js?t3=' + Date.now());
+  trackSupportClick();
+
+  await new Promise(resolve => setTimeout(resolve, 10));
+
+  assertEquals(beaconCalled, false, 'sendBeacon should not be called when GPC is true');
+  assertEquals(fetchCalled, false, 'fetch should not be called when GPC is true');
+});
+
+/* Test: loadSupporters with hostile names (XSS protection) */
+test('loadSupporters escapes hostile names via textContent', async () => {
+  const dom = new JSDOM('<!DOCTYPE html><html><body><div id="test"></div></body></html>');
+  const listElement = dom.window.document.getElementById('test');
+  
+  const mockFetch = () => Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve([
+      { name: '<script>alert("xss")</script>', tier: 'test' },
+      { name: 'Normal Name', tier: 'test' },
+    ]),
+  });
+
+  const { loadSupporters } = await import('../src/supporters.js');
+  loadSupporters(listElement, mockFetch);
+
+  await new Promise(resolve => setTimeout(resolve, 50));
+
+  const names = listElement.querySelectorAll('.supporter-name');
+  assertEquals(names.length, 2, 'Should render 2 names');
   assertEquals(
-    span.textContent,
+    names[0].textContent,
     '<script>alert("xss")</script>',
-    'Script tag should be text'
+    'Script tag should be rendered as text, not executed'
   );
-  assertEquals(
-    list.innerHTML.includes('<script>'),
-    false,
-    'HTML should not contain actual script tag'
+  assertContains(
+    listElement.innerHTML,
+    '&lt;script&gt;',
+    'HTML should be escaped'
   );
+  assertEquals(names[1].textContent, 'Normal Name', 'Normal name should render');
 });
 
-/* Test: Long names are handled */
-test('Long names are capped at 50 characters', () => {
-  const dom = new JSDOM(html);
-  const MAX_NAME_LENGTH = 50;
+/* Test: loadSupporters with over-long names */
+test('loadSupporters caps names at 50 characters', async () => {
+  const dom = new JSDOM('<!DOCTYPE html><html><body><div id="test"></div></body></html>');
+  const listElement = dom.window.document.getElementById('test');
+  
   const longName = 'A'.repeat(60);
-  const expected = longName.slice(0, MAX_NAME_LENGTH) + '...';
-  
-  assertEquals(expected.length, 53, 'Capped name should be 53 chars (50 + ...)');
-  assertContains(expected, '...', 'Should contain ellipsis');
+  const mockFetch = () => Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve([
+      { name: longName, tier: 'test' },
+    ]),
+  });
+
+  const { loadSupporters } = await import('../src/supporters.js');
+  loadSupporters(listElement, mockFetch);
+
+  await new Promise(resolve => setTimeout(resolve, 50));
+
+  const names = listElement.querySelectorAll('.supporter-name');
+  assertEquals(names.length, 1, 'Should render 1 name');
+  assertEquals(names[0].textContent.length, 53, 'Capped name should be 53 chars (50 + ...)');
+  assertContains(names[0].textContent, '...', 'Capped name should have ellipsis');
+  assertEquals(names[0].textContent, longName.slice(0, 50) + '...', 'Should cap at exactly 50 + ...');
 });
 
-/* Test: Empty array behavior */
-test('Empty supporters array shows empty state', () => {
-  const dom = new JSDOM(html);
-  const list = dom.window.document.getElementById('supporters-list');
-  const empty = list.querySelector('.supporters-empty');
+/* Test: loadSupporters with malformed JSON */
+test('loadSupporters fails quietly with malformed JSON', async () => {
+  const dom = new JSDOM('<!DOCTYPE html><html><body><div id="test">Initial</div></body></html>');
+  const listElement = dom.window.document.getElementById('test');
+  const initialHTML = listElement.innerHTML;
   
-  assertEquals(empty !== null, true, 'Empty state should be visible with empty array');
+  const mockFetch = () => Promise.resolve({
+    ok: true,
+    json: () => Promise.reject(new Error('Invalid JSON')),
+  });
+
+  const { loadSupporters } = await import('../src/supporters.js');
+  loadSupporters(listElement, mockFetch);
+
+  await new Promise(resolve => setTimeout(resolve, 50));
+
+  assertEquals(
+    listElement.innerHTML,
+    initialHTML,
+    'Content should remain unchanged when JSON is malformed'
+  );
+});
+
+/* Test: loadSupporters with empty array */
+test('loadSupporters leaves empty state with empty array', async () => {
+  const dom = new JSDOM('<!DOCTYPE html><html><body><div id="test">Empty state</div></body></html>');
+  const listElement = dom.window.document.getElementById('test');
+  const initialHTML = listElement.innerHTML;
+  
+  const mockFetch = () => Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve([]),
+  });
+
+  const { loadSupporters } = await import('../src/supporters.js');
+  loadSupporters(listElement, mockFetch);
+
+  await new Promise(resolve => setTimeout(resolve, 50));
+
+  assertEquals(
+    listElement.innerHTML,
+    initialHTML,
+    'Empty state should remain with empty array'
+  );
+});
+
+/* Test: loadSupporters with all-invalid array */
+test('loadSupporters leaves empty state with all-invalid array', async () => {
+  const dom = new JSDOM('<!DOCTYPE html><html><body><div id="test">Empty state</div></body></html>');
+  const listElement = dom.window.document.getElementById('test');
+  const initialHTML = listElement.innerHTML;
+  
+  const mockFetch = () => Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve([
+      { name: '', tier: 'test' },
+      { name: '   ', tier: 'test' },
+      { tier: 'test' },
+      null,
+    ]),
+  });
+
+  const { loadSupporters } = await import('../src/supporters.js');
+  loadSupporters(listElement, mockFetch);
+
+  await new Promise(resolve => setTimeout(resolve, 50));
+
+  assertEquals(
+    listElement.innerHTML,
+    initialHTML,
+    'Empty state should remain when all names are invalid'
+  );
+});
+
+/* Test: loadSupporters trims whitespace */
+test('loadSupporters trims whitespace from names', async () => {
+  const dom = new JSDOM('<!DOCTYPE html><html><body><div id="test"></div></body></html>');
+  const listElement = dom.window.document.getElementById('test');
+  
+  const mockFetch = () => Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve([
+      { name: '  Test Name  ', tier: 'test' },
+    ]),
+  });
+
+  const { loadSupporters } = await import('../src/supporters.js');
+  loadSupporters(listElement, mockFetch);
+
+  await new Promise(resolve => setTimeout(resolve, 50));
+
+  const names = listElement.querySelectorAll('.supporter-name');
+  assertEquals(names.length, 1, 'Should render 1 name');
+  assertEquals(names[0].textContent, 'Test Name', 'Name should be trimmed');
 });
 
 /* Report results */

@@ -36,9 +36,9 @@ function privacyRefused() {
 }
 
 /*
- * Sends an event to the board's stats endpoint using the same envelope
- * format as the simulator's visit event. Mirrors the v1 format from
- * src/share/stats.js in WebFPVSimulator.
+ * Sends an event to the board's stats endpoint. For support_click, sends
+ * exactly {"v":1,"kind":"support_click","source":"landing"} as the board
+ * contract requires.
  *
  * Uses sendBeacon with a fallback to fetch keepalive so the link never
  * blocks, even if the board is down.
@@ -55,9 +55,6 @@ function sendEvent(payload) {
     body = JSON.stringify({
       v: 1,
       ...payload,
-      source: null,
-      referrer: null,
-      ref: null,
     });
   } catch (e) {
     return false;
