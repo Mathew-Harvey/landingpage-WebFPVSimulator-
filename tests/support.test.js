@@ -23,7 +23,6 @@ import { JSDOM } from 'jsdom';
 
 let testCount = 0;
 let passCount = 0;
-let failed = false;
 
 async function test(name, fn) {
   testCount++;
@@ -32,7 +31,6 @@ async function test(name, fn) {
     passCount++;
     console.log(`✓ ${name}`);
   } catch (e) {
-    failed = true;
     console.error(`✗ ${name}`);
     console.error(`  ${e.message}`);
   }
@@ -134,14 +132,14 @@ await test('GPC true sends nothing', async () => {
 
 /* Test: loadSupporters with hostile names (XSS protection) */
 await test('loadSupporters escapes hostile names via textContent', async () => {
-  const dom = new JSDOM('<!DOCTYPE html><html><body><div id="test"></div></body></html>');
+  const dom = new JSDOM('<!DOCTYPE html><html><body><div class="supporters" hidden><div id="test"></div></div></body></html>');
   const listElement = dom.window.document.getElementById('test');
   
   const mockFetch = () => Promise.resolve({
     ok: true,
     json: () => Promise.resolve([
-      { name: '<script>alert("xss")</script>', tier: 'test' },
-      { name: 'Normal Name', tier: 'test' },
+      { name: '<script>alert("xss")</script>', optIn: true, tier: 'test' },
+      { name: 'Normal Name', optIn: true, tier: 'test' },
     ]),
   });
 
@@ -167,14 +165,14 @@ await test('loadSupporters escapes hostile names via textContent', async () => {
 
 /* Test: loadSupporters with over-long names */
 await test('loadSupporters caps names at 50 characters', async () => {
-  const dom = new JSDOM('<!DOCTYPE html><html><body><div id="test"></div></body></html>');
+  const dom = new JSDOM('<!DOCTYPE html><html><body><div class="supporters" hidden><div id="test"></div></div></body></html>');
   const listElement = dom.window.document.getElementById('test');
   
   const longName = 'A'.repeat(60);
   const mockFetch = () => Promise.resolve({
     ok: true,
     json: () => Promise.resolve([
-      { name: longName, tier: 'test' },
+      { name: longName, optIn: true, tier: 'test' },
     ]),
   });
 
@@ -214,10 +212,10 @@ await test('loadSupporters fails quietly with malformed JSON', async () => {
 });
 
 /* Test: loadSupporters with empty array */
-await test('loadSupporters leaves empty state with empty array', async () => {
-  const dom = new JSDOM('<!DOCTYPE html><html><body><div id="test">Empty state</div></body></html>');
+await test('loadSupporters leaves section hidden with empty array', async () => {
+  const dom = new JSDOM('<!DOCTYPE html><html><body><div class="supporters" hidden><div id="test"></div></div></body></html>');
+  const container = dom.window.document.querySelector('.supporters');
   const listElement = dom.window.document.getElementById('test');
-  const initialHTML = listElement.innerHTML;
   
   const mockFetch = () => Promise.resolve({
     ok: true,
@@ -230,24 +228,24 @@ await test('loadSupporters leaves empty state with empty array', async () => {
   await new Promise(resolve => setTimeout(resolve, 50));
 
   assertEquals(
-    listElement.innerHTML,
-    initialHTML,
-    'Empty state should remain with empty array'
+    container.hasAttribute('hidden'),
+    true,
+    'Section should stay hidden with empty array'
   );
 });
 
 /* Test: loadSupporters with all-invalid array */
-await test('loadSupporters leaves empty state with all-invalid array', async () => {
-  const dom = new JSDOM('<!DOCTYPE html><html><body><div id="test">Empty state</div></body></html>');
+await test('loadSupporters leaves section hidden with all-invalid array', async () => {
+  const dom = new JSDOM('<!DOCTYPE html><html><body><div class="supporters" hidden><div id="test"></div></div></body></html>');
+  const container = dom.window.document.querySelector('.supporters');
   const listElement = dom.window.document.getElementById('test');
-  const initialHTML = listElement.innerHTML;
   
   const mockFetch = () => Promise.resolve({
     ok: true,
     json: () => Promise.resolve([
-      { name: '', tier: 'test' },
-      { name: '   ', tier: 'test' },
-      { tier: 'test' },
+      { name: '', optIn: true, tier: 'test' },
+      { name: '   ', optIn: true, tier: 'test' },
+      { tier: 'test', optIn: true },
       null,
     ]),
   });
@@ -258,21 +256,21 @@ await test('loadSupporters leaves empty state with all-invalid array', async () 
   await new Promise(resolve => setTimeout(resolve, 50));
 
   assertEquals(
-    listElement.innerHTML,
-    initialHTML,
-    'Empty state should remain when all names are invalid'
+    container.hasAttribute('hidden'),
+    true,
+    'Section should stay hidden when all names are invalid'
   );
 });
 
 /* Test: loadSupporters trims whitespace */
 await test('loadSupporters trims whitespace from names', async () => {
-  const dom = new JSDOM('<!DOCTYPE html><html><body><div id="test"></div></body></html>');
+  const dom = new JSDOM('<!DOCTYPE html><html><body><div class="supporters" hidden><div id="test"></div></div></body></html>');
   const listElement = dom.window.document.getElementById('test');
   
   const mockFetch = () => Promise.resolve({
     ok: true,
     json: () => Promise.resolve([
-      { name: '  Test Name  ', tier: 'test' },
+      { name: '  Test Name  ', optIn: true, tier: 'test' },
     ]),
   });
 
@@ -284,6 +282,63 @@ await test('loadSupporters trims whitespace from names', async () => {
   const names = listElement.querySelectorAll('.supporter-name');
   assertEquals(names.length, 1, 'Should render 1 name');
   assertEquals(names[0].textContent, 'Test Name', 'Name should be trimmed');
+});
+
+/* Test: loadSupporters removes hidden when valid name exists */
+await test('loadSupporters removes hidden attribute when valid name exists', async () => {
+  const dom = new JSDOM('<!DOCTYPE html><html><body><div class="supporters" hidden><div id="test"></div></div></body></html>');
+  const container = dom.window.document.querySelector('.supporters');
+  const listElement = dom.window.document.getElementById('test');
+  
+  const mockFetch = () => Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve([
+      { name: 'Valid Name', optIn: true, tier: 'test' },
+    ]),
+  });
+
+  const { loadSupporters } = await import('../src/supporters.js');
+  loadSupporters(listElement, mockFetch);
+
+  await new Promise(resolve => setTimeout(resolve, 50));
+
+  assertEquals(
+    container.hasAttribute('hidden'),
+    false,
+    'Section should show when valid name exists'
+  );
+  const names = listElement.querySelectorAll('.supporter-name');
+  assertEquals(names.length, 1, 'Should render 1 name');
+});
+
+/* Test: loadSupporters skips entries without optIn: true */
+await test('loadSupporters skips entries without optIn: true', async () => {
+  const dom = new JSDOM('<!DOCTYPE html><html><body><div class="supporters" hidden><div id="test"></div></div></body></html>');
+  const container = dom.window.document.querySelector('.supporters');
+  const listElement = dom.window.document.getElementById('test');
+  
+  const mockFetch = () => Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve([
+      { name: 'No OptIn', tier: 'test' },
+      { name: 'OptIn False', optIn: false, tier: 'test' },
+      { name: 'OptIn True', optIn: true, tier: 'test' },
+    ]),
+  });
+
+  const { loadSupporters } = await import('../src/supporters.js');
+  loadSupporters(listElement, mockFetch);
+
+  await new Promise(resolve => setTimeout(resolve, 50));
+
+  const names = listElement.querySelectorAll('.supporter-name');
+  assertEquals(names.length, 1, 'Should render only 1 name with optIn: true');
+  assertEquals(names[0].textContent, 'OptIn True', 'Should render only the opted-in name');
+  assertEquals(
+    container.hasAttribute('hidden'),
+    false,
+    'Section should show when one valid opted-in name exists'
+  );
 });
 
 /* Report results */

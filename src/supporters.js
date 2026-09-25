@@ -20,11 +20,10 @@
 const MAX_NAME_LENGTH = 50;
 
 /*
- * Load and render supporters from supporters.json. Render names with
- * textContent only (never innerHTML), trim and cap length. Only replaces
- * the empty state if there is at least one valid name; an all-invalid
- * array leaves the 'Be the first' message visible. Fails quietly if the
- * JSON is missing or malformed.
+ * Load and render supporters from supporters.json. Format: [{ "name": "...", "optIn": true }]
+ * Render names with textContent only (never innerHTML), trim and cap length.
+ * Only shows the supporters section if there is at least one valid opted-in name.
+ * The section stays hidden otherwise. Fails quietly if the JSON is missing or malformed.
  */
 export function loadSupporters(listElement, fetchFn = fetch) {
   if (!listElement) {
@@ -46,7 +45,7 @@ export function loadSupporters(listElement, fetchFn = fetch) {
       const validNames = [];
       
       supporters.forEach((supporter) => {
-        if (!supporter || typeof supporter.name !== 'string') {
+        if (!supporter || supporter.optIn !== true || typeof supporter.name !== 'string') {
           return;
         }
 
@@ -74,6 +73,8 @@ export function loadSupporters(listElement, fetchFn = fetch) {
         span.textContent = displayName;
         listElement.appendChild(span);
       });
+
+      listElement.closest('.supporters')?.removeAttribute('hidden');
     })
     .catch(() => {
       /* Fail quietly. Empty state stays visible. */

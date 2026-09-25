@@ -1193,8 +1193,9 @@
          makes the box smaller than its contents after all.
 
          The three numbers are one number: 180 is the footer's own height
-         plus its margin at this width, rounded up. If the footer grows a
-         line, this is the line that moves.
+         plus its margin at this width, rounded up. The hidden Supporters
+         row adds no height today. If the footer grows a line or supporters
+         show, this 180px calc must be re-measured at 1440x900.
       */
       #close {
         position: relative;
@@ -1551,7 +1552,6 @@
       }
       footer a { color: rgba(243, 234, 212, 0.78); text-decoration: none; }
       footer a:hover { color: var(--sakura); }
-      footer a.patreon:hover { color: var(--cream); box-shadow: inset 0 0 0 1px #FF424D; }
       footer a:focus-visible { outline: 2px solid var(--sakura); outline-offset: 3px; }
 
       .foot-legal {
@@ -1599,18 +1599,11 @@
         font-size: 11.5px;
         line-height: 1.5;
       }
-      .supporters-empty {
-        color: rgba(157, 179, 200, 0.62);
-      }
-      .supporters-empty a {
-        color: rgba(243, 234, 212, 0.78);
-        text-decoration: none;
-      }
-      .supporters-empty a:hover {
-        color: var(--sakura);
-      }
       .supporter-name {
         color: rgba(243, 234, 212, 0.78);
+      }
+      .supporters[hidden] {
+        display: none;
       }
 
       /* ------------------------------------------------------------------
@@ -2558,11 +2551,9 @@
         </div>
       </div>
 
-      <div class="supporters">
+      <div class="supporters" id="supporters" hidden>
         <div class="supporters-label">Supporters</div>
-        <div class="supporters-list" id="supporters-list">
-          <span class="supporters-empty">No supporters listed yet. <a href="https://www.patreon.com/cw/webfpv" target="_blank" rel="noopener noreferrer" id="support-link-empty">Be the first.</a></span>
-        </div>
+        <div class="supporters-list" id="supporters-list"></div>
       </div>
 
       <div class="foot-legal">
@@ -2786,40 +2777,7 @@
       })();
     </script>
 
-    <script type="module">
-      import { trackSupportClick } from './src/stats.js';
-      import { loadSupporters } from './src/supporters.js';
-      import { PATREON_URL, PATREON_NOTE } from './src/config.js';
-
-      /*
-       * Load and render supporters from supporters.json.
-       */
-      const list = document.getElementById('supporters-list');
-      if (list) {
-        loadSupporters(list);
-      }
-
-      /*
-       * Set Support link attributes from config constants and add click
-       * tracking. Uses sendBeacon with fetch keepalive fallback so it never
-       * blocks navigation. The href is in the HTML so links work without JS.
-       */
-      (function bindSupportLinks() {
-        const links = [
-          document.getElementById('support-link'),
-          document.getElementById('support-link-empty'),
-        ];
-
-        links.forEach((link) => {
-          if (link) {
-            link.setAttribute('aria-label', PATREON_NOTE);
-            link.title = PATREON_NOTE;
-            link.addEventListener('click', trackSupportClick);
-          }
-        });
-      })();
-    </script>
-
+    <script type="module" src="src/support-boot.js"></script>
     <script type="module" src="src/main.js"></script>
   </body>
 </html>
