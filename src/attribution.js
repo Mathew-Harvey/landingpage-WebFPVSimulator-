@@ -25,17 +25,10 @@
 const STORAGE_KEY = 'webfpv.session.attribution';
 
 /*
- * Canonical short tags for known sources. Server-side closed list is the
- * source of truth; this mirrors the board's normalizer.
- */
-const CANONICAL_REFS = new Set([
-  'reddit', 'yt', 'youtube', 'hn', 'x', 'twitter',
-  'facebook', 'instagram', 'github', 'discord',
-]);
-
-/*
  * Normalize a ref tag to a safe, canonical form. Max 16 chars, alphanumeric
  * and hyphens only. Known aliases (youtube->yt, twitter->x) are canonicalized.
+ * Server-side closed list is the source of truth; this mirrors the board's
+ * normalizer.
  */
 function normalizeRef(raw) {
   if (!raw || typeof raw !== 'string') {
