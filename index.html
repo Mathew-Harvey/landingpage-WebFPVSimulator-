@@ -99,11 +99,10 @@
   "description": "Free FPV drone racing simulator running Betaflight 4.5.1 flight controller code compiled to WebAssembly. Fly in your browser with no install or account required.",
   "url": "https://webfpv.org/",
   "screenshot": "https://webfpv.org/og.png",
-  "softwareVersion": "4.5.1",
   "keywords": "FPV, drone simulator, racing simulator, Betaflight, WebAssembly, browser game",
   "applicationSubCategory": "Flight Simulator",
   "featureList": [
-    "Real Betaflight 4.5.1 flight controller",
+    "Real Betaflight 4.5.1 flight code compiled to WebAssembly",
     "Visual track builder",
     "Freestyle flying in city environment",
     "5 inch and 65mm whoop aircraft",
@@ -115,10 +114,6 @@
   "author": {
     "@type": "Person",
     "name": "Mat Harvey"
-  },
-  "softwareHelp": {
-    "@type": "WebPage",
-    "url": "https://webfpv.org/wiki/"
   }
 }
     </script>
@@ -650,7 +645,7 @@
       /* Over a sunset the slate eyebrow is invisible. This one is cream. */
       .eyebrow-lit { color: rgba(243, 234, 212, 0.9); }
 
-      h1.wordmark {
+      .wordmark {
         margin: 0;
         font-size: clamp(52px, 10vw, 132px);
         font-weight: 800;
@@ -659,7 +654,17 @@
         color: var(--cream);
         text-shadow: 3px 3px 0 rgba(20, 28, 20, 0.72), 0 14px 40px rgba(0, 0, 0, 0.45);
       }
-      h1.wordmark .fpv { color: var(--sakura); }
+      .wordmark .fpv { color: var(--sakura); }
+
+      h1.hero-h1 {
+        margin: 10px 0 0;
+        font-size: clamp(17px, 2.2vw, 22px);
+        font-weight: 600;
+        color: var(--cream);
+        letter-spacing: 0.005em;
+        line-height: 1.3;
+        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+      }
 
       .tagline {
         margin: 8px 0 0;
@@ -1779,7 +1784,7 @@
             rgba(10, 15, 11, 0) 100%);
           pointer-events: none;
         }
-        h1.wordmark { font-size: clamp(46px, 15vw, 92px); }
+        .wordmark { font-size: clamp(46px, 15vw, 92px); }
         h2 { font-size: clamp(27px, 8.2vw, 44px); }
         .lede { font-size: 15px; max-width: 26em; }
         .rule { margin: 18px 0; }
@@ -1833,7 +1838,7 @@
         .copy { padding-top: 52px; }
         .lede + .lede { display: none; }
         .specs { display: none; }
-        h1.wordmark { font-size: clamp(38px, 7vw, 64px); }
+        .wordmark { font-size: clamp(38px, 7vw, 64px); }
       }
 
       /*
@@ -2135,8 +2140,9 @@
         <div class="pin">
           <div class="copy" data-copy="assemble">
             <p class="eyebrow">01 &#183; The machine</p>
-            <h1 class="wordmark">WEB<span class="fpv">FPV</span></h1>
-            <p class="tagline">Free FPV drone racing simulator in your browser</p>
+            <div class="wordmark" aria-hidden="true">WEB<span class="fpv">FPV</span></div>
+            <h1 class="hero-h1">Free FPV drone racing simulator in your browser</h1>
+            <p class="tagline">Free browser FPV. Real Betaflight. No install.</p>
             <div class="rule"></div>
             <p class="lede">
               A five inch racing quad, built in front of you. Frame, stack,
@@ -2340,15 +2346,15 @@
           </div>
           <div class="faq-item">
             <dt>What controller do I need?</dt>
-            <dd>A radio transmitter or a game controller. Touch controls work too, but a radio gives you the real sticks.</dd>
+            <dd>You can fly with a radio transmitter or a game controller.</dd>
           </div>
           <div class="faq-item">
             <dt>Is it really running Betaflight?</dt>
-            <dd>Yes. Betaflight 4.5.1 is compiled from source to WebAssembly. The rates, PID controller, filters and mixer are the real code running at 1 kHz.</dd>
+            <dd>Yes. WebFPV runs real Betaflight 4.5.1 flight code, compiled to WebAssembly, with a loop of about 1 kHz.</dd>
           </div>
           <div class="faq-item">
-            <dt>Does it work on my phone or Chromebook?</dt>
-            <dd>Yes. Any device with a web browser that supports WebGL and WebAssembly will run it.</dd>
+            <dt>Which browsers does it run in?</dt>
+            <dd>A current Chrome, Edge, Firefox or Safari with WebGL and hardware acceleration turned on.</dd>
           </div>
           <div class="faq-item">
             <dt>Is it free?</dt>
@@ -2375,7 +2381,7 @@
       "name": "What controller do I need?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "A radio transmitter or a game controller. Touch controls work too, but a radio gives you the real sticks."
+        "text": "You can fly with a radio transmitter or a game controller."
       }
     },
     {
@@ -2383,15 +2389,15 @@
       "name": "Is it really running Betaflight?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes. Betaflight 4.5.1 is compiled from source to WebAssembly. The rates, PID controller, filters and mixer are the real code running at 1 kHz."
+        "text": "Yes. WebFPV runs real Betaflight 4.5.1 flight code, compiled to WebAssembly, with a loop of about 1 kHz."
       }
     },
     {
       "@type": "Question",
-      "name": "Does it work on my phone or Chromebook?",
+      "name": "Which browsers does it run in?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes. Any device with a web browser that supports WebGL and WebAssembly will run it."
+        "text": "A current Chrome, Edge, Firefox or Safari with WebGL and hardware acceleration turned on."
       }
     },
     {
