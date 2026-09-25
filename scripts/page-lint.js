@@ -386,6 +386,55 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
   }
 }
 
+/*
+ * 12. PATREON TIERS SHOW THE LIVE PRICES.
+ *
+ * The tier prices are in several places: src/config.js PATREON_NOTE,
+ * aria-label and title attributes on Patreon links in index.html, wiki, and
+ * notes, plus prose in notes/index.html. All of them must carry the current
+ * prices, and none may carry old prices or the removed GST claim.
+ */
+{
+  const oldPrices = /\$(5|12|25)(?!\d)/;
+  const gstClaim = /GST on join|plus GST/i;
+  const newPrices = /\$3[^0-9].*\$8[^0-9].*\$20/;
+  const fullText = 'Support WebFPV on Patreon. Keep the lights on, $3. Hosting + runway, $8. Build the sim, $20. USD a month.';
+
+  const configJs = await readFile(join(root, 'src/config.js'), 'utf8');
+  const files = { 'index.html': index, 'wiki/index.html': wiki, 'notes/index.html': notes, 'src/config.js': configJs };
+  
+  const hasOld = [];
+  const hasGst = [];
+  for (const [name, src] of Object.entries(files)) {
+    if (oldPrices.test(src)) {
+      hasOld.push(name);
+    }
+    if (gstClaim.test(src)) {
+      hasGst.push(name);
+    }
+  }
+  
+  check(
+    'no old Patreon prices ($5, $12, $25) anywhere',
+    hasOld.length === 0,
+    hasOld.length ? `old prices in ${hasOld.join(', ')}` : 'all old prices removed',
+  );
+  
+  check(
+    'no GST claim in Patreon text',
+    hasGst.length === 0,
+    hasGst.length ? `GST claim in ${hasGst.join(', ')}` : 'GST claim removed',
+  );
+  
+  const hasNew = newPrices.test(configJs) && newPrices.test(index) && newPrices.test(wiki) && newPrices.test(notes);
+  const hasFullNote = configJs.includes(fullText);
+  check(
+    'Patreon prices are the live $3, $8, $20',
+    hasNew && hasFullNote,
+    hasNew && hasFullNote ? 'new prices in all pages' : `${hasNew ? 'prices present' : 'MISSING new prices'}, ${hasFullNote ? 'full note in config.js' : 'config.js text does not match'}`,
+  );
+}
+
 const w = Math.max(...rows.map((r) => r[0].length));
 console.log('page-lint: the parts of the pages that are true or false\n');
 for (const [name, status, detail] of rows) {
