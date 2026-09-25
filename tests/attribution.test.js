@@ -208,6 +208,18 @@ test('does not use localStorage', () => {
   assertEquals(window.localStorage.getItem('webfpv_attribution'), null);
 });
 
+/* Test: appendAttribution preserves existing query parameters */
+test('appendAttribution preserves existing query parameters', () => {
+  clearStorage();
+  dom.reconfigure({ url: 'https://webfpv.io/?ref=hn' });
+  getAttribution();
+  
+  const url = appendAttribution('https://webfpv.io/sim?map=field');
+  const u = new URL(url);
+  assertEquals(u.searchParams.get('map'), 'field', 'should preserve map param');
+  assertEquals(u.searchParams.get('ref'), 'hn', 'should add ref param');
+});
+
 /* Report results */
 console.log('');
 console.log(`${passCount}/${testCount} tests passed`);

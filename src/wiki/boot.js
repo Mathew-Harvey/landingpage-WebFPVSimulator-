@@ -21,14 +21,16 @@
  */
 
 import { bindPatreonLinks, destinations, simOrigin } from '../config.js';
+import { appendAttribution } from '../attribution.js';
 import { mountWiki } from './wiki.js';
 
 {
   const byDest = new Map(destinations().map((d) => [d.id, d]));
   for (const a of document.querySelectorAll('[data-dest]')) {
     const d = byDest.get(a.dataset.dest);
-    if (d && a.getAttribute('href') !== d.href) {
-      a.href = d.href;
+    if (d) {
+      /* Always append attribution parameters when linking to sim or board */
+      a.href = appendAttribution(d.href);
     }
   }
   bindPatreonLinks();
@@ -40,7 +42,7 @@ if (!host) {
 }
 
 const wiki = mountWiki(host);
-wiki.simHref = `${simOrigin()}/?map=field`;
+wiki.simHref = appendAttribution(`${simOrigin()}/?map=field`);
 
 /*
  * Hash URL redirect: if someone lands on #wiki/<id>, redirect them to the
