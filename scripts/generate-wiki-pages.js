@@ -150,11 +150,12 @@ ${robotsMeta}    <meta name="theme-color" content="#141c16" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="A five inch racing quad on a lit studio deck, its frame open and the stack visible." />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${escapeHtml(title)}" />
     <meta name="twitter:description" content="${escapeHtml(description)}" />
-    <meta name="twitter:image" content="https://webfpv.org/og.png" />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
@@ -300,6 +301,12 @@ ${robotsMeta}    <meta name="theme-color" content="#141c16" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${escapeHtml(title)}" />
+    <meta name="twitter:description" content="${escapeHtml(description)}" />
+    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
+    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
