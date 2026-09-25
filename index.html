@@ -30,10 +30,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>WebFPV, a browser FPV racing simulator</title>
+    <title>WebFPV, free FPV drone racing simulator in your browser</title>
     <meta
       name="description"
-      content="Build the quad, draw the track, fly the line. A free browser FPV racing simulator running Betaflight compiled to WebAssembly. No install, no account: a radio or a game controller is the whole kit list."
+      content="Free FPV drone racing simulator running in your browser. Real Betaflight 4.5.1 flight code compiled to WebAssembly. No install, no account. Fly with a radio or game controller."
     />
     <!--
       A link to this page posted anywhere renders a 1200 by 630 card, and
@@ -50,16 +50,16 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="WebFPV" />
     <meta property="og:url" content="https://webfpv.org/" />
-    <meta property="og:title" content="WebFPV, a browser FPV racing simulator" />
-    <meta property="og:description" content="Build the quad, draw the track, fly the line. Betaflight compiled to WebAssembly, running in a tab. No install, no account." />
+    <meta property="og:title" content="WebFPV, free FPV drone racing simulator in your browser" />
+    <meta property="og:description" content="Free FPV drone racing simulator. Real Betaflight 4.5.1 compiled to WebAssembly. No install, no account. Fly with a radio or game controller." />
     <meta property="og:image" content="https://webfpv.org/og.png" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="The race field in the WebFPV simulator: a lit start gate on mown grass, a five inch quad parked beside it, flags and track markers running away under a low sun." />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="WebFPV, a browser FPV racing simulator" />
-    <meta name="twitter:description" content="Build the quad, draw the track, fly the line. Betaflight compiled to WebAssembly, running in a tab. No install, no account." />
+    <meta name="twitter:title" content="WebFPV, free FPV drone racing simulator in your browser" />
+    <meta name="twitter:description" content="Free FPV drone racing simulator. Real Betaflight 4.5.1 compiled to WebAssembly. No install, no account." />
     <meta name="twitter:image" content="https://webfpv.org/og.png" />
     <meta name="twitter:image:alt" content="The race field in the WebFPV simulator: a lit start gate on mown grass, a five inch quad parked beside it, flags and track markers running away under a low sun." />
 
@@ -83,6 +83,45 @@
     <link rel="icon" href="icon.svg" type="image/svg+xml" />
     <link rel="icon" href="favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "WebFPV",
+  "applicationCategory": "GameApplication",
+  "operatingSystem": "Web browser",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "description": "Free FPV drone racing simulator running Betaflight 4.5.1 flight controller code compiled to WebAssembly. Fly in your browser with no install or account required.",
+  "url": "https://webfpv.org/",
+  "screenshot": "https://webfpv.org/og.png",
+  "softwareVersion": "4.5.1",
+  "keywords": "FPV, drone simulator, racing simulator, Betaflight, WebAssembly, browser game",
+  "applicationSubCategory": "Flight Simulator",
+  "featureList": [
+    "Real Betaflight 4.5.1 flight controller",
+    "Visual track builder",
+    "Freestyle flying in city environment",
+    "5 inch and 65mm whoop aircraft",
+    "Works with radio transmitter or game controller",
+    "No installation required",
+    "No account required"
+  ],
+  "browserRequirements": "Requires WebGL and WebAssembly support",
+  "author": {
+    "@type": "Person",
+    "name": "Mat Harvey"
+  },
+  "softwareHelp": {
+    "@type": "WebPage",
+    "url": "https://webfpv.org/wiki/"
+  }
+}
+    </script>
 
     <style>
       :root {
@@ -622,6 +661,15 @@
       }
       h1.wordmark .fpv { color: var(--sakura); }
 
+      .tagline {
+        margin: 8px 0 0;
+        font-size: clamp(15px, 2vw, 18px);
+        font-weight: 500;
+        color: rgba(243, 234, 212, 0.78);
+        letter-spacing: 0.01em;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+      }
+
       h2 {
         margin: 0 0 20px;
         font-size: clamp(30px, 4.4vw, 60px);
@@ -1046,6 +1094,52 @@
         .why-copy { width: 100%; }
         #why { padding-top: clamp(76px, 14vh, 130px); }
         #why .specs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+
+      /* ------------------------------------------------------------------
+         FAQ
+         ------------------------------------------------------------------ */
+
+      #faq {
+        position: relative;
+        z-index: 10;
+        padding: clamp(50px, 6vh, 72px) var(--gutter);
+      }
+      .faq-wrap {
+        max-width: 760px;
+        margin: 0 auto;
+      }
+      .faq-title {
+        margin: 0 0 32px;
+        font-size: clamp(24px, 3.2vw, 36px);
+        font-weight: 750;
+        letter-spacing: 0.005em;
+        color: var(--cream);
+      }
+      .faq-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        margin: 0;
+      }
+      .faq-item {
+        padding: 18px 20px;
+        background: rgba(16, 22, 17, 0.55);
+        border: 1px solid var(--line);
+        border-radius: 4px;
+      }
+      .faq-item dt {
+        margin: 0 0 8px;
+        font-size: 16px;
+        font-weight: 650;
+        letter-spacing: 0.01em;
+        color: var(--cream);
+      }
+      .faq-item dd {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.6;
+        color: rgba(243, 234, 212, 0.85);
       }
 
       /* ------------------------------------------------------------------
@@ -2042,6 +2136,7 @@
           <div class="copy" data-copy="assemble">
             <p class="eyebrow">01 &#183; The machine</p>
             <h1 class="wordmark">WEB<span class="fpv">FPV</span></h1>
+            <p class="tagline">Free FPV drone racing simulator in your browser</p>
             <div class="rule"></div>
             <p class="lede">
               A five inch racing quad, built in front of you. Frame, stack,
@@ -2233,6 +2328,83 @@
         <div><dt>Controller</dt><dd>Radio <span class="unit">or game controller</span></dd></div>
       </dl>
     </section>
+
+    <!-- FAQ -->
+    <section id="faq">
+      <div class="faq-wrap">
+        <h2 class="faq-title">Questions</h2>
+        <dl class="faq-list">
+          <div class="faq-item">
+            <dt>Do I need to install anything?</dt>
+            <dd>No. WebFPV runs entirely in your web browser. No download, no install, no account.</dd>
+          </div>
+          <div class="faq-item">
+            <dt>What controller do I need?</dt>
+            <dd>A radio transmitter or a game controller. Touch controls work too, but a radio gives you the real sticks.</dd>
+          </div>
+          <div class="faq-item">
+            <dt>Is it really running Betaflight?</dt>
+            <dd>Yes. Betaflight 4.5.1 is compiled from source to WebAssembly. The rates, PID controller, filters and mixer are the real code running at 1 kHz.</dd>
+          </div>
+          <div class="faq-item">
+            <dt>Does it work on my phone or Chromebook?</dt>
+            <dd>Yes. Any device with a web browser that supports WebGL and WebAssembly will run it.</dd>
+          </div>
+          <div class="faq-item">
+            <dt>Is it free?</dt>
+            <dd>Yes, and open source under GPLv3. The code is on GitHub.</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Do I need to install anything?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. WebFPV runs entirely in your web browser. No download, no install, no account."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What controller do I need?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A radio transmitter or a game controller. Touch controls work too, but a radio gives you the real sticks."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is it really running Betaflight?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Betaflight 4.5.1 is compiled from source to WebAssembly. The rates, PID controller, filters and mixer are the real code running at 1 kHz."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does it work on my phone or Chromebook?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Any device with a web browser that supports WebGL and WebAssembly will run it."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is it free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, and open source under GPLv3. The code is on GitHub."
+      }
+    }
+  ]
+}
+    </script>
 
     <!-- The close -->
     <section id="close">

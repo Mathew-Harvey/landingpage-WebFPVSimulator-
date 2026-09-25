@@ -12,6 +12,9 @@
     "serve": "node scripts/serve.js",
     "lint:wiki": "node scripts/wiki-lint.js",
     "lint:page": "node scripts/page-lint.js",
-    "lint:nouns": "node scripts/noun-lint.js"
+    "lint:nouns": "node scripts/noun-lint.js",
+    "build:wiki": "node scripts/generate-wiki-pages.js",
+    "build:sitemap": "node scripts/generate-sitemap.js",
+    "build": "npm run build:wiki && npm run build:sitemap"
   }
 }
