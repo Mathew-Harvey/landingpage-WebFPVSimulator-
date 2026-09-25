@@ -1564,6 +1564,56 @@
       .foot-links { display: flex; flex-wrap: wrap; gap: 18px; }
 
       /* ------------------------------------------------------------------
+         Supporters section.
+         ------------------------------------------------------------------ */
+
+      .supporters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 14px clamp(24px, 4vw, 46px);
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--line-2);
+      }
+      .supporters-label {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 10.5px;
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: rgba(157, 179, 200, 0.72);
+      }
+      .supporters-label::after {
+        content: "";
+        width: 26px;
+        height: 1px;
+        flex: 0 0 auto;
+        background: var(--line);
+      }
+      .supporters-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 18px;
+        font-size: 11.5px;
+        line-height: 1.5;
+      }
+      .supporters-empty {
+        color: rgba(157, 179, 200, 0.62);
+      }
+      .supporters-empty a {
+        color: rgba(243, 234, 212, 0.78);
+        text-decoration: none;
+      }
+      .supporters-empty a:hover {
+        color: var(--sakura);
+      }
+      .supporter-name {
+        color: rgba(243, 234, 212, 0.78);
+      }
+
+      /* ------------------------------------------------------------------
          Also by Mat Harvey. The other three sites, in their own marks.
          ------------------------------------------------------------------ */
 
@@ -2508,6 +2558,13 @@
         </div>
       </div>
 
+      <div class="supporters">
+        <div class="supporters-label">Supporters</div>
+        <div class="supporters-list" id="supporters-list">
+          <span class="supporters-empty">No supporters listed yet. <a href="https://www.patreon.com/cw/webfpv" target="_blank" rel="noopener" id="support-link-empty">Be the first.</a></span>
+        </div>
+      </div>
+
       <div class="foot-legal">
         <span>GPLv3 &#183; Betaflight 4.5.1 compiled to WebAssembly</span>
         <div class="foot-links" id="foot">
@@ -2518,10 +2575,7 @@
           <a href="https://github.com/Mathew-Harvey/WebFPVSimulator-LeaderBoard" rel="noreferrer">Leaderboard repo</a>
           <a href="https://betaflight.com" rel="noreferrer">Betaflight</a>
           <a href="https://www.gnu.org/licenses/gpl-3.0.html" rel="noreferrer">GPLv3</a>
-          <a class="patreon" data-patreon href="https://www.patreon.com/c/webfpv" target="_blank" rel="noopener noreferrer" aria-label="Support WebFPV on Patreon. Keep the lights on, $5. Hosting + runway, $12. Build the sim, $25. USD, plus GST on join." title="Support WebFPV on Patreon. Keep the lights on, $5. Hosting + runway, $12. Build the sim, $25. USD, plus GST on join.">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#FF424D" d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003"/></svg>
-            <span>Patreon</span>
-          </a>
+          <a href="https://www.patreon.com/cw/webfpv" target="_blank" rel="noopener" id="support-link">Support</a>
         </div>
       </div>
     </footer>
@@ -2729,6 +2783,78 @@
          */
         window.addEventListener('webfpv:ready', show);
         window.setTimeout(show, 13000);
+      })();
+    </script>
+
+    <script type="module">
+      import { trackSupportClick } from './src/stats.js';
+
+      /*
+       * Load and render supporters from supporters.json. Render names with
+       * textContent only (never innerHTML), trim and cap length, and fail
+       * quietly if the JSON is missing or malformed.
+       */
+      (function loadSupporters() {
+        const list = document.getElementById('supporters-list');
+        if (!list) {
+          return;
+        }
+
+        const MAX_NAME_LENGTH = 50;
+
+        fetch('supporters.json')
+          .then((response) => {
+            if (!response.ok) {
+              return;
+            }
+            return response.json();
+          })
+          .then((supporters) => {
+            if (!Array.isArray(supporters) || supporters.length === 0) {
+              return;
+            }
+
+            list.innerHTML = '';
+            
+            supporters.forEach((supporter) => {
+              if (!supporter || typeof supporter.name !== 'string') {
+                return;
+              }
+
+              const name = supporter.name.trim();
+              if (!name) {
+                return;
+              }
+
+              const span = document.createElement('span');
+              span.className = 'supporter-name';
+              span.textContent = name.length > MAX_NAME_LENGTH
+                ? name.slice(0, MAX_NAME_LENGTH) + '...'
+                : name;
+              
+              list.appendChild(span);
+            });
+          })
+          .catch(() => {
+            /* Fail quietly. Empty state stays visible. */
+          });
+      })();
+
+      /*
+       * Add click tracking to Support links. Uses sendBeacon with fetch
+       * keepalive fallback so it never blocks navigation.
+       */
+      (function bindSupportLinks() {
+        const links = [
+          document.getElementById('support-link'),
+          document.getElementById('support-link-empty'),
+        ];
+
+        links.forEach((link) => {
+          if (link) {
+            link.addEventListener('click', trackSupportClick);
+          }
+        });
       })();
     </script>
 
