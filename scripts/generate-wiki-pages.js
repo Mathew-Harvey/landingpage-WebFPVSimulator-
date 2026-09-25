@@ -196,7 +196,7 @@ ${sectionsHtml}
     </article>
     <div class="wiki-cta">
       <p><strong>This article is part of the interactive FPV wiki.</strong></p>
-      <p><a href="/wiki/?view=${article.id}">View in the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for live figures, related articles, and full navigation.</p>
     </div>
   </body>
 </html>
@@ -348,7 +348,7 @@ ${sectionsHtml}
     </article>
     <div class="wiki-cta">
       <p><strong>This page is part of the interactive FPV wiki.</strong></p>
-      <p><a href="/wiki/?view=${page.id}">View in the interactive wiki</a> for full navigation and related articles.</p>
+      <p><a href="/wiki/">Open the interactive wiki</a> for full navigation and related articles.</p>
     </div>
   </body>
 </html>

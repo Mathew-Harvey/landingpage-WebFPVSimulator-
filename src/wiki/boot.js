@@ -66,21 +66,7 @@ function redirectHashToStatic() {
   return false;
 }
 
-/*
- * Check for ?view=<id> parameter to open a specific article in the
- * interactive wiki. This allows static page CTAs to deep-link to articles
- * without triggering redirectHashToStatic.
- */
-function openFromViewParam() {
-  const params = new URLSearchParams(window.location.search);
-  const viewId = params.get('view');
-  if (viewId && wiki.open(viewId, { silentHash: false })) {
-    return true;
-  }
-  return false;
-}
-
-/* Check for hash redirect on initial load, then view param, then default */
+/* Check for hash redirect on initial load */
 if (!redirectHashToStatic()) {
   /*
    * Listener first. It used to be registered after the initial openDefault(),
@@ -92,9 +78,5 @@ if (!redirectHashToStatic()) {
       wiki.openDefault();
     }
   });
-  
-  /* Open from ?view= parameter if present, otherwise openDefault */
-  if (!openFromViewParam()) {
-    wiki.openDefault();
-  }
+  wiki.openDefault();
 }
