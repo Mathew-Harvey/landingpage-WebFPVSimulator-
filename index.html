@@ -675,6 +675,11 @@
         text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
       }
 
+      @media (min-width: 901px) and (max-height: 760px) {
+        .wordmark { font-size: clamp(48px, 7vw, 96px); }
+        .copy[data-copy="assemble"] .rule { margin: 14px 0; }
+      }
+
       h2 {
         margin: 0 0 20px;
         font-size: clamp(30px, 4.4vw, 60px);
@@ -1935,7 +1940,7 @@
     <div id="grain"></div>
 
     <header id="topbar">
-      <a class="mark" href="#top">WEB<span class="fpv">FPV</span></a>
+      <a class="mark" href="#top" aria-label="WebFPV, back to top">WEB<span class="fpv">FPV</span></a>
       <nav class="nav" id="nav">
         <a class="is-wiki" href="wiki/">Wiki</a>
         <a href="notes/">Patch notes</a>
@@ -2416,7 +2421,7 @@
     <section id="close">
       <div class="close-copy">
         <p class="eyebrow eyebrow-lit" style="justify-content: center">07 &#183; The point</p>
-        <!-- h2, not h1. The wordmark at the top of the page is the h1, and a
+        <!-- h2, not h1. The SEO line under the hero wordmark is the h1, and a
              document with two of them has no single heading a crawler or a
              screen reader can name it by. The type is unchanged: .shout is
              what sizes this, not the tag. -->
