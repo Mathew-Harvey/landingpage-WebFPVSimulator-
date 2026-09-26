@@ -2457,7 +2457,9 @@
       THE STICKERS ON THE GLASS. See the stylesheet's block on #slaps. Each
       element says which sticker it is, where it goes, which stretch of the
       film it is there for and, for the one that opens, how long it waits
-      after the boot. main.js fills them from src/stickers-data.js, which
+      after the boot. A stretch from the town on is written by act, "room"
+      or "tail+0.78", so an act inserted before it moves it with the act;
+      see whenOf in main.js. main.js fills them from src/stickers-data.js, which
       scripts/stickers.js generates from the slap pack at stickers/, and
       toggles them. Every one is the actual sticker, and every one is a link
       to that page.
@@ -2482,14 +2484,14 @@
       <!-- Act three, the lap, flown from inside a pair of goggles, which is
            what the sticker is. Top left, under the wordmark and above the
            act's copy, because the OSD owns both bottom corners here. -->
-      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="tl" data-on="2.02" data-off="3" data-slap="goggle_view" style="--r: -6deg; --w: 190px"></a>
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="tl" data-on="2.02" data-off="city" data-slap="goggle_view" style="--r: -6deg; --w: 190px"></a>
       <!-- Act four, the city. The sticker says leave the track, which is
            what the act says. -->
-      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="r" data-on="3" data-off="4" data-slap="railway_town" style="--r: 5deg; --w: 214px"></a>
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="r" data-on="city" data-off="city+1" data-slap="railway_town" style="--r: 5deg; --w: 214px"></a>
       <!-- Act five, the room. It carries no number the copy could disagree
            with, which is why the chibi whoop is not the one used here: that
            one says 16 g on it and the copy beside it says twenty three. -->
-      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="r" data-on="4" data-off="5.02" data-slap="bubble_whoop" style="--r: -8deg; --w: 172px"></a>
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="r" data-on="room" data-off="tail+0.02" data-slap="bubble_whoop" style="--r: -8deg; --w: 172px"></a>
       <!-- The reason, and the last two. A wakaba is the mark a new driver
            wears in Japan and the headline beside it is about getting to the
            first lap; an ema is the plaque you write a wish on. The reason's
@@ -2505,8 +2507,8 @@
            a narrow window, and the page's one call to action is the last
            thing that should be fought with. The door to the pack at the
            close is the footer's own link. -->
-      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="l" data-on="5" data-off="5.78" data-slap="wakaba" style="--r: -6deg; --w: 98px"></a>
-      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="tr" data-on="5.04" data-off="5.78" data-slap="ema_plaque" style="--r: 4deg; --w: 160px"></a>
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="l" data-on="tail" data-off="tail+0.78" data-slap="wakaba" style="--r: -6deg; --w: 98px"></a>
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="tr" data-on="tail+0.04" data-off="tail+0.78" data-slap="ema_plaque" style="--r: 4deg; --w: 160px"></a>
     </div>
 
     <main id="flow">

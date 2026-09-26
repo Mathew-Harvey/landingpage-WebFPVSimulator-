@@ -288,12 +288,27 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
   check('src/stickers-data.js is current', fresh, why);
 
   const anchors = [...index.matchAll(/<a class="slap"[^>]*>/g)].map((m) => m[0]);
+  /* A window is a number, or an act's name and a share of an act, which is
+   * how main.js reads it (whenOf): the acts in markup order, then the tail. */
+  const actAt = Object.fromEntries([...index.matchAll(/data-act="([a-z]+)"/g)].map((m, i) => [m[1], i]));
+  actAt.tail = Object.keys(actAt).length;
+  const when = (text) => {
+    const m = /^\s*([a-z]+)\s*(?:([+-])\s*([\d.]+))?\s*$/.exec(text || '');
+    if (m) {
+      if (!(m[1] in actAt)) {
+        return Number.NaN;
+      }
+      const k = m[3] ? Number.parseFloat(m[3]) : 0;
+      return actAt[m[1]] + (m[2] === '-' ? -k : k);
+    }
+    return Number.parseFloat(text);
+  };
   const names = [...pack.matchAll(/"name":\s*"([^"]+)"/g)].map((m) => m[1].toLowerCase().replace(/[^a-z0-9]+/g, '_'));
   const bad = [];
   for (const a of anchors) {
     const name = /data-slap="([^"]+)"/.exec(a);
-    const on = Number.parseFloat((/data-on="([^"]+)"/.exec(a) || [])[1]);
-    const off = Number.parseFloat((/data-off="([^"]+)"/.exec(a) || [])[1]);
+    const on = when((/data-on="([^"]+)"/.exec(a) || [])[1]);
+    const off = when((/data-off="([^"]+)"/.exec(a) || [])[1]);
     const spot = /data-spot="(tl|tr|r|br|l)"/.test(a);
     if (!name || !names.includes(name[1])) {
       bad.push(`${name ? name[1] : 'unnamed'}: not in the pack`);
@@ -319,8 +334,8 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
     const win = anchors.map((t) => ({
       name: (/data-slap="([^"]+)"/.exec(t) || [, '?'])[1],
       spot: (/data-spot="([^"]+)"/.exec(t) || [, '?'])[1],
-      on: Number.parseFloat((/data-on="([^"]+)"/.exec(t) || [])[1]),
-      off: Number.parseFloat((/data-off="([^"]+)"/.exec(t) || [])[1]),
+      on: when((/data-on="([^"]+)"/.exec(t) || [])[1]),
+      off: when((/data-off="([^"]+)"/.exec(t) || [])[1]),
     }));
     /* Each spot on a wide screen, then the three a phone folds together.
      * FOLDED is the media query's own list: if that changes, so does this. */

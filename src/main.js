@@ -694,7 +694,7 @@ if (DEBUG) {
      * meant to debug is a special kind of unhelpful. */
     line: () => cityLine,
     cityAt,
-    cityRoam: (t) => ramp(t, 3.0, 3.97, 0, 0.13),
+    cityRoam: (t) => ramp(t, A.city, A.city + 0.97, 0, 0.13),
     cityWhere: (roam) => {
       if (!cityLineIn()) {
         return null;
@@ -1129,6 +1129,34 @@ const el = {
 
 const ACTS = [...document.querySelectorAll('[data-act]')];
 /*
+ * WHERE EACH ACT BEGINS ON T, BY NAME.
+ *
+ * T is an act's place in the markup plus the way through it, so an act
+ * begins at its index, and everything timed inside an act from the town on
+ * is written from its own beginning: `A.room + 0.2` is a fifth of the way
+ * into the room, whatever comes before it. So an act inserted in the middle
+ * moves every number after it by moving these, and nothing else. `tail` is
+ * where the last stretch begins, the reason section, which is not an act.
+ *
+ * The first three acts are written as plain numbers and stay that way: the
+ * studio, the plan and the lap are the film's opening and nothing comes
+ * before them. The chapter menu between the first two is not an act, so it
+ * moves none of them. See timeline().
+ */
+const A = Object.fromEntries(ACTS.map((node, i) => [node.dataset.act, i]));
+A.tail = ACTS.length;
+/* An act's name, or a name and a share of an act: "room", "tail+0.78". The
+ * stickers' windows are written this way on their anchors, and a plain
+ * number is still a plain number. */
+function whenOf(text) {
+  const m = /^\s*([a-z]+)\s*(?:([+-])\s*([\d.]+))?\s*$/.exec(text || '');
+  if (m && m[1] in A) {
+    const k = m[3] ? Number.parseFloat(m[3]) : 0;
+    return A[m[1]] + (m[2] === '-' ? -k : k);
+  }
+  return Number.parseFloat(text) || 0;
+}
+/*
  * Where the last stretch of the timeline begins. NOT the close: the reason
  * section sits above it, and if T only started moving at the close then the
  * camera held one still frame for the whole of the reading. It is the same
@@ -1170,8 +1198,8 @@ const SLAPS = [...document.querySelectorAll('.slap')]
   })
   .map((node) => ({
     node,
-    on: Number.parseFloat(node.dataset.on) || 0,
-    off: Number.parseFloat(node.dataset.off) || 0,
+    on: whenOf(node.dataset.on),
+    off: whenOf(node.dataset.off),
     wait: Number.parseFloat(node.dataset.wait) || 0,
   }));
 
@@ -2086,13 +2114,13 @@ const LENS = [
   { at: 1.34, fov: 46 },
   { at: 1.98, fov: 46 },
   { at: 2.24, fov: 104 },
-  { at: 3.80, fov: 104 },
-  { at: 3.99, fov: CLOSE_FOV },
-  { at: 4.01, fov: 66 },
-  { at: 4.20, fov: 66 },
-  { at: 4.33, fov: WHOOP_FOV },
-  { at: 4.90, fov: WHOOP_FOV },
-  { at: 5.16, fov: ROOM_CLOSE_FOV },
+  { at: A.city + 0.80, fov: 104 },
+  { at: A.city + 0.99, fov: CLOSE_FOV },
+  { at: A.room + 0.01, fov: 66 },
+  { at: A.room + 0.20, fov: 66 },
+  { at: A.room + 0.33, fov: WHOOP_FOV },
+  { at: A.room + 0.90, fov: WHOOP_FOV },
+  { at: A.tail + 0.16, fov: ROOM_CLOSE_FOV },
 ];
 function lensAt(t) {
   for (let i = 1; i < LENS.length; i += 1) {
@@ -2344,7 +2372,7 @@ function frame(ms) {
    * haze has all of it, so that was thirty draw calls of nothing for ten
    * screens of scroll.
    */
-  city.setShown(T > 2.90 && T < 4.02);
+  city.setShown(T > A.city - 0.10 && T < A.room + 0.02);
   /*
    * The town's own clock: the train, the crossing sequence that lowers the
    * barriers for it, and the blossom coming off its trees. Only while it is
@@ -2359,7 +2387,7 @@ function frame(ms) {
    * colour. It opens up across the dash between the two, which is the one
    * stretch of the page where nothing is close enough to notice.
    */
-  const reach = REDUCED ? 0 : ease(T, 3.02, 3.34);
+  const reach = REDUCED ? 0 : ease(T, A.city + 0.02, A.city + 0.34);
   stage.setRegime(scale, world, reach);
   /*
    * INDOORS, and the switch is a step rather than a fade because it happens
@@ -2371,7 +2399,7 @@ function frame(ms) {
    * long crossfade would be worse than useless: there is no frame in which a
    * sun and a pair of shed bulbs are both the right answer.
    */
-  const indoor = REDUCED ? 0 : clamp01((T - 3.988) / 0.016);
+  const indoor = REDUCED ? 0 : clamp01((T - (A.room - 0.012)) / 0.016);
   stage.setIndoor(indoor, ROOM_AIR);
   course.setFog(stage.scene.fog);
   /* ------------------------------------------------------------- aircraft */
@@ -2410,9 +2438,9 @@ function frame(ms) {
    */
   /* Already moving when the haze clears. There is no ease in: the aircraft
    * is not starting, the page has cut to it mid flight. */
-  const roaming = ramp(T, 3.0, 3.97, 0, 0.13);
+  const roaming = ramp(T, A.city, A.city + 0.97, 0, 0.13);
   const cityU = cityAt(roaming);
-  const inCity = T >= 2.995 && T < 4.0;
+  const inCity = T >= A.city - 0.005 && T < A.city + 1;
 
   /*
    * THE ROOM ACT, and it opens standing still, which is the one thing none
@@ -2430,11 +2458,11 @@ function frame(ms) {
    *   running  progress through the lap, which the line's own speed profile
    *            then turns into a position: see roomAt.
    */
-  const lamps = REDUCED ? 0 : ease(T, 4.004, 4.085);
-  const lift = ease(T, 4.20, 4.27);
-  const running = ramp(T, 4.27, 4.95, 0.05, 0.08);
+  const lamps = REDUCED ? 0 : ease(T, A.room + 0.004, A.room + 0.085);
+  const lift = ease(T, A.room + 0.20, A.room + 0.27);
+  const running = ramp(T, A.room + 0.27, A.room + 0.95, 0.05, 0.08);
   const roomU = roomAt(running);
-  const inRoom = T >= 4.0 && T < 5.0;
+  const inRoom = T >= A.room && T < A.room + 1;
 
   /*
    * Which way it is pointing. Live across all THREE flying acts, and driven
@@ -2450,7 +2478,7 @@ function frame(ms) {
    * behind a full screen transition anyway.
    */
   const heading = inRoom ? running : inCity ? roaming : flying;
-  const flip = updateHeading(heading, dt, T >= 2.0 && T < 5.0);
+  const flip = updateHeading(heading, dt, T >= 2.0 && T < A.tail);
   /* How far outside the aircraft the camera is: nothing at either heading,
    * everything at the half way point of a turn. */
   const turnBank = turnBankNow(flip);
@@ -2530,7 +2558,7 @@ function frame(ms) {
     eul.set(-0.13, Math.atan2(vTmp.x, vTmp.z) + Math.PI + Math.sin(now * 0.42) * 0.34, 0.05);
     quat2.setFromEuler(eul);
     droneQuat.slerp(quat2, Math.min(1, dt * 2.2));
-  } else if (T < 3.0) {
+  } else if (T < A.city) {
     /* The union, then the lap. The quad leaves the camera's hand, lands on
      * the line, and the camera follows it down into the airframe. */
     flightPose(s, pos2, quat2, now * 2.1, flip, turnBank);
@@ -2568,7 +2596,7 @@ function frame(ms) {
      * the way to the roofs of the town. That unbroken stretch is the single
      * longest thing the film does and it is the point of it.
      */
-  } else if (T < 4.0) {
+  } else if (T < A.city + 1) {
     /*
      * THE FREESTYLE ACT. Off the field, over the wood, and down into the town.
      *
@@ -2616,19 +2644,19 @@ function frame(ms) {
      * frame is that it is a place somebody flies, and a place needs to be
      * near enough to have streets in it.
      */
-    const out = ease(T, 3.70, 3.94);
+    const out = ease(T, A.city + 0.70, A.city + 0.94);
     if (out > 0) {
       poseChase(dronePos, droneQuat, lerp(3.1, 44, out), lerp(0.72, 19, out), pos2, quat2);
       camPos.lerp(pos2, out);
       camQuat.slerp(quat2, out);
     }
-    const wide = ease(T, 3.88, 4.0);
+    const wide = ease(T, A.city + 0.88, A.city + 1);
     if (wide > 0) {
       poseCity(wide * 0.62, pos2, quat2);
       camPos.lerp(pos2, wide);
       camQuat.slerp(quat2, wide);
     }
-  } else if (T < 5.0) {
+  } else if (T < A.room + 1) {
     /*
      * THE ROOM ACT. A shed, one warm pair of bulbs, and 43 m of RaceGOW lap
      * folded into three metres by two.
@@ -2641,7 +2669,7 @@ function frame(ms) {
      * and about a track being a specification rather than a place, so it
      * opens on something standing still and lets the room be read.
      */
-    poseRoomIn(ease(T, 4.085, 4.185), camPos, camQuat);
+    poseRoomIn(ease(T, A.room + 0.085, A.room + 0.185), camPos, camQuat);
 
     /*
      * On the pad, then off it. The aircraft sits exactly where room.js put
@@ -2666,7 +2694,7 @@ function frame(ms) {
      * thirty metre gap to cross: the camera is already a metre from the
      * aircraft when it leaves the pad. */
     poseWhoopFPV(whoopPos, whoopQuat, pos2, quat2);
-    const toFpv = ease(T, 4.23, 4.32);
+    const toFpv = ease(T, A.room + 0.23, A.room + 0.32);
     camPos.lerp(pos2, toFpv);
     camQuat.slerp(quat2, toFpv);
 
@@ -2681,7 +2709,7 @@ function frame(ms) {
      * is where a RaceGOW pilot's aircraft is at the end of a run: the lap
      * closes on the gate it opened on.
      */
-    const out = ease(T, 4.88, 4.97);
+    const out = ease(T, A.room + 0.88, A.room + 0.97);
     if (out > 0) {
       poseChase(whoopPos, whoopQuat,
         lerp(0.34, 1.4, out), lerp(0.06, 0.55, out), pos2, quat2, 0.5);
@@ -2698,7 +2726,7 @@ function frame(ms) {
      * Landing on poseRoomClose(0) here means the closing act simply carries
      * the same crane on, and there is no blend at the boundary at all.
      */
-    const wide = ease(T, 4.94, 5.0);
+    const wide = ease(T, A.room + 0.94, A.room + 1);
     if (wide > 0) {
       poseRoomClose(0, pos2, quat2);
       camPos.lerp(pos2, wide);
@@ -2714,7 +2742,7 @@ function frame(ms) {
      * banked, and setting a hover pose directly levels the aircraft and
      * spins it on the exact frame the closing act begins.
      */
-    const parkK = ease(T, 5.0, 5.14);
+    const parkK = ease(T, A.tail, A.tail + 0.14);
     roomPose(1, pos2, quat2, now * 3.1);
     parked.set(ROOM_HOVER.x, ROOM_HOVER.y + Math.sin(now * 1.3) * 0.012, ROOM_HOVER.z);
     whoopPos.copy(pos2).lerp(parked, parkK);
@@ -2723,7 +2751,7 @@ function frame(ms) {
     whoopQuat.copy(quat2).slerp(whoopQuat, parkK);
 
     /* No blend. The room act's last frame IS this crane's first one. */
-    poseRoomClose(clamp01(T - 5), camPos, camQuat);
+    poseRoomClose(clamp01(T - A.tail), camPos, camQuat);
   }
 
   droneRig.position.copy(dronePos);
@@ -2740,7 +2768,7 @@ function frame(ms) {
    * machine standing next to a 0.082 m one, and it would settle that argument
    * the wrong way round in one frame.
    */
-  const shed = T >= 3.995;
+  const shed = T >= A.room - 0.005;
   droneRig.visible = !shed;
   /* The field and its sky go with the daylight. The sky dome is a ten metre
    * shell centred on the lens, so leaving it on would put a painted horizon
@@ -2779,16 +2807,16 @@ function frame(ms) {
    * sounds like an angry wasp and why the blur discs are on for all of it.
    */
   let whoopThrottle = 0;
-  if (T >= 4.09) {
-    whoopThrottle = lerp(0.18, 0.62, ease(T, 4.09, 4.24));
+  if (T >= A.room + 0.09) {
+    whoopThrottle = lerp(0.18, 0.62, ease(T, A.room + 0.09, A.room + 0.24));
   }
-  if (T >= 4.24) {
+  if (T >= A.room + 0.24) {
     whoopThrottle = 0.58;
   }
-  if (T >= 5.0) {
+  if (T >= A.tail) {
     whoopThrottle = 0.44;
   }
-  whoop.setArmed(T >= 4.06);
+  whoop.setArmed(T >= A.room + 0.06);
   whoop.spin(dt, REDUCED ? 0 : whoopThrottle);
 
   /*
@@ -2830,7 +2858,7 @@ function frame(ms) {
   } else if (T < 1.98) {
     /* Nearly off over the plan. A diagram should not have weather. */
     petals.update(dt, camPos, 0.10, 9, 0.02);
-  } else if (T < 4.0) {
+  } else if (T < A.room) {
     /* A tight box in the flight, so most of them are NEAR the lens and
      * streak past it. Spread over 44 m they were all in the distance,
      * which is a still field rather than a fast one.
@@ -2838,7 +2866,7 @@ function frame(ms) {
      * The freestyle act keeps it, and gets a few more: the town has cherry
      * in it, so blossom past the lens in a shopping street is the district's
      * own weather rather than a decoration carried over from the field. */
-    petals.update(dt, camPos, T < 3.0 ? 0.6 : 0.75, 14, 0.022);
+    petals.update(dt, camPos, T < A.city ? 0.6 : 0.75, 14, 0.022);
   } else {
     /*
      * NO WEATHER INDOORS, and it is the cheapest thing on the page that says
@@ -2864,10 +2892,10 @@ function frame(ms) {
   } else if (T < 2.0) {
     stage.aimLight(vTmp.set(0, 0, -2), 46);
     stage.aimBlob(dronePos, 0, 1);
-  } else if (T < 3.88) {
+  } else if (T < A.city + 0.88) {
     stage.aimLight(dronePos, 16);
     stage.aimBlob(dronePos, world, 1.05);
-  } else if (T < 4.0) {
+  } else if (T < A.room) {
     /*
      * At the end of the town act the subject is the DISTRICT, so the sun is
      * aimed at the district. Aimed at the quad instead, the shadow frustum
@@ -2968,7 +2996,7 @@ function frame(ms) {
     el.osdVolts.textContent = `${volts.toFixed(1)} V`;
     el.osdPack.textContent = '6S pack \u00b7 Acro';
     el.osdBatt.style.width = `${Math.round(lerp(34, 9, roaming))}%`;
-  } else if (inWorld && T < 4.0) {
+  } else if (inWorld && T < A.room) {
     let next = GATE_LAP.length - 1;
     for (let i = 0; i < GATE_LAP.length; i += 1) {
       if (GATE_LAP[i] >= sRaw - 0.004) {
@@ -2991,7 +3019,7 @@ function frame(ms) {
     el.osdVolts.textContent = `${volts.toFixed(1)} V`;
     el.osdPack.textContent = '6S pack \u00b7 Acro';
     el.osdBatt.style.width = `${Math.round(lerp(96, 34, flying))}%`;
-  } else if (T >= 5.0) {
+  } else if (T >= A.tail) {
     /* The close, and it is in the shed now. The race track is three hundred
      * metres away with its lights off and nothing on it should still be lit
      * for a run that finished three acts ago. The lines stay hidden, because
@@ -3051,14 +3079,12 @@ function frame(ms) {
     /* ...and it stands down while a hold has the transition closed, because
      * the goggles are not showing anything yet. */
     el.osd.classList.toggle('on', !REDUCED && !holding
-      && ((T > 2.12 && T < 3.74) || (T > 4.24 && T < 4.90)));
+      && ((T > 2.12 && T < A.city + 0.74) || (T > A.room + 0.24 && T < A.room + 0.90)));
     el.cue.style.opacity = T > 0.35 ? '0' : '1';
     if (el.progress) {
-      /* Six, not five: the acts run 0 to 5 and the tail is the sixth. It is
-       * the one number on the page that has to be counted by hand, because
-       * the bar is about the whole document and the document's last stretch
-       * is not an act. */
-      el.progress.style.width = `${(clamp01(T / 6) * 100).toFixed(2)}%`;
+      /* One more than the acts: the tail is the last stretch and it is not
+       * an act, because the bar is about the whole document. */
+      el.progress.style.width = `${(clamp01(T / (A.tail + 1)) * 100).toFixed(2)}%`;
     }
     el.veil.style.opacity = String(lerp(0.72, 0.5, world));
     /*
@@ -3113,11 +3139,11 @@ function frame(ms) {
     setCopy('assemble', T < 0.90);
     setCopy('build', T > 1.06 && T < 1.90);
     setCopy('fly', T > 2.0 && T < 2.2);
-    setCopy('city', T > 3.02 && T < 3.16);
+    setCopy('city', T > A.city + 0.02 && T < A.city + 0.16);
     /* Later into its act than the others, because the room act opens on a
      * dark shed and a headline over black is a headline nobody reads as part
      * of a film. By 4.06 the bulbs are up and there is something behind it. */
-    setCopy('room', T > 4.06 && T < 4.20);
+    setCopy('room', T > A.room + 0.06 && T < A.room + 0.20);
 
     const row = inChooser ? ROW_CHOOSER
       : T >= ACTS.length ? ROW_TAIL
@@ -3183,8 +3209,8 @@ function frame(ms) {
    * still. So the two transitions are drawn here as well.
    */
   {
-    const townWait = !REDUCED && PIN === null && T > 2.965 && T < 4.0 && !loader.done('town');
-    const shedWait = !REDUCED && PIN === null && T > 3.99 && !loader.done('shed');
+    const townWait = !REDUCED && PIN === null && T > A.city - 0.035 && T < A.room && !loader.done('town');
+    const shedWait = !REDUCED && PIN === null && T > A.room - 0.01 && !loader.done('shed');
     holdTown = townWait ? 1 : Math.max(0, holdTown - dt / HOLD_OPEN);
     holdShed = shedWait ? 1 : Math.max(0, holdShed - dt / HOLD_OPEN);
     /* The OSD is decided in the block that runs when T moves, and a hold can
@@ -3200,9 +3226,9 @@ function frame(ms) {
       holdFor = -1;
     }
 
-    const flare = 1 - clamp01(Math.abs(T - 3.0) / 0.085);
+    const flare = 1 - clamp01(Math.abs(T - A.city) / 0.085);
     const dissolve = Math.max(flare * flare * (3 - 2 * flare), holdTown);
-    const dark = 1 - clamp01(Math.abs(T - 4.0) / 0.075);
+    const dark = 1 - clamp01(Math.abs(T - A.room) / 0.075);
     const blackout = Math.max(dark * dark * (3 - 2 * dark), holdShed);
     setOpacity(el.dissolve, dissolve);
     setOpacity(el.blackout, blackout);
