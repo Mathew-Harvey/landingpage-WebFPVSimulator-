@@ -44,22 +44,35 @@ Act 4  The frame goes to warm haze and comes out of it in a six metre
        road, over a level crossing with its barriers down and a train going
        under, a climb out at the far end, and the camera leaves the airframe
        for the whole district at a hundred and twenty metres.
-Act 5  The frame goes to black. Two bulbs come on in a shed, and there is a
+Act 5  The same crane carries on, up over the roofs and west, turning to
+       look straight down as it goes, and stops over an empty plot on the
+       far side of the town: the track builder's map canvas. It loads Hibari
+       Yard and sets the showpiece down on it, the drift course laid along
+       its length, two drift cars on it, an overpass, a wall of containers,
+       lamps and sakura, and comes down onto the start pads.
+Act 6  The five inch lifts off the pads, runs up the gap between the half
+       built office and the bando, and drops in behind two drift cars
+       sliding in tandem, smoke off their rear wheels, and chases them round
+       most of a lap the way drift is shot: from the inside of each corner,
+       door to door up a straight, under the overpass, and at the container
+       wall. The cars are the simulator's physics module's own laps.
+Act 7  The frame goes to black. Two bulbs come on in a shed, and there is a
        whoop track in it: four 28 inch gates in 3/4 inch pipe, two of them
        stacked, a pole and a rail, 13.8 m of lap in a footprint 2.97 m by
        1.42, as src/room-data.js measures it. A 65 mm whoop lifts off a pad
        and flies a lap of it from inside.
-Act 6  You must practice, in the shed, over the gate the lap closed on.
+Act 8  You must practice, in the shed, over the gate the lap closed on.
 ```
 
-Between act 5 and the close sits `#why`, which is not an act: nothing
+Between act 7 and the close sits `#why`, which is not an act: nothing
 assembles or draws itself there, the copy is simply on the page. It is
 sized and placed like one all the same, at the act gutter and in the act
 copy's column, so the reason lands in the exact place the flight's copy
 just left.
 
-There are two cuts in the film, they are at the tops of acts 4 and 5, and
-they go opposite ways. Both are fades rather than hard cuts because the page
+There are two cuts in the film, they are at the tops of acts 4 and 7, the
+town and the shed, and they go opposite ways. The yard between them is not
+cut to: the town's last crane is flown on to it. Both are fades rather than hard cuts because the page
 is scrubbable: a reader dragging the bar slowly across a hard cut would see
 it flicker, and a fade has a middle to move the camera in.
 
@@ -71,18 +84,19 @@ needed, the town's distance included. Nothing has to fly between the two
 places now, so the town sits 460 m out, past the point where anything of the
 race field survives the haze. The two places are two places.
 
-Act 5's goes DOWN, into the dark, and it is a different device rather than
+Act 7's goes DOWN, into the dark, and it is a different device rather than
 the same one twice. What is on the other side of it is indoors with the
 lights off, so the frame does not come back by a veil lifting off a lit room:
 the shed's own two bulbs come on. The light arrives in the place rather than
 on the page, which is the difference between a scene change and a slide
 transition. Nothing could have been flown between them anyway. The other side
-is 300 m away, it is inside a closed box, and the aircraft is a different
-aircraft.
+is hundreds of metres from the yard, it is inside a closed box, and the
+aircraft is a different aircraft.
 
 The camera does not stop for the reason section. The last stretch of the
-timeline begins at `#why` rather than at the close, so 5 to 6 covers the
-reason and the close together and the crane plays across the reading. That
+timeline begins at `#why` rather than at the close, so its last whole step
+covers the reason and the close together and the crane plays across the
+reading. That
 stretch is also the only place the pull-out ever had room to finish. Measured
 from the close alone it had about a fifth of a screen of scroll and played a
 quarter of its arc.
@@ -99,6 +113,18 @@ requires. `src/city.js` is only a join: where the town stands (the numbers
 are in `src/places.js`), which parts of it are built, and the line flown
 through it. A visitor sees the same streets here that they will fly when
 they click through, because it is the same source drawing them.
+
+The yard is the simulator's too. Hibari Yard Tandem is its showpiece map,
+`src/maps/built/showpiece.js` there, published on the board, and the page's
+two links in that chapter open it to fly or in the builder. The document and
+every car's lap as the simulator's physics module drives it are baked into
+`src/yard-data.js` by `node scripts/bake-yard.js ../WebFPVSimulator`, and it
+is drawn by the simulator's own built map modules, copied into `src/sim/`
+with the town's. `src/yard.js` is its join: which parts are drawn, how the
+builder sets them down, and the line flown through it, which
+`window.__wf.yard.clearance()` measures against the map's solids and the
+cars. The two drift cars stay in step because the simulator drives them off
+one speed table; the simulator's roads check holds them to a microsecond.
 
 It costs what a whole town costs. Measured: it builds about eleven and a half
 thousand meshes and paints every sign and fascia with Canvas2D as it goes, and
@@ -409,6 +435,9 @@ screenshot of a wall is an afternoon. On a clean URL, no global.
 | `src/gate.js` | One MultiGP gate at published dimensions |
 | `src/course.js` | The layout, the ground, the racing line, the dress |
 | `src/city.js` | The freestyle town, and the line flown through it |
+| `src/yard.js` | The freestyle map, set down by the builder act, and the chase flown through it |
+| `src/yard-data.js` | The showpiece map and its cars' laps, GENERATED. See `scripts/bake-yard.js` |
+| `src/places.js` | Where the town and the yard stand, and why there |
 | `src/room.js` | The shed, the RaceGOW track standing in it, and its two bulbs |
 | `src/room-data.js` | The demo micro track, GENERATED. See `scripts/bake-room.js` |
 | `src/whoop.js` | The 65 mm ducted whoop, at the size it actually is |
@@ -435,6 +464,14 @@ a table rather than a formula, integrated once at start up, because the
 mapping has to be monotonic and smooth in its derivative and the integral
 of an obvious speed curve is easier to read than a piecewise one that is
 both. See `CITY_S` in `main.js`.
+
+The chase act's height is the same rule with a different subject: 900vh for
+about thirty seconds of the physics module's clock, so the gearing is set in
+seconds of the cars' lap rather than metres of a line the aircraft owns. The
+clock runs faster over the approach from the pads and finer over the chase,
+where the cars are: three anchors, the lift, the drop in behind the tandem
+and the end of the chase, and `yardClock` in `main.js` runs straight between
+them.
 
 The room act's height is the same rule and it does not come out the same
 way, because a micro track is short and dense. 700vh over a 14.4 m lap is

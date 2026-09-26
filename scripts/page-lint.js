@@ -484,6 +484,53 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
   );
 }
 
+/*
+ * 13. THE YARD THE PAGE BUILDS IS THE MAP ITS LINKS OPEN.
+ *
+ * The freestyle chapter builds Hibari Yard Tandem from src/yard-data.js,
+ * which scripts/bake-yard.js writes from the simulator's showpiece, and its
+ * two links, fly it and open it in the builder, name the map on the board
+ * by id, in src/config.js and in the markup. Three places say which map, so
+ * this holds them to one: a regenerated yard with a new id and links that
+ * still name the old one would build one map and send the visitor to
+ * another. And the baked laps have to be laps: every car's samples cover
+ * its period, and the tandem names two cars that are in the file.
+ */
+{
+  const data = await readFile(join(root, 'src/yard-data.js'), 'utf8').catch(() => '');
+  const config = await readFile(join(root, 'src/config.js'), 'utf8').catch(() => '');
+  const docId = (/export const DOC = \{"schemaVersion":\d+,"id":"([^"]+)"/.exec(data) || [])[1];
+  const configId = (/export const YARD_MAP_ID = '([^']+)'/.exec(config) || [])[1];
+  const hrefs = [...index.matchAll(/data-dest="(yard|yardBuilder)"/g)].length;
+  const named = [...index.matchAll(/mapshare=([a-z0-9-]+)[^"]*"[^>]*data-dest="(?:yard|yardBuilder)"/g)].map((m) => m[1]);
+  const every = Number((/export const EVERY = (\d+);/.exec(data) || [])[1]);
+  const cars = [...data.matchAll(/element: '([^']+)',\n\s+period: ([\d.]+),\n\s+length: [\d.]+,\n\s+x: \[([^\]]*)\]/g)]
+    .map((m) => ({ element: m[1], period: Number(m[2]), samples: m[3].split(',').length }));
+  const short = cars.filter((c) => !(c.samples * every >= c.period + 2 * every));
+  const tandem = /export const TANDEM = \{ lead: '([^']+)', chase: '([^']+)'/.exec(data);
+  const tandemIn = tandem && cars.some((c) => c.element === tandem[1]) && cars.some((c) => c.element === tandem[2]);
+  const why = [];
+  if (!docId) {
+    why.push('src/yard-data.js has no DOC: run node scripts/bake-yard.js ../WebFPVSimulator > src/yard-data.js');
+  } else if (configId !== docId) {
+    why.push(`src/config.js links ${configId}, the yard is ${docId}`);
+  }
+  if (hrefs !== 2 || named.length !== 2 || named.some((n) => n !== docId)) {
+    why.push(`the markup's two yard links name ${named.join(', ') || 'nothing'}`);
+  }
+  if (!cars.length || short.length) {
+    why.push(cars.length ? `laps short of their period: ${short.map((c) => c.element).join(', ')}` : 'no laps');
+  }
+  if (!tandemIn) {
+    why.push('the tandem names a car the file does not have');
+  }
+  check(
+    'the yard, its links and its laps agree',
+    why.length === 0,
+    why.join('; ') || `${docId}, ${cars.length} laps at ${every} ms, tandem ${tandem[1]} and ${tandem[2]}`,
+  );
+}
+
 const w = Math.max(...rows.map((r) => r[0].length));
 console.log('page-lint: the parts of the pages that are true or false\n');
 for (const [name, status, detail] of rows) {

@@ -104,6 +104,7 @@
   "featureList": [
     "Real Betaflight 4.5.1 flight code compiled to WebAssembly",
     "Visual track builder",
+    "Freestyle map builder with roads and drift cars",
     "Freestyle flying in city environment",
     "5 inch and 65mm whoop aircraft",
     "Works with radio transmitter or game controller",
@@ -629,6 +630,12 @@
          that left "Now fly it." wrapping inside a 133 px gutter. */
       .copy-tight { width: min(26em, 34vw); }
       @media (max-width: 900px) { .copy-tight { width: 100%; } }
+      /* The two builder acts' copy, beside the instrument's palette rather
+         than under it: the palette is 200 px of panel down the left from
+         128 px, and at every width it is shown at the column began inside it,
+         so the headline was set over a list of gates. Below 900 px the
+         palette is not drawn and the column goes back to the gutter. */
+      @media (min-width: 901px) { .copy-beside { margin-left: 212px; width: min(26em, 40vw); } }
       @media (max-width: 900px) {
         .copy { width: 100%; }
       }
@@ -2697,7 +2704,7 @@
         <!-- Where the racing chapter opens: see .chapter-at. -->
         <span class="chapter-at" id="racing" style="--at: 0.07"></span>
         <div class="pin">
-          <div class="copy" data-copy="build">
+          <div class="copy copy-beside" data-copy="build">
             <p class="eyebrow">03 &#183; The track</p>
             <h2>Draw a track.</h2>
             <p class="lede">
@@ -2779,7 +2786,7 @@
            watching things arrive. -->
       <section class="act" data-act="map" style="min-height: 560vh">
         <div class="pin">
-          <div class="copy" data-copy="map">
+          <div class="copy copy-beside" data-copy="map">
             <p class="eyebrow">06 &#183; The map</p>
             <h2>Build a map.</h2>
             <p class="lede">
@@ -3030,13 +3037,13 @@
         <a class="card" href="https://webfpv.org/sim/src/trackbuilder/index.html" data-dest="builder" style="--accent: var(--sakura)">
           <span class="card-n">03</span>
           <span class="card-t">Track builder</span>
-          <span class="card-d">Both formats, MultiGP five inch and whoop micro UTT. Export a track file or an animated GIF, or publish it to Tracks and Times.</span>
+          <span class="card-d">Five inch and whoop tracks, and freestyle maps with roads and drift cars. Export a file or an animated GIF, or publish it to Tracks and Times.</span>
           <span class="card-go">Build a track</span>
         </a>
         <a class="card" href="https://webfpv.org/board/" data-dest="board" style="--accent: var(--amber)">
           <span class="card-n">04</span>
           <span class="card-t">Tracks and Times</span>
-          <span class="card-d">Every published track, both aircraft, and the times flown on them. Post yours.</span>
+          <span class="card-d">Every published track and map, both aircraft, and the times flown on the tracks. Post yours.</span>
           <span class="card-go">See the times</span>
         </a>
       </div>

@@ -776,6 +776,17 @@ if (DEBUG) {
     /* The yard: its build, its line's clocks, and the clock at a T. */
     yard,
     yardClock: (t) => yardClock(t),
+    /* The scroll position that puts the film at T: timeline() backwards,
+     * for a check that has to scroll, because the acts' copy is in the
+     * page and only a scroll brings it into view. */
+    scrollFor: (t) => {
+      const { list, closeTop, docEnd } = bounds;
+      const i = Math.floor(t);
+      if (i < list.length) {
+        return list[i].top + (t - i) * list[i].height;
+      }
+      return closeTop + (t - list.length) * Math.max(1, docEnd - closeTop);
+    },
     /* Put the film at T without scrolling, or give it back to the scroll
      * with null: ?t= for a page that is already up, so a run of frames is
      * one load rather than one each. */
@@ -785,6 +796,7 @@ if (DEBUG) {
     },
     /* Where the camera and the aircraft actually ended up on the last frame. */
     live: () => ({
+      T: lastT,
       cam: stage.camera.position.toArray(),
       drone: dronePos.toArray(),
       quat: droneQuat.toArray(),
@@ -2722,7 +2734,14 @@ function frame(ms) {
    * haze has all of it, so that was thirty draw calls of nothing for ten
    * screens of scroll.
    */
-  city.setShown(T > A.city - 0.10 && T < A.room + 0.02);
+  /*
+   * The town stays up through the map act, which flies over it, and goes
+   * as the aircraft lifts off the yard's pads, facing away from it. From
+   * the chase it is a hundred and fifty metres off behind the yard, and in
+   * the frames where it is in view it cost a thousand draw calls of the
+   * chase's nineteen hundred, measured.
+   */
+  city.setShown(T > A.city - 0.10 && T < A.yard + YARD_LIFT);
   /*
    * The yard from the moment the crane can see it, which is past the
    * town's roofs a fifth of the way into the map act, to the blackout. Its

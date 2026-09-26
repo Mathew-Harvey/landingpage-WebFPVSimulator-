@@ -209,8 +209,20 @@ export function buildYard({ onReady = null } = {}) {
     const out = {};
     const hits = [];
     let best = { gap: Infinity };
+    /* And the tandem, whose bodies are not in the map's solids: the nearest
+     * the aircraft comes to either car's middle, less half a sedan's
+     * length, which is the most of a sliding car that can be nearer. */
+    let cars = { gap: Infinity };
+    const pose = {};
     for (let ms = flight.lift; ms <= flight.end; ms += stepMs) {
       flight.at(ms, out);
+      for (const e of [TANDEM.lead, TANDEM.chase]) {
+        carAt(e, ms, pose);
+        const g = Math.hypot(pose.pos.x - out.pos.x, 0.7 - out.pos.y, pose.pos.z - out.pos.z) - 2.21;
+        if (g < cars.gap) {
+          cars = { gap: Math.round(g * 100) / 100, ms: Math.round(ms), car: e, s: Math.round(out.s || 0) };
+        }
+      }
       const dx = out.pos.x - YARD_ORIGIN.x;
       const dz = out.pos.z - YARD_ORIGIN.z;
       const x = dx * COS - dz * SIN;
@@ -250,7 +262,7 @@ export function buildYard({ onReady = null } = {}) {
         hits.push({ ms: Math.round(ms), gap: Math.round(gap * 100) / 100, phase: out.phase, what });
       }
     }
-    return { nearest: best, under: hits.length, first: hits.slice(0, 8) };
+    return { nearest: best, under: hits.length, first: hits.slice(0, 8), cars };
   }
   let smokeAt = -Infinity;
   const scratch = blankPose();
@@ -649,12 +661,14 @@ export function buildYard({ onReady = null } = {}) {
  * the course that car has driven: how far behind it, how far to its side
  * (left positive, the side of its way of going) and how high, and where
  * between the two cars to look. The keys are where a drift chase is shot
- * from. Behind and low on a straight; out wide on the outside of a corner,
- * where both cars are side on and the smoke is between them and the lens;
- * across from one side to the other through the transition, where the cars
- * flick; alongside the chase car's door up the east straight, looking past
- * it at the lead; low and centred under the overpass; and outside the north
- * west corner with the container wall behind the cars. Distances round the
+ * from. Behind and low on a straight; on the INSIDE of a corner, where both
+ * cars are side on and sliding away from the lens with their smoke going
+ * out behind them (from the outside, which was tried first, the lens looks
+ * at the cars through their own smoke); across from one side to the other
+ * through the transition, where the cars flick; alongside the chase car's
+ * door up the east straight, looking past it at the lead; low and centred
+ * under the overpass; and on the inside of the north west corner, with the
+ * container wall behind the cars as they slide at it. Distances round the
  * course count on past a lap, so the keys read as one run.
  */
 const APPROACH = [
@@ -674,20 +688,23 @@ const APPROACH_MS = 9000;
 const CHASE = [
   /* how far round the chase car is, m; behind, side, up, m; look, 0 at the
    * chase car and 1 at the lead */
-  [178, 8.0, -2.5, 3.4, 0.55],
-  [192, 7.5, -3.4, 3.0, 0.6],
-  [224, 7.0, 3.8, 2.9, 0.6],
-  [256, 7.5, -3.4, 3.0, 0.6],
-  [276, 8.0, -4.2, 3.0, 0.55],
-  [292, 8.5, -5.0, 3.1, 0.5],
+  [178, 8.0, -1.5, 3.6, 0.55],
+  [188, 6.5, 1.5, 3.0, 0.6],
+  [196, 5.5, 3.6, 2.8, 0.62],
+  [216, 5.5, -3.4, 2.8, 0.62],
+  [230, 5.5, -3.6, 2.8, 0.62],
+  [250, 5.5, 3.4, 2.8, 0.62],
+  [262, 6.0, 3.6, 2.9, 0.6],
+  [280, 6.5, 4.2, 3.0, 0.55],
+  [292, 6.0, 4.6, 3.0, 0.55],
   [312, 2.8, 3.8, 1.8, 0.85],
-  [326, 5.0, 1.5, 2.4, 0.7],
-  [342, 8.0, -4.5, 3.1, 0.5],
-  [366, 7.0, 0.0, 2.5, 0.6],
+  [326, 5.0, 2.5, 2.4, 0.7],
+  [340, 6.0, 4.4, 3.0, 0.55],
+  [366, 7.0, 0.5, 2.6, 0.6],
   [388.6, 6.0, 0.0, 2.0, 0.6],
-  [418, 7.0, -3.6, 3.0, 0.55],
-  [440, 8.0, -4.0, 3.3, 0.5],
-  [465, 10.0, -1.0, 4.8, 0.5],
+  [418, 5.5, 3.0, 2.6, 0.6],
+  [440, 4.5, 4.8, 2.8, 0.55],
+  [465, 9.0, 1.0, 4.8, 0.5],
 ];
 
 /* A key's values at s, a cubic through the keys with each one's slope taken
