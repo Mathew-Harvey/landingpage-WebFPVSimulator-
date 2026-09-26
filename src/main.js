@@ -1118,6 +1118,8 @@ const el = {
   osdBatt: document.getElementById('osd-batt'),
   beats: document.getElementById('beats'),
   progress: document.querySelector('#progress i'),
+  chooser: document.getElementById('worlds'),
+  jump: document.getElementById('jump'),
   hold: document.getElementById('hold'),
   holdNote: document.getElementById('hold-note'),
   holdFill: document.getElementById('hold-fill'),
@@ -1198,22 +1200,38 @@ const SLAPS = [...document.querySelectorAll('.slap')]
   bindPatreonLinks();
 }
 
-/* The act ledger down the left edge. */
+/*
+ * THE LEDGER down the left edge, and it is the chapters now, not the acts.
+ *
+ * It was one row an act, and a label saying where you were was all it could
+ * do. With the film cut into chapters it is also the quickest way between
+ * them, so each row is a link to its chapter's anchor, and a row covers the
+ * acts its chapter is made of: racing is the drawing of the track and the
+ * lap, freestyle is everything from the dissolve to the blackout. `acts`
+ * names them by their data-act, so an act added to a chapter is a word
+ * here and nothing is counted by hand. The chapters themselves (the chooser
+ * and the close) are named by the section they are.
+ */
 const LEDGER = [
-  { id: 'assemble', label: 'Build' },
-  { id: 'build', label: 'Track' },
-  { id: 'fly', label: 'Fly' },
-  { id: 'city', label: 'Freestyle' },
-  { id: 'room', label: 'Whoop' },
-  { id: 'close', label: 'Practise' },
+  { href: '#top', label: 'Build', acts: ['assemble'] },
+  { href: '#worlds', label: 'Worlds', chooser: true },
+  { href: '#racing', label: 'Racing', acts: ['build', 'fly'] },
+  { href: '#freestyle', label: 'Freestyle', acts: ['city'] },
+  { href: '#whoop', label: 'Whoop', acts: ['room'] },
+  { href: '#why', label: 'Practise', tail: true },
 ];
 const ledgerRows = LEDGER.map((r) => {
-  const row = document.createElement('div');
+  const row = document.createElement('a');
   row.className = 'ledger-row';
+  row.href = r.href;
   row.innerHTML = `<span class="ledger-tick"></span><span>${r.label}</span>`;
   el.ledger.append(row);
   return row;
 });
+/* Which ledger row an act belongs to, by the act's index on the timeline. */
+const ROW_OF_ACT = ACTS.map((node) => Math.max(0, LEDGER.findIndex((r) => r.acts && r.acts.includes(node.dataset.act))));
+const ROW_CHOOSER = LEDGER.findIndex((r) => r.chooser);
+const ROW_TAIL = LEDGER.findIndex((r) => r.tail);
 
 /* The build ticker. */
 const tickRows = drone.stages.map((s) => {
@@ -1264,7 +1282,10 @@ function measure() {
     closeTop + vh,
     document.documentElement.scrollHeight - vh,
   );
-  bounds = { list, closeTop, docEnd, vh };
+  const chooser = el.chooser
+    ? { top: el.chooser.offsetTop, height: el.chooser.offsetHeight }
+    : { top: -1, height: 0 };
+  bounds = { list, closeTop, docEnd, vh, chooser };
 }
 
 /*
@@ -2228,8 +2249,48 @@ function frame(ms) {
   if (Math.abs(scrollTarget - scrollNow) < 0.4) {
     scrollNow = scrollTarget;
   }
+  /*
+   * NO DAMPING BEHIND THE BOOT SCREEN, AND NONE ACROSS A JUMP.
+   *
+   * The damping turns wheel notches into camera moves, and that is all it is
+   * for. Across a jump it does the opposite of its job: a visitor who clicks
+   * a chapter five acts away gets five acts played in a second as the damping
+   * catches up, dissolves, blackout and all. So a jump puts the film straight
+   * where it is going (see jumpTo), and so does a jump the browser made on
+   * its own: a reload that restores the scroll, a link to #freestyle opened
+   * cold, Back, Home and End. The first two happen while the boot screen is
+   * up, where nothing is watching and the film should simply be where the
+   * page is. The others set `jumpPending`.
+   */
+  if (!bootDone) {
+    scrollNow = scrollTarget;
+  } else if (jumpPending > 0) {
+    jumpPending -= 1;
+    if (Math.abs(scrollTarget - scrollNow) > 2) {
+      cut();
+      snapTo(scrollTarget);
+    }
+  }
 
   const T = REDUCED ? 2.55 : (PIN !== null ? PIN : timeline(scrollNow));
+  /*
+   * THE CHAPTER MENU, measured off the scroll because T cannot see it: T is
+   * held at exactly 1 across the whole of it. `chooserStill` is the stretch
+   * where the film behind is not moving at all, which is what the loader
+   * wants to know. `inChooser` is wider, the stretch where the menu has the
+   * middle of the screen, which is what the ledger and the glass want.
+   */
+  {
+    const { top, height } = bounds.chooser;
+    const y = scrollNow;
+    const vh = bounds.vh;
+    chooserStill = top >= 0 && PIN === null && y >= top && y < top + height;
+    inChooser = top >= 0 && PIN === null && y > top - vh * 0.6 && y < top + height - vh * 0.4;
+    const arrive = REDUCED || (top >= 0 && y > top - vh * 0.8 && y < top + height - vh * 0.2);
+    if (el.chooser && el.chooser.classList.contains('in') !== arrive) {
+      el.chooser.classList.toggle('in', arrive);
+    }
+  }
 
   /* ---------------------------------------------------------------- build */
   /* Pinned, the build is the pin's business alone: an autoplay would race
@@ -2965,9 +3026,13 @@ function frame(ms) {
   }
 
   /* --------------------------------------------------------------- the DOM */
+  if (inChooser !== wasInChooser) {
+    wasInChooser = inChooser;
+    lastT = -1;
+  }
   if (Math.abs(T - lastT) > 0.0005) {
     lastT = T;
-    el.ticker.classList.toggle('on', !REDUCED && T < 1.06);
+    el.ticker.classList.toggle('on', !REDUCED && T < 1.06 && !inChooser);
     el.builder.classList.toggle('on', !REDUCED && T > 1.04 && T < 2.02);
     /*
      * THE INSTRUMENT LEAVES WITH THE GOGGLES.
@@ -3054,9 +3119,11 @@ function frame(ms) {
      * of a film. By 4.06 the bulbs are up and there is something behind it. */
     setCopy('room', T > 4.06 && T < 4.20);
 
-    const act = T < 1 ? 0 : T < 2 ? 1 : T < 3 ? 2 : T < 4 ? 3 : T < 5 ? 4 : 5;
+    const row = inChooser ? ROW_CHOOSER
+      : T >= ACTS.length ? ROW_TAIL
+      : ROW_OF_ACT[Math.min(ACTS.length - 1, Math.floor(T))];
     for (let i = 0; i < ledgerRows.length; i += 1) {
-      ledgerRows[i].classList.toggle('on', i === act);
+      ledgerRows[i].classList.toggle('on', i === row);
     }
 
     /*
@@ -3165,7 +3232,7 @@ function frame(ms) {
     const since = readyAt < 0 ? -1 : now - readyAt;
     for (const s of SLAPS) {
       const due = REDUCED || PIN !== null || since >= s.wait;
-      s.node.classList.toggle('on', due && T >= s.on && T < s.off);
+      s.node.classList.toggle('on', due && !inChooser && T >= s.on && T < s.off);
     }
   }
 
@@ -3179,6 +3246,13 @@ function frame(ms) {
    * callback holds the frame back until it finishes, and a step after it
    * only holds back the NEXT one, which on a still frame nobody can see.
    */
+  /* The cut lifts once the frame under it is the chapter's. */
+  if (jumpAt >= 0 && now - jumpAt > JUMP_HOLD) {
+    jumpAt = -1;
+    el.jump.classList.add('out');
+    el.jump.style.opacity = '0';
+  }
+
   pumpSoon(loaderBudget(now, T));
 
   /*
@@ -3400,6 +3474,8 @@ let lastMoveAt = 0;
 let lastScrollSeen = -1;
 let holding = false;
 let chooserStill = false;
+let inChooser = false;
+let wasInChooser = false;
 
 function loaderBudget(now, T) {
   if (loader.idle()) {
@@ -3408,7 +3484,7 @@ function loaderBudget(now, T) {
   if (PIN !== null) {
     return 400;
   }
-  if (holding) {
+  if (holding || jumpAt >= 0) {
     return 150;
   }
   if (chooserStill || document.body.classList.contains('invite-open')) {
@@ -3431,6 +3507,148 @@ function pumpSoon(budget) {
   if (budget > 0) {
     pumpBudget = budget;
     pumpPort.port2.postMessage(0);
+  }
+}
+
+/* ------------------------------------------------------------ the chapters */
+
+/*
+ * THE JUMP, and it is a cut on purpose.
+ *
+ * The page has two transitions of its own and a rule that there is no third:
+ * everything else is flown. A jump is not a third transition, because it is
+ * not the film changing place, it is the reader skipping, which a film on a
+ * scrollbar has always allowed: drag the bar anywhere and the frame there is
+ * the frame you get. What it must not be is the damping catching up, which
+ * plays every act between here and there in a second, and it must not be a
+ * smooth scroll either, which is the same thing done more slowly.
+ *
+ * So it cuts to dark, puts the film straight onto the chapter's opening frame
+ * with nothing between, and fades up out of the dark. Where the chapter's
+ * place is still being built, the fade comes up into the transition's own
+ * hold, haze or dark with a note, and that opens when the place is there.
+ *
+ * Three more things, each of which was a bug before it was a line here:
+ *
+ *   THE HEADING is reset. The aircraft turns round when the reader scrolls
+ *   back, and a jump back up the page is the biggest backward scroll there
+ *   is: without the reset it arrives at the lap flying it the wrong way.
+ *   THE LOADER is told, so the chapter's place is built next.
+ *   THE FOCUS goes to the chapter's heading, so a keyboard or a screen reader
+ *   lands where the eye does.
+ */
+const JUMP_HOLD = 0.09;
+let jumpAt = -1;
+let jumpPending = 0;
+const CHAPTER_NEEDS = { racing: ['course'], freestyle: ['town'], whoop: ['shed'] };
+
+/* To dark, at once. The frame loop lifts it. */
+function cut() {
+  if (REDUCED || !el.jump) {
+    return;
+  }
+  el.jump.classList.remove('out');
+  el.jump.style.opacity = '1';
+  jumpAt = performance.now() * 0.001;
+}
+
+/* The film put straight onto a scroll position, with nothing played between. */
+function snapTo(y) {
+  scrollTarget = y;
+  scrollNow = y;
+  lastScrollSeen = y;
+  lastMoveAt = performance.now() * 0.001;
+  flyWant = 0;
+  flyFlip = 0;
+  lastFlying = null;
+  lastT = -1;
+}
+
+function chapterNode(hash) {
+  if (!hash || hash.length < 2 || hash[0] !== '#') {
+    return null;
+  }
+  try {
+    return document.getElementById(decodeURIComponent(hash.slice(1)));
+  } catch (e) {
+    return null;
+  }
+}
+
+/* The heading a chapter opens on, for the focus. */
+function headingOf(node) {
+  const within = node.closest('section') || node;
+  return within.querySelector('h1, h2') || within;
+}
+
+function jumpTo(hash, { push = true } = {}) {
+  const node = chapterNode(hash);
+  if (!node) {
+    return false;
+  }
+  if (CHAPTER_NEEDS[node.id]) {
+    loader.want(...CHAPTER_NEEDS[node.id]);
+  }
+  const y = Math.max(0, Math.round(node.getBoundingClientRect().top + window.scrollY));
+  /* The history entry first, and the scroll after it: the browser files the
+   * scroll position under whichever entry is current, and Back should return
+   * to where the visitor was, not to where they went. */
+  if (push && window.location.hash !== `#${node.id}`) {
+    try {
+      window.history.pushState(null, '', `#${node.id}`);
+    } catch (e) {
+      /* A sandboxed frame. The jump happens; the address simply does not
+         say so. */
+    }
+  }
+  cut();
+  window.scrollTo(0, y);
+  snapTo(y);
+  const h = headingOf(node);
+  if (!h.hasAttribute('tabindex')) {
+    h.setAttribute('tabindex', '-1');
+  }
+  h.focus({ preventScroll: true });
+  return true;
+}
+
+/*
+ * Every in page link is a jump: the chapter cards, the ledger, the mark in
+ * the corner. A modified click is left to the browser, which is how
+ * somebody opens a chapter in a new tab.
+ */
+document.addEventListener('click', (e) => {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+    return;
+  }
+  const a = e.target && e.target.closest ? e.target.closest('a[href^="#"]') : null;
+  if (a && jumpTo(a.getAttribute('href'))) {
+    e.preventDefault();
+  }
+});
+
+/* Back and forward. To a chapter, jump there; to anywhere else, the browser
+ * restores the scroll itself and the next frames snap to it. */
+window.addEventListener('popstate', () => {
+  if (!jumpTo(window.location.hash, { push: false })) {
+    jumpPending = 3;
+  }
+});
+
+/* Home and End scroll the whole page at once, natively. Snap to wherever they
+ * land rather than let the damping replay the film on the way. */
+window.addEventListener('keydown', (e) => {
+  if ((e.key === 'Home' || e.key === 'End') && !e.target.closest('input, textarea, select, [contenteditable]')) {
+    jumpPending = 3;
+  }
+});
+
+/* A link to a chapter opened cold: the browser scrolls to it, the boot screen
+ * snaps the film there, and the loader builds that chapter's place first. */
+{
+  const first = chapterNode(window.location.hash);
+  if (first && CHAPTER_NEEDS[first.id]) {
+    loader.want(...CHAPTER_NEEDS[first.id]);
   }
 }
 

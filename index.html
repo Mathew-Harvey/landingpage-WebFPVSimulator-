@@ -491,9 +491,11 @@
         .invite-foot span { display: none; }
       }
 
-      /* Act ledger down the left edge: which act you are in, and how far
-         through the whole timeline you are. CollectUI's chrome is a thin
-         persistent frame around loud content; this is that frame. */
+      /* The ledger down the left edge: which chapter you are in, and the
+         way to any other. CollectUI's chrome is a thin persistent frame
+         around loud content; this is that frame. The column itself ignores
+         the pointer, because it is fixed over the middle of a page whose
+         whole interaction is the scroll, and only the rows take a click. */
       #ledger {
         position: fixed;
         left: var(--gutter);
@@ -502,13 +504,16 @@
         z-index: 20;
         display: flex;
         flex-direction: column;
-        gap: 14px;
+        gap: 8px;
         pointer-events: none;
       }
       .ledger-row {
         display: flex;
         align-items: center;
         gap: 10px;
+        padding: 3px 0;
+        pointer-events: auto;
+        text-decoration: none;
         font-size: 10px;
         letter-spacing: var(--track-eyebrow);
         text-transform: uppercase;
@@ -525,6 +530,11 @@
         transition: width 0.4s var(--ease), background 0.4s var(--ease);
       }
       .ledger-row.on { color: var(--cream); }
+      .ledger-row:hover,
+      .ledger-row:focus-visible { color: var(--cream); }
+      .ledger-row:hover .ledger-tick { width: 26px; background: rgba(243, 234, 212, 0.6); }
+      .ledger-row.on:hover .ledger-tick { width: 34px; background: var(--sakura); }
+      .ledger-row:focus-visible { outline: 1px solid var(--sakura); outline-offset: 4px; }
       .ledger-row.on .ledger-tick { width: 34px; background: var(--sakura); }
       @media (max-width: 900px) { #ledger { display: none; } }
 
@@ -1016,6 +1026,261 @@
         line-height: 1.24;
         color: var(--cream);
         text-shadow: 0 4px 22px rgba(0, 0, 0, 0.75);
+      }
+
+      /* ------------------------------------------------------------------
+         THE CHAPTERS: the film paused on the finished quad, and the three
+         kinds of track it goes on to, offered as a menu.
+
+         The frame behind does not move while this is on screen (timeline()
+         holds T at 1 in the gap between two acts), so what this section has
+         to do is read as a menu laid over a paused film rather than as a
+         page that interrupts one. Three things do that. The section carries
+         its own dark band, feathered at both ends, so the cards sit on
+         something and the quad still glows above and below it. The heading
+         sits in the acts' own column, so it lands where the copy always
+         lands. And the cards come in as the section arrives, a beat apart,
+         which is the one thing on the page that animates in response to a
+         section rather than to T: see .chapters.in and its entry in the
+         reduced motion block at the foot.
+         ------------------------------------------------------------------ */
+
+      .chapters {
+        position: relative;
+        padding: clamp(96px, 22vh, 220px) var(--gutter) clamp(90px, 20vh, 200px);
+        pointer-events: auto;
+        /* The band. Transparent at both ends so the section never shows an
+           edge against the film, and deepest where the cards are. */
+        background: linear-gradient(180deg,
+          rgba(12, 18, 14, 0) 0%,
+          rgba(12, 18, 14, 0.62) 20%,
+          rgba(12, 18, 14, 0.78) 50%,
+          rgba(12, 18, 14, 0.62) 80%,
+          rgba(12, 18, 14, 0) 100%);
+      }
+      @media (min-width: 901px) {
+        .chapters { padding-left: calc(var(--gutter) + 116px); }
+      }
+      .chapters-in { width: min(1120px, 100%); }
+      .chapters .lede { max-width: 34em; }
+
+      .worlds {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+        margin-top: clamp(26px, 5vh, 44px);
+      }
+
+      .world {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        text-decoration: none;
+        color: var(--cream);
+        background: var(--panel-fill);
+        border: 1px solid var(--line);
+        border-top: 2px solid var(--edge);
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(26px);
+        transition: opacity 0.7s var(--ease), transform 0.7s var(--ease), border-color 0.3s var(--ease), background 0.3s var(--ease);
+      }
+      .chapters.in .world { opacity: 1; transform: none; }
+      .chapters.in .world:nth-child(2) { transition-delay: 0.09s, 0.09s, 0s, 0s; }
+      .chapters.in .world:nth-child(3) { transition-delay: 0.18s, 0.18s, 0s, 0s; }
+      /* The same underline the closing cards grow, in the chapter's accent. */
+      .world::after {
+        content: "";
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        height: 2px;
+        background: var(--accent);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.4s var(--ease);
+      }
+      .chapters.in .world:hover {
+        transform: translateY(-4px);
+        transition-delay: 0s;
+        border-color: rgba(244, 236, 214, 0.24);
+        background: rgba(22, 32, 24, 0.92);
+      }
+      .world:hover::after { transform: scaleX(1); }
+      .world:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+      .world-pic {
+        position: relative;
+        display: block;
+        aspect-ratio: 16 / 9;
+        overflow: hidden;
+        background: #1a2319;
+      }
+      .world-pic img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 1.2s var(--ease);
+      }
+      .world:hover .world-pic img { transform: scale(1.045); }
+      /* A picture is lit from above, and the card's type starts where it
+         stops: a shade across its foot so the join is a fade, not a line. */
+      .world-pic::after {
+        content: "";
+        position: absolute;
+        inset: auto 0 0 0;
+        height: 34%;
+        background: linear-gradient(180deg, rgba(16, 22, 17, 0), rgba(16, 22, 17, 0.55));
+        pointer-events: none;
+      }
+      .world-new {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 1;
+        padding: 6px 9px 5px;
+        font: 700 10px/1 var(--mono);
+        letter-spacing: var(--track-label);
+        text-transform: uppercase;
+        color: var(--deep);
+        background: var(--sakura);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+      }
+
+      .world-body {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        padding: 18px 20px 20px;
+      }
+      .world-k {
+        font: 10px/1 var(--mono);
+        letter-spacing: var(--track-label);
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 12px;
+      }
+      .world-t {
+        font-size: clamp(19px, 1.7vw, 23px);
+        font-weight: 700;
+        letter-spacing: 0.005em;
+        margin-bottom: 8px;
+      }
+      .world-d {
+        font-size: 13.5px;
+        line-height: 1.58;
+        color: rgba(243, 234, 212, 0.7);
+      }
+      .world-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 14px;
+      }
+      /* The builder's own chips: see #builder's .tb-chip. */
+      .world-tags span {
+        padding: 5px 8px 4px;
+        font: 10px/1 var(--mono);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(243, 234, 212, 0.62);
+        border: 1px solid rgba(244, 236, 214, 0.16);
+      }
+      .world-go {
+        margin-top: auto;
+        padding-top: 18px;
+        font-size: 11px;
+        letter-spacing: var(--track-label);
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      .world-go::after {
+        content: "\2193";
+        display: inline-block;
+        /* A margin, not a space: an inline block drops its own leading
+           white space, and the arrow is one so that it can move. */
+        margin-left: 0.55em;
+        transition: transform 0.3s var(--ease);
+      }
+      .world:hover .world-go::after { transform: translateY(3px); }
+
+      .worlds-on {
+        margin: clamp(22px, 4vh, 34px) 0 0;
+        font-size: 11px;
+        letter-spacing: var(--track-label);
+        text-transform: uppercase;
+      }
+      .worlds-on a {
+        color: var(--slate);
+        text-decoration: none;
+        border-bottom: 1px solid rgba(157, 179, 200, 0.3);
+        padding-bottom: 3px;
+      }
+      .worlds-on a::after { content: " \2193"; }
+      .worlds-on a:hover,
+      .worlds-on a:focus-visible { color: var(--cream); border-bottom-color: var(--cream); }
+
+      /*
+       * WHERE A CHAPTER OPENS, and it is not where its act starts.
+       *
+       * Two of the three chapters begin at the peak of a transition: the town
+       * at the top of the dissolve, the shed at the bottom of the blackout.
+       * An anchor on the act itself would land a visitor in a screen of pure
+       * haze or pure dark and leave them to work out that they should scroll.
+       * So the anchor is a mark inside the act, --at of the way down it,
+       * which is the first frame the chapter reads as itself: past the fade,
+       * with the headline up. The fraction is T, so it is the same number
+       * main.js times the copy against.
+       */
+      .chapter-at {
+        position: absolute;
+        left: 0;
+        top: calc(var(--at, 0) * 100%);
+        width: 1px;
+        height: 1px;
+        pointer-events: none;
+      }
+
+      /* THE CUT. A chapter jump goes to this and fades up out of it: see
+         jumpTo in main.js. The film's own dark, the boot screen's, over
+         everything but the bar, which stays put so the visitor keeps their
+         bearings. No transition when it goes on: it is a cut. */
+      #jump {
+        position: fixed;
+        inset: 0;
+        z-index: 14;
+        opacity: 0;
+        pointer-events: none;
+        background: radial-gradient(120% 100% at 50% 50%, #18221a, #0c120e);
+      }
+      #jump.out { transition: opacity 0.45s var(--ease); }
+
+      @media (max-width: 900px) {
+        .chapters { padding-top: clamp(80px, 16vh, 140px); padding-bottom: clamp(70px, 14vh, 120px); }
+        .worlds { grid-template-columns: 1fr; gap: 12px; }
+        /* A row, not a poster: the picture to the left of the words, so
+           three chapters still fit in about a screen and the menu is not a
+           second marathon on top of the first. */
+        .world { display: grid; grid-template-columns: 40% 1fr; }
+        .world-pic { aspect-ratio: auto; height: 100%; min-height: 128px; }
+        .world-pic::after { display: none; }
+        .world-body { padding: 13px 14px 14px; }
+        .world-k { margin-bottom: 8px; }
+        .world-t { font-size: 18px; margin-bottom: 5px; }
+        .world-d {
+          font-size: 12.5px;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        .world-tags { display: none; }
+        .world-go { padding-top: 10px; font-size: 10px; }
+        .world-new { top: 8px; right: auto; left: 8px; padding: 5px 7px 4px; font-size: 9px; }
+      }
+      @media (max-width: 460px) {
+        .world { grid-template-columns: 36% 1fr; }
+        .world-d { -webkit-line-clamp: 3; }
       }
 
       /* ------------------------------------------------------------------
@@ -1972,6 +2237,14 @@
         /* The stickers are already on the glass. Nothing gets slapped. */
         .slap, .slap.on { transition: none; }
         .slap.on { animation: none; }
+        /* The chapter cards are simply there, and a jump is a jump: no cards
+           rising into place, no cut to dark and fade up, no hold's note
+           sliding in. REDUCED in main.js is the other half: it skips the
+           veil and sets the cards in at once. */
+        .world { opacity: 1; transform: none; transition: none; }
+        .world-pic img, .world-go::after { transition: none; }
+        #jump { display: none; }
+        #hold { transition: none; }
       }
     </style>
 
@@ -2032,6 +2305,8 @@
       <span id="hold-note">Building the town</span>
       <div class="hold-rail"><div class="hold-fill" id="hold-fill"></div><div class="boot-sweep"></div></div>
     </div>
+    <!-- A chapter jump cuts to this and fades up out of it. See jumpTo. -->
+    <div id="jump" aria-hidden="true"></div>
     <div id="grain"></div>
 
     <header id="topbar">
@@ -2278,11 +2553,90 @@
         </div>
       </section>
 
+      <!--
+        THE CHAPTERS.
+
+        The page is a film of three kinds of track, and a visitor who came for
+        one of them should not have to sit through the other two to reach it.
+        So the film pauses here, once, on the finished quad, and offers them.
+
+        NOT AN ACT, and inside <main> anyway. Every [data-act] is measured into
+        the timeline, and this has no data-act, so timeline() finds it in the
+        gap between two acts and holds T at exactly 1 for as long as it is on
+        screen: the studio's last frame, the quad built and armed, waiting.
+        That hold is the point. It is a chapter menu over a paused film, and
+        the frame behind it is still, which is also why the loader does its
+        heaviest work while it is up.
+
+        The cards are plain links to the chapters' anchors, so with the module
+        graph dead they are still a table of contents. main.js makes them a
+        jump: a cut to dark, the film put straight onto the chapter's opening
+        frame, and a fade up. See jumpTo.
+
+        In the film's order, because the film is what they jump into: a card
+        further right is further down, and the last one is where the page
+        ends. The accents are the ones the closing cards already give the same
+        three things: mint for racing, sakura for the builder, cream for the
+        whoop.
+      -->
+      <section id="worlds" class="chapters" aria-labelledby="worlds-h">
+        <div class="chapters-in">
+          <p class="eyebrow">02 &#183; The worlds</p>
+          <h2 id="worlds-h">Three kinds of <em>track.</em></h2>
+          <p class="lede">
+            Five inch racing, freestyle and whoop racing, and the builder makes
+            all three. Pick one and the film goes straight to it.
+          </p>
+          <nav class="worlds" aria-label="Chapters">
+            <a class="world" href="#racing" data-chapter="racing" style="--accent: var(--mint)">
+              <span class="world-pic">
+                <img src="assets/chapters/racing.webp" width="960" height="540" alt="The five inch quad in FPV, lining up a gate on the MultiGP race field at golden hour, lap clock running." loading="lazy" decoding="async" />
+              </span>
+              <span class="world-body">
+                <span class="world-k">The track</span>
+                <span class="world-t">Five inch racing</span>
+                <span class="world-d">Gate racing on the MultiGP race field. Draw a track, then fly it.</span>
+                <span class="world-tags"><span>1.75 m gates</span><span>38 mm PVC</span><span>Snap 0.5 m</span></span>
+                <span class="world-go">Build it and fly it</span>
+              </span>
+            </a>
+            <a class="world" href="#freestyle" data-chapter="freestyle" style="--accent: var(--sakura)">
+              <span class="world-pic">
+                <img src="assets/chapters/freestyle.webp" width="960" height="540" alt="Two drift cars sliding in tandem through a yard at golden hour, tyre smoke behind them, seen from the chasing quad." loading="lazy" decoding="async" />
+                <span class="world-new">New &#183; Map builder</span>
+              </span>
+              <span class="world-body">
+                <span class="world-k">The city</span>
+                <span class="world-t">Freestyle</span>
+                <span class="world-d">A Japanese town, and a freestyle map. Now build your own: named gaps, roads and drift cars to chase.</span>
+                <span class="world-tags"><span>Named gaps</span><span>Drift cars</span><span>Roads</span></span>
+                <span class="world-go">Build it and fly it</span>
+              </span>
+            </a>
+            <a class="world" href="#whoop" data-chapter="whoop" style="--accent: var(--cream)">
+              <span class="world-pic">
+                <img src="assets/chapters/whoop.webp" width="960" height="540" alt="A 65 mm whoop in FPV, threading a micro UTT track of white pipe gates inside a lamp lit shed." loading="lazy" decoding="async" />
+              </span>
+              <span class="world-body">
+                <span class="world-k">The room</span>
+                <span class="world-t">Whoop racing</span>
+                <span class="world-d">A 65 mm whoop on a micro UTT track. Every RaceGOW Season 5 track, or build your own.</span>
+                <span class="world-tags"><span>28 in gates</span><span>Indoors</span><span>RaceGOW</span></span>
+                <span class="world-go">Fly the room</span>
+              </span>
+            </a>
+          </nav>
+          <p class="worlds-on"><a href="#racing" data-chapter="racing">Or keep scrolling, and see all three in order</a></p>
+        </div>
+      </section>
+
       <!-- ACT 2: the track -->
       <section class="act" data-act="build" style="min-height: 300vh">
+        <!-- Where the racing chapter opens: see .chapter-at. -->
+        <span class="chapter-at" id="racing" style="--at: 0.07"></span>
         <div class="pin">
           <div class="copy" data-copy="build">
-            <p class="eyebrow">02 &#183; The track</p>
+            <p class="eyebrow">03 &#183; The track</p>
             <h2>Draw a track.</h2>
             <p class="lede">
               Place gates, flags and hurdles into a flying order. The builder
@@ -2317,7 +2671,7 @@
       <section class="act" data-act="fly" style="min-height: 640vh">
         <div class="pin">
           <div class="copy copy-tight" data-copy="fly">
-            <p class="eyebrow">03 &#183; The line</p>
+            <p class="eyebrow">04 &#183; The line</p>
             <h2>Now fly it.</h2>
             <p class="lede">
               Gate racing, with adjustable camera angle and field of view.
@@ -2335,10 +2689,11 @@
            a slower shopping street and a faster road, lives in CITY_S in
            main.js. -->
       <section class="act" data-act="city" style="min-height: 760vh">
+        <span class="chapter-at" id="freestyle" style="--at: 0.09"></span>
         <div class="pin">
           <div class="copy copy-tight" data-copy="city">
-            <p class="eyebrow">04 &#183; The city</p>
-            <h2>Then leave the track.</h2>
+            <p class="eyebrow">05 &#183; The city</p>
+            <h2>Leave the track.</h2>
             <p class="lede">
               A Japanese town, and a freestyle map. A training park, gaps and
               open spaces.
@@ -2375,9 +2730,10 @@
            timing inside the act is a fraction of its height, and timeline()
            measures the height rather than assuming it. -->
       <section class="act" data-act="room" style="min-height: 700vh">
+        <span class="chapter-at" id="whoop" style="--at: 0.08"></span>
         <div class="pin">
           <div class="copy copy-tight" data-copy="room">
-            <p class="eyebrow">05 &#183; The room</p>
+            <p class="eyebrow">06 &#183; The room</p>
             <h2>Micro UTT.</h2>
             <p class="lede">
               A 65 mm whoop.
@@ -2414,7 +2770,7 @@
     -->
     <section id="why">
       <div class="why-copy">
-        <p class="eyebrow eyebrow-lit">06 &#183; The reason</p>
+        <p class="eyebrow eyebrow-lit">07 &#183; The reason</p>
         <h2>The hard part of FPV<br /><em>is getting to the first lap.</em></h2>
         <p class="lede">
           A quad, a radio, goggles, batteries, a charger. Hundreds of dollars
@@ -2515,7 +2871,7 @@
     <!-- The close -->
     <section id="close">
       <div class="close-copy">
-        <p class="eyebrow eyebrow-lit" style="justify-content: center">07 &#183; The point</p>
+        <p class="eyebrow eyebrow-lit" style="justify-content: center">08 &#183; The point</p>
         <!-- h2, not h1. The SEO line under the hero wordmark is the h1, and a
              document with two of them has no single heading a crawler or a
              screen reader can name it by. The type is unchanged: .shout is
