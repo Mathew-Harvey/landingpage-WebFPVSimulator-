@@ -32,10 +32,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { readFile, access } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { createHash } from 'node:crypto';
+import { readFile, readdir, access } from 'node:fs/promises';
+import { dirname, join, posix, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bake, OUT as STICKERS_OUT } from './stickers.js';
+import { relativeImports } from './vendor.js';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const rows = [];
@@ -389,6 +391,82 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
       `${frames ? 'keyframes present' : 'NO @keyframes slap'}, ${used ? 'used by .slap.on' : 'NOT USED'}, ${noFill ? 'no fill mode' : 'FILL MODE, so hover is dead'}, ${squash ? 'squashes on contact' : 'NO squash, so it is a zoom'}`,
     );
   }
+}
+
+/*
+ * 12. THE SIMULATOR'S CODE IS A COPY, NOT AN EDIT.
+ *
+ * src/sim/ is the simulator's own code, copied by scripts/vendor.js and laid
+ * out as the simulator lays itself out. The way that goes wrong is a fix
+ * made here instead of there: the page and the simulator then disagree about
+ * the thing the page exists to show, and the next recopy quietly undoes the
+ * fix. The manifest holds a SHA-256 for every file as it was copied, so an
+ * edit is a mismatch, a file the copy did not make is a stray, and an import
+ * that points outside the copy is a hole a recopy would not fill.
+ */
+{
+  const SIM = join(root, 'src/sim');
+  let manifest = null;
+  try {
+    manifest = JSON.parse(await readFile(join(SIM, 'MANIFEST.json'), 'utf8'));
+  } catch (e) {
+    manifest = null;
+  }
+  const walk = async (dir) => {
+    const out = [];
+    for (const e of await readdir(dir, { withFileTypes: true })) {
+      const p = join(dir, e.name);
+      if (e.isDirectory()) {
+        out.push(...await walk(p));
+      } else {
+        out.push(relative(SIM, p).split('\\').join('/'));
+      }
+    }
+    return out;
+  };
+  const edited = [];
+  const strays = [];
+  const holes = [];
+  if (manifest) {
+    const listed = manifest.files || {};
+    for (const rel of await walk(SIM)) {
+      if (rel === 'MANIFEST.json') {
+        continue;
+      }
+      if (!(rel in listed)) {
+        strays.push(rel);
+        continue;
+      }
+      const buf = await readFile(join(SIM, rel));
+      if (createHash('sha256').update(buf).digest('hex') !== listed[rel]) {
+        edited.push(rel);
+      }
+      if (rel.endsWith('.js')) {
+        for (const spec of relativeImports(buf.toString('utf8'))) {
+          const to = posix.normalize(posix.join(posix.dirname(rel), spec));
+          if (!(to in listed)) {
+            holes.push(`${rel} -> ${spec}`);
+          }
+        }
+      }
+    }
+    for (const rel of Object.keys(listed)) {
+      if (!(await exists(join('src/sim', rel)))) {
+        holes.push(`${rel} is in the manifest and not on disk`);
+      }
+    }
+  }
+  check(
+    'src/sim is the simulator\'s code, unedited',
+    Boolean(manifest) && edited.length === 0 && strays.length === 0 && holes.length === 0,
+    !manifest
+      ? 'NO src/sim/MANIFEST.json: run node scripts/vendor.js ../WebFPVSimulator'
+      : [
+        edited.length ? `EDITED ${edited.join(', ')}` : '',
+        strays.length ? `NOT A COPY ${strays.join(', ')}` : '',
+        holes.length ? `UNRESOLVED ${holes.slice(0, 4).join(', ')}` : '',
+      ].filter(Boolean).join('; ') || `${Object.keys(manifest.files).length} files as copied from ${String(manifest.commit).slice(0, 12)}`,
+  );
 }
 
 const w = Math.max(...rows.map((r) => r[0].length));

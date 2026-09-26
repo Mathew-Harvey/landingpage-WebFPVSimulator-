@@ -40,7 +40,9 @@ import * as THREE from 'three';
 import { createStage } from './stage.js';
 import { buildDrone, CAMERA_MOUNT_FORWARD, CAMERA_MOUNT_UP } from './drone.js';
 import { buildCourse, GATE_COUNT } from './course.js';
-import { buildCity, flightLine, CITY_ORIGIN, BUILT_R, TREE_R } from './city.js';
+import { buildCity } from './city.js';
+import { CITY_ORIGIN, CITY_HEART, BUILT_R, TREE_R } from './places.js';
+import { createLoader } from './loader.js';
 import { buildRoom, ROOM_AIR } from './room.js';
 import { buildWhoop, WHOOP_FOV, WHOOP_MOUNT_FORWARD, WHOOP_MOUNT_UP, WHOOP_CAM_TILT_DEG } from './whoop.js';
 import { buildPetals } from './petals.js';
@@ -229,7 +231,7 @@ const CITY_BEATS = [
     /* THE ONE BEAT THAT NAMES SOMETHING THIS FILM DOES NOT SHOW, and it is
      * named on purpose rather than by accident. The practice field is in the
      * simulator's town, in src/maps/city/places/training.js, and this page
-     * builds the vendored town only: see src/city/vendored. A visitor
+     * builds the vendored town only: see src/sim/maps/city/vendored. A visitor
      * clicking Fly the city gets it, so leaving it out would undersell the
      * map. Everything else the beats say is in the frame they say it in. */
     t: 'Streets, gaps and a freestyle training park.',
@@ -289,6 +291,14 @@ const ROOM_BEATS = [
 /*
  * THE BOOT SCREEN'S PHASES, AND THEY ARE REAL ONES NOW.
  *
+ * THREE OF THEM, where there were five. The town and the warm pass used to
+ * be phases here, and between them they were most of the wait: measured in
+ * the container, 27 seconds of loading screen of which 24 were a town the
+ * visitor would not reach for a minute. They are the loader's now (see
+ * loader.js and the jobs below), built behind the film, and this screen
+ * covers only what the first frame needs: the renderer, the studio, and
+ * the frame itself.
+ *
  * This used to be four jokes on a 220 ms interval and a bar that went to
  * 18 percent and then added 26 every tick, so the screen was a stopwatch
  * wearing a workshop's clothes: it said "Balancing props" while the module
@@ -307,10 +317,8 @@ const ROOM_BEATS = [
  */
 const BOOT_PHASES = [
   { id: 'modules', at: 0.02, ms: 1400, note: 'Fetching the renderer' },
-  { id: 'studio', at: 0.18, ms: 1200, note: 'Building the studio' },
-  { id: 'frame', at: 0.34, ms: 1200, note: 'Drawing the first frame' },
-  { id: 'town', at: 0.46, ms: 9000, note: 'Building the town' },
-  { id: 'warm', at: 0.84, ms: 6000, note: 'Warming the shaders' },
+  { id: 'studio', at: 0.34, ms: 900, note: 'Building the studio' },
+  { id: 'frame', at: 0.68, ms: 900, note: 'Drawing the first frame' },
 ];
 
 /* ------------------------------------------------------------------- boot */
@@ -438,26 +446,27 @@ function clearBoot() {
 }
 
 /*
- * THE BOOT SCREEN COMES DOWN WHEN THE TOWN IS BUILT, not on the first frame.
+ * THE BOOT SCREEN COMES DOWN ON THE FIRST FRAME, and the town is built after.
  *
- * It used to go on the first rendered frame, which is right for a page whose
- * whole world is a quad and a course. The freestyle act's town is the
- * simulator's own and it is seconds of synchronous work: eleven and a half
- * thousand meshes with every sign painted on a canvas as it goes. Built
- * after the boot screen had gone, that work landed as a freeze on a page the
- * visitor was already scrolling, which is exactly the hitch this replaces.
+ * That is where it started, and it moved for a reason that no longer holds.
+ * The freestyle act's town is the simulator's own and it is seconds of work:
+ * eleven and a half thousand meshes with every sign painted on a canvas as it
+ * goes. While that work could only run in one block, running it after the
+ * screen had gone landed as a freeze on a page the visitor was scrolling, so
+ * the screen waited for it, and for a warm pass after it, and the visitor
+ * waited 27 seconds in the container for a place a minute away.
  *
- * A loading screen is the one place on a page where seconds are honest. So
- * the first frame renders under the boot screen, the town is built, and only
- * then does the screen lift, onto a page that never stalls again.
+ * The town comes in steps now, and so does its warm pass, and the loader
+ * spends them where nobody sees them: see the loader's budget in frame().
+ * So the screen covers only what the first frame needs.
  *
- * The fallback is not paranoia and it is longer than it was: a background tab
- * does not run requestAnimationFrame, so a page opened in one and read later
- * would otherwise be a permanent loading screen over a finished page. Twelve
- * seconds is past any machine this has been measured on and still short of a
- * visitor deciding the page is broken.
+ * The fallback is for a background tab, which does not run
+ * requestAnimationFrame: a page opened in one and read later would otherwise
+ * be a permanent loading screen over a finished page. A pinned timeline
+ * (?t=) waits for everything instead, because a named frame has to be the
+ * whole frame, and it gets longer to do it.
  */
-setTimeout(clearBoot, 12000);
+setTimeout(clearBoot, PIN === null ? 12000 : 180000);
 
 function fail() {
   document.getElementById('nowebgl').classList.add('on');
@@ -601,7 +610,7 @@ if (DEBUG) {
     /* Minimum clearance along the whole line, in metres, against the town's
      * own colliders, plus the lowest the line ever gets over its ground. */
     clearance: (samples = 900) => {
-      if (!city.ready) {
+      if (!city.ready || !cityLineIn()) {
         return null;
       }
       const world = city.world();
@@ -687,6 +696,9 @@ if (DEBUG) {
     cityAt,
     cityRoam: (t) => ramp(t, 3.0, 3.97, 0, 0.13),
     cityWhere: (roam) => {
+      if (!cityLineIn()) {
+        return null;
+      }
       const u = cityAt(roam);
       const p = cityLine.getPointAt(u);
       const t = cityLine.getTangentAt(u);
@@ -704,6 +716,9 @@ if (DEBUG) {
       want: CLOSE_WANT, far: CLOSE_FAR, dist: CLOSE_DIST, high: CLOSE_HIGH,
       fog: stage.fogFor(1, 1),
     }),
+    /* What the loader has done, what each job cost on the main thread and
+     * how long it took on the wall clock. */
+    loads: () => loader.report(),
     /* Where the camera and the aircraft actually ended up on the last frame. */
     live: () => ({
       cam: stage.camera.position.toArray(),
@@ -820,9 +835,24 @@ const LAP_TIME = (() => {
  * The freestyle line. It no longer starts where the lap ends, because the
  * page no longer flies between them: see the dissolve below. It starts at
  * the best shot in the town instead, which is what a cut is for.
+ *
+ * IT ARRIVES WITH THE TOWN. The line is drawn against the town's own street
+ * functions, and those are the first thing the town's build fetches, so it
+ * is null until then. Nothing can fly it before it is here: the act it
+ * belongs to is held closed until the town is built (see the holds in
+ * frame()), and the town is built after its street. CITY_LENGTH is the
+ * line's measured length once it is; the number it starts at is what it
+ * measures, near enough, so the instrument never divides by nothing.
  */
-const cityLine = flightLine(CITY_ORIGIN);
-const CITY_LENGTH = cityLine.getLength();
+let cityLine = null;
+let CITY_LENGTH = 180;
+function cityLineIn() {
+  if (!cityLine && city.line) {
+    cityLine = city.line;
+    CITY_LENGTH = cityLine.getLength();
+  }
+  return cityLine;
+}
 
 /*
  * THE PACING OF THE FREESTYLE ACT.
@@ -1088,6 +1118,9 @@ const el = {
   osdBatt: document.getElementById('osd-batt'),
   beats: document.getElementById('beats'),
   progress: document.querySelector('#progress i'),
+  hold: document.getElementById('hold'),
+  holdNote: document.getElementById('hold-note'),
+  holdFill: document.getElementById('hold-fill'),
   cards: document.getElementById('cards'),
   foot: document.getElementById('foot'),
 };
@@ -2141,6 +2174,18 @@ const camQuat = new THREE.Quaternion();
 const pos2 = new THREE.Vector3();
 const quat2 = new THREE.Quaternion();
 
+/* The two transitions, written only when they change. */
+const HOLD_OPEN = 0.6;
+let holdTown = 0;
+let holdShed = 0;
+let holdFor = -1;
+function setOpacity(node, v) {
+  const text = v.toFixed(3);
+  if (node.style.opacity !== text) {
+    node.style.opacity = text;
+  }
+}
+
 function setCopy(id, on) {
   const c = COPIES.get(id);
   if (c) {
@@ -2166,6 +2211,11 @@ function frame(ms) {
   }
 
   scrollTarget = window.scrollY || window.pageYOffset || 0;
+  /* When the visitor last moved the page, for the loader: see its budget. */
+  if (Math.abs(scrollTarget - lastScrollSeen) > 0.5) {
+    lastMoveAt = now;
+    lastScrollSeen = scrollTarget;
+  }
   /* Critically damped enough to feel like film and not like syrup. A raw
    * scroll value makes a 3D camera judder on every wheel notch. */
   /*
@@ -2467,7 +2517,12 @@ function frame(ms) {
      * turns a hundred and forty metres of empty field into an arrival rather
      * than a commute.
      */
-    cityPose(cityU, dronePos, droneQuat, now * 2.1, flip, turnBank);
+    /* The line arrives with the town, and until the town is here this act is
+     * held closed (see the holds), so the aircraft simply stays where it was
+     * rather than fly a line that does not exist. */
+    if (cityLineIn()) {
+      cityPose(cityU, dronePos, droneQuat, now * 2.1, flip, turnBank);
+    }
 
     /*
      * No join. The two lines are a hundred metres and a dissolve apart, and
@@ -2928,7 +2983,9 @@ function frame(ms) {
      * off the pad to the moment the camera leaves it. Same contract at both
      * ends: an OSD is what you see through goggles, so it is on exactly when
      * the page is in them. */
-    el.osd.classList.toggle('on', !REDUCED
+    /* ...and it stands down while a hold has the transition closed, because
+     * the goggles are not showing anything yet. */
+    el.osd.classList.toggle('on', !REDUCED && !holding
       && ((T > 2.12 && T < 3.74) || (T > 4.24 && T < 4.90)));
     el.cue.style.opacity = T > 0.35 ? '0' : '1';
     if (el.progress) {
@@ -2952,8 +3009,6 @@ function frame(ms) {
      * reader dragging the bar back up the page has to come out of the town
      * the same way they went in.
      */
-    const flare = 1 - clamp01(Math.abs(T - 3.0) / 0.085);
-    el.dissolve.style.opacity = (flare * flare * (3 - 2 * flare)).toFixed(3);
 
     /*
      * THE SECOND TRANSITION, AND IT GOES THE OTHER WAY.
@@ -2975,8 +3030,6 @@ function frame(ms) {
      * A slightly narrower window than the dissolve's, because a fade to
      * black reads as complete sooner than a fade to white does.
      */
-    const dark = 1 - clamp01(Math.abs(T - 4.0) / 0.075);
-    el.blackout.style.opacity = (dark * dark * (3 - 2 * dark)).toFixed(3);
 
     /*
      * ACT 1'S COPY IS ON SCREEN FROM THE FIRST FRAME.
@@ -3041,6 +3094,67 @@ function frame(ms) {
   }
 
   /*
+   * THE HOLDS, and the two transitions they keep closed.
+   *
+   * The page builds its places behind the film now, a step at a time when
+   * nobody can see the work (see the loader), and a visitor can outrun that:
+   * scroll hard, or jump to a chapter, and the film reaches the town before
+   * the town is built. The honest thing is the thing a film would do, which
+   * is to stay in the transition: the dissolve stays in its haze, or the
+   * blackout stays dark, until the place is there to come out into. While a
+   * hold is on, the loader gets everything (see its budget), and the note
+   * says what it is waiting for, after a third of a second so that a wait
+   * that ends at once never flashes a sentence.
+   *
+   * The town's hold covers the dissolve and its whole act, and the shed's
+   * covers the blackout onward. Each is a number that goes to one at once
+   * and back down over HOLD_OPEN seconds once the place is ready, so the
+   * frame comes out of the transition the way it would have gone into it,
+   * rather than cutting to a place the moment it lands.
+   *
+   * Every frame, not only when T moves, because a hold ends while T sits
+   * still. So the two transitions are drawn here as well.
+   */
+  {
+    const townWait = !REDUCED && PIN === null && T > 2.965 && T < 4.0 && !loader.done('town');
+    const shedWait = !REDUCED && PIN === null && T > 3.99 && !loader.done('shed');
+    holdTown = townWait ? 1 : Math.max(0, holdTown - dt / HOLD_OPEN);
+    holdShed = shedWait ? 1 : Math.max(0, holdShed - dt / HOLD_OPEN);
+    /* The OSD is decided in the block that runs when T moves, and a hold can
+     * start or end while T sits still, so a change of hold asks for it. */
+    if (holding !== (townWait || shedWait)) {
+      lastT = -1;
+    }
+    holding = townWait || shedWait;
+    if (holding) {
+      loader.want(townWait ? 'town' : 'shed');
+      holdFor = holdFor < 0 ? now : holdFor;
+    } else {
+      holdFor = -1;
+    }
+
+    const flare = 1 - clamp01(Math.abs(T - 3.0) / 0.085);
+    const dissolve = Math.max(flare * flare * (3 - 2 * flare), holdTown);
+    const dark = 1 - clamp01(Math.abs(T - 4.0) / 0.075);
+    const blackout = Math.max(dark * dark * (3 - 2 * dark), holdShed);
+    setOpacity(el.dissolve, dissolve);
+    setOpacity(el.blackout, blackout);
+
+    const noted = holding && now - holdFor > 0.33;
+    el.hold.classList.toggle('on', noted);
+    if (noted) {
+      const note = townWait ? 'Building the town' : 'Lighting the shed';
+      if (el.holdNote.textContent !== note) {
+        el.holdNote.textContent = note;
+      }
+      const k = townWait
+        ? (city.ready ? 0.85 + 0.15 * warmed.town : 0.85 * city.progress)
+        : warmed.shed;
+      el.holdFill.style.transform = `scaleX(${clamp01(k).toFixed(3)})`;
+    }
+  }
+
+  /*
    * THE STICKERS, every frame rather than only when T moves. The opening
    * three are timed off the boot and not off the scroll, so they have to
    * be checked while T sits at zero. Pinned or reduced there is no beat to
@@ -3058,50 +3172,37 @@ function frame(ms) {
   stage.render();
 
   /*
-   * The first frame is drawn UNDER the boot screen, then the town is built,
-   * then the screen lifts. Drawing first is not a formality: it compiles the
-   * cel shaders and uploads the airframe, so the frame the visitor is shown
-   * when the screen goes is one the GPU has already seen.
+   * THE LOADER'S TURN, after the frame is drawn and never before it.
    *
-   * The build blocks for seconds. Everything driven from JavaScript stops
-   * with it, which is why the boot bar's sweep is a CSS animation: it runs on
-   * the compositor and keeps moving through a blocked main thread.
+   * The work goes in a task of its own (see pumpSoon) so that this frame is
+   * handed to the compositor first: a step that runs inside the frame
+   * callback holds the frame back until it finishes, and a step after it
+   * only holds back the NEXT one, which on a still frame nobody can see.
    */
+  pumpSoon(loaderBudget(now, T));
+
   /*
-   * ONE STEP PER FRAME, AND THE ANNOUNCEMENT ALWAYS GETS ITS OWN.
+   * THE FIRST FRAME IS DRAWN UNDER THE BOOT SCREEN, then the screen lifts.
+   * Drawing first is not a formality: it compiles the studio's cel shaders
+   * and uploads the airframe at full size, so the frame the visitor is shown
+   * when the screen goes is one the GPU has already seen. That full size
+   * draw was measured once at four seconds on a cold GPU, which is why it
+   * happens here and not in front of anybody.
    *
-   * The two calls in here, building the town and warming it, are seconds of
-   * synchronous work each. A note set in the same frame that then blocks is
-   * a note nobody sees: the DOM was updated and nothing was composited, and
-   * the visitor reads the PREVIOUS phase's words for the whole of the wait.
-   * Same lesson as yieldToPaint in the simulator's loading screen, and the
-   * same fix: say it, let the frame end, do it on the next one.
+   * One step per frame, and the announcement gets its own: a note set in a
+   * frame that then blocks is a note nobody sees. Same lesson as yieldToPaint
+   * in the simulator's loading screen.
    *
-   * Three extra frames on a boot that is measured in seconds.
+   * A PINNED frame (?t=) waits for the loader to finish, with the screen up,
+   * because a frame named for a review or a check has to be the whole frame
+   * and not the town half built. Nobody else waits for it.
    */
   if (!bootDone) {
     if (bootStep === 0) {
       /* The frame above this is the first one the visitor's GPU has drawn. */
       bootPhase('frame');
-      /*
-       * Not for a reduced motion visitor. The timeline is pinned to one
-       * frame for them, that frame is on the race field, and the town is
-       * never shown at all: building it would be seconds of loading screen
-       * for geometry nobody is going to see. They get the page sooner, which
-       * is the whole point of asking for less.
-       */
-      bootStep = REDUCED ? 2 : 1;
-    } else if (bootStep === 1) {
-      bootPhase('town');
-      bootStep = 2;
-    } else if (bootStep === 2) {
-      if (!REDUCED) {
-        city.start();
-      }
-      bootPhase('warm');
-      bootStep = 3;
-    } else {
-      warmCity();
+      bootStep = 1;
+    } else if (PIN === null || loader.idle()) {
       clearBoot();
       bootDone = true;
     }
@@ -3110,162 +3211,246 @@ function frame(ms) {
   requestAnimationFrame(frame);
 }
 
+/* ------------------------------------------------------------- the loader */
+
 /*
- * COMPILING AND UPLOADING THE TOWN BEFORE ANYBODY LOOKS AT IT.
+ * EVERYTHING THE FIRST FRAME DOES NOT NEED, BUILT BEHIND THE FILM.
  *
- * Building the geometry under the boot screen fixed the first hitch and
- * revealed the second one. A mesh costs nothing until it is first DRAWN, and
- * then it costs everything at once: the material's shader is compiled and
- * linked, and its buffers are uploaded to the GPU. The town is about fifteen
- * hundred meshes across thirty odd materials, and all of that came due on the
- * frame it first entered the camera, which is the frame the field arrives.
- * Measured, that was a six second stall in the middle of the lap.
+ * The loading screen covers the renderer, the studio and one frame.
+ * Everything else is a job here, run a step at a time by loader.js when the
+ * frame can afford it. Three jobs, in the order the film reaches them:
  *
- * So it is paid here instead, while the boot screen is still up. renderer
- * .compile walks the scene and builds every program it finds, and then a
- * handful of real renders from a wide shot over the district force the
- * geometry uploads that compile alone does not: a buffer is uploaded when it
- * is first submitted, so something has to actually draw it.
+ *   course   the race field's warm pass. The field is built at import and it
+ *            is cheap, but its shaders and buffers are cold until they are
+ *            first drawn, and before there was a warm pass that first draw
+ *            was a three second stall in the middle of the track act.
+ *   town     the town: its modules, its build, its merge, then its warm pass,
+ *            about a hundred and fifty steps in all. See city.js.
+ *   shed     the shed and the whoop's warm pass. A hundred and fifty meshes,
+ *            hidden for four fifths of the page and cold until the lights come
+ *            on, which is also the frame the camera changes place on: a stall
+ *            there reads as the transition being broken.
  *
- * Three angles, not one, because a frustum test decides what gets submitted
- * and one camera cannot see the whole of a district from inside it.
- *
- * The camera is put back exactly as it was found. The next frame is computed
- * from T like every other frame, so even if it were not, nothing would carry
- * over; restoring it is cheap and means this function has no side effects to
- * remember.
+ * A reduced motion visitor is pinned to one frame of the lap and never sees
+ * the town or the shed, so they get the course and nothing else. Seconds of
+ * work for geometry nobody will see is the opposite of what they asked for.
  */
-const warmPos = new THREE.Vector3();
-const warmQuat = new THREE.Quaternion();
-function warmCity() {
-  warmPos.copy(stage.camera.position);
-  warmQuat.copy(stage.camera.quaternion);
-  const wasShown = city.group.visible;
-  const wasFov = stage.camera.fov;
+const loader = createLoader();
 
-  /*
-   * THE COURSE IS WARMED TOO, and leaving it out cost a three second stall
-   * in the middle of the track act.
-   *
-   * On the first frame the page is in the studio: the gates are invisible,
-   * the flags and the treeline have not grown in, and the racing line is not
-   * drawn. Invisible means never submitted, and never submitted means every
-   * one of those meshes, and every canvas texture printed for the gates, was
-   * still cold when the track stood up. Putting the course into its finished
-   * state for the warm pass costs nothing, because setBuild and setWorld are
-   * recomputed from T on the very next frame: there is no state here to put
-   * back.
-   */
-  course.setBuild(1);
-  course.setWorld(1);
-  course.hideLines(false);
-  course.setRun(0, 1);
-  city.setShown(true);
-  stage.setRegime(1, 1, 1);
+/*
+ * WARMING A PLACE, which is compiling its shaders and uploading its buffers
+ * before anybody looks at it.
+ *
+ * A mesh costs nothing until it is first DRAWN, and then everything at once:
+ * its material's program is compiled and linked and its buffers go to the
+ * GPU. The old warm pass paid that for every place in one block behind the
+ * loading screen, and it was the larger half of the 27 seconds. Here it is
+ * two kinds of step:
+ *
+ *   COMPILE  renderer.compileAsync, with the place shown. Its synchronous
+ *            part only hands the programs to the driver; where the driver has
+ *            KHR_parallel_shader_compile it builds them on its own threads,
+ *            and the promise says when, so the step yields the promise and
+ *            the page loses no frames to it.
+ *   UPLOAD   the place drawn a slice at a time into stage.warm's eight pixel
+ *            scissor, culling off so every mesh in the slice is submitted, and
+ *            everything else hidden for the length of the draw. A buffer goes
+ *            to the GPU the first time it is drawn, and this is that first
+ *            time, a slice a step.
+ *
+ * Each step puts its place into the state it is seen in: shown, its lights
+ * at the level they will be, the race field finished. It does not put any of
+ * that back, because frame() sets all of it from T on every frame and the
+ * next frame does. What frame() does not own is restored here: which meshes
+ * the slice hid, and their culling.
+ */
+function showForWarm(place) {
+  if (place === 'course') {
+    course.setBuild(1);
+    course.setWorld(1);
+    course.hideLines(false);
+    course.setRun(0, 1);
+    course.group.visible = true;
+    droneRig.visible = true;
+    stage.setRegime(1, 1, 0);
+  } else if (place === 'town') {
+    city.setShown(true);
+    stage.setRegime(1, 1, 1);
+  } else if (place === 'shed') {
+    room.setShown(true);
+    room.setLamps(1);
+    whoopRig.visible = true;
+  }
   course.setFog(stage.scene.fog);
-  stage.setFov(90);
+}
 
-  const heart = city.heart;
-  /* Into an eight pixel scissor: everything the first draw of a mesh costs
-   * except the fill, which is the part that is worth nothing here. */
-  /*
-   * CULLING IS TURNED OFF FOR THE WARM PASS, and that is the difference
-   * between most of the stall and all of it.
-   *
-   * Three camera angles left a two second hitch behind: a frustum decides
-   * what is submitted, and whatever fell outside all three was still cold
-   * when the visitor reached it. Submitting the district unconditionally is
-   * the only way to be sure every mesh has been through the pipeline once.
-   * It is also why this is worth doing inside a scissor: with nothing culled
-   * the town is a million triangles, and none of them need to land anywhere.
-   */
-  /*
-   * THE SHED IS WARMED WITH THEM, and it is the cheapest part of this whole
-   * function and the one that would be missed.
-   *
-   * It is a hundred and fifty meshes against the district's fifteen hundred,
-   * so nobody would think to. But it is hidden for four fifths of the page,
-   * hidden means never submitted, and never submitted means its pipe, its
-   * boards and its two bulbs were all cold at the exact frame the lights
-   * come on. That frame is also the frame the camera changes place on, so a
-   * stall there does not read as a stall, it reads as the transition being
-   * broken.
-   *
-   * Its lamps go up for the pass too, because a material compiled with two
-   * point lights at zero is not the same program as one compiled with two
-   * point lights doing something. Both are put back below: the next frame
-   * recomputes them from T, so there is no state here to lose.
-   */
-  const wasRoomShown = room.group.visible;
-  room.setShown(true);
-  room.setLamps(1);
-  whoopRig.visible = true;
+const WARM_ROOTS = {
+  course: () => [course.group, droneRig],
+  town: () => [city.group],
+  shed: () => [room.group, whoopRig],
+};
 
-  const culled = [];
-  for (const root of [city.group, course.group, droneRig, room.group, whoopRig]) {
-    root.traverse((o) => {
-      if (o.isMesh && o.frustumCulled) {
-        culled.push(o);
-        o.frustumCulled = false;
+/* How far each place's warm pass has got, 0 to 1, for a hold's note. */
+const warmed = { course: 0, town: 0, shed: 0 };
+
+function* warmPlace(place, slices) {
+  const roots = WARM_ROOTS[place]();
+  showForWarm(place);
+  yield stage.renderer.compileAsync(stage.scene, stage.camera);
+  warmed[place] = 0.2;
+
+  const meshes = [];
+  for (const r of roots) {
+    r.traverse((o) => {
+      if (o.isMesh || o.isLine || o.isPoints) {
+        meshes.push(o);
       }
     });
   }
-
-  stage.warm(() => {
-    /* Two over the town, one over the race field, because the two places are
-     * a hundred metres apart and a frustum that holds one loses the other. */
-    for (const [dx, dy, dz] of [[120, 90, 120], [-130, 70, -60], [-heart.x + 40, 40, -heart.z + 40]]) {
-      stage.camera.position.set(heart.x + dx, dy, heart.z + dz);
-      stage.camera.lookAt(heart);
-      stage.camera.updateMatrixWorld(true);
-      course.sky.position.copy(stage.camera.position);
-      /* compile() first, so the render below is an upload rather than a
-       * compile AND an upload. */
-      stage.renderer.compile(stage.scene, stage.camera);
-      stage.render();
+  /* The scene's children that carry lights, which stay up for every draw. */
+  const lit = new Set();
+  for (const c of stage.scene.children) {
+    if (roots.includes(c)) {
+      continue;
     }
-    /* And one from inside the shed, which none of the three above can see
-     * into: it is 300 m away and it is a closed box. From a back corner,
-     * looking across the track, which is the act's own opening shot. */
-    stage.camera.position.set(room.heart.x - 4.1, 2.35, room.heart.z + 5.1);
-    stage.camera.lookAt(room.heart.x, 0.85, room.heart.z);
-    stage.camera.updateMatrixWorld(true);
-    stage.renderer.compile(stage.scene, stage.camera);
-    stage.render();
-  });
-
-  for (const o of culled) {
-    o.frustumCulled = true;
+    let has = false;
+    c.traverse((o) => {
+      has = has || Boolean(o.isLight);
+    });
+    if (has) {
+      lit.add(c);
+    }
   }
-
-  /*
-   * ...and one frame at FULL SIZE, which the scissor above deliberately does
-   * not do and which turned out to be the last of the hitch.
-   *
-   * Everything before this is about getting shaders compiled and buffers
-   * uploaded, and an eight pixel scissor does all of that for a fraction of
-   * the fill. What it does not do is exercise the renderer at the size it
-   * will actually run at, and the first frame that does was measured at four
-   * seconds: reproducibly, at T = 0, immediately after the boot screen lifted.
-   * The first frame the visitor sees, in other words, which is the worst
-   * possible place for it.
-   *
-   * So the studio is drawn once, properly, before the screen goes. It is the
-   * cheapest shot on the page, which is why this costs almost nothing.
-   */
-  stage.camera.position.copy(warmPos);
-  stage.camera.quaternion.copy(warmQuat);
-  stage.camera.fov = wasFov;
-  stage.camera.updateProjectionMatrix();
-  stage.camera.updateMatrixWorld(true);
-  course.sky.position.copy(stage.camera.position);
-  stage.render();
-
-  city.setShown(wasShown);
-  room.setShown(wasRoomShown);
-  room.setLamps(0);
-  whoopRig.visible = false;
+  const per = Math.max(1, Math.ceil(meshes.length / slices));
+  for (let k = 0; k < meshes.length; k += per) {
+    showForWarm(place);
+    const slice = new Set(meshes.slice(k, k + per));
+    /* Everything else in the scene stands down for the draw, lights apart:
+     * a program is keyed on the lights it is drawn with, and one compiled
+     * against a different set would be compiled twice. */
+    const off = [];
+    for (const c of stage.scene.children) {
+      if (!roots.includes(c) && c.visible && !lit.has(c)) {
+        c.visible = false;
+        off.push(c);
+      }
+    }
+    const culled = [];
+    for (const m of meshes) {
+      if (!slice.has(m)) {
+        if (m.visible) {
+          m.visible = false;
+          off.push(m);
+        }
+      } else if (m.frustumCulled) {
+        m.frustumCulled = false;
+        culled.push(m);
+      }
+    }
+    stage.warm(() => stage.render());
+    for (const o of off) {
+      o.visible = true;
+    }
+    for (const m of culled) {
+      m.frustumCulled = true;
+    }
+    warmed[place] = 0.2 + 0.8 * Math.min(1, (k + per) / meshes.length);
+    yield `warm ${place}`;
+  }
+  warmed[place] = 1;
 }
+
+loader.add('course', () => warmPlace('course', 2));
+if (!REDUCED) {
+  loader.add('town', function* town() {
+    yield* city.steps();
+    if (city.ready) {
+      yield* warmPlace('town', 8);
+    }
+  });
+  loader.add('shed', () => warmPlace('shed', 1));
+}
+
+/*
+ * THE BUDGET, which is the rule for when nobody will see a step.
+ *
+ * A step cannot be interrupted, and the town's longest are hundreds of
+ * milliseconds, so the question is never how much work fits in a frame. It
+ * is whether this frame can be late without anybody noticing, and there are
+ * four answers:
+ *
+ *   WAITING  a transition is being held closed for a place that is not built
+ *            yet (see the holds). The screen is haze or dark and the visitor
+ *            is waiting for exactly this, so it gets everything: a lot of work
+ *            a frame, with a frame between batches so the note can move.
+ *   STILL    the frame is not moving: the invitation is open over a blurred
+ *            film, or the film is paused on the chapter cards, or the tab
+ *            is in the background. A step here costs nothing visible.
+ *   QUIET    the visitor has stopped scrolling and the opening build has
+ *            finished playing. The frame is nearly still: petals and a pulse,
+ *            which a stall freezes for a moment and nobody reads as a fault.
+ *   BUSY     anything else. The visitor is scrolling, or watching the quad
+ *            assemble, and a stall now is the hitch the page exists to avoid.
+ *            Nothing runs.
+ *
+ * A pinned timeline runs everything at once behind the boot screen.
+ */
+const QUIET_AFTER = 0.45;
+let lastMoveAt = 0;
+let lastScrollSeen = -1;
+let holding = false;
+let chooserStill = false;
+
+function loaderBudget(now, T) {
+  if (loader.idle()) {
+    return 0;
+  }
+  if (PIN !== null) {
+    return 400;
+  }
+  if (holding) {
+    return 150;
+  }
+  if (chooserStill || document.body.classList.contains('invite-open')) {
+    return 60;
+  }
+  const building = !REDUCED && autoBuild < 1 && T < 0.9;
+  if (!building && now - lastMoveAt > QUIET_AFTER) {
+    return 40;
+  }
+  return 0;
+}
+
+/* The loader runs in a task of its own, posted after the frame is drawn. */
+const pumpPort = new MessageChannel();
+let pumpBudget = 0;
+pumpPort.port1.onmessage = () => {
+  loader.pump(pumpBudget);
+};
+function pumpSoon(budget) {
+  if (budget > 0) {
+    pumpBudget = budget;
+    pumpPort.port2.postMessage(0);
+  }
+}
+
+/*
+ * IN A BACKGROUND TAB there are no frames at all, so there is no frame to
+ * hang the loader on, and a visitor who opened the page in a tab and came
+ * back to it later should come back to a town. A background tab is the
+ * stillest a page gets, so it works in large batches on a timer until the
+ * tab is shown again or there is nothing left.
+ */
+document.addEventListener('visibilitychange', () => {
+  const tick = () => {
+    if (!document.hidden || loader.idle()) {
+      return;
+    }
+    loader.pump(250);
+    setTimeout(tick, 0);
+  };
+  tick();
+});
 
 /* --------------------------------------------------------------- start up */
 

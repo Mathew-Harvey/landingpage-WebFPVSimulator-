@@ -87,48 +87,41 @@ stretch is also the only place the pull-out ever had room to finish. Measured
 from the close alone it had about a fifth of a screen of scroll and played a
 quarter of its arc.
 
-The town IS the simulator's town, not a drawing of one. `src/city/vendored/`
-is sakura-crossing, copied from the simulator's `src/maps/city/vendored/`
-where it is the copy of record, and `src/city.js` is only a join: where the
-town stands in the race field's coordinates, which parts of it are built, and
-the line flown through it. A visitor sees the same streets here that they
-will fly when they click through, because it is the same source drawing them.
+The town IS the simulator's town, not a drawing of one. `src/sim/` is a
+copy of the parts of the simulator this page draws, laid out exactly as the
+simulator lays out its own `src/` so that every file arrives byte for byte
+and no import is rewritten. `node scripts/vendor.js ../WebFPVSimulator`
+makes it, `src/sim/MANIFEST.json` records the commit and a hash of every
+file, and `npm run lint:page` fails if any file there has been edited. The
+town itself is `src/sim/maps/city/vendored/`: sakura-crossing, by Kenton
+Wang, MIT, which the simulator vendors and credits, copied whole as NOTICE
+requires. `src/city.js` is only a join: where the town stands (the numbers
+are in `src/places.js`), which parts of it are built, and the line flown
+through it. A visitor sees the same streets here that they will fly when
+they click through, because it is the same source drawing them.
 
 It costs what a whole town costs. Measured: it builds about eleven and a half
 thousand meshes and paints every sign and fascia with Canvas2D as it goes, and
-after pruning and merging it settles at about four thousand meshes and 1 M
-triangles.
+after pruning and the simulator's own merge it settles at about twelve hundred
+meshes and 1.1 M triangles.
 
-The merge is ours rather than the simulator's `bakeCity`. That pass is much
-cleverer, and called from here it drops the shopping street's buildings: every
-one of its options was tried, the simulator's own combination included, and the
-shops go every time; with the call removed they come back. The simulator does a
-good deal of preparation between `buildWorld` and `bakeCity` that this page does
-not. `mergeStatics` in `src/city.js` does the one thing that actually matters,
-which is turning eleven thousand meshes into a few hundred, and uses bake.js's
-own `findAnimated` for the part that must not be got wrong: which bits of the
-town move.
+That is seconds of work, and for a long time it happened behind the boot
+screen, in one block, followed by a warm pass that compiled every shader and
+uploaded every buffer. Measured in the container, the screen stayed up for
+27 seconds. It comes down on the first frame now, at about two seconds, and
+the rest is built behind the film by `src/loader.js`: the simulator's
+`buildWorldSteps` and `bakeCitySteps` are the same build and bake as
+generators, hashed identical to the single calls, and the loader takes a step
+only when nobody will see the frame be late: the visitor has stopped
+scrolling, the film is paused on the chapter cards, or the invitation is
+open. If a visitor outruns it, the transition into the town stays in its
+haze with a note saying what it is waiting for, and opens when the town is
+there.
 
-The build is seconds rather than milliseconds, so it happens behind the boot
-screen, and the boot screen is built around that fact. Its bar used to be a
-220 ms interval writing 18 percent, then 44, then 70, then 96, and then
-sitting there until the town was finished: a stopwatch wearing a workshop's
-clothes. It now names five real phases as they happen, fetching the renderer,
-building the studio, the first frame, the town, the shaders, and the bar is
-aimed at each phase's mark as that phase begins.
-
-Both moving parts are CSS transforms rather than widths, and that is the
-whole trick: building the town blocks the main thread for seconds, so
-anything driven from JavaScript stops with it and so does a width, which is
-layout. A transform transition and a transform keyframe animation are
-composited and keep running. The sweep says the page is alive, the bar says
-how far through it is, and neither of them can be stopped by the work they
-are describing.
-
-The district is sakura-crossing, by Kenton Wang, MIT, which the simulator
-vendors and credits in its `NOTICE`. No code from it is here and none of it
-is imported. What travels is the plan, and every number in `src/city.js` is
-attributed to the file it was read from at the point it is used.
+The boot bar names three real phases as they happen, fetching the renderer,
+building the studio and drawing the first frame, and both of its moving parts
+are CSS transforms rather than widths, so they keep moving through anything
+that blocks the main thread.
 
 Client side only. No build step, no bundler, no framework, no dependencies
 to install, no API. Three.js comes from a CDN import map, the same version

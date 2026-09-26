@@ -1710,6 +1710,52 @@
         background: radial-gradient(120% 100% at 50% 58%, #14100c, #07060a);
       }
 
+      /*
+       * THE HOLD. The page builds its places behind the film now rather than
+       * behind a loading screen (see loader.js), and a visitor can outrun
+       * that: scroll hard, or jump straight to a chapter, and the film
+       * reaches the town before the town is built. When it does, the
+       * transition into the place stays closed, haze or dark, and this says
+       * why, over whichever of them it is. So it is dressed as a panel
+       * rather than as type: slate on haze is not legible and cream on haze
+       * is not either, and a panel reads on both.
+       *
+       * It waits a third of a second before it shows, from main.js, so a
+       * hold that ends almost at once never flashes a sentence at anybody.
+       */
+      #hold {
+        position: fixed;
+        left: 50%;
+        bottom: 12vh;
+        z-index: 13;
+        display: grid;
+        gap: 10px;
+        justify-items: center;
+        padding: 14px 20px 16px;
+        background: var(--panel-fill);
+        border: 1px solid var(--line);
+        border-top: 2px solid var(--edge);
+        transform: translateX(-50%) translateY(8px);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.35s var(--ease), transform 0.35s var(--ease);
+      }
+      #hold.on { opacity: 1; transform: translateX(-50%); }
+      #hold-note {
+        font-size: 10px;
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: var(--cream);
+      }
+      .hold-rail { position: relative; width: 170px; height: 3px; background: rgba(157, 179, 200, 0.2); overflow: hidden; }
+      .hold-fill {
+        position: absolute; inset: 0;
+        transform: scaleX(0);
+        transform-origin: left center;
+        background: var(--sakura);
+        transition: transform 0.4s var(--ease);
+      }
+
       #boot {
         position: fixed;
         inset: 0;
@@ -1980,6 +2026,12 @@
       into it.
     -->
     <div id="blackout" aria-hidden="true"></div>
+    <!-- Over a transition that is waiting for its place to be built. See the
+         stylesheet's note on #hold and the holds in main.js. -->
+    <div id="hold" role="status" aria-live="polite">
+      <span id="hold-note">Building the town</span>
+      <div class="hold-rail"><div class="hold-fill" id="hold-fill"></div><div class="boot-sweep"></div></div>
+    </div>
     <div id="grain"></div>
 
     <header id="topbar">

@@ -3,8 +3,9 @@
  * a drawing of one.
  *
  * WHAT THIS FILE IS. It is a join, not a model. The geometry under
- * ./city/vendored is sakura-crossing, MIT, Kenton Wang, copied from the
- * simulator's src/maps/city/vendored where it is the copy of record. The town
+ * ./sim/maps/city/vendored is sakura-crossing, MIT, Kenton Wang, copied from
+ * the simulator's src/maps/city/vendored where it is the copy of record (see
+ * scripts/vendor.js, which lays the copy out as the simulator does). The town
  * a visitor flies here is byte for byte the town they will fly when they
  * click through, because it is the same source building it. Nothing about
  * the district is authored in this repository.
@@ -17,7 +18,8 @@
  * WHAT IS OURS, AND IT IS ONLY THREE THINGS:
  *
  *   1. WHERE THE TOWN STANDS in the race field's coordinates, and the fact
- *      that it stands there at all.
+ *      that it stands there at all. The numbers are in places.js, because
+ *      the page needs them before the town exists.
  *   2. WHICH PARTS OF IT ARE BUILT. The town is a whole district, and the
  *      act flies one street of it. See PRUNE below: what the camera cannot
  *      reach is dropped before it is ever drawn.
@@ -30,8 +32,8 @@
  * passes it comes out at about a thousand meshes and half a million
  * triangles, which is the same order as the aircraft and the race field
  * already cost. What it also costs is the build itself, which is seconds
- * rather than milliseconds and is why it does not happen at import. See
- * buildCity.
+ * rather than milliseconds and is why it happens in steps, behind the film.
+ * See buildCity.
  *
  * This file is part of the WebFPVSimulator landing page.
  *
@@ -50,47 +52,34 @@
  */
 
 import * as THREE from 'three';
-import { buildWorld } from './city/vendored/world/index.js';
-import { centerX, groundY } from './city/vendored/world/street.js';
-import { bakeCity, thinFoliage } from './city/bake.js';
 import { LITE } from './quality.js';
-
-/* The town's own street functions, re-exported so the flight line and
- * anything else that needs to know where the road is asks the town rather
- * than a copy of it. */
-export { centerX, groundY };
+import { CITY_ORIGIN, CITY_HEART } from './places.js';
 
 /*
- * Where the town stands, in the race field's own coordinates.
+ * NOTHING OF THE TOWN'S IS IMPORTED HERE, and that is the first half of the
+ * page coming up at once rather than after the town.
  *
- * FAR AWAY, and that is the dissolve's doing.
- *
- * While the page flew between the two places, this number was a compromise
- * between two things it could not satisfy at once. Far enough and the flight
- * over was a boring transit; near enough for the transit to be short and the
- * town stood inside the field's own treeline, which had to have a gap cut in
- * it. At 96 m it got worse than a compromise: from the roofs at the south end
- * of the town you could see the race track fifty metres away, so the page cut
- * from the field to a shot of the field.
- *
- * Nothing has to fly here now, so the distance is free, and the right value
- * is simply FAR: 460 m is three quarters of the fog's reach, which puts the
- * race field past the point where anything of it survives the haze, and the
- * town's own hills are in the way besides. The two places are two places
- * again, which is what the cut between them is for.
- *
- * IT IS ON THE SIDE THE CLOSING SHOT ALREADY LOOKED AT. The close orbits
- * from the south east looking roughly north, so putting the town there makes
- * the closing frame a wider version of a shot the page was already composing
- * rather than a new one bolted on.
- *
- * The town is authored around its level crossing at its own origin, with the
- * road running along z and north at -z, so it drops in with a translation and
- * no rotation. That is not luck, it is why this offset is a pure translation:
- * a rotated town would put every one of the town's own functions, centerX and
- * groundY included, in a frame that does not match the world.
+ * The town is about sixty modules, and a static import of any one of them
+ * puts the whole graph on the page's critical path: measured, 0.96 s of
+ * fetching and evaluating before main.js could draw its first frame, for a
+ * place the visitor will not see for a minute. So the three the build needs
+ * are fetched by the build itself, as its first steps. See buildCity.
  */
-export const CITY_ORIGIN = new THREE.Vector3(0, 0, -460);
+const WORLD = './sim/maps/city/vendored/world/index.js';
+const STREET = './sim/maps/city/vendored/world/street.js';
+const BAKE = './sim/maps/city/bake.js';
+
+/*
+ * How many steps a whole build takes, for the progress a hold shows: the
+ * three imports, the town's own 67, the prune's, and the bake's passes and
+ * chunks. Measured rather than guessed, and only ever a denominator: a wrong
+ * one makes the bar honest about order and wrong about pace, which is what a
+ * progress bar is anyway.
+ */
+const STEPS = 324;
+
+/* Where the town stands is in places.js, with the reason it is far away. */
+export { CITY_ORIGIN };
 
 /*
  * HOW MUCH OF THE TOWN IS BUILT.
@@ -129,18 +118,7 @@ const KEEP = {
   z: [-125, 102],
 };
 
-/*
- * How far the built town reaches, for the closing shot's cap.
- *
- * BUILT_R is where the street's own frontage stops and TREE_R is where the
- * kept district stops. main.js does the trigonometry against them: the brief
- * on the close was that the colour must not run out of the city, so the pull
- * back is bounded by the haze at BUILT_R and by the frame at TREE_R rather
- * than by a number somebody liked.
- */
-export const BUILT_R = 60;
-export const TREE_R = 190;
-export const ROAD_HALF = 3.15;
+/* How far the built town reaches, BUILT_R and TREE_R, is in places.js too. */
 
 /* ------------------------------------------------------------- the foliage */
 
@@ -330,33 +308,33 @@ function summarise(o) {
 /* --------------------------------------------------------------- the build */
 
 /*
- * THE TOWN IS NOT BUILT AT IMPORT, and that is the one piece of machinery in
- * this file that is worth the words.
+ * THE TOWN IS BUILT IN STEPS, BEHIND THE FILM, and that is the one piece of
+ * machinery in this file that is worth the words.
  *
- * buildWorld is synchronous and it is seconds, not milliseconds: about
- * eleven and a half thousand meshes, every sign and fascia painted with
- * Canvas2D as it goes, and then the merge passes on top. Called at module
- * scope it would run before the page's first frame, which means a visitor
- * looks at a boot screen for the whole of it and the hero act, the thing the
- * page opens on, starts late.
+ * It is seconds of work, not milliseconds: about eleven and a half thousand
+ * meshes, every sign and fascia painted with Canvas2D as it goes, and then
+ * the merge passes on top. For a long time it was built behind the loading
+ * screen, in one block, because the town's own entry point could not stop
+ * part way and a block of seconds anywhere else is a freeze on a page
+ * somebody is watching. Measured in the container, that screen stayed up
+ * for 27 seconds.
  *
- * So it is deferred: the page draws its studio, the drone starts assembling,
- * and only then does the town get built, in an idle slot. The visitor has
- * three hundred vh of build act, three hundred of track and six hundred and
- * forty of lap to scroll through before act four needs it, which at any
- * plausible reading speed is tens of seconds.
+ * The town's entry point can stop now. The simulator, which is the copy of
+ * record, grew buildWorldSteps and bakeCitySteps: the same build and the
+ * same bake as generators that yield between their builders and passes,
+ * and hashed identical to the one call they replace. So steps() below is a
+ * generator too, and the page's loader (loader.js) runs it a step at a time
+ * when the frame is still enough that nobody sees the work: the visitor is
+ * reading rather than scrolling, the film is paused on the chapter cards, or
+ * a transition has the screen covered and is waiting for the town anyway.
  *
- * It still BLOCKS when it runs, because buildWorld cannot be sliced without
- * forking it, and forking the town's own entry point is exactly the thing
- * this file exists not to do. What it can do is run at a moment when nothing
- * is moving that a stall would ruin: requestIdleCallback puts it after the
- * first paint, and the studio act is an autoplay rather than a scroll, so it
- * survives a dropped frame better than any other part of the film.
+ * Its first steps are the imports. Nothing of the town's is fetched until
+ * the build asks for it, and a step that yields a promise is resumed with
+ * what the promise resolved to, so the network wait costs no frames at all.
  *
  * `onReady` fires when it is done. Until then the group is empty and
- * setShown does nothing, which is the correct behaviour for a page somebody
- * has scrolled through faster than the town could arrive: they get the field,
- * the lap and the close, and no error.
+ * setShown does nothing, and the page holds its transition closed rather
+ * than show a field where a town should be: see the holds in main.js.
  */
 export function buildCity({ onReady = null } = {}) {
   const group = new THREE.Group();
@@ -378,8 +356,18 @@ export function buildCity({ onReady = null } = {}) {
   };
 
   let shown = false;
+  /* The flight line, made as soon as the town's street module arrives, which
+   * is the build's first step. Null until then. */
+  let line = null;
+  /* Steps taken, for the loader's progress. See STEPS. */
+  let taken = 0;
 
-  function make() {
+  function* make() {
+    /* The town's modules, fetched by the build rather than by the page. */
+    const street = yield import(STREET);
+    line = flightLine(CITY_ORIGIN, street);
+    const { buildWorldSteps } = yield import(WORLD);
+    const { bakeCitySteps, thinFoliage } = yield import(BAKE);
     const t0 = performance.now();
     /*
      * THE TOWN IS BUILT AND MERGED AT THE WORLD ORIGIN, AND MOVED AFTERWARDS.
@@ -411,7 +399,7 @@ export function buildCity({ onReady = null } = {}) {
      * transform, and the bake gives every mesh a bounding sphere the size of
      * the planet, which disables frustum culling for the whole world.
      */
-    const world = buildWorld(group, { bake: false });
+    const world = yield* counted(buildWorldSteps(group, { bake: false }));
     const tBuilt = performance.now();
 
     /*
@@ -440,7 +428,13 @@ export function buildCity({ onReady = null } = {}) {
     /* Drop what the camera cannot reach, before the merge passes look at it. */
     const box = new THREE.Box3();
     let pruned = 0;
+    let looked = 0;
     for (const child of [...world.root.children]) {
+      looked += 1;
+      if (looked % 250 === 0) {
+        taken += 1;
+        yield 'prune';
+      }
       box.setFromObject(child);
       if (box.isEmpty()) {
         continue;
@@ -517,6 +511,8 @@ export function buildCity({ onReady = null } = {}) {
       }
     });
     rawGround.copy(groundBox);
+    taken += 1;
+    yield 'ground';
     if (!groundBox.isEmpty()) {
       const INSET = 9;
       groundBox.min.x += INSET;
@@ -567,6 +563,8 @@ export function buildCity({ onReady = null } = {}) {
       { name: 'cedar', canopy: /^cedarCanopy/, wood: /^cedarWood/, keep: LITE ? 0.22 : 0.30 },
       { name: 'grove', canopy: /^groveCanopy/, wood: /^groveWood/, keep: LITE ? 0.26 : 0.34 },
     ]);
+    taken += 1;
+    yield 'thin';
 
     /*
      * The petals, which are two more instanced sets and are most of the pink
@@ -646,7 +644,7 @@ export function buildCity({ onReady = null } = {}) {
      * would be paying a second pass over the whole district to draw a
      * shadow nothing samples.
      */
-    const mergeStats = bakeCity(world, {
+    const mergeStats = yield* counted(bakeCitySteps(world, {
       cell: Infinity,
       shadowCell: Infinity,
       cullCell: 40,
@@ -669,10 +667,12 @@ export function buildCity({ onReady = null } = {}) {
       atlasSize: 64,
       releaseStillRigs: true,
       shadowProxyCell: 0,
-    });
+    }));
     /* The town's own knob, which only reaches its hill tufts, moss, rocks and
      * lake reeds. Cheap, and worth having, but it is not the planting. */
     thinFoliage(world.root, { keep: LITE ? 0.35 : 0.55 });
+    taken += 1;
+    yield 'foliage';
     /*
      * chunkInstanced is NOT run, though bake.js offers it. It splits each
      * instanced set into per cell sets so distant cells cull, which is the
@@ -740,37 +740,55 @@ export function buildCity({ onReady = null } = {}) {
     }
   }
 
+  /* Every step the build yields, counted as it goes, including the town's and
+   * the bake's own. */
+  function* counted(it) {
+    for (;;) {
+      const r = it.next();
+      if (r.done) {
+        return r.value;
+      }
+      taken += 1;
+      yield r.value;
+    }
+  }
+
   /*
-   * WHEN IT RUNS IS THE CALLER'S DECISION NOW, and that is the whole fix for
-   * the hitch.
+   * WHEN IT RUNS IS THE CALLER'S DECISION, and the caller is loader.js.
    *
    * It used to start itself on an idle callback a second after load, which
    * put a two to four second block of synchronous work into a page that was
-   * already up and being scrolled. There is no polite way to spend that:
-   * requestIdleCallback gets you a slot, and then buildWorld holds it for as
-   * long as it takes. What the visitor saw was the page freezing a moment
-   * after it arrived.
-   *
-   * So the page decides instead, and it decides to do it while the boot
-   * screen is still up. A loading screen is the one place on a page where
-   * seconds of work are honest and expected. See start() below and its one
-   * caller in main.js.
+   * already up and being scrolled, and then it moved behind the loading
+   * screen, which made every visitor wait for a town most of them would not
+   * reach for a minute. Neither is needed now that it comes in steps: the
+   * loader takes one when the frame can afford it, and all of them at once
+   * when a transition is holding for the town. Safe to ask for twice: the
+   * second generator is empty.
    */
   let started = false;
-  function start() {
+  function* steps() {
     if (started) {
       return;
     }
     started = true;
-    make();
+    yield* make();
   }
 
   return {
     group,
-    /* Build it. Synchronous, seconds long, and safe to call twice. */
-    start,
+    steps,
     get ready() {
       return state.ready;
+    },
+    /* How far through, 0 to 1, for the note a hold shows. Counted in steps,
+     * against the count a full build takes, so it is honest about ORDER and
+     * rough about time: the districts are the long steps and they come first. */
+    get progress() {
+      return state.ready ? 1 : Math.min(0.99, taken / STEPS);
+    },
+    /* The line the act flies, null until the town's street module is in. */
+    get line() {
+      return line;
     },
     get stats() {
       return state.stats;
@@ -820,7 +838,7 @@ export function buildCity({ onReady = null } = {}) {
      * further north than south of it, so the crossing is off centre and a
      * shot framed on it puts the town in the bottom of the frame.
      */
-    heart: new THREE.Vector3(CITY_ORIGIN.x + 4, CITY_ORIGIN.y + 4, CITY_ORIGIN.z - 8),
+    heart: CITY_HEART,
   };
 }
 
@@ -863,7 +881,7 @@ export function buildCity({ onReady = null } = {}) {
  * stop short of the tracks, so nothing is strung across the gap the aircraft
  * rises through.
  */
-export function flightLine(origin) {
+export function flightLine(origin, { centerX, groundY }) {
   const gy = (z) => origin.y + groundY(z);
   /* A point in the town's own frame, `y` metres over the ground there. */
   const at = (x, y, z) => new THREE.Vector3(origin.x + x, gy(z) + y, origin.z + z);
