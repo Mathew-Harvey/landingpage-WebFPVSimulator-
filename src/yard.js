@@ -190,6 +190,9 @@ export function buildYard({ onReady = null } = {}) {
   /* Each baked lap by the slot its car drives in. */
   const lapBySlot = [];
   const driftSlots = [];
+  /* Half of each car's length by its element, the module's own number for
+   * its style (traffic.js VEHICLE_KINDS), for clearance() below. */
+  const halfLength = new Map();
   let startClock = 0;
   let flight = null;
   let spawn = null;
@@ -210,7 +213,7 @@ export function buildYard({ onReady = null } = {}) {
     const hits = [];
     let best = { gap: Infinity };
     /* And the tandem, whose bodies are not in the map's solids: the nearest
-     * the aircraft comes to either car's middle, less half a sedan's
+     * the aircraft comes to either car's middle, less half that car's
      * length, which is the most of a sliding car that can be nearer. */
     let cars = { gap: Infinity };
     const pose = {};
@@ -218,7 +221,7 @@ export function buildYard({ onReady = null } = {}) {
       flight.at(ms, out);
       for (const e of [TANDEM.lead, TANDEM.chase]) {
         carAt(e, ms, pose);
-        const g = Math.hypot(pose.pos.x - out.pos.x, 0.7 - out.pos.y, pose.pos.z - out.pos.z) - 2.21;
+        const g = Math.hypot(pose.pos.x - out.pos.x, 0.7 - out.pos.y, pose.pos.z - out.pos.z) - halfLength.get(e);
         if (g < cars.gap) {
           cars = { gap: Math.round(g * 100) / 100, ms: Math.round(ms), car: e, s: Math.round(out.s || 0) };
         }
@@ -351,6 +354,7 @@ export function buildYard({ onReady = null } = {}) {
     for (const v of traffic.vehicles) {
       const lap = CARS.find((c) => c.element === v.element);
       lapBySlot[v.slot] = lap || null;
+      halfLength.set(v.element, v.length / 2);
       if (v.drift > 0) {
         driftSlots.push(v.slot);
       }
