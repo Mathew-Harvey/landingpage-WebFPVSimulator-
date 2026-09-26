@@ -241,11 +241,16 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
   const importMaps = (index.match(/<script[^>]*type="importmap"/g) || []).length;
   const executableScripts = allScripts - jsonLd - importMaps;
   check(
-    'index.html: the invitation is static markup, not a module',
-    hasCard && hidden && targeted && modules === 1 && executableScripts === 2,
+    'index.html: exactly 2 module scripts (support-boot and main)',
+    hasCard && hidden && targeted && modules === 2 && executableScripts === 3,
     hasCard
-      ? `${hidden ? 'hidden' : 'NOT hidden, so it flashes'}, ${targeted ? 'data-dest set' : 'NO data-dest, so local serving points at production'}, ${modules} module, ${executableScripts - modules} plain, ${jsonLd} JSON-LD`
+      ? `${hidden ? 'hidden' : 'NOT hidden, so it flashes'}, ${targeted ? 'data-dest set' : 'NO data-dest, so local serving points at production'}, ${modules} module (support-boot.js, main.js), ${executableScripts - modules} plain, ${jsonLd} JSON-LD`
       : 'MISSING, so the only way in is a 12 px label in the corner',
+  );
+  check(
+    'index.html: #supporters ships with hidden attribute',
+    index.includes('id="supporters" hidden'),
+    'supporters section must ship hidden, shown only after valid opted-in name',
   );
 }
 

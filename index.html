@@ -1193,8 +1193,9 @@
          makes the box smaller than its contents after all.
 
          The three numbers are one number: 180 is the footer's own height
-         plus its margin at this width, rounded up. If the footer grows a
-         line, this is the line that moves.
+         plus its margin at this width, rounded up. The hidden Supporters
+         row adds no height today. If the footer grows a line or supporters
+         show, this 180px calc must be re-measured at 1440x900.
       */
       #close {
         position: relative;
@@ -1551,7 +1552,6 @@
       }
       footer a { color: rgba(243, 234, 212, 0.78); text-decoration: none; }
       footer a:hover { color: var(--sakura); }
-      footer a.patreon:hover { color: var(--cream); box-shadow: inset 0 0 0 1px #FF424D; }
       footer a:focus-visible { outline: 2px solid var(--sakura); outline-offset: 3px; }
 
       .foot-legal {
@@ -1562,6 +1562,49 @@
         justify-content: space-between;
       }
       .foot-links { display: flex; flex-wrap: wrap; gap: 18px; }
+
+      /* ------------------------------------------------------------------
+         Supporters section.
+         ------------------------------------------------------------------ */
+
+      .supporters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 14px clamp(24px, 4vw, 46px);
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--line-2);
+      }
+      .supporters-label {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 10.5px;
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: rgba(157, 179, 200, 0.72);
+      }
+      .supporters-label::after {
+        content: "";
+        width: 26px;
+        height: 1px;
+        flex: 0 0 auto;
+        background: var(--line);
+      }
+      .supporters-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 18px;
+        font-size: 11.5px;
+        line-height: 1.5;
+      }
+      .supporter-name {
+        color: rgba(243, 234, 212, 0.78);
+      }
+      .supporters[hidden] {
+        display: none;
+      }
 
       /* ------------------------------------------------------------------
          Also by Mat Harvey. The other three sites, in their own marks.
@@ -1947,7 +1990,7 @@
         <a href="https://webfpv.org/sim/src/trackbuilder/index.html" data-dest="builder">Track builder</a>
         <a href="https://webfpv.org/board/" data-dest="board">Tracks and Times</a>
         <a href="https://github.com/Mathew-Harvey/WebFPVSimulator" rel="noreferrer">Source</a>
-        <a class="patreon" data-patreon href="https://www.patreon.com/c/webfpv" target="_blank" rel="noopener noreferrer" aria-label="Support WebFPV on Patreon. Keep the lights on, $5. Hosting + runway, $12. Build the sim, $25. USD, plus GST on join." title="Support WebFPV on Patreon. Keep the lights on, $5. Hosting + runway, $12. Build the sim, $25. USD, plus GST on join.">
+        <a class="patreon" data-patreon href="https://www.patreon.com/cw/webfpv" target="_blank" rel="noopener noreferrer" aria-label="Support WebFPV on Patreon. Keep the lights on, $5. Hosting + runway, $12. Build the sim, $25. USD, plus GST on join." title="Support WebFPV on Patreon. Keep the lights on, $5. Hosting + runway, $12. Build the sim, $25. USD, plus GST on join.">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#FF424D" d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003"/></svg>
           <span>Patreon</span>
         </a>
@@ -2508,6 +2551,11 @@
         </div>
       </div>
 
+      <div class="supporters" id="supporters" hidden>
+        <div class="supporters-label">Supporters</div>
+        <div class="supporters-list" id="supporters-list"></div>
+      </div>
+
       <div class="foot-legal">
         <span>GPLv3 &#183; Betaflight 4.5.1 compiled to WebAssembly</span>
         <div class="foot-links" id="foot">
@@ -2518,10 +2566,7 @@
           <a href="https://github.com/Mathew-Harvey/WebFPVSimulator-LeaderBoard" rel="noreferrer">Leaderboard repo</a>
           <a href="https://betaflight.com" rel="noreferrer">Betaflight</a>
           <a href="https://www.gnu.org/licenses/gpl-3.0.html" rel="noreferrer">GPLv3</a>
-          <a class="patreon" data-patreon href="https://www.patreon.com/c/webfpv" target="_blank" rel="noopener noreferrer" aria-label="Support WebFPV on Patreon. Keep the lights on, $5. Hosting + runway, $12. Build the sim, $25. USD, plus GST on join." title="Support WebFPV on Patreon. Keep the lights on, $5. Hosting + runway, $12. Build the sim, $25. USD, plus GST on join.">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#FF424D" d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003"/></svg>
-            <span>Patreon</span>
-          </a>
+          <a href="https://www.patreon.com/cw/webfpv" target="_blank" rel="noopener noreferrer" id="support-link">Support</a>
         </div>
       </div>
     </footer>
@@ -2732,6 +2777,7 @@
       })();
     </script>
 
+    <script type="module" src="src/support-boot.js"></script>
     <script type="module" src="src/main.js"></script>
   </body>
 </html>
