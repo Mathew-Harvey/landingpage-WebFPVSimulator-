@@ -3546,11 +3546,17 @@ function frame(ms) {
   if (Math.abs(T - lastT) > 0.0005) {
     lastT = T;
     el.ticker.classList.toggle('on', !REDUCED && T < 1.06 && !inChooser);
-    el.builder.classList.toggle('on', !REDUCED && T > 1.04 && T < 2.02);
+    const building = !REDUCED && T > 1.04 && T < 2.02;
+    el.builder.classList.toggle('on', building);
     /* The map builder, from the moment the crane is looking at the plot to
      * the moment it starts down onto the pads, and only with the map in:
      * an instrument over a hold's haze would be describing nothing. */
-    el.mapper.classList.toggle('on', !REDUCED && yard.ready && T > A.map + 0.2 && T < A.map + 0.84);
+    const mapping = !REDUCED && yard.ready && T > A.map + 0.2 && T < A.map + 0.84;
+    el.mapper.classList.toggle('on', mapping);
+    /* And the ledger steps aside while either is up: a builder's palette is
+     * a column down the same gutter, and its bar already names the
+     * chapter. Never under REDUCED, where neither builder comes on. */
+    el.ledger.classList.toggle('aside', building || mapping);
     /*
      * THE INSTRUMENT LEAVES WITH THE GOGGLES.
      *

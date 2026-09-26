@@ -507,7 +507,14 @@
         flex-direction: column;
         gap: 8px;
         pointer-events: none;
+        transition: opacity 0.45s var(--ease);
       }
+      /* While a builder is up the ledger steps aside: the builder's palette
+         is a column down the same gutter, and its bar already names the
+         chapter. It comes back with the scroll that takes the builder away,
+         and a row nobody can see takes no click. */
+      #ledger.aside { opacity: 0; }
+      #ledger.aside .ledger-row { pointer-events: none; }
       .ledger-row {
         display: flex;
         align-items: center;
@@ -2248,6 +2255,9 @@
         #dissolve, #blackout { display: none; }
         .copy { opacity: 1; transform: none; transition: none; }
         #cue, #ticker, #builder, #mapper, #osd, #beats { display: none; }
+        /* The builders never come on, so the ledger never steps aside for
+           them: REDUCED in main.js is the other half. */
+        #ledger { transition: none; }
         .act { min-height: auto !important; padding-top: 12vh; padding-bottom: 12vh; }
         .pin { position: static; height: auto; }
         #veil { opacity: 0.5 !important; }
