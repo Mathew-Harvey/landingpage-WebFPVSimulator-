@@ -1134,11 +1134,17 @@
         overflow: hidden;
         background: #1a2319;
       }
+      /* Below 900 px the picture is a narrow crop of a 16 by 9 frame, and
+         the middle of the frame is not always where the subject is. A card
+         whose subject is off centre says where it is with --focus, and a
+         crop keeps that. At full width nothing is cropped and it does
+         nothing. */
       .world-pic img {
         display: block;
         width: 100%;
         height: 100%;
         object-fit: cover;
+        object-position: var(--focus, 50%) 50%;
         transition: transform 1.2s var(--ease);
       }
       .world:hover .world-pic img { transform: scale(1.045); }
@@ -1155,7 +1161,7 @@
       .world-new {
         position: absolute;
         top: 12px;
-        right: 12px;
+        left: 12px;
         z-index: 1;
         padding: 6px 9px 5px;
         font: 700 10px/1 var(--mono);
@@ -1295,7 +1301,7 @@
         }
         .world-tags { display: none; }
         .world-go { padding-top: 10px; font-size: 10px; }
-        .world-new { top: 8px; right: auto; left: 8px; padding: 5px 7px 4px; font-size: 9px; }
+        .world-new { top: 8px; left: 8px; padding: 5px 7px 4px; font-size: 9px; }
       }
       @media (max-width: 460px) {
         .world { grid-template-columns: 36% 1fr; }
@@ -2669,9 +2675,9 @@
                 <span class="world-go">Build it and fly it</span>
               </span>
             </a>
-            <a class="world" href="#freestyle" data-chapter="freestyle" style="--accent: var(--sakura)">
+            <a class="world" href="#freestyle" data-chapter="freestyle" style="--accent: var(--sakura); --focus: 62%">
               <span class="world-pic">
-                <img src="assets/chapters/freestyle.webp" width="960" height="540" alt="Two drift cars sliding in tandem through a yard at golden hour, tyre smoke behind them, seen from the chasing quad." loading="lazy" decoding="async" />
+                <img src="assets/chapters/freestyle.webp" width="960" height="540" alt="A white sedan and a mustard sedan sliding in tandem past a wall of shipping containers at golden hour, tyre smoke pouring off them, seen from the chasing quad's camera." loading="lazy" decoding="async" />
                 <span class="world-new">New &#183; Map builder</span>
               </span>
               <span class="world-body">
@@ -2684,7 +2690,7 @@
             </a>
             <a class="world" href="#whoop" data-chapter="whoop" style="--accent: var(--cream)">
               <span class="world-pic">
-                <img src="assets/chapters/whoop.webp" width="960" height="540" alt="A 65 mm whoop in FPV, threading a micro UTT track of white pipe gates inside a lamp lit shed." loading="lazy" decoding="async" />
+                <img src="assets/chapters/whoop.webp" width="960" height="540" alt="A 65 mm whoop on its launch pad in a lamp lit shed, the white pipe gates of a micro UTT track standing over it." loading="lazy" decoding="async" />
               </span>
               <span class="world-body">
                 <span class="world-k">The room</span>
