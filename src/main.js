@@ -41,7 +41,8 @@ import { createStage } from './stage.js';
 import { buildDrone, CAMERA_MOUNT_FORWARD, CAMERA_MOUNT_UP } from './drone.js';
 import { buildCourse, GATE_COUNT } from './course.js';
 import { buildCity } from './city.js';
-import { CITY_ORIGIN, CITY_HEART, BUILT_R, TREE_R } from './places.js';
+import { buildYard, planToWorld } from './yard.js';
+import { CITY_ORIGIN, CITY_HEART, BUILT_R, TREE_R, YARD_ORIGIN, YARD_TURN } from './places.js';
 import { createLoader } from './loader.js';
 import { buildRoom, ROOM_AIR } from './room.js';
 import { buildWhoop, WHOOP_FOV, WHOOP_MOUNT_FORWARD, WHOOP_MOUNT_UP, WHOOP_CAM_TILT_DEG } from './whoop.js';
@@ -235,6 +236,41 @@ const CITY_BEATS = [
      * clicking Fly the city gets it, so leaving it out would undersell the
      * map. Everything else the beats say is in the frame they say it in. */
     t: 'Streets, gaps and a freestyle training park.',
+  },
+];
+
+/*
+ * The chase act's beats, and each names what is in frame when it arrives.
+ *
+ * The first waits for the act's copy to go, which is while the aircraft is
+ * on the pad, and arrives as it comes up the yard between the office and
+ * the bando. The second is the tandem, once the aircraft is on its tail.
+ * The third is the smoke, which is the simulator's own and says the cars
+ * are sliding rather than turning. The last is the map's own provenance,
+ * and it stops before the camera leaves the airframe, for the reason the
+ * town's last beat does: the wide shot is the shot, and it carries no type.
+ */
+const YARD_BEATS = [
+  {
+    at: 0.13,
+    k: 'The yard',
+    t: 'Hibari Yard, the map every pilot starts on, with a drift course added.',
+  },
+  {
+    at: 0.31,
+    k: 'The tandem',
+    t: 'Two drift cars on one road, driven by the same physics module as the quad.',
+  },
+  {
+    at: 0.50,
+    k: 'The drift',
+    t: 'Each one slides every bend, and the smoke comes off its rear wheels.',
+  },
+  {
+    at: 0.68,
+    until: 0.84,
+    k: 'The map',
+    t: 'Built in the track builder and published on Tracks and Times.',
   },
 ];
 
@@ -521,6 +557,24 @@ const city = buildCity({
 stage.scene.add(city.group);
 
 /*
+ * THE YARD, the map the freestyle chapter builds and then flies: Hibari Yard
+ * Tandem, the simulator's own showpiece, built behind the film from the
+ * simulator's own code like the town. See yard.js, and the loader below.
+ *
+ * The deck is cut out from under its ground when it lands, off the ground
+ * as built, the way it is from under the town's.
+ */
+const yard = buildYard({
+  onReady: (stats) => {
+    course.setYardCut(yard.groundBox());
+    if (DEBUG) {
+      console.info('yard:', JSON.stringify(stats));
+    }
+  },
+});
+stage.scene.add(yard.group);
+
+/*
  * THE SHED, AND THE AIRCRAFT THAT FLIES IN IT.
  *
  * Built at import like the field and unlike the town, because it costs what
@@ -719,6 +773,16 @@ if (DEBUG) {
     /* What the loader has done, what each job cost on the main thread and
      * how long it took on the wall clock. */
     loads: () => loader.report(),
+    /* The yard: its build, its line's clocks, and the clock at a T. */
+    yard,
+    yardClock: (t) => yardClock(t),
+    /* Put the film at T without scrolling, or give it back to the scroll
+     * with null: ?t= for a page that is already up, so a run of frames is
+     * one load rather than one each. */
+    setT: (t) => {
+      debugT = t === null ? null : Number(t);
+      lastT = -1;
+    },
     /* Where the camera and the aircraft actually ended up on the last frame. */
     live: () => ({
       cam: stage.camera.position.toArray(),
@@ -1102,6 +1166,13 @@ const el = {
   tickCount: document.getElementById('tick-count'),
   tickFill: document.getElementById('tick-fill'),
   builder: document.getElementById('builder'),
+  mapper: document.getElementById('mapper'),
+  mbPlay: document.getElementById('mb-play'),
+  mbEls: document.getElementById('mb-els'),
+  mbRoad: document.getElementById('mb-road'),
+  mbCars: document.getElementById('mb-cars'),
+  mbGaps: document.getElementById('mb-gaps'),
+  mbXy: document.getElementById('mb-xy'),
   tbGates: document.getElementById('tb-gates'),
   tbLen: document.getElementById('tb-len'),
   tbWarn: document.getElementById('tb-warn'),
@@ -1244,7 +1315,7 @@ const LEDGER = [
   { href: '#top', label: 'Build', acts: ['assemble'] },
   { href: '#worlds', label: 'Worlds', chooser: true },
   { href: '#racing', label: 'Racing', acts: ['build', 'fly'] },
-  { href: '#freestyle', label: 'Freestyle', acts: ['city'] },
+  { href: '#freestyle', label: 'Freestyle', acts: ['city', 'map', 'yard'] },
   { href: '#whoop', label: 'Whoop', acts: ['room'] },
   { href: '#why', label: 'Practise', tail: true },
 ];
@@ -1293,6 +1364,57 @@ function makeBeats(list) {
 const beatEls = makeBeats(BEATS);
 const cityBeatEls = makeBeats(CITY_BEATS);
 const roomBeatEls = makeBeats(ROOM_BEATS);
+const yardBeatEls = makeBeats(YARD_BEATS);
+
+/*
+ * THE MAP BUILDER'S INSTRUMENT. The palette's rows are in the markup and
+ * each names the kind of element it counts; the named gaps' list is made
+ * from the map itself when it arrives, so it cannot name a gap the map does
+ * not have.
+ */
+const mapperRows = [...el.mapper.querySelectorAll('[data-mb]')].map((row) => ({
+  row, type: row.dataset.mb, k: row.querySelector('.k'), n: -1, on: false,
+}));
+let mapperGaps = null;
+function mapperShow(counts) {
+  if (!mapperGaps && yard.order.length) {
+    mapperGaps = yard.order.filter((o) => o.kind === 'gap').map((o) => {
+      const row = document.createElement('div');
+      row.className = 'tb-gap';
+      row.innerHTML = `<span></span><span></span>`;
+      row.firstChild.textContent = o.name;
+      row.lastChild.textContent = String(o.points);
+      el.mbGaps.append(row);
+      return { id: o.id, row, on: false };
+    });
+  }
+  el.mbEls.textContent = String(counts.placed);
+  el.mbRoad.textContent = `${Math.round(counts.road)} m`;
+  el.mbCars.textContent = counts.drift ? `${counts.cars} \u00b7 ${counts.drift} drift` : String(counts.cars);
+  for (const r of mapperRows) {
+    const n = counts.byType[r.type] || 0;
+    if (n !== r.n) {
+      r.n = n;
+      r.k.textContent = String(n);
+    }
+    const on = counts.last === r.type;
+    if (on !== r.on) {
+      r.on = on;
+      r.row.classList.toggle('on', on);
+    }
+  }
+  if (mapperGaps) {
+    for (const g of mapperGaps) {
+      const on = counts.gapIds.includes(g.id);
+      if (on !== g.on) {
+        g.on = on;
+        g.row.classList.toggle('on', on);
+      }
+    }
+  }
+  el.mbXy.textContent = `${counts.lastAt.x.toFixed(1)}, ${counts.lastAt.y.toFixed(1)} m`;
+  el.mbPlay.classList.toggle('on', counts.placed >= yard.order.length && yard.order.length > 0);
+}
 
 /* ------------------------------------------------------------- the timeline */
 
@@ -1679,6 +1801,218 @@ function poseCity(t, outPos, outQuat) {
    * middle of the frame instead of along the bottom of it. */
   at.set(city.heart.x, 7.0, city.heart.z);
   lookQuat(outPos, at, outQuat);
+}
+
+/* ------------------------------------------------------------ the map act */
+
+/*
+ * THE MAP ACT'S CAMERA: ONE MOVE IN THREE PARTS, AND NO CUT IN IT.
+ *
+ * It starts on the town's last frame, the wide shot of the district, and
+ * carries the same crane on: up, over the roofs and west, turning to look
+ * straight down as it goes, until it is over an empty plot on the far side
+ * of the town. That is the builder's view, in the map's own art, the way
+ * the builder's 3D view shows one. It holds there while the starter yard
+ * loads, slides north to where the drift course goes while the builder
+ * draws it and sets the rest down, and then comes all the way down, out of
+ * the plan and onto the start pads, behind the aircraft that is sitting on
+ * them. The chase act's first frame is that one.
+ *
+ * NORTH IS UP. The plot is turned so its north faces west (see places.js),
+ * which is the way the crane is travelling, so a camera arriving over it
+ * and looking down has the builder's own plan on screen: north at the top
+ * and east on the right, with nothing turned to get it there.
+ *
+ * The frames are in the plan's own metres: where the middle of the frame is
+ * and how high the camera stands. LOAD holds the starter's square, the south
+ * 160 m of the plot; ADD holds the course at the north end. Both are set so
+ * their subject fits the frame's height between the instrument's title bar
+ * and its status line, on the plan lens.
+ */
+const PLAN_LOAD = { x: 80, y: 86, h: 280 };
+const PLAN_ADD = { x: 86, y: 206, h: 200 };
+/* The plot's north, in the race field's frame: the map's -z, turned. */
+const PLAN_NORTH = new THREE.Vector3(-Math.sin(YARD_TURN), 0, -Math.cos(YARD_TURN));
+const WORLD_UP = new THREE.Vector3(0, 1, 0);
+const upTmp = new THREE.Vector3();
+const eyeA = new THREE.Vector3();
+const eyeB = new THREE.Vector3();
+const aimA = new THREE.Vector3();
+const aimB = new THREE.Vector3();
+
+function lookWith(from, to, upv, out) {
+  m4.lookAt(from, to, upv);
+  return out.setFromRotationMatrix(m4);
+}
+
+/* A plan frame's eye and its aim, straight down on it. False until the map
+ * is in, which a hold covers. */
+function planFrame(f, eye, aim) {
+  if (!planToWorld(f.x, f.y, 0, aim)) {
+    return false;
+  }
+  eye.copy(aim);
+  eye.y = f.h;
+  /* A hair off true vertical along the plot's south, so the look is never
+   * exactly down the up vector. */
+  eye.addScaledVector(PLAN_NORTH, -0.01);
+  return true;
+}
+
+/* A point on the quadratic through a, b and c at k. */
+function bezier(a, b, c, k, out) {
+  const j = 1 - k;
+  return out.set(
+    j * j * a.x + 2 * j * k * b.x + k * k * c.x,
+    j * j * a.y + 2 * j * k * b.y + k * k * c.y,
+    j * j * a.z + 2 * j * k * b.z + k * k * c.z,
+  );
+}
+
+const craneMid = new THREE.Vector3();
+/*
+ * The camera at `u` of the way through the map act, into outPos and
+ * outQuat. `pads` is the chase act's first frame, the pose it has to land
+ * on, or null while the map is not in.
+ */
+function poseMap(u, outPos, outQuat, padEye, padAim) {
+  poseCity(0.62, outPos, outQuat);
+  if (!planFrame(PLAN_LOAD, eyeA, aimA) || !planFrame(PLAN_ADD, eyeB, aimB)) {
+    return;
+  }
+  if (u < 0.24) {
+    /* Up and over: from the town's wide shot, through a point high over the
+     * district's west edge, to the plan. The aim slides from the roofs to
+     * the plot, and the up turns from the sky to the plot's north as the
+     * lens comes to point straight down. */
+    const k = smooth(clamp01(u / 0.24));
+    craneMid.set(CITY_HEART.x - 110, 250, CITY_HEART.z - 40);
+    const from = vTmp.copy(outPos);
+    bezier(from, craneMid, eyeA, k, outPos);
+    at.set(CITY_HEART.x, 7, CITY_HEART.z).lerp(aimA, smooth(clamp01(u / 0.2)));
+    upTmp.copy(WORLD_UP).lerp(PLAN_NORTH, k * k).normalize();
+    lookWith(outPos, at, upTmp, outQuat);
+    return;
+  }
+  if (u < 0.80) {
+    /* The plan: held on the starter while it loads, then along to the
+     * course, where it creeps in while the builder works. */
+    const k = smooth(clamp01((u - 0.38) / 0.09));
+    outPos.copy(eyeA).lerp(eyeB, k);
+    at.copy(aimA).lerp(aimB, k);
+    outPos.y -= 14 * smooth(clamp01((u - 0.47) / 0.33));
+    lookWith(outPos, at, PLAN_NORTH, outQuat);
+    return;
+  }
+  /* Down onto the pads: from the plan, round a point over the south end of
+   * the plot, to the chase act's first frame. */
+  const k = smooth(clamp01((u - 0.80) / 0.20));
+  if (!padEye) {
+    outPos.copy(eyeB);
+    lookWith(outPos, aimB, PLAN_NORTH, outQuat);
+    return;
+  }
+  craneMid.copy(padEye).lerp(eyeB, 0.35);
+  craneMid.y = 70;
+  bezier(eyeB, craneMid, padEye, k, outPos);
+  at.copy(aimB).lerp(padAim, smooth(clamp01((k - 0.1) / 0.8)));
+  upTmp.copy(PLAN_NORTH).lerp(WORLD_UP, smooth(clamp01((k - 0.05) / 0.7))).normalize();
+  lookWith(outPos, at, upTmp, outQuat);
+}
+
+/* ---------------------------------------------------------- the chase act */
+
+/*
+ * THE CHASE ACT'S CLOCK, which is the physics module's: the cars are posed
+ * from their baked laps at it, and the aircraft's line is keyed to it.
+ *
+ * Three anchors, as shares of the act: the aircraft leaves the pads at
+ * YARD_LIFT, is on the tandem's tail at YARD_JOIN, and the chase ends at
+ * YARD_END. Between them the clock runs at whatever rate carries the line
+ * from one to the next: the approach is nine seconds of clock over a fifth
+ * of the act, the chase about twenty over six tenths, so the chase is
+ * geared finer, which is where the cars are. Outside them it runs on at the
+ * nearer rate, and it never goes below the clock's zero: that is the
+ * builder's Play, a little way into the act, while the aircraft is still on
+ * the pads and the cars start from where the map put them.
+ */
+const YARD_LIFT = 0.08;
+const YARD_JOIN = 0.28;
+const YARD_END = 0.86;
+function yardClock(T) {
+  const f = yard.flight;
+  if (!f) {
+    return 0;
+  }
+  const v = T - A.yard;
+  const rA = (f.join - f.lift) / (YARD_JOIN - YARD_LIFT);
+  const rC = (f.end - f.join) / (YARD_END - YARD_JOIN);
+  const c = v < YARD_JOIN
+    ? f.lift + (v - YARD_LIFT) * rA
+    : f.join + (v - YARD_JOIN) * rC;
+  return Math.max(0, c);
+}
+
+/* The aircraft on the pad: its origin this far over the plot, as it stands
+ * on the studio floor, a pad's thickness up. */
+const PAD_REST = 0.125;
+/* The chase act's first frame, and the map act's last: behind the aircraft
+ * on the pad, a little higher than the lap's union, aimed past it. */
+const PAD_BACK = 1.5;
+const PAD_HIGH = 0.5;
+const PAD_AHEAD = 4;
+
+/*
+ * How far below what it is looking at the lens is pointed, rad: nine
+ * degrees, which puts the tandem in the upper half of the frame. The beats
+ * sit a little below the middle, and a caption across the cars it names is
+ * a caption nobody can read the cars through.
+ */
+const CHASE_DROP = 0.16;
+
+const flyNow = {};
+const flyNear = {};
+const yawAt = (a, b) => Math.atan2(b.x - a.x, b.z - a.z);
+/*
+ * The aircraft at the yard's clock, into outPos and outQuat.
+ *
+ * On the pad it is level and pointing up the first leg of the approach.
+ * Off it, it points where it is LOOKING, which is where a pilot points an
+ * FPV quad: the line says what to look at, first down the approach and
+ * then at the tandem, and the camera's thirty degrees of uptilt say how far
+ * nose down the frame has to be for the lens to be on it. It banks by how
+ * hard the line is turning, measured over a tenth of a second either side.
+ */
+function yardPose(clock, outPos, outQuat, bobPhase) {
+  const f = yard.flight;
+  f.at(clock, flyNow);
+  if (flyNow.phase === 'pads') {
+    outPos.copy(yard.spawn);
+    outPos.y = PAD_REST;
+    f.at(f.lift + 900, flyNear);
+    eul.set(0, yawAt(flyNear.pos, outPos), 0);
+    outQuat.setFromEuler(eul);
+    return;
+  }
+  outPos.copy(flyNow.pos);
+  vTmp.copy(flyNow.look).sub(outPos);
+  const yaw = Math.atan2(vTmp.x, vTmp.z) + Math.PI;
+  const pitch = Math.atan2(vTmp.y, Math.hypot(vTmp.x, vTmp.z)) - CAM_TILT - CHASE_DROP;
+  f.at(clock - 100, flyNear);
+  const h0 = yawAt(flyNear.pos, flyNow.pos);
+  const back = flyNear.pos.distanceTo(flyNow.pos);
+  f.at(clock + 100, flyNear);
+  const h1 = yawAt(flyNow.pos, flyNear.pos);
+  const speed = (back + flyNow.pos.distanceTo(flyNear.pos)) / 0.2;
+  let dyaw = h1 - h0;
+  while (dyaw > Math.PI) dyaw -= Math.PI * 2;
+  while (dyaw < -Math.PI) dyaw += Math.PI * 2;
+  /* The bank a coordinated turn at this speed and rate would hold, eased
+   * off, so a hard flick through the transition is a lean and not a roll. */
+  const roll = THREE.MathUtils.clamp(Math.atan((dyaw / 0.1) * speed / 9.81) * 0.4, -0.3, 0.3);
+  eul.set(pitch, yaw, roll);
+  outQuat.setFromEuler(eul);
+  outPos.y += Math.sin(bobPhase) * 0.02;
 }
 
 /* ------------------------------------------------------------ the aircraft */
@@ -2116,6 +2450,19 @@ const LENS = [
   { at: 2.24, fov: 104 },
   { at: A.city + 0.80, fov: 104 },
   { at: A.city + 0.99, fov: CLOSE_FOV },
+  /* The map act: the town's lens carried up the crane, then the plan's,
+   * which is the track act's plan lens opened a little for a plot five
+   * times the size, then down to the pads on the chase's third person. */
+  { at: A.map + 0.08, fov: CLOSE_FOV },
+  { at: A.map + 0.24, fov: 52 },
+  { at: A.map + 0.82, fov: 52 },
+  { at: A.map + 1.00, fov: 74 },
+  /* The chase: into the goggles off the pad, and out again for the yard's
+   * wide shot before the blackout. */
+  { at: A.yard + 0.085, fov: 74 },
+  { at: A.yard + 0.15, fov: 104 },
+  { at: A.yard + 0.86, fov: 104 },
+  { at: A.yard + 0.97, fov: 62 },
   { at: A.room + 0.01, fov: 66 },
   { at: A.room + 0.20, fov: 66 },
   { at: A.room + 0.33, fov: WHOOP_FOV },
@@ -2210,6 +2557,8 @@ function turnBankNow(flip) {
 
 let scrollTarget = 0;
 let scrollNow = 0;
+/* The debug handle's T, when it has set one: see setT. */
+let debugT = null;
 let autoBuild = 0;
 let clock = 0;
 let lastT = -1;
@@ -2222,6 +2571,7 @@ const camPos = new THREE.Vector3();
 const camQuat = new THREE.Quaternion();
 const pos2 = new THREE.Vector3();
 const quat2 = new THREE.Quaternion();
+const aimB2 = new THREE.Vector3();
 
 /* The two transitions, written only when they change. */
 const HOLD_OPEN = 0.6;
@@ -2300,7 +2650,7 @@ function frame(ms) {
     }
   }
 
-  const T = REDUCED ? 2.55 : (PIN !== null ? PIN : timeline(scrollNow));
+  const T = REDUCED ? 2.55 : (PIN !== null ? PIN : (debugT !== null ? debugT : timeline(scrollNow)));
   /*
    * THE CHAPTER MENU, measured off the scroll because T cannot see it: T is
    * held at exactly 1 across the whole of it. `chooserStill` is the stretch
@@ -2374,6 +2724,21 @@ function frame(ms) {
    */
   city.setShown(T > A.city - 0.10 && T < A.room + 0.02);
   /*
+   * The yard from the moment the crane can see it, which is past the
+   * town's roofs a fifth of the way into the map act, to the blackout. Its
+   * clock and how much of it the builder has set down are the film's, every
+   * frame it is up: see yardClock, and the builder's two shares below.
+   */
+  const yardUp = !REDUCED && T > A.map + 0.04 && T < A.room + 0.02;
+  yard.setShown(yardUp);
+  const mapLoad = ease(T, A.map + 0.25, A.map + 0.37);
+  const mapAdd = clamp01((T - (A.map + 0.46)) / 0.34);
+  const mapCounts = yardUp ? yard.setBuild(T < A.map + 1 ? mapLoad : 1, T < A.map + 1 ? mapAdd : 1) : null;
+  const clockNow = T >= A.yard ? yardClock(T) : 0;
+  if (yardUp) {
+    yard.setClock(clockNow);
+  }
+  /*
    * The town's own clock: the train, the crossing sequence that lowers the
    * barriers for it, and the blossom coming off its trees. Only while it is
    * on screen, because a level crossing cycling behind a studio backdrop is
@@ -2388,7 +2753,10 @@ function frame(ms) {
    * stretch of the page where nothing is close enough to notice.
    */
   const reach = REDUCED ? 0 : ease(T, A.city + 0.02, A.city + 0.34);
-  stage.setRegime(scale, world, reach);
+  /* The map act's plan, looking straight down: see setRegime's `plan`. Up
+   * as the crane comes to point at the ground, down as it comes off it. */
+  const plan = REDUCED ? 0 : ease(T, A.map + 0.14, A.map + 0.24) * (1 - ease(T, A.map + 0.82, A.map + 0.92));
+  stage.setRegime(scale, world, reach, plan);
   /*
    * INDOORS, and the switch is a step rather than a fade because it happens
    * inside the blackout.
@@ -2441,6 +2809,10 @@ function frame(ms) {
   const roaming = ramp(T, A.city, A.city + 0.97, 0, 0.13);
   const cityU = cityAt(roaming);
   const inCity = T >= A.city - 0.005 && T < A.city + 1;
+  /* The chase act, and how far through it: its beats are keyed to the act,
+   * the way the town's are. */
+  const inYard = T >= A.yard && T < A.yard + 1;
+  const yardU = clamp01(T - A.yard);
 
   /*
    * THE ROOM ACT, and it opens standing still, which is the one thing none
@@ -2478,7 +2850,9 @@ function frame(ms) {
    * behind a full screen transition anyway.
    */
   const heading = inRoom ? running : inCity ? roaming : flying;
-  const flip = updateHeading(heading, dt, T >= 2.0 && T < A.tail);
+  /* Not in the map act or the chase, where the aircraft points at what it
+   * is chasing and a scroll back runs the cars back with it. */
+  const flip = updateHeading(heading, dt, (T >= 2.0 && T < A.city + 1) || inRoom);
   /* How far outside the aircraft the camera is: nothing at either heading,
    * everything at the half way point of a turn. */
   const turnBank = turnBankNow(flip);
@@ -2656,6 +3030,41 @@ function frame(ms) {
       camPos.lerp(pos2, wide);
       camQuat.slerp(quat2, wide);
     }
+  } else if (T < A.map + 1) {
+    /*
+     * THE MAP ACT. The aircraft is on the yard's pads from the start, three
+     * hundred metres from a camera that cannot see it, because the act ends
+     * behind it and the chase begins there. See poseMap.
+     */
+    if (yard.flight) {
+      yardPose(0, dronePos, droneQuat, now * 2.1);
+      poseChase(dronePos, droneQuat, PAD_BACK, PAD_HIGH, pos2, quat2, PAD_AHEAD);
+      aimB2.set(0, 0, -PAD_AHEAD).applyQuaternion(droneQuat).add(dronePos);
+      poseMap(T - A.map, camPos, camQuat, pos2, aimB2);
+    } else {
+      poseMap(T - A.map, camPos, camQuat, null, null);
+    }
+  } else if (T < A.yard + 1) {
+    /*
+     * THE CHASE. On the pad, off it, into the goggles, and on the tandem's
+     * tail; then out of the airframe for the yard's one wide shot before the
+     * lights go out. The same device as the lap's union and the room's lift,
+     * because it is the same thing happening: somebody pressed Fly.
+     */
+    if (yard.flight) {
+      yardPose(clockNow, dronePos, droneQuat, now * 2.1);
+    }
+    poseChase(dronePos, droneQuat, PAD_BACK, PAD_HIGH, camPos, camQuat, PAD_AHEAD);
+    poseFPV(dronePos, droneQuat, pos2, quat2);
+    const toFpv = ease(T, A.yard + 0.085, A.yard + 0.15);
+    camPos.lerp(pos2, toFpv);
+    camQuat.slerp(quat2, toFpv);
+    const out = ease(T, A.yard + 0.86, A.yard + 0.97);
+    if (out > 0) {
+      poseChase(dronePos, droneQuat, lerp(3.1, 22, out), lerp(0.72, 9, out), pos2, quat2, lerp(4.5, 18, out));
+      camPos.lerp(pos2, out);
+      camQuat.slerp(quat2, out);
+    }
   } else if (T < A.room + 1) {
     /*
      * THE ROOM ACT. A shed, one warm pair of bulbs, and 43 m of RaceGOW lap
@@ -2796,6 +3205,11 @@ function frame(ms) {
   if (inWorld) {
     throttle = lerp(0.34, 0.86, ease(T, 2.0, 2.14));
   }
+  /* On the yard's pad: still through the map act, idling when the chase
+   * opens, and up for the lift. */
+  if (T >= A.map && T < A.yard + 1) {
+    throttle = T < A.yard ? 0 : lerp(0.18, 0.84, ease(T, A.yard + 0.03, A.yard + YARD_LIFT + 0.02));
+  }
   /* Reduced motion means the props are stopped too. A spinning rotor is
    * the single most animated thing on the page. */
   drone.spin(dt, REDUCED ? 0 : throttle);
@@ -2858,6 +3272,10 @@ function frame(ms) {
   } else if (T < 1.98) {
     /* Nearly off over the plan. A diagram should not have weather. */
     petals.update(dt, camPos, 0.10, 9, 0.02);
+  } else if (T >= A.map && T < A.map + 0.86) {
+    /* Nearly off over the map's plan, the track act's reason: a diagram
+     * should not have weather. */
+    petals.update(dt, camPos, 0.10, 9, 0.02);
   } else if (T < A.room) {
     /* A tight box in the flight, so most of them are NEAR the lens and
      * streak past it. Spread over 44 m they were all in the distance,
@@ -2895,7 +3313,23 @@ function frame(ms) {
   } else if (T < A.city + 0.88) {
     stage.aimLight(dronePos, 16);
     stage.aimBlob(dronePos, world, 1.05);
-  } else if (T < A.room) {
+  } else if (T >= A.map && T < A.room) {
+    /*
+     * The yard: the whole plot while the builder has it, then the aircraft
+     * from the moment the camera is down on the pads, like the lap, and a
+     * wider box again for the wide shot at the end.
+     */
+    if (T < A.map + 0.9) {
+      stage.aimLight(yard.heart, 140);
+      stage.aimBlob(dronePos, 0, 1);
+    } else if (T < A.yard + 0.86) {
+      stage.aimLight(dronePos, 22);
+      stage.aimBlob(dronePos, world, 1.05);
+    } else {
+      stage.aimLight(dronePos, 40);
+      stage.aimBlob(dronePos, 0, 1);
+    }
+  } else if (T < A.map) {
     /*
      * At the end of the town act the subject is the DISTRICT, so the sun is
      * aimed at the district. Aimed at the quad instead, the shadow frustum
@@ -2971,6 +3405,32 @@ function frame(ms) {
     const volts = lerp(4.05, 3.78, running);
     el.osdVolts.textContent = `${volts.toFixed(2)} V`;
     el.osdBatt.style.width = `${Math.round(lerp(52, 14, running))}%`;
+  } else if (inYard) {
+    /*
+     * A NEW FLIGHT, SO THE CLOCK STARTS AGAIN. The chase is flown from the
+     * pads after the builder's Fly, with a pack that has not flown the lap
+     * or the town, so the timer runs from the lift and the pack is full. The
+     * counter says what kind of flight it is, as it does in the town.
+     */
+    course.setRun(-1, 0);
+    course.hideLines(true);
+    const f = yard.flight;
+    const flown = f ? Math.max(0, clockNow - f.lift) * 0.001 : 0;
+    let kmh = 0;
+    if (f && clockNow > f.lift) {
+      f.at(clockNow - 50, flyNear);
+      f.at(clockNow + 50, flyNow);
+      kmh = (flyNear.pos.distanceTo(flyNow.pos) / 0.1) * 3.6;
+    }
+    el.osdSpeed.textContent = `${Math.round(kmh)} km/h`;
+    el.osdLabel.textContent = 'Flight';
+    el.osdTimer.textContent = fmtTime(flown);
+    el.osdGate.textContent = 'Freestyle';
+    el.osdThrottle.style.width = `${Math.round(clamp01((kmh - 20) / 80) * 100)}%`;
+    const volts = lerp(CELLS_6S * 4.18, CELLS_6S * 3.86, clamp01(flown / 40));
+    el.osdVolts.textContent = `${volts.toFixed(1)} V`;
+    el.osdPack.textContent = '6S pack \u00b7 Acro';
+    el.osdBatt.style.width = `${Math.round(lerp(98, 70, clamp01(flown / 40)))}%`;
   } else if (inCity) {
     /*
      * THE INSTRUMENT KEEPS RUNNING AND IT STOPS COUNTING GATES.
@@ -2996,7 +3456,7 @@ function frame(ms) {
     el.osdVolts.textContent = `${volts.toFixed(1)} V`;
     el.osdPack.textContent = '6S pack \u00b7 Acro';
     el.osdBatt.style.width = `${Math.round(lerp(34, 9, roaming))}%`;
-  } else if (inWorld && T < A.room) {
+  } else if (inWorld && T < A.city) {
     let next = GATE_LAP.length - 1;
     for (let i = 0; i < GATE_LAP.length; i += 1) {
       if (GATE_LAP[i] >= sRaw - 0.004) {
@@ -3053,6 +3513,12 @@ function frame(ms) {
     el.tbXy.textContent = `${p.x.toFixed(2)}, ${p.z.toFixed(2)} m`;
   }
 
+  /* The map builder's instrument: what is on the plot, the kind of thing
+   * just set down, and the named gaps as they go in. */
+  if (mapCounts && T >= A.map && T < A.map + 1) {
+    mapperShow(mapCounts);
+  }
+
   /* --------------------------------------------------------------- the DOM */
   if (inChooser !== wasInChooser) {
     wasInChooser = inChooser;
@@ -3062,6 +3528,10 @@ function frame(ms) {
     lastT = T;
     el.ticker.classList.toggle('on', !REDUCED && T < 1.06 && !inChooser);
     el.builder.classList.toggle('on', !REDUCED && T > 1.04 && T < 2.02);
+    /* The map builder, from the moment the crane is looking at the plot to
+     * the moment it starts down onto the pads, and only with the map in:
+     * an instrument over a hold's haze would be describing nothing. */
+    el.mapper.classList.toggle('on', !REDUCED && yard.ready && T > A.map + 0.2 && T < A.map + 0.84);
     /*
      * THE INSTRUMENT LEAVES WITH THE GOGGLES.
      *
@@ -3079,7 +3549,8 @@ function frame(ms) {
     /* ...and it stands down while a hold has the transition closed, because
      * the goggles are not showing anything yet. */
     el.osd.classList.toggle('on', !REDUCED && !holding
-      && ((T > 2.12 && T < A.city + 0.74) || (T > A.room + 0.24 && T < A.room + 0.90)));
+      && ((T > 2.12 && T < A.city + 0.74) || (T > A.yard + 0.14 && T < A.yard + 0.86)
+        || (T > A.room + 0.24 && T < A.room + 0.90)));
     el.cue.style.opacity = T > 0.35 ? '0' : '1';
     if (el.progress) {
       /* One more than the acts: the tail is the last stretch and it is not
@@ -3140,6 +3611,10 @@ function frame(ms) {
     setCopy('build', T > 1.06 && T < 1.90);
     setCopy('fly', T > 2.0 && T < 2.2);
     setCopy('city', T > A.city + 0.02 && T < A.city + 0.16);
+    /* The builder's copy while the starter loads, before the road starts,
+     * and the chase's while the aircraft is still on the pad. */
+    setCopy('map', T > A.map + 0.24 && T < A.map + 0.44);
+    setCopy('yard', T > A.yard + 0.01 && T < A.yard + 0.09);
     /* Later into its act than the others, because the room act opens on a
      * dark shed and a headline over black is a headline nobody reads as part
      * of a film. By 4.06 the bulbs are up and there is something behind it. */
@@ -3173,6 +3648,13 @@ function frame(ms) {
       const until = b.until ?? nextAt - 0.03;
       const on = inCity && roaming >= b.at && roaming < until;
       cityBeatEls[i].classList.toggle('on', on);
+    }
+    for (let i = 0; i < yardBeatEls.length; i += 1) {
+      const b = YARD_BEATS[i];
+      const nextAt = i + 1 < YARD_BEATS.length ? YARD_BEATS[i + 1].at : 1.02;
+      const until = b.until ?? nextAt - 0.03;
+      const on = inYard && yardU >= b.at && yardU < until;
+      yardBeatEls[i].classList.toggle('on', on);
     }
     /* And the shed's, keyed to progress through its lap for the same reason
      * the town's are keyed to progress through its act: the beat is about
@@ -3210,17 +3692,26 @@ function frame(ms) {
    */
   {
     const townWait = !REDUCED && PIN === null && T > A.city - 0.035 && T < A.room && !loader.done('town');
+    /*
+     * THE YARD HAS NO TRANSITION TO HOLD IN, because it is flown to: the
+     * crane over the town is one shot. So a yard that is not there yet is
+     * waited for in the dissolve's haze all the same, from the moment the
+     * crane would see the plot, which is the one frame a visitor can reach
+     * it in without having watched the town for a minute first. It is a
+     * fallback: the yard is built behind the town and is usually long done.
+     */
+    const yardWait = !REDUCED && PIN === null && !townWait && T > A.map + 0.04 && T < A.room && !loader.done('yard');
     const shedWait = !REDUCED && PIN === null && T > A.room - 0.01 && !loader.done('shed');
-    holdTown = townWait ? 1 : Math.max(0, holdTown - dt / HOLD_OPEN);
+    holdTown = townWait || yardWait ? 1 : Math.max(0, holdTown - dt / HOLD_OPEN);
     holdShed = shedWait ? 1 : Math.max(0, holdShed - dt / HOLD_OPEN);
     /* The OSD is decided in the block that runs when T moves, and a hold can
      * start or end while T sits still, so a change of hold asks for it. */
-    if (holding !== (townWait || shedWait)) {
+    if (holding !== (townWait || yardWait || shedWait)) {
       lastT = -1;
     }
-    holding = townWait || shedWait;
+    holding = townWait || yardWait || shedWait;
     if (holding) {
-      loader.want(townWait ? 'town' : 'shed');
+      loader.want(townWait ? 'town' : yardWait ? 'yard' : 'shed');
       holdFor = holdFor < 0 ? now : holdFor;
     } else {
       holdFor = -1;
@@ -3236,13 +3727,15 @@ function frame(ms) {
     const noted = holding && now - holdFor > 0.33;
     el.hold.classList.toggle('on', noted);
     if (noted) {
-      const note = townWait ? 'Building the town' : 'Lighting the shed';
+      const note = townWait ? 'Building the town' : yardWait ? 'Building the yard' : 'Lighting the shed';
       if (el.holdNote.textContent !== note) {
         el.holdNote.textContent = note;
       }
       const k = townWait
         ? (city.ready ? 0.85 + 0.15 * warmed.town : 0.85 * city.progress)
-        : warmed.shed;
+        : yardWait
+          ? (yard.ready ? 0.85 + 0.15 * warmed.yard : 0.85 * yard.progress)
+          : warmed.shed;
       el.holdFill.style.transform = `scaleX(${clamp01(k).toFixed(3)})`;
     }
   }
@@ -3326,13 +3819,17 @@ function frame(ms) {
  *            was a three second stall in the middle of the track act.
  *   town     the town: its modules, its build, its merge, then its warm pass,
  *            about a hundred and fifty steps in all. See city.js.
+ *   yard     the freestyle chapter's map: its modules, the map and its laps,
+ *            the ground, the roads, every element in its own chunk and the
+ *            cars, then its warm pass. About thirty steps and a second or so
+ *            of work in all. See yard.js.
  *   shed     the shed and the whoop's warm pass. A hundred and fifty meshes,
  *            hidden for four fifths of the page and cold until the lights come
  *            on, which is also the frame the camera changes place on: a stall
  *            there reads as the transition being broken.
  *
  * A reduced motion visitor is pinned to one frame of the lap and never sees
- * the town or the shed, so they get the course and nothing else. Seconds of
+ * the town, the yard or the shed, so they get the course and nothing else. Seconds of
  * work for geometry nobody will see is the opposite of what they asked for.
  */
 const loader = createLoader();
@@ -3376,6 +3873,10 @@ function showForWarm(place) {
   } else if (place === 'town') {
     city.setShown(true);
     stage.setRegime(1, 1, 1);
+  } else if (place === 'yard') {
+    yard.setShown(true);
+    yard.setBuild(1, 1);
+    stage.setRegime(1, 1, 1);
   } else if (place === 'shed') {
     room.setShown(true);
     room.setLamps(1);
@@ -3387,11 +3888,12 @@ function showForWarm(place) {
 const WARM_ROOTS = {
   course: () => [course.group, droneRig],
   town: () => [city.group],
+  yard: () => [yard.group],
   shed: () => [room.group, whoopRig],
 };
 
 /* How far each place's warm pass has got, 0 to 1, for a hold's note. */
-const warmed = { course: 0, town: 0, shed: 0 };
+const warmed = { course: 0, town: 0, yard: 0, shed: 0 };
 
 function* warmPlace(place, slices) {
   const roots = WARM_ROOTS[place]();
@@ -3466,6 +3968,12 @@ if (!REDUCED) {
     yield* city.steps();
     if (city.ready) {
       yield* warmPlace('town', 8);
+    }
+  });
+  loader.add('yard', function* yardJob() {
+    yield* yard.steps();
+    if (yard.ready) {
+      yield* warmPlace('yard', 4);
     }
   });
   loader.add('shed', () => warmPlace('shed', 1));

@@ -278,13 +278,14 @@ export function createStage(canvas) {
   }
 
   const fogColour = new THREE.Color();
-  function setRegime(scale, world, reach = 0) {
+  function setRegime(scale, world, reach = 0, plan = 0) {
     const s = Math.max(0, Math.min(1, scale));
     const w = Math.max(0, Math.min(1, world));
     const r = Math.max(0, Math.min(1, reach));
+    const p = Math.max(0, Math.min(1, plan));
 
     camera.near = 0.02 + s * 0.06;
-    camera.far = 22 + s * 780;
+    camera.far = 22 + s * (780 + 400 * p);
     camera.updateProjectionMatrix();
 
     fogColour.copy(STUDIO).lerp(HORIZON, w * 0.92);
@@ -324,6 +325,17 @@ export function createStage(canvas) {
      * it is a third argument here rather than a second act.
      */
     const haze = fogFor(1, r);
+    /*
+     * ...and `plan` is the map act's, for a camera looking STRAIGHT DOWN on a
+     * plot from three hundred metres up. The town's 620 m would put a third
+     * of a fog over the ground at that range, and the plan is a drawing that
+     * should be read to its corners. Looking straight down there is no
+     * horizon in frame to give the deck's far edge away, so the air can
+     * clear another sixty per cent; main.js only asks for it while the
+     * camera is pointing at the ground.
+     */
+    haze.near *= 1 + 0.6 * p;
+    haze.far *= 1 + 0.6 * p;
     scene.fog.near = 2.5 + s * (haze.near - 2.5);
     scene.fog.far = 16 + s * (haze.far - 16);
 

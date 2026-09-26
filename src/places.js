@@ -82,3 +82,32 @@ export const CITY_HEART = new THREE.Vector3(CITY_ORIGIN.x + 4, CITY_ORIGIN.y + 4
 export const BUILT_R = 60;
 export const TREE_R = 190;
 export const ROAD_HALF = 3.15;
+
+/*
+ * WHERE THE YARD STANDS: Hibari Yard Tandem, the map the freestyle chapter
+ * builds and then flies (see yard.js). The middle of its plot, in the race
+ * field's coordinates, and the turn it stands at.
+ *
+ * WEST OF THE TOWN, just off the town's own ground. The town's ground ends
+ * at x = -163 and the yard's verge begins 30 m past it, so the two grounds
+ * never touch and the deck is cut out from under each on its own. The
+ * chapter FLIES here, which is the rule for any place after the town: the
+ * camera cranes up out of the town's last shot, carries on over the roofs,
+ * and comes down on the plot on the far side of them. Nothing is cut to.
+ *
+ * AND NORTH OF THE RAILWAY. The town's line runs out west well past its
+ * ground, at z = -460, and the first place the yard stood put it straight
+ * through the plot. Here the plot's near edge is fifteen metres short of
+ * it, so the line runs past the yard, which is where a yard would be.
+ *
+ * TURNED A QUARTER, so the plot's north is west. The camera arrives over it
+ * travelling west, and a plan seen that way up has north at the top of the
+ * frame and east on the right, which is the builder's own plan. The drift
+ * course is the plot's north end, so it is the far end from the town, and
+ * the pads and the skate corner are the near one.
+ *
+ * FAR FROM THE FIELD, 435 m to its nearest corner, which is past the lap's
+ * haze the way the town is, so nothing of it is ever in a frame of the lap.
+ */
+export const YARD_ORIGIN = new THREE.Vector3(-325, 0, -560);
+export const YARD_TURN = Math.PI / 2;

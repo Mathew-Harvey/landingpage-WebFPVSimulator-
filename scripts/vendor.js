@@ -60,10 +60,21 @@ const OUT = join(root, 'src/sim');
 /* Copied whole: directories under the simulator's src/. */
 const WHOLE = ['maps/city/vendored'];
 
-/* Followed through their imports: modules under the simulator's src/. */
+/* Followed through their imports: modules under the simulator's src/. The
+ * town and its bake; then what the yard is built from, the same parts the
+ * built map and the builder's 3D view put together: where each element
+ * stands, the kit that draws it, the ground, the roads, the cars and the
+ * time of day, and the traffic that says which car drives which lane. */
 const ENTRIES = [
   'maps/city/vendored/world/index.js',
   'maps/city/bake.js',
+  'maps/built/place.js',
+  'props/kit.js',
+  'maps/built/ground.js',
+  'maps/built/roadmesh.js',
+  'maps/built/cars.js',
+  'maps/built/looks.js',
+  'maps/built/traffic.js',
 ];
 
 /* Relative specifiers in a module: static imports, re-exports, and dynamic

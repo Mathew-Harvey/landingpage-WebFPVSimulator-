@@ -110,9 +110,18 @@ export function boardOrigin() {
  * had stopped. The words live in the HTML. This file knows where things
  * are, and that is all it knows.
  */
+/*
+ * The freestyle chapter's map, Hibari Yard Tandem: the simulator's
+ * src/maps/built/showpiece.js, published on the board under its own fixed
+ * id, which is this. src/yard-data.js is baked from the same document and
+ * the page lint holds the two to the same id.
+ */
+export const YARD_MAP_ID = 'trk-1b4a7d7a';
+
 export function destinations() {
   const sim = simOrigin();
   const board = boardOrigin();
+  const from = encodeURIComponent(board);
   return [
     { id: 'sim', href: `${sim}/?map=field` },
     /* The freestyle city, which the page now spends a whole act flying. A
@@ -137,6 +146,15 @@ export function destinations() {
      */
     { id: 'whoop', href: `${sim}/?map=custom&craft=whoop65` },
     { id: 'builder', href: `${sim}/src/trackbuilder/index.html` },
+    /*
+     * The map the freestyle chapter builds and flies, the board's own two
+     * links for a published map (its public/app.js mapFlyHref and
+     * mapRemixHref): fly it from its pads on the five inch, or open it on
+     * the builder's map canvas. `board` says where the simulator fetches it
+     * from, so a local page fetches from the local board.
+     */
+    { id: 'yard', href: `${sim}/?map=built&mapshare=${YARD_MAP_ID}&board=${from}&craft=5inch&fly=1` },
+    { id: 'yardBuilder', href: `${sim}/src/trackbuilder/index.html?mapshare=${YARD_MAP_ID}&board=${from}&mode=freestyle` },
     { id: 'board', href: `${board}/` },
   ];
 }

@@ -831,7 +831,7 @@
          chrome, so the page shows the tool rather than describing it.
          ------------------------------------------------------------------ */
 
-      #builder {
+      #builder, #mapper {
         position: fixed;
         inset: 0;
         z-index: 12;
@@ -840,7 +840,7 @@
         transition: opacity 0.55s var(--ease);
         font-size: 12px;
       }
-      #builder.on { opacity: 1; }
+      #builder.on, #mapper.on { opacity: 1; }
 
       .tb-bar {
         position: absolute;
@@ -916,6 +916,18 @@
         transition: color 0.3s var(--ease), border-color 0.3s var(--ease), background 0.3s var(--ease);
       }
       .tb-node.on { color: var(--deep); background: var(--mint); border-color: var(--mint); font-weight: 700; }
+      /* The map act's named gaps, a row each, lit in the amber the builder
+         draws a gap's window in as each one is set down. */
+      .tb-gaps { display: grid; gap: 4px; }
+      .tb-gap {
+        display: flex; justify-content: space-between; gap: 10px;
+        padding: 4px 6px;
+        font: 10px/1.2 var(--mono);
+        color: rgba(157, 179, 200, 0.5);
+        border: 1px solid var(--line);
+        transition: color 0.3s var(--ease), border-color 0.3s var(--ease), background 0.3s var(--ease);
+      }
+      .tb-gap.on { color: var(--deep); background: var(--amber); border-color: var(--amber); font-weight: 700; }
 
       .tb-status {
         position: absolute;
@@ -2222,7 +2234,7 @@
            still page would be a flash with nothing behind it. */
         #dissolve, #blackout { display: none; }
         .copy { opacity: 1; transform: none; transition: none; }
-        #cue, #ticker, #builder, #osd, #beats { display: none; }
+        #cue, #ticker, #builder, #mapper, #osd, #beats { display: none; }
         .act { min-height: auto !important; padding-top: 12vh; padding-bottom: 12vh; }
         .pin { position: static; height: auto; }
         #veil { opacity: 0.5 !important; }
@@ -2418,6 +2430,54 @@
         <span id="tb-xy">0.00, 0.00 m</span>
         <span>SNAP <b>0.5 m</b></span>
         <span>GRID <b>5 m</b></span>
+      </div>
+    </div>
+
+    <!--
+      The map act's instrument: the same slice of the builder's chrome, on
+      its freestyle canvas, showing the map in its 3D view the way the real
+      one does. The palette lights the kind of thing being set down and
+      counts them, the side panel counts the map, and the named gaps light
+      up as they go in, in the amber the builder draws a gap's window in.
+      main.js fills the gaps' list from the map itself and keeps the rest.
+    -->
+    <div id="mapper">
+      <div class="tb-bar">
+        <span class="tb-name">Hibari Yard Tandem <span>&#183; map</span></span>
+        <div class="tb-chips">
+          <span class="tb-chip">Plan</span>
+          <span class="tb-chip on">3D</span>
+          <span class="tb-chip" id="mb-play">Play</span>
+          <span class="tb-chip">Publish</span>
+        </div>
+      </div>
+      <div class="tb-palette">
+        <h4 class="tb-h">Elements</h4>
+        <div class="tb-item" data-mb="road"><span>Road</span><span class="k">0</span></div>
+        <div class="tb-item" data-mb="vehicle"><span>Vehicle</span><span class="k">0</span></div>
+        <div class="tb-item" data-mb="bridge"><span>Bridge</span><span class="k">0</span></div>
+        <div class="tb-item" data-mb="gap"><span>Named gap</span><span class="k">0</span></div>
+        <div class="tb-item" data-mb="containers"><span>Containers</span><span class="k">0</span></div>
+        <div class="tb-item" data-mb="lamp"><span>Lamp</span><span class="k">0</span></div>
+        <div class="tb-item" data-mb="tree"><span>Tree</span><span class="k">0</span></div>
+      </div>
+      <div class="tb-side">
+        <div class="tb-sec">
+          <h4 class="tb-h">Map</h4>
+          <div class="tb-kv"><span>Elements</span><b id="mb-els">0</b></div>
+          <div class="tb-kv"><span>Road</span><b id="mb-road">0 m</b></div>
+          <div class="tb-kv"><span>Cars</span><b id="mb-cars">0</b></div>
+          <div class="tb-kv good"><span>Warnings</span><b id="mb-warn">none</b></div>
+        </div>
+        <div class="tb-sec">
+          <h4 class="tb-h">Named gaps</h4>
+          <div class="tb-gaps" id="mb-gaps"></div>
+        </div>
+      </div>
+      <div class="tb-status">
+        <span id="mb-xy">0.0, 0.0 m</span>
+        <span>SNAP <b>1 m</b></span>
+        <span>GRID <b>10 m</b></span>
       </div>
     </div>
 
@@ -2707,7 +2767,58 @@
         </div>
       </section>
 
-      <!-- ACT 5: the room -->
+      <!-- ACT 5: the map -->
+      <!-- The freestyle builder, and it is FLOWN TO rather than cut to: the
+           town's last shot cranes up and carries on west over the roofs, and
+           comes down over an empty plot on the far side of them. See places.js
+           for where the yard stands and why. The builder then loads a yard
+           and draws the showpiece on it, road first, and the camera comes
+           down onto the pads as the cars start. Like the track act, it is a
+           builder at work rather than a flight, so it gets the track act's
+           kind of height: about five and a half screens, most of it spent
+           watching things arrive. -->
+      <section class="act" data-act="map" style="min-height: 560vh">
+        <div class="pin">
+          <div class="copy" data-copy="map">
+            <p class="eyebrow">06 &#183; The map</p>
+            <h2>Build a map.</h2>
+            <p class="lede">
+              Buildings, cranes, containers and named gaps, set out on a plot.
+              Draw a road and put cars on it: they drive it, and a drift car
+              slides every bend.
+            </p>
+            <p class="lede">
+              <a class="inline-go" href="https://webfpv.org/sim/src/trackbuilder/index.html?mapshare=trk-1b4a7d7a&amp;board=https%3A%2F%2Fwebfpv.org%2Fboard&amp;mode=freestyle" data-dest="yardBuilder">Open this map in the builder</a>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ACT 6: the chase -->
+      <!-- 900vh for about thirty seconds of the physics module's clock: off
+           the pads, over the yard, down onto the tandem and round most of a
+           lap behind it. About thirty screens a minute, a little quicker
+           than the town's forty seven, because what is in frame is two cars
+           and not a street, and a slide is a thing to see happen rather than
+           read. Every timing inside the act is a share of it, so this is the
+           one number to turn if the chase feels hurried. -->
+      <section class="act" data-act="yard" style="min-height: 900vh">
+        <div class="pin">
+          <div class="copy copy-tight" data-copy="yard">
+            <p class="eyebrow">07 &#183; The chase</p>
+            <h2>Chase the tandem.</h2>
+            <p class="lede">
+              Hibari Yard Tandem, flown from its pads. Two drift cars on one
+              road, in step every lap.
+            </p>
+            <p class="lede">
+              <a class="inline-go" href="https://webfpv.org/sim/?map=built&amp;mapshare=trk-1b4a7d7a&amp;board=https%3A%2F%2Fwebfpv.org%2Fboard&amp;craft=5inch&amp;fly=1" data-dest="yard">Fly this map</a>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ACT 7: the room -->
       <!-- 700vh, and THIS IS THE ONE NUMBER TO TURN IF THE WHOOP FEELS FAST.
 
            An act's height is the gearing between the wheel and the aircraft,
@@ -2735,7 +2846,7 @@
         <span class="chapter-at" id="whoop" style="--at: 0.08"></span>
         <div class="pin">
           <div class="copy copy-tight" data-copy="room">
-            <p class="eyebrow">06 &#183; The room</p>
+            <p class="eyebrow">08 &#183; The room</p>
             <h2>Micro UTT.</h2>
             <p class="lede">
               A 65 mm whoop.
@@ -2772,7 +2883,7 @@
     -->
     <section id="why">
       <div class="why-copy">
-        <p class="eyebrow eyebrow-lit">07 &#183; The reason</p>
+        <p class="eyebrow eyebrow-lit">09 &#183; The reason</p>
         <h2>The hard part of FPV<br /><em>is getting to the first lap.</em></h2>
         <p class="lede">
           A quad, a radio, goggles, batteries, a charger. Hundreds of dollars
@@ -2873,7 +2984,7 @@
     <!-- The close -->
     <section id="close">
       <div class="close-copy">
-        <p class="eyebrow eyebrow-lit" style="justify-content: center">08 &#183; The point</p>
+        <p class="eyebrow eyebrow-lit" style="justify-content: center">10 &#183; The point</p>
         <!-- h2, not h1. The SEO line under the hero wordmark is the h1, and a
              document with two of them has no single heading a crawler or a
              screen reader can name it by. The type is unchanged: .shout is

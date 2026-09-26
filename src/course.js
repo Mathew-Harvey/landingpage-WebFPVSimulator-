@@ -364,6 +364,23 @@ function ground() {
        */
       uCutDrop: { value: 3 },
       /*
+       * THE YARD'S CUT, a second one, and it ducks the other way round.
+       *
+       * The yard's ground is flat at zero like the deck, with a verge round
+       * it two centimetres down, so the deck has to be under all of it. The
+       * town's cut eases in INSIDE its rectangle because the town's ground
+       * overhangs it; the yard's has no overhang, so this eases in over the
+       * YARD_RAMP metres OUTSIDE the verge and is all the way down by the
+       * verge's edge. Half a metre is enough to be under a verge and little
+       * enough that the dip round the plot reads as the land falling away
+       * a little from a paved yard, which is what it looks like anyway.
+       *
+       * The rectangle is the yard's ground as built, handed over when it
+       * lands. Zero half extent means no cut.
+       */
+      uYardAt: { value: new THREE.Vector2(0, 0) },
+      uYardHalf: { value: new THREE.Vector2(0, 0) },
+      /*
        * The ground's fog is OURS, not the renderer's.
        *
        * Spreading THREE.UniformsLib.fog hands the material the library's
@@ -384,7 +401,11 @@ function ground() {
       uniform vec2 uCutHalf;
       uniform float uCutInner;
       uniform float uCutDrop;
+      uniform vec2 uYardAt;
+      uniform vec2 uYardHalf;
       varying vec3 vWorld;
+      const float YARD_DROP = 0.5;
+      const float YARD_RAMP = 8.0;
       void main() {
         vec3 wp = (modelMatrix * vec4(position, 1.0)).xyz;
         if (uCutHalf.x > 0.0) {
@@ -396,6 +417,10 @@ function ground() {
           /* ...and never under the race field, which needs its own ground. */
           float outField = smoothstep(uCutInner, uCutInner + 26.0, length(wp.xz));
           wp.y -= uCutDrop * smoothstep(0.0, 26.0, inside) * outField;
+        }
+        if (uYardHalf.x > 0.0) {
+          vec2 e = uYardHalf - abs(wp.xz - uYardAt);
+          wp.y -= YARD_DROP * smoothstep(-YARD_RAMP, 0.0, min(e.x, e.y));
         }
         vWorld = wp;
         gl_Position = projectionMatrix * viewMatrix * vec4(wp, 1.0);
@@ -996,6 +1021,18 @@ export function buildCourse() {
     u.uCutHalf.value.set((max.x - min.x) * 0.5, (max.z - min.z) * 0.5);
   }
 
+  /* The yard's ground as built, a world rectangle: the deck ducks under it.
+   * See uYardAt. Null clears it. */
+  function setYardCut(box) {
+    const u = deck.material.uniforms;
+    if (!box || box.isEmpty()) {
+      u.uYardHalf.value.set(0, 0);
+      return;
+    }
+    u.uYardAt.value.set((box.min.x + box.max.x) * 0.5, (box.min.z + box.max.z) * 0.5);
+    u.uYardHalf.value.set((box.max.x - box.min.x) * 0.5, (box.max.z - box.min.z) * 0.5);
+  }
+
   /* The renderer's fog, handed to the ground shader verbatim, so the deck's
    * far edge and the dome behind it resolve to the same value. */
   function setFog(fog) {
@@ -1035,6 +1072,7 @@ export function buildCourse() {
     setWorld,
     setWild,
     setCut,
+    setYardCut,
     setFog,
     setRun,
     hideLines,
