@@ -76,7 +76,9 @@ const WHOLE = ['maps/city/vendored'];
  * src/cel.js is this page's port of that file and both patch the same
  * shader chunk, so the room lights the art with cel.js instead. And the
  * lettering, the hand the simulator draws its wordmark and its titles in,
- * which this page's titles are drawn in too: see src/titles.js. */
+ * which this page's titles are drawn in too: see src/titles.js. And the
+ * partners' roster, who they are, what they are called and where their
+ * marks are, which is the simulator's list and this page's to show. */
 const ENTRIES = [
   'maps/city/vendored/world/index.js',
   'maps/city/bake.js',
@@ -90,11 +92,21 @@ const ENTRIES = [
   'art/wallart-hang.js',
   'art/wallart-atlas.js',
   'ui/lettering.js',
+  'partners/roster.js',
 ];
 
 /* Copied as files, to the same path from this repository's root: see
- * ASSETS in the header. */
-const ASSETS = ['assets/wallart/atlas.webp'];
+ * ASSETS in the header. The wall art's atlas, and the partners' marks the
+ * roster names, each in colour and in one colour. */
+const ASSETS = [
+  'assets/wallart/atlas.webp',
+  'assets/partners/gds/colour.svg',
+  'assets/partners/gds/mono.svg',
+  'assets/partners/mantisfpv/colour.svg',
+  'assets/partners/mantisfpv/mono.svg',
+  'assets/partners/wcmrc/colour.png',
+  'assets/partners/wcmrc/mono.png',
+];
 
 /* Relative specifiers in a module: static imports, re-exports, and dynamic
  * import() with a string literal. */

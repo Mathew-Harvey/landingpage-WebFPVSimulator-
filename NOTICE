@@ -33,8 +33,9 @@ here: the tree is already patched.
 ## The simulator's own code
 
     From        Mathew-Harvey/WebFPVSimulator, GPLv3, the same project
-    Held at     src/sim/, laid out as the simulator's src/, and one picture,
-                assets/wallart/atlas.webp, at its path in the simulator
+    Held at     src/sim/, laid out as the simulator's src/, and the pictures
+                it names from outside src/, assets/wallart/atlas.webp and
+                assets/partners/, at their paths in the simulator
     Recorded in src/sim/MANIFEST.json, the commit and a hash per file
 
 Not third party: the simulator and this page are one product under one
@@ -63,6 +64,13 @@ And the lettering the page's wordmarks and titles are drawn in, the
 simulator's src/ui/lettering.js. It is not a font and ships none: it sets
 the system's own heaviest sans a glyph at a time and draws the ink, the drop
 and the bands round it.
+
+And the partners' roster, src/partners/roster.js, with the marks it names
+under assets/partners/: Global Drone Solutions, Mantis FPV and the West Coast
+Multirotor Club. The roster is the simulator's GPLv3 code. THE MARKS ARE NOT:
+each is its owner's trade mark, shown here with their permission as a WebFPV
+partner, and the GPLv3 grant does not extend to them. The simulator's NOTICE
+says where each file came from.
 
 ## RaceGOW5 Track 1
 

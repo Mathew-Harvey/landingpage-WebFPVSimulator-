@@ -1,7 +1,7 @@
 {
   "note": "Copied from Mathew-Harvey/WebFPVSimulator by scripts/vendor.js. Regenerate, do not edit: scripts/page-lint.js checks every file here against its hash.",
   "from": "Mathew-Harvey/WebFPVSimulator",
-  "commit": "bb2ed749ad533d673798d10baa90fcf4d61345df",
+  "commit": "865e24dadfa4fea80f31ece9ac1c7e3bbb7da2bb",
   "clean": true,
   "whole": [
     "maps/city/vendored"
@@ -18,7 +18,8 @@
     "maps/built/traffic.js",
     "art/wallart-hang.js",
     "art/wallart-atlas.js",
-    "ui/lettering.js"
+    "ui/lettering.js",
+    "partners/roster.js"
   ],
   "files": {
     "art/banners.js": "2646d8f1b499d61d90f1741cd8db37c7a80264d65f9558d234a6f3d5ffd80d48",
@@ -102,6 +103,7 @@
     "maps/city/vendored/world/vehicles.js": "f9ad02658ece5cd82f67f9288ced03029ad9c49035f718ec0451f846a70bda30",
     "maps/city/vendored/world/vending.js": "d710346088342b4f1ff5f20a1fcafbb780fe7c554acd10f1746153f5876d22cb",
     "maps/city/vendored/world/yonchome.js": "6ffd9a05e558dde4f6c9048af4b5c2a33a6a582673a707a7f8b7afbc35e97a06",
+    "partners/roster.js": "06d245521289279f83fada863ba9f7dd1cac8f183e2def6aadbbf922fa626b46",
     "props/buildings.js": "82ce3a33d04f364a9da1893ca9c1f65a06b861be38cbcb51b3f55e535694a182",
     "props/catalog.js": "05f4ecdcc38409c44045bb62757a1fd88e0579ec5015c3636b62448bab954987",
     "props/course.js": "ccc7e932141f1c1fd8abd6b99d14a96979edcc8d34c4ecd1813cf2cc60b909d0",
@@ -123,6 +125,12 @@
     "units.js": "6e2326500c4053ce3495a0ffa6ea59a210f6ca68ba0117146a2d87b2fcf2f84d"
   },
   "assets": {
-    "assets/wallart/atlas.webp": "a38d67f8b8bf93bdd8e5c10a4b24ebb056b5c22b667e49162ff3d7bd15f93569"
+    "assets/wallart/atlas.webp": "a38d67f8b8bf93bdd8e5c10a4b24ebb056b5c22b667e49162ff3d7bd15f93569",
+    "assets/partners/gds/colour.svg": "52f0d69da518c7848849a9145221f2e9c2365c3594217d1098b6cef1eb724ac4",
+    "assets/partners/gds/mono.svg": "7b0e5d6f6662f7e808278e702196bae9dd8e121044951debc3d7e11fdb041439",
+    "assets/partners/mantisfpv/colour.svg": "bf0873101aef1ea94f5c51d842363f422e5967db6cae8075f29fbfe1b04fffc9",
+    "assets/partners/mantisfpv/mono.svg": "565209023f712b04cfe08780256b2225b56e32d7c19ebd1bafe5ea9074483a26",
+    "assets/partners/wcmrc/colour.png": "6e8712facb42430a4a4691b1a2a413d486f212ddc5cd24c96c420897a0513f9f",
+    "assets/partners/wcmrc/mono.png": "0a277c4d54a8b8bb46f870ae39dc815765fa68833db479ed300ef572b9aec8a1"
   }
 }
