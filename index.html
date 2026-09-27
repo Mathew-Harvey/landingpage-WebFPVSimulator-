@@ -729,7 +729,6 @@
 
       @media (min-width: 901px) and (max-height: 760px) {
         .wordmark { font-size: clamp(48px, 7vw, 96px); }
-        .copy[data-copy="assemble"] .rule { margin: 14px 0; }
       }
 
       h2 {
@@ -752,20 +751,6 @@
       }
       .lede + .lede { margin-top: 14px; }
       .lede strong { color: var(--cream); font-weight: 600; }
-
-      /* The admission. A third of a step down from the lede, with the
-         eyebrow's own sakura bar turned on its side, so it reads as an
-         aside somebody said rather than as a line of the pitch. */
-      .admission {
-        margin: 18px 0 0;
-        padding-left: 12px;
-        max-width: 30em;
-        border-left: 2px solid var(--sakura);
-        font-size: clamp(12px, 1.15vw, 13.5px);
-        line-height: 1.65;
-        color: var(--slate);
-        text-shadow: 0 1px 8px rgba(8, 12, 9, 0.8);
-      }
 
       .rule {
         width: 100%;
@@ -2685,37 +2670,6 @@
             <div class="wordmark" aria-hidden="true">WEB<span class="fpv">FPV</span></div>
             <h1 class="hero-h1">Free FPV drone racing simulator in your browser</h1>
             <p class="tagline">Free browser FPV. Real Betaflight. No install.</p>
-            <div class="rule"></div>
-            <p class="lede">
-              A five inch racing quad, built in front of you. Frame, stack,
-              motors, loom, camera, props.
-            </p>
-            <p class="lede">
-              Then it flies on
-              <a class="inline-cite" href="https://betaflight.com" rel="noreferrer"><strong>Betaflight 4.5.1</strong></a>,
-              compiled to WebAssembly and running the real control loop at
-              1&#8239;kHz. Their firmware, free and open, doing the hard part.
-              Support them.
-            </p>
-            <!--
-              THE DISCLOSURE, AND IT IS ON THE FIRST SCREEN ON PURPOSE.
-
-              Somebody works out that a one man project shipped a flight
-              model, a town, a track builder and a wiki, and they wonder. Said
-              here, once, in the owner's own voice, it costs a line and it is
-              over. Left for a visitor to discover, it is the only thing they
-              remember about the page.
-
-              Dry, and no apology in it: an apology invites an argument about
-              whether the tool was allowed, and the argument this page wants
-              is about whether the quad flies right. Quieter type than the
-              lede for the same reason. It is a fact, not the pitch.
-            -->
-            <p class="admission">
-              Built with AI, by me, a developer who, apparently, orders AI
-              agents about these days (my AI team). There, out of the way.
-              Now let's fly.
-            </p>
           </div>
         </div>
       </section>
