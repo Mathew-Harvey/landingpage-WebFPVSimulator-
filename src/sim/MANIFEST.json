@@ -1,7 +1,7 @@
 {
   "note": "Copied from Mathew-Harvey/WebFPVSimulator by scripts/vendor.js. Regenerate, do not edit: scripts/page-lint.js checks every file here against its hash.",
   "from": "Mathew-Harvey/WebFPVSimulator",
-  "commit": "865e24dadfa4fea80f31ece9ac1c7e3bbb7da2bb",
+  "commit": "fdc7d2f8706a0a103c9dbe3938b13c81b4c08955",
   "clean": true,
   "whole": [
     "maps/city/vendored"
@@ -103,7 +103,7 @@
     "maps/city/vendored/world/vehicles.js": "f9ad02658ece5cd82f67f9288ced03029ad9c49035f718ec0451f846a70bda30",
     "maps/city/vendored/world/vending.js": "d710346088342b4f1ff5f20a1fcafbb780fe7c554acd10f1746153f5876d22cb",
     "maps/city/vendored/world/yonchome.js": "6ffd9a05e558dde4f6c9048af4b5c2a33a6a582673a707a7f8b7afbc35e97a06",
-    "partners/roster.js": "06d245521289279f83fada863ba9f7dd1cac8f183e2def6aadbbf922fa626b46",
+    "partners/roster.js": "10add950fbcba3f57f6226f23fb581d393379944ae5c195102be1b130cf85c9d",
     "props/buildings.js": "82ce3a33d04f364a9da1893ca9c1f65a06b861be38cbcb51b3f55e535694a182",
     "props/catalog.js": "05f4ecdcc38409c44045bb62757a1fd88e0579ec5015c3636b62448bab954987",
     "props/course.js": "ccc7e932141f1c1fd8abd6b99d14a96979edcc8d34c4ecd1813cf2cc60b909d0",
