@@ -50,6 +50,9 @@ import { buildPetals } from './petals.js';
 import { bindPatreonLinks, destinations } from './config.js';
 import { FONTCSS, STICKERS } from './stickers-data.js';
 import { captureAttribution, appendAttribution } from './attribution.js';
+import { createManga } from './manga.js';
+import { createPage } from './page.js';
+import { paintSfx } from './sim/ui/lettering.js';
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -1629,6 +1632,148 @@ function applyBias(q, yawScale = 1, pitchScale = 1, yawCap = Infinity) {
   }
 }
 
+/*
+ * THE FIRST SCREEN IS A MANGA PAGE, and its big panel is this studio.
+ *
+ * src/page.js lays the page out for the window and src/manga.js draws the
+ * studio inside it as ink on paper. Two things here join them to the film.
+ *
+ * THE FRAMING. The camera's composition above was made for a frame that is
+ * the whole window; the page gives the studio a panel whose middle is higher
+ * than the window's, with the chapter tier under it. So while the page is up
+ * the picture is slid, not turned: a view offset moves the projection so the
+ * hero sits in the middle of what the panel leaves it, which changes nothing
+ * about where the camera is or what it looks at. The slide goes to nothing
+ * as the page opens, so from there on every pose, and the act two handover
+ * measured against poseStudio(1), is exactly what it was.
+ *
+ * THE OPENING. --open goes from 0 to 1 over the first stretch of the scroll
+ * and the stylesheet does the rest: the frame, the gutters and the chapter
+ * tier zoom past the glass and go, and the panel is the screen. Scrolling is
+ * turning the page into the film, which is the owner's brief in one move.
+ */
+const PAGE_OPEN = [0.04, 0.30];
+const pagePin = document.querySelector('#top .pin');
+const topbarEl = document.getElementById('topbar');
+const manga = createManga({
+  stage,
+  drone,
+  course,
+  studioY: STUDIO_Y,
+  reduced: REDUCED,
+  masks: ['[data-copy="assemble"]', '#ticker', '#cue', '#topbar'],
+});
+stage.setDrawer(manga);
+let pageCopyBottom = 0;
+let pageCopyRight = 0;
+let pageLayout = null;
+const pageSfx = document.createElement('canvas');
+pageSfx.className = 'page-sfx';
+pageSfx.setAttribute('aria-hidden', 'true');
+if (pagePin) {
+  pagePin.append(pageSfx);
+}
+
+/*
+ * THE SOUND OF IT ARMING. One sound effect over the studio, lettered by the
+ * simulator's hand from its stroke kana: キュイーン, kyuiin, the whine of
+ * something spinning up fast, which is what five inch props do when the quad
+ * arms. It lands once, when the build finishes, beside the aircraft and
+ * clear of it, and it is decoration: hidden from a screen reader, and not
+ * drawn at all under reduced motion, where the film does not build.
+ */
+const SFX_SPOOL = 'キュイーン';
+let sfxShown = false;
+function placeSfx() {
+  const L = pageLayout;
+  if (!L || !sfxShown) {
+    return;
+  }
+  const cell = Math.max(26, Math.min(170, 8.5 * L.u));
+  const { w, h } = paintSfx(pageSfx, SFX_SPOOL, cell, '#f7f0dc');
+  const at = manga.subjectCss();
+  /* Up and to the left of the clear ellipse round the aircraft, on the
+   * page's side of it, and never off the panel. */
+  const x = Math.max(L.m + L.g, Math.min(L.W - L.m - w - L.g, at.cx - at.rx * 0.55 - w * 0.5));
+  const y = Math.max(L.top + L.g, at.cy - at.ry * 0.95 - h);
+  pageSfx.style.left = `${Math.round(x)}px`;
+  pageSfx.style.top = `${Math.round(y)}px`;
+}
+function showSfx() {
+  if (sfxShown || REDUCED || manga.k < 0.5) {
+    return;
+  }
+  sfxShown = true;
+  placeSfx();
+  pageSfx.classList.add('on');
+}
+
+const page = pagePin
+  ? createPage(pagePin, {
+    bar: () => (topbarEl ? topbarEl.getBoundingClientRect().bottom : 0),
+    onLayout: (L) => {
+      pageLayout = L;
+      const copy = COPIES.get('assemble');
+      const cr = copy ? copy.getBoundingClientRect() : null;
+      pageCopyBottom = cr ? cr.bottom : 0;
+      pageCopyRight = cr ? cr.right : 0;
+      composeLayout();
+      manga.measure();
+      placeSfx();
+      /* The drift tandem's own sound, on the freestyle panel. */
+      for (const c of document.querySelectorAll('.world-sfx[data-sfx]')) {
+        paintSfx(c, c.dataset.sfx, Math.max(14, Math.min(64, 3.1 * L.u)), '#f7f0dc');
+      }
+    },
+  })
+  : null;
+
+let pageOpenNow = -1;
+const vPage = new THREE.Vector3();
+function framePage(T) {
+  const open = REDUCED ? 0 : ease(T, PAGE_OPEN[0], PAGE_OPEN[1]);
+  if (Math.abs(open - pageOpenNow) > 0.0005) {
+    pageOpenNow = open;
+    document.documentElement.style.setProperty('--open', open.toFixed(4));
+    document.body.classList.toggle('page-open', open > 0.5);
+  }
+  const cam = stage.camera;
+  const L = pageLayout;
+  const offset = cam.view && cam.view.enabled;
+  if (REDUCED || !L || open > 0.999 || T >= 1) {
+    if (offset) {
+      cam.clearViewOffset();
+    }
+    return;
+  }
+  if (offset) {
+    cam.clearViewOffset();
+  }
+  cam.updateMatrixWorld();
+  vPage.set(0, STUDIO_Y, 0).project(cam);
+  const W = stage.size.width;
+  const H = stage.size.height;
+  const py = (0.5 - vPage.y * 0.5) * H;
+  /* The middle of what the panel leaves the hero: beside the copy on a
+   * spread, under it on a page or a strip. A touch high, for its shadow. */
+  const foot = L.tierTop - L.g;
+  const head = L.shape === 'spread' ? L.top : Math.max(L.top, pageCopyBottom);
+  const want = (head + foot) * 0.5 - 0.03 * (foot - head);
+  const dy = (py - want) * (1 - open);
+  /* Across, only on a spread, where the hero sits beside the copy: a third
+   * of the way into what the copy leaves, so the build order keeps the
+   * panel's right hand edge to itself. */
+  let dx = 0;
+  if (L.shape === 'spread' && pageCopyRight > 0) {
+    const px = (vPage.x * 0.5 + 0.5) * W;
+    const wantX = pageCopyRight + (L.W - L.m - pageCopyRight) * 0.36;
+    dx = (px - wantX) * (1 - open);
+  }
+  if (Math.abs(dy) > 0.5 || Math.abs(dx) > 0.5) {
+    cam.setViewOffset(W, H, dx, dy, W, H);
+  }
+}
+
 /* The builder view. High, three quarters on, drifting: an architect's
  * model being walked around, not a turntable. */
 function poseBuilder(t, outPos, outQuat) {
@@ -2681,6 +2826,9 @@ function frame(ms) {
    * longer equal lengths and the ticker cannot infer it from `built`. */
   const landed = drone.setBuild(built);
   drone.setArmed(built > 0.999);
+  if (built > 0.999) {
+    showSfx();
+  }
 
   /* ---------------------------------------------------------------- track */
   const courseT = REDUCED ? 1 : ease(T, 1.01, 1.90);
@@ -3273,7 +3421,9 @@ function frame(ms) {
     /* A real blossom petal is about 15 mm. It is worth keeping it there:
      * against a 155 mm airframe the size is the thing that says how close
      * the lens is, and a petal drawn at 50 mm quietly shrinks the quad. */
-    petals.update(dt, camPos, 0.85, 1.35, 0.017);
+    /* Few while the studio is paper: a petal is a gradient, and a page
+     * has none, so a handful drift past rather than a flurry. */
+    petals.update(dt, camPos, 0.85 - 0.62 * manga.k, 1.35, 0.017);
   } else if (T < 1.98) {
     /* Nearly off over the plan. A diagram should not have weather. */
     petals.update(dt, camPos, 0.10, 9, 0.02);
@@ -3772,6 +3922,18 @@ function frame(ms) {
     }
   }
 
+  framePage(T);
+  /* On paper while the studio is paper; under reduced motion the studio is
+   * never paper, and the page is simply the first thing on it, so the
+   * chrome is inked while the page is still in the window. */
+  const paperK = manga.update(T);
+  const inked = REDUCED
+    ? Boolean(pagePin) && pagePin.getBoundingClientRect().bottom > 90
+    : paperK > 0.5;
+  if (inked !== document.body.classList.contains('on-paper')) {
+    document.body.classList.toggle('on-paper', inked);
+    manga.measure();
+  }
   stage.render();
 
   /*
