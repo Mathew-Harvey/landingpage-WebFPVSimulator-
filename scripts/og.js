@@ -440,7 +440,10 @@ if (card) {
   });
   if (wiki.status === 0) {
     console.log(`og.jpg?v=${stamp} on every page, the wiki's articles regenerated`);
-    console.log(`next: npm run lint:page, commit, push, and once the site has it, Scrape Again at\n  ${DEBUGGER}`);
+    /* Not npm run lint:page here: it hashes files byte for byte, and a
+     * Windows checkout with Git's usual line endings fails it on the copied
+     * simulator code whatever the card did. Run it on a checkout with LF. */
+    console.log(`next: commit and push, and once the site has it, Scrape Again at\n  ${DEBUGGER}`);
   } else {
     console.error(`og.js: the wiki's generator failed, so its articles still name the old address. Run npm run build:wiki.`);
     process.exitCode = 1;
