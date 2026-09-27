@@ -1960,6 +1960,114 @@
       .also-row a:hover .also-mark { color: var(--cream); }
 
       /* ------------------------------------------------------------------
+         The partners (the simulator's src/partners/roster.js, copied into
+         src/sim/partners/). F1's rule: in the chrome every partner mark is
+         one colour and one height, over a small label saying what they
+         are, and the livery is for the world. So these are the roster's
+         cream files, never its colour ones, and the palette gains nothing.
+         Every mark goes to the partner's card on the board's partners page.
+         ------------------------------------------------------------------ */
+
+      /* The row, above "Also by" and in its furniture. Held back like the
+         other sites' marks and up to full on hover. 30 px for the stacked
+         and the badge marks, and Mantis FPV's, which is nearly six times as
+         wide as it is tall, at the height its capitals match theirs. */
+      .partners {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 14px clamp(24px, 4vw, 46px);
+      }
+      .partner-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 16px clamp(24px, 3.5vw, 40px);
+      }
+      .pmark {
+        display: grid;
+        gap: 7px;
+        opacity: 0.8;
+        transition: opacity 0.3s var(--ease);
+      }
+      .pmark:hover { opacity: 1; }
+      .pmark small {
+        font-size: 9.5px;
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: rgba(157, 179, 200, 0.72);
+      }
+      .pmark img { display: block; height: 30px; width: auto; }
+      .pmark img.wide { height: 17px; margin: 6px 0 7px; }
+
+      /* THE MOMENTS. Each partner has one place in the film tied to what
+         they do, and it is never in a beat (see #beats) and never two at
+         once: the shop at the foot of the build order, the club under the
+         lap clock, the school under "You must practise." Each is the role
+         over the mark, small. */
+      .plock {
+        display: inline-flex;
+        flex-direction: column;
+        gap: 6px;
+        text-decoration: none;
+      }
+      .plock span {
+        font-size: 9.5px;
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: var(--slate);
+      }
+      .plock img { display: block; width: auto; }
+      /* In the ticker's panel, under its rail, and a link only while the
+         panel is up: #ticker takes no pointer, so a hidden panel cannot
+         be clicked through. */
+      #ticker .plock {
+        display: flex;
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+      }
+      #ticker .plock img { height: 17px; align-self: flex-start; }
+      #ticker.on .plock { pointer-events: auto; }
+      /* Under the clock, inked as the OSD is: the text by #osd's own edge,
+         the mark by a one pixel drop of the same ink each way, which is
+         what keeps cream legible over the pale race field. */
+      .plock-osd {
+        align-items: center;
+        margin-top: 12px;
+        opacity: 0;
+        transition: opacity 0.5s var(--ease);
+      }
+      .plock-osd.on { opacity: 1; }
+      #osd.on .plock-osd.on { pointer-events: auto; }
+      .plock-osd span { color: var(--osd-slate); }
+      .plock-osd img {
+        height: 30px;
+        filter:
+          drop-shadow(1px 0 0 var(--osd-ink)) drop-shadow(-1px 0 0 var(--osd-ink))
+          drop-shadow(0 1px 0 var(--osd-ink)) drop-shadow(0 -1px 0 var(--osd-ink));
+      }
+      @media (max-width: 900px) { .plock-osd { display: none; } }
+      /* Under the close's line, in its clothes: the same soft ink shadow
+         .close-sub wears, because the room behind it is lit and on a phone
+         the pale plaster is right behind the mark. */
+      .plock-close {
+        align-items: center;
+        margin-top: 20px;
+        opacity: 0.92;
+        transition: opacity 0.3s var(--ease);
+      }
+      .plock-close:hover { opacity: 1; }
+      .plock-close span { color: rgba(198, 212, 225, 0.9); text-shadow: 0 2px 14px rgba(8, 12, 9, 0.85); }
+      .plock-close img { height: 30px; filter: drop-shadow(0 2px 10px rgba(8, 12, 9, 0.85)); }
+      /* A phone keeps the three abreast: the labels are what make the row
+         wide, so they close up, and the marks stay the height they are. */
+      @media (max-width: 520px) {
+        .partner-row { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; column-gap: 18px; }
+        .pmark small { letter-spacing: 0.14em; }
+      }
+
+      /* ------------------------------------------------------------------
          Boot and fallbacks.
          ------------------------------------------------------------------ */
 
@@ -2290,7 +2398,7 @@
            still page would be a flash with nothing behind it. */
         #dissolve, #blackout { display: none; }
         .copy { opacity: 1; transform: none; transition: none; }
-        #cue, #ticker, #builder, #mapper, #osd, #beats { display: none; }
+        #cue, #ticker, #builder, #mapper, #osd, #beats, .plock-osd { display: none; }
         /* The builders never come on, so the ledger never steps aside for
            them: REDUCED in main.js is the other half. */
         #ledger { transition: none; }
@@ -2454,6 +2562,13 @@
       <div class="tick-head"><span>Build order</span><b id="tick-count">0 / 7</b></div>
       <div id="tick-rows"></div>
       <div class="tick-rail"><div class="tick-fill" id="tick-fill"></div></div>
+      <!-- The retail partner's moment: the build order is the parts list,
+           so the shop sits at its foot, in the same panel, and leaves with
+           it. See .plock. -->
+      <a class="plock" href="https://webfpv.org/board/partners#mantisfpv" data-dest="partners-mantisfpv" data-partner="mantisfpv" data-place="landing_moment">
+        <span>Retail partner</span>
+        <img src="assets/partners/mantisfpv/mono.svg" width="567" height="100" alt="Mantis FPV" decoding="async" />
+      </a>
     </aside>
 
     <!-- Act 2 instrument -->
@@ -2556,6 +2671,14 @@
         <div class="osd-label" id="osd-label">Lap</div>
         <div class="osd-timer" id="osd-timer">0.00</div>
         <div class="osd-gate" id="osd-gate">Gate 1 of 7</div>
+        <!-- The club partner's moment, where a timing partner's mark goes:
+             under the clock, inked as the clock is. On for the race and the
+             town that follows it, the first of the OSD's three windows
+             (main.js), and never on a phone. See .plock. -->
+        <a class="plock plock-osd" id="osd-partner" href="https://webfpv.org/board/partners#wcmrc" data-dest="partners-wcmrc" data-partner="wcmrc" data-place="landing_moment">
+          <span>Club partner</span>
+          <img src="assets/partners/wcmrc/mono.png" width="708" height="252" alt="West Coast Multirotor Club" decoding="async" />
+        </a>
       </div>
       <div class="osd-corner osd-left">
         <div class="osd-value" id="osd-speed">0 km/h</div>
@@ -3023,6 +3146,12 @@
         <p class="close-sub">
           Nobody gets smooth by reading about it.
         </p>
+        <!-- The training partner's moment. "You must practise" is their
+             line, so they take it. See .plock. -->
+        <a class="plock plock-close" href="https://webfpv.org/board/partners#gds" data-dest="partners-gds" data-partner="gds" data-place="landing_moment">
+          <span>Training partner</span>
+          <img src="assets/partners/gds/mono.svg" width="208" height="72" alt="Global Drone Solutions" loading="lazy" decoding="async" />
+        </a>
       </div>
       <div class="cards" id="cards">
         <a class="card" href="https://webfpv.org/sim/?map=field" data-dest="sim" style="--accent: var(--mint)">
@@ -3061,6 +3190,27 @@
     </section>
 
     <footer>
+      <!-- THE PARTNERS, above the other sites, in the same furniture: one
+           colour, one height, the role over each mark, every mark to the
+           partner's card on the board's partners page. See .partners. -->
+      <div class="partners" id="partner-row">
+        <span class="also-label">Partners</span>
+        <div class="partner-row">
+          <a class="pmark" href="https://webfpv.org/board/partners#gds" data-dest="partners-gds" data-partner="gds" data-place="landing_row">
+            <small>Training partner</small>
+            <img src="assets/partners/gds/mono.svg" width="208" height="72" alt="Global Drone Solutions" loading="lazy" decoding="async" />
+          </a>
+          <a class="pmark" href="https://webfpv.org/board/partners#mantisfpv" data-dest="partners-mantisfpv" data-partner="mantisfpv" data-place="landing_row">
+            <small>Retail partner</small>
+            <img class="wide" src="assets/partners/mantisfpv/mono.svg" width="567" height="100" alt="Mantis FPV" loading="lazy" decoding="async" />
+          </a>
+          <a class="pmark" href="https://webfpv.org/board/partners#wcmrc" data-dest="partners-wcmrc" data-partner="wcmrc" data-place="landing_row">
+            <small>Club partner</small>
+            <img src="assets/partners/wcmrc/mono.png" width="708" height="252" alt="West Coast Multirotor Club" loading="lazy" decoding="async" />
+          </a>
+        </div>
+      </div>
+
       <div class="also">
         <span class="also-label">Also by Mat Harvey</span>
         <div class="also-row">
@@ -3101,6 +3251,7 @@
           <a href="wiki/">FPV wiki</a>
           <a href="notes/">Patch notes</a>
           <a href="stickers/">Stickers</a>
+          <a href="https://webfpv.org/board/partners" data-dest="partners">Partners</a>
           <a href="https://github.com/Mathew-Harvey/WebFPVSimulator" rel="noreferrer">Simulator repo</a>
           <a href="https://github.com/Mathew-Harvey/WebFPVSimulator-LeaderBoard" rel="noreferrer">Leaderboard repo</a>
           <a href="https://betaflight.com" rel="noreferrer">Betaflight</a>

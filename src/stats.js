@@ -3,7 +3,8 @@
  *
  * Mirrors the simulator's src/share/stats.js event envelope and GPC handling.
  * Sends support_click events to the board's stats endpoint when the Support
- * link is clicked. Never blocks navigation.
+ * link is clicked, and a partner's mark seen or clicked (trackPartner).
+ * Never blocks navigation.
  *
  * This file is part of the WebFPVSimulator landing page.
  *
@@ -82,6 +83,19 @@ function sendEvent(payload) {
   } catch (e) {
     return false;
   }
+}
+
+/*
+ * A partner's mark on this page: it was on screen (at least half of it, for
+ * at least a second) or it was clicked through to the board's partners
+ * page. `place` is 'landing_row', the footer's partner row, or
+ * 'landing_moment', the one moment each partner has in the film. The board
+ * holds all three words to closed lists and refuses anything else.
+ */
+export function trackPartner(partner, what, place) {
+  sendEvent({
+    kind: 'partner', partner, what, place,
+  });
 }
 
 /*

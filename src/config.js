@@ -29,6 +29,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { PARTNER_SLUGS } from './sim/partners/roster.js';
+
 /*
  * These are mount points on webfpv.org, not Render hostnames, and the trailing
  * path is the point. A Cloudflare Worker owns webfpv.org and hands /sim to the
@@ -156,5 +158,11 @@ export function destinations() {
     { id: 'yard', href: `${sim}/?map=built&mapshare=${YARD_MAP_ID}&board=${from}&craft=5inch&fly=1` },
     { id: 'yardBuilder', href: `${sim}/src/trackbuilder/index.html?mapshare=${YARD_MAP_ID}&board=${from}&mode=freestyle` },
     { id: 'board', href: `${board}/` },
+    /* The board's partners page, and each partner's card on it: every
+     * partner mark on this page links there, never to the partner (the
+     * simulator's src/partners/roster.js, copied into ./sim/partners/, says
+     * who they are). */
+    { id: 'partners', href: `${board}/partners` },
+    ...PARTNER_SLUGS.map((slug) => ({ id: `partners-${slug}`, href: `${board}/partners#${slug}` })),
   ];
 }

@@ -1195,6 +1195,7 @@ const el = {
   tbSeq: document.getElementById('tb-seq'),
   tbXy: document.getElementById('tb-xy'),
   osd: document.getElementById('osd'),
+  osdPartner: document.getElementById('osd-partner'),
   osdLabel: document.getElementById('osd-label'),
   osdTimer: document.getElementById('osd-timer'),
   osdGate: document.getElementById('osd-gate'),
@@ -3557,6 +3558,14 @@ function frame(ms) {
     el.osd.classList.toggle('on', !REDUCED && !holding
       && ((T > 2.12 && T < A.city + 0.74) || (T > A.yard + 0.14 && T < A.yard + 0.86)
         || (T > A.room + 0.24 && T < A.room + 0.90)));
+    /* The club partner's mark under the clock (.plock-osd in index.html) is
+     * the race field's: the first of those three windows, the lap and the
+     * town it flies on into, and not the yard's or the room's, so the film
+     * never has two partners' marks in it at once and the room act, which
+     * is RaceGOW's, carries only theirs. */
+    if (el.osdPartner) {
+      el.osdPartner.classList.toggle('on', !REDUCED && !holding && T > 2.12 && T < A.city + 0.74);
+    }
     el.cue.style.opacity = T > 0.35 ? '0' : '1';
     if (el.progress) {
       /* One more than the acts: the tail is the last stretch and it is not

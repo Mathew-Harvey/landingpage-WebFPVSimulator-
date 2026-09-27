@@ -1,5 +1,5 @@
 /*
- * support-boot.js: initialize supporters section and click tracking.
+ * support-boot.js: the supporters section, the Support click, and the partners' marks counted.
  *
  * This file is part of the WebFPVSimulator landing page.
  *
@@ -17,7 +17,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { trackSupportClick } from './stats.js';
+import { trackPartner, trackSupportClick } from './stats.js';
 import { loadSupporters } from './supporters.js';
 import { PATREON_NOTE } from './config.js';
 
@@ -42,3 +42,67 @@ links.forEach((link) => {
   }
   link.addEventListener('click', trackSupportClick);
 });
+
+/*
+ * THE PARTNERS' MARKS: the footer's row and each partner's one moment in the
+ * film ([data-partner] in index.html). A click is counted as it leaves for
+ * the partners page. SEEN is what a partner is told their mark was: at least
+ * half of it inside the window, drawn (no ancestor hidden or faded below
+ * half, which is how the film's instruments come and go), for a second
+ * together. Counted once a page load for each mark, and nothing at all for
+ * a browser that sends Global Privacy Control (./stats.js).
+ *
+ * Here and not in main.js because this module is up without three.js and
+ * the film: the footer row is counted on a phone whose WebGL never came.
+ */
+const SEEN_MS = 1000;
+const SEEN_TICK = 250;
+const marks = [...document.querySelectorAll('[data-partner]')];
+for (const a of marks) {
+  a.addEventListener('click', () => trackPartner(a.dataset.partner, 'click', a.dataset.place));
+}
+
+function drawn(node) {
+  for (let n = node; n && n.nodeType === 1; n = n.parentElement) {
+    const cs = getComputedStyle(n);
+    if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) < 0.5) {
+      return false;
+    }
+  }
+  return true;
+}
+
+if (marks.length && typeof IntersectionObserver !== 'undefined') {
+  const inView = new Set();
+  const shownMs = new Map();
+  let timer = 0;
+  const tick = () => {
+    for (const a of inView) {
+      const ms = drawn(a) ? (shownMs.get(a) || 0) + SEEN_TICK : 0;
+      shownMs.set(a, ms);
+      if (ms >= SEEN_MS) {
+        inView.delete(a);
+        io.unobserve(a);
+        trackPartner(a.dataset.partner, 'seen', a.dataset.place);
+      }
+    }
+    if (!inView.size) {
+      clearInterval(timer);
+      timer = 0;
+    }
+  };
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting && e.intersectionRatio >= 0.5) {
+        inView.add(e.target);
+      } else {
+        inView.delete(e.target);
+        shownMs.set(e.target, 0);
+      }
+    }
+    if (inView.size && !timer) {
+      timer = setInterval(tick, SEEN_TICK);
+    }
+  }, { threshold: [0, 0.5, 1] });
+  marks.forEach((m) => io.observe(m));
+}
