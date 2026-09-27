@@ -179,7 +179,12 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
     }
     return null;
   };
-  const size = jpegSize(await readFile(join(root, 'og.jpg')).catch(() => null));
+  const jpg = await readFile(join(root, 'og.jpg')).catch(() => null);
+  const size = jpegSize(jpg);
+  /* The address is the card's own: scripts/og.js writes the first eight of
+   * its SHA-256 as the ?v=, so a card replaced any other way, or redrawn and
+   * committed without its pages, is an address that names another picture. */
+  const own = jpg ? `https://webfpv.org/og.jpg?v=${createHash('sha256').update(jpg).digest('hex').slice(0, 8)}` : null;
   const pages = [['index.html', index], ['wiki/index.html', wiki], ['notes/index.html', notes], ['stickers/index.html', pack]];
   for (const e of await readdir(join(root, 'wiki'), { withFileTypes: true })) {
     if (e.isDirectory() && await exists(`wiki/${e.name}/index.html`)) {
@@ -203,7 +208,7 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
       odd.push(`${name} describes another picture`);
     }
   }
-  const address = /^https:\/\/webfpv\.org\/og\.jpg\?v=[0-9a-z]+$/.test(want.image || '');
+  const address = want.image === own;
   check(
     'og.jpg is one card, named at one address, the size the pages say',
     size === '1200x630' && address && odd.length === 0,
@@ -212,7 +217,7 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
       : size !== '1200x630'
         ? `og.jpg is ${size}, and a card is 1200x630`
         : !address
-          ? `index.html names ${want.image}, not og.jpg under a ?v=`
+          ? `index.html names ${want.image} and the card is ${own}: run node scripts/og.js`
           : odd.length
             ? `${odd.length} of ${pages.length}: ${odd.slice(0, 3).join('; ')}`
             : `${size}, ${want.image.replace('https://webfpv.org/', '')} on all ${pages.length} pages`,

@@ -55,13 +55,14 @@
  *
  *     node scripts/og.js
  *
- * then move the ?v= on every og:image and twitter:image that names og.jpg,
- * in index.html, wiki/index.html, notes/index.html, stickers/index.html and
- * scripts/generate-wiki-pages.js, and run npm run build:wiki. Facebook and X
- * keep a picture by its address, and the edge keeps it for four hours, so a
- * new card at an old address is the old card for a while. npm run lint:page
- * fails while any page names another address, another size or another
- * description.
+ * and commit what it changed. It writes og.jpg, moves the ?v= on every page
+ * that names it to the new card's hash (see the end of this file) and
+ * regenerates the wiki's articles, and it prints the Sharing Debugger's
+ * address for Facebook to fetch the card again once the site has it. On
+ * Windows it finds Chrome or Edge where they install; anywhere else that
+ * they are not, SIM_CHROME_BIN names the binary. npm run lint:page fails
+ * while any page names another address, size or description, or an address
+ * that is not the card's own.
  *
  * This file is part of the WebFPVSimulator landing page.
  *
@@ -80,9 +81,10 @@
  */
 
 import http from 'node:http';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -101,6 +103,10 @@ const QUALITY = 0.92;
 
 /* The import map's CDN, which the page cannot start without. */
 const CDN = 'https://cdn.jsdelivr.net/';
+
+/* Every file that names the card, the wiki's articles through the last. */
+const NAMED_IN = ['index.html', 'wiki/index.html', 'notes/index.html', 'stickers/index.html', 'scripts/generate-wiki-pages.js'];
+const DEBUGGER = 'https://developers.facebook.com/tools/debug/?q=https%3A%2F%2Fwebfpv.org%2F';
 
 /* The simulator's harness looks in the same places, and reads the same
  * variable, so one setting points both at a browser. */
@@ -272,6 +278,7 @@ function send(method, params = {}, sessionId = undefined) {
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+let card = null;
 const errors = [];
 const refused = new Set();
 const cdnCache = new Map();
@@ -382,7 +389,7 @@ try {
   })`);
 
   const shot = await tab('Page.captureScreenshot', { format: 'png' });
-  const card = Buffer.from(await evaluate(shrink(shot.data)), 'base64');
+  card = Buffer.from(await evaluate(shrink(shot.data)), 'base64');
   await writeFile(OUT, card);
   console.log(`og.jpg ${CARD_W} x ${CARD_H}, ${(card.length / 1024).toFixed(0)} KB -> ${OUT}`);
 } catch (e) {
@@ -408,4 +415,34 @@ if (refused.size) {
 }
 if (errors.length) {
   console.log(`the page reported:\n  ${errors.join('\n  ')}`);
+}
+
+/*
+ * THE ADDRESS IS THE PICTURE'S OWN. Facebook and X keep a picture by its
+ * address and the edge keeps it for four hours, so a new card has to go out
+ * at a new one, and the surest new address is the card's own hash: a redraw
+ * that changes a pixel moves it, and one that changes nothing leaves it
+ * where it was. So the run ends by writing it into every page that names the
+ * card and regenerating the wiki's articles from their template, and what is
+ * left is to commit and push. npm run lint:page holds every page to it.
+ */
+if (card) {
+  const stamp = createHash('sha256').update(card).digest('hex').slice(0, 8);
+  for (const rel of NAMED_IN) {
+    const was = await readFile(join(root, rel), 'utf8');
+    const now = was.replace(/og\.jpg\?v=[0-9a-z]+/g, `og.jpg?v=${stamp}`);
+    if (now !== was) {
+      await writeFile(join(root, rel), now);
+    }
+  }
+  const wiki = spawnSync(process.execPath, [join(root, 'scripts', 'generate-wiki-pages.js')], {
+    cwd: root, stdio: ['ignore', 'ignore', 'inherit'],
+  });
+  if (wiki.status === 0) {
+    console.log(`og.jpg?v=${stamp} on every page, the wiki's articles regenerated`);
+    console.log(`next: npm run lint:page, commit, push, and once the site has it, Scrape Again at\n  ${DEBUGGER}`);
+  } else {
+    console.error(`og.js: the wiki's generator failed, so its articles still name the old address. Run npm run build:wiki.`);
+    process.exitCode = 1;
+  }
 }
