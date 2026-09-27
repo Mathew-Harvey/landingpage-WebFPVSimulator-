@@ -148,6 +148,78 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
 }
 
 /*
+ * 5b. AND IT IS ONE CARD, AT ONE ADDRESS, THE SIZE THE PAGES SAY.
+ *
+ * og.jpg is the front door's first screen, drawn by scripts/og.js, and every
+ * page here names it. A new card goes out under a new ?v=, because Facebook
+ * and X keep a picture by its address, so the ways this goes wrong are a page
+ * left on the old address, which goes on showing the old card; a description
+ * of a picture that is no longer there, which is what the notes and the
+ * stickers were carrying when the card became the manga page, each
+ * describing a card older than the one it showed; and a file of one size or
+ * kind behind tags that promise
+ * another. index.html is the reference and the rest agree with it. The
+ * wiki's articles are generated, so they are read as generated, all of them.
+ */
+{
+  /* A JPEG's size is in its start of frame, which follows whatever tables
+   * the encoder put first, so walk the segments to it. */
+  const jpegSize = (b) => {
+    if (!b || b.length < 4 || b[0] !== 0xff || b[1] !== 0xd8) {
+      return null;
+    }
+    for (let i = 2; i + 9 < b.length; i += 2 + b.readUInt16BE(i + 2)) {
+      const m = b[i + 1];
+      if (b[i] !== 0xff) {
+        return null;
+      }
+      if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) {
+        return `${b.readUInt16BE(i + 7)}x${b.readUInt16BE(i + 5)}`;
+      }
+    }
+    return null;
+  };
+  const size = jpegSize(await readFile(join(root, 'og.jpg')).catch(() => null));
+  const pages = [['index.html', index], ['wiki/index.html', wiki], ['notes/index.html', notes], ['stickers/index.html', pack]];
+  for (const e of await readdir(join(root, 'wiki'), { withFileTypes: true })) {
+    if (e.isDirectory() && await exists(`wiki/${e.name}/index.html`)) {
+      pages.push([`wiki/${e.name}/index.html`, await readFile(join(root, 'wiki', e.name, 'index.html'), 'utf8')]);
+    }
+  }
+  const tag = (src, key) => (new RegExp(`(?:property|name)="${key}" content="([^"]*)"`).exec(src) || [])[1];
+  const want = { image: tag(index, 'og:image'), alt: tag(index, 'og:image:alt') };
+  const odd = [];
+  for (const [name, src] of pages) {
+    const card = [tag(src, 'og:image'), tag(src, 'twitter:image')];
+    const told = `${tag(src, 'og:image:width')}x${tag(src, 'og:image:height')}`;
+    const alt = [tag(src, 'og:image:alt'), tag(src, 'twitter:image:alt')];
+    if (card.some((c) => c !== want.image)) {
+      odd.push(`${name} names ${[...new Set(card)].join(' and ')}`);
+    } else if (tag(src, 'og:image:type') !== 'image/jpeg') {
+      odd.push(`${name} calls it ${tag(src, 'og:image:type')}`);
+    } else if (told !== size) {
+      odd.push(`${name} says ${told}`);
+    } else if (alt.some((a) => a !== want.alt)) {
+      odd.push(`${name} describes another picture`);
+    }
+  }
+  const address = /^https:\/\/webfpv\.org\/og\.jpg\?v=[0-9a-z]+$/.test(want.image || '');
+  check(
+    'og.jpg is one card, named at one address, the size the pages say',
+    size === '1200x630' && address && odd.length === 0,
+    !size
+      ? 'og.jpg is missing or not a JPEG: run node scripts/og.js'
+      : size !== '1200x630'
+        ? `og.jpg is ${size}, and a card is 1200x630`
+        : !address
+          ? `index.html names ${want.image}, not og.jpg under a ?v=`
+          : odd.length
+            ? `${odd.length} of ${pages.length}: ${odd.slice(0, 3).join('; ')}`
+            : `${size}, ${want.image.replace('https://webfpv.org/', '')} on all ${pages.length} pages`,
+  );
+}
+
+/*
  * 6. EVERY ARTICLE IS ITS OWN ENTRY IN THE TAB STRIP AND THE BACK LIST.
  */
 {

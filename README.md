@@ -452,6 +452,7 @@ global.
 | File | What it owns |
 | --- | --- |
 | `index.html` | The page, its CSS, and every launch link as static markup |
+| `og.jpg` | The share card: the first screen with the quad built, GENERATED. See `scripts/og.js` |
 | `wiki/index.html` | The FPV wiki's page, its CSS, and its layout grid |
 | `src/wiki/` | Articles, CLI pages, figures, and the wiki shell |
 | `src/fc/` | Snapshot of the simulator catalog. Recopy when that catalog changes |

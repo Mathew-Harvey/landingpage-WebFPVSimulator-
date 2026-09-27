@@ -44,7 +44,14 @@ const TYPES = {
   '.txt': 'text/plain; charset=utf-8',
 };
 
-const server = http.createServer((req, res) => {
+/*
+ * The handler on its own, because scripts/og.js serves the page to a
+ * headless browser to draw the share card, and a card drawn off a second
+ * server with its own idea of a MIME type is a card of a different page:
+ * an SVG sent as octet-stream is an empty box in an <img>, and the partners'
+ * marks are SVGs.
+ */
+export function handle(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   let rel = decodeURIComponent(url.pathname);
   if (rel.endsWith('/')) {
@@ -66,8 +73,24 @@ const server = http.createServer((req, res) => {
       'cache-control': 'no-cache',
     }).end(buf);
   });
-});
+}
 
-server.listen(PORT, HOST, () => {
-  console.log(`landing page on http://${HOST}:${PORT}/`);
-});
+/*
+ * Run, it listens. Imported, it only hands over the handler. Both sides
+ * through realpath, because Node resolves the module it runs through
+ * symlinks and junctions and argv keeps the path as typed, and a checkout
+ * under a link would otherwise make npm run serve exit having served
+ * nothing.
+ */
+const run = (() => {
+  try {
+    return Boolean(process.argv[1]) && fs.realpathSync(process.argv[1]) === fileURLToPath(import.meta.url);
+  } catch (e) {
+    return false;
+  }
+})();
+if (run) {
+  http.createServer(handle).listen(PORT, HOST, () => {
+    console.log(`landing page on http://${HOST}:${PORT}/`);
+  });
+}

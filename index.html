@@ -37,10 +37,12 @@
     />
     <!--
       A link to this page posted anywhere renders a 1200 by 630 card, and
-      og.png is a frame of the real shell rather than a drawing of one, so it
-      cannot disagree with the thing it advertises. scripts/og.js in the
-      simulator's repository regenerates it, and the URL is absolute because a
-      crawler does not resolve a relative one.
+      og.jpg is this page's own first screen, the manga page with the quad
+      built, drawn by the page in headless Chromium rather than composed, so
+      it cannot disagree with the thing it advertises. scripts/og.js draws
+      it. The ?v= moves with every redraw, because Facebook and X keep a
+      picture by its address, and the URL is absolute because a crawler does
+      not resolve a relative one.
 
       No animated card. Facebook, Messenger, X, LinkedIn, WhatsApp and iMessage
       all flatten a link preview to one still frame; Discord is the only place
@@ -52,16 +54,16 @@
     <meta property="og:url" content="https://webfpv.org/" />
     <meta property="og:title" content="WebFPV, free FPV drone racing simulator in your browser" />
     <meta property="og:description" content="Free FPV drone racing simulator. Real Betaflight 4.5.1 compiled to WebAssembly. No install, no account. Fly with a radio or game controller." />
-    <meta property="og:image" content="https://webfpv.org/og.png?v=2" />
-    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image" content="https://webfpv.org/og.jpg?v=20260927" />
+    <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
+    <meta property="og:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks, and Betaflight's under Powered by, over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="WebFPV, free FPV drone racing simulator in your browser" />
     <meta name="twitter:description" content="Free FPV drone racing simulator. Real Betaflight 4.5.1 compiled to WebAssembly. No install, no account." />
-    <meta name="twitter:image" content="https://webfpv.org/og.png?v=2" />
-    <meta name="twitter:image:alt" content="The WebFPV share card: the WebFPV mark and wordmark with the tagline Free browser FPV. Real Betaflight. No install. and webfpv.org, beside a frame from the simulator showing the start gate and a five inch quad on the race field." />
+    <meta name="twitter:image" content="https://webfpv.org/og.jpg?v=20260927" />
+    <meta name="twitter:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks, and Betaflight's under Powered by, over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
 
     <!--
       The page's own background is the radial gradient below, not this colour,
@@ -107,7 +109,7 @@
   },
   "description": "Free FPV drone racing simulator running Betaflight 4.5.1 flight controller code compiled to WebAssembly. Fly in your browser with no install or account required.",
   "url": "https://webfpv.org/",
-  "screenshot": "https://webfpv.org/og.png",
+  "screenshot": "https://webfpv.org/og.jpg?v=20260927",
   "keywords": "FPV, drone simulator, racing simulator, Betaflight, WebAssembly, browser game",
   "applicationSubCategory": "Flight Simulator",
   "featureList": [
