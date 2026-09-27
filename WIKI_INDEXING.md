@@ -60,7 +60,9 @@ Articles are available at `/wiki/<article-id>/`, for example:
 - https://webfpv.org/wiki/physics-airframe/
 - https://webfpv.org/wiki/control-pid/
 
-Old hash routes (`#wiki/<id>`) redirect client-side to the new URLs.
+These are the crawlers' copies: the article's text, and no figure, rail or search. A reader's address for an article is still `/wiki/#wiki/<id>`, which the interactive wiki opens in place, and each copy ends with a link to it.
+
+Nothing sends a reader to a copy. `src/wiki/boot.js` once redirected every `#wiki/<id>` to its copy, and because going Back or Forward between two articles fires `hashchange`, the Back button took the reader to the plain copy of every article they went back to. A crawler never sees a fragment, so a redirect from one does nothing for indexing; the copies are canonical by their own `<link rel="canonical">` and the sitemap.
 
 ## Adding Articles to Index
 
