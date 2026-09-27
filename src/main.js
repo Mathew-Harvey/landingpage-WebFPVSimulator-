@@ -52,7 +52,6 @@ import { FONTCSS, STICKERS } from './stickers-data.js';
 import { captureAttribution, appendAttribution } from './attribution.js';
 import { createManga } from './manga.js';
 import { createPage } from './page.js';
-import { paintSfx } from './sim/ui/lettering.js';
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -1667,47 +1666,6 @@ stage.setDrawer(manga);
 let pageCopyBottom = 0;
 let pageCopyRight = 0;
 let pageLayout = null;
-const pageSfx = document.createElement('canvas');
-pageSfx.className = 'page-sfx';
-pageSfx.setAttribute('aria-hidden', 'true');
-if (pagePin) {
-  pagePin.append(pageSfx);
-}
-
-/*
- * THE SOUND OF IT ARMING. One sound effect over the studio, lettered by the
- * simulator's hand from its stroke kana: キュイーン, kyuiin, the whine of
- * something spinning up fast, which is what five inch props do when the quad
- * arms. It lands once, when the build finishes, beside the aircraft and
- * clear of it, and it is decoration: hidden from a screen reader, and not
- * drawn at all under reduced motion, where the film does not build.
- */
-const SFX_SPOOL = 'キュイーン';
-let sfxShown = false;
-function placeSfx() {
-  const L = pageLayout;
-  if (!L || !sfxShown) {
-    return;
-  }
-  const cell = Math.max(26, Math.min(170, 8.5 * L.u));
-  const { w, h } = paintSfx(pageSfx, SFX_SPOOL, cell, '#f7f0dc');
-  const at = manga.subjectCss();
-  /* Up and to the left of the clear ellipse round the aircraft, on the
-   * page's side of it, and never off the panel. */
-  const x = Math.max(L.m + L.g, Math.min(L.W - L.m - w - L.g, at.cx - at.rx * 0.55 - w * 0.5));
-  const y = Math.max(L.top + L.g, at.cy - at.ry * 0.95 - h);
-  pageSfx.style.left = `${Math.round(x)}px`;
-  pageSfx.style.top = `${Math.round(y)}px`;
-}
-function showSfx() {
-  if (sfxShown || REDUCED || manga.k < 0.5) {
-    return;
-  }
-  sfxShown = true;
-  placeSfx();
-  pageSfx.classList.add('on');
-}
-
 const page = pagePin
   ? createPage(pagePin, {
     bar: () => (topbarEl ? topbarEl.getBoundingClientRect().bottom : 0),
@@ -1719,11 +1677,6 @@ const page = pagePin
       pageCopyRight = cr ? cr.right : 0;
       composeLayout();
       manga.measure();
-      placeSfx();
-      /* The drift tandem's own sound, on the freestyle panel. */
-      for (const c of document.querySelectorAll('.world-sfx[data-sfx]')) {
-        paintSfx(c, c.dataset.sfx, Math.max(14, Math.min(64, 3.1 * L.u)), '#f7f0dc');
-      }
     },
   })
   : null;
@@ -2826,9 +2779,6 @@ function frame(ms) {
    * longer equal lengths and the ticker cannot infer it from `built`. */
   const landed = drone.setBuild(built);
   drone.setArmed(built > 0.999);
-  if (built > 0.999) {
-    showSfx();
-  }
 
   /* ---------------------------------------------------------------- track */
   const courseT = REDUCED ? 1 : ease(T, 1.01, 1.90);

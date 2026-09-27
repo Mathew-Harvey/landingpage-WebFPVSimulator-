@@ -1192,38 +1192,6 @@
         text-shadow: none;
       }
 
-      /* THE SOUND OF IT ARMING: キュイーン, painted by main.js in the
-         simulator's stroke kana, landing once the way the simulator's calls
-         land, and gone as the page opens. */
-      .page-sfx {
-        position: absolute;
-        z-index: 5;
-        pointer-events: none;
-        opacity: 0;
-        transform-origin: 40% 60%;
-      }
-      .page-sfx.on {
-        opacity: calc(1 - var(--open, 0) * 2.5);
-        transform: rotate(-7deg);
-        animation: sfx-land 0.46s cubic-bezier(0.2, 0.9, 0.3, 1.2);
-      }
-      @keyframes sfx-land {
-        0% { opacity: 0; transform: rotate(-28deg) scale(0.2); }
-        55% { opacity: 1; transform: rotate(4deg) scale(1.22); }
-        100% { opacity: 1; transform: rotate(-7deg) scale(1); }
-      }
-
-      /* THE CHAPTER TIER. Each panel is a link whose box src/page.js sets
-         and whose quad is its clip; the ink line round it is the page's,
-         drawn over it. They come in a beat after the page and a beat apart.
-         A clip cuts an outline off, so focus is drawn inside the panel. */
-      .worlds {
-        position: absolute;
-        inset: 0;
-        z-index: 1;
-        margin: 0;
-        pointer-events: none;
-      }
       .world {
         position: absolute;
         display: block;
@@ -1309,18 +1277,10 @@
         border: max(1.5px, calc(0.2 * var(--u))) solid var(--page-ink);
       }
       .world-new-x { display: none; }
-      .world-sfx {
-        position: absolute;
-        right: calc(3 * var(--u));
-        top: 38%;
-        pointer-events: none;
-        transform: rotate(-7deg);
-      }
       @media (min-width: 1400px) { .world-new-x { display: inline; } }
 
       /* A strip, on a phone: panels a thumb wide, so the name alone. */
-      .pin-open[data-shape="strip"] .world-k,
-      .pin-open[data-shape="strip"] .world-sfx { display: none; }
+      .pin-open[data-shape="strip"] .world-k { display: none; }
       .pin-open[data-shape="strip"] .world-body { padding: 8px 9px 9px; justify-content: flex-end; }
       .pin-open[data-shape="strip"] .world-new { top: 7px; right: 8px; }
 
@@ -2595,7 +2555,6 @@
            page, rather than a window onto a race half a film away. */
         .pin-open { height: 100vh; height: 100svh; background: var(--paper); }
         .page-ink, .worlds { transform: none; opacity: 1; }
-        .page-sfx { display: none; }
         #jump { display: none; }
         #hold { transition: none; }
       }
@@ -2977,9 +2936,7 @@
             panel further right is further down. The names are lettered by
             src/titles.js in the accents the closing cards give the same
             three things: mint for racing, sakura for the builder, cream for
-            the whoop. Only the freestyle panel carries a sound effect, its
-            drift tandem's キキーッ, because the manga action layer is the
-            freestyle maps' in the simulator and a race stays clean.
+            the whoop.
           -->
           <nav class="worlds" data-copy="worlds" aria-label="Chapters">
             <a class="world" href="#racing" data-chapter="racing" style="--accent: var(--mint)">
@@ -2997,7 +2954,6 @@
                 <img src="assets/chapters/freestyle.webp" width="960" height="540" alt="Two drift coupes, one white with a blue stripe and one mustard, sliding in tandem past a wall of shipping containers at golden hour, tyre smoke pouring off them, seen from the chasing quad's camera." decoding="async" />
                 <span class="world-new">New<span class="world-new-x"> &#183; Map builder</span></span>
               </span>
-              <canvas class="world-sfx" data-sfx="キキーッ" aria-hidden="true"></canvas>
               <span class="world-body">
                 <span class="world-k">The city</span>
                 <span class="world-t">Freestyle</span>
