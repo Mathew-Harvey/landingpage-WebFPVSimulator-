@@ -358,10 +358,10 @@ export function createStage(canvas) {
    * INDOORS, which is the one regime setRegime cannot express.
    *
    * Its two parameters are about how big the world is and how much daylight
-   * has arrived, and both of them are wrong in a shed. There is no sun, the
-   * air is the colour of an unlit basement rather than of a horizon, and the
-   * far wall is twelve metres away rather than three hundred, so a haze
-   * tuned to dissolve a treeline puts a fog over a skirting board.
+   * has arrived, and both of them are wrong in a room. There is no sun, the
+   * air is the room's rather than a horizon's, and the far wall is twelve
+   * metres away rather than three hundred, so a haze tuned to dissolve a
+   * treeline puts a fog over a skirting board.
    *
    * Called AFTER setRegime every frame and it simply takes over, which is
    * why it is a separate function rather than a third argument: at k = 1 not
@@ -369,36 +369,36 @@ export function createStage(canvas) {
    * function would be two rigs arguing in the same expression. The room
    * brings its own lamps, in room.js, and this is what gets the outdoor ones
    * out of their way.
+   *
+   * The room says what indoors is, in `room`: its air as it is now, the
+   * fog's reach, and the key, the lit ceiling's light at its level now and
+   * its colour. The key is this stage's own directional light rather than a
+   * second one of the room's, because a light added to the scene is a light
+   * every shader on the page pays for, all the way through the town. See
+   * ROOM_INDOOR in room.js, and aimLight below for where it points.
    */
   const indoorAir = new THREE.Color();
-  const indoorSun = new THREE.Color(0xffe9c4);
+  const indoorKey = new THREE.Color();
   const lerp = (a, b, t) => a + (b - a) * t;
-  function setIndoor(k, air) {
+  function setIndoor(k, room) {
     const t = Math.max(0, Math.min(1, k));
     if (t <= 0) {
       return;
     }
-    indoorAir.set(air);
+    indoorAir.set(room.air);
     scene.fog.color.lerp(indoorAir, t);
     scene.background.lerp(indoorAir, t);
     renderer.setClearColor(scene.background, 1);
+    scene.fog.near = lerp(scene.fog.near, room.fogNear, t);
+    scene.fog.far = lerp(scene.fog.far, room.fogFar, t);
     /*
-     * A shed has air in it, and 12 m of it is worth about a tenth of the
-     * wall's colour. Far enough that the near end of the room is clean and
-     * near enough that the far wall sits behind the track rather than beside
-     * it, which on a 10 by 12 m box is the only depth cue there is.
+     * The key never quite to nothing. The simulator keeps a trace of a
+     * directional light in its own indoor scene for the reason this page
+     * did: the shadow camera and half the material setup read it, and a key
+     * of exactly zero makes every face no lamp reaches perfectly flat.
      */
-    scene.fog.near = lerp(scene.fog.near, 5, t);
-    scene.fog.far = lerp(scene.fog.far, 62, t);
-    /*
-     * The sun down to a sixteenth, and the studio's rim and kick out
-     * altogether. The simulator leaves the same trace of a directional light
-     * in its own indoor scene, for the same reason: the shadow camera and
-     * half the material setup read it, and a key of exactly zero makes every
-     * face that no bulb reaches perfectly flat.
-     */
-    key.intensity = lerp(key.intensity, 0.24, t);
-    key.color.lerp(indoorSun, t);
+    key.intensity = lerp(key.intensity, Math.max(0.02, room.key), t);
+    key.color.lerp(indoorKey.set(room.keyColor), t);
     rim.intensity = lerp(rim.intensity, 0, t);
     kick.intensity = lerp(kick.intensity, 0, t);
     hemi.intensity = lerp(hemi.intensity, 0, t);
@@ -411,11 +411,32 @@ export function createStage(canvas) {
   const keyOffset = new THREE.Vector3(0.42, 0.70, 0.55);
   const rimOffset = new THREE.Vector3(-0.7, 0.28, -0.62);
   const kickOffset = new THREE.Vector3(0.25, 0.82, -0.72);
-  function aimLight(at, radius) {
+  /*
+   * `from` is where the key comes from, as a direction, when it is not the
+   * page's own low sun: the room's lit ceiling stands almost straight up.
+   *
+   * `shadow` false PARKS the shadow rather than switching it off. Nothing in
+   * the room casts, as nothing in the simulator's does, and turning the
+   * light's castShadow off and on again would recompile every material on
+   * the page each way. So the shadow camera is shrunk to a few millimetres of
+   * empty air beside the light, which puts every surface in the scene outside
+   * it, and a surface outside the shadow camera is lit.
+   */
+  function aimLight(at, radius, from = keyOffset, shadow = true) {
     key.target.position.copy(at);
-    key.position.copy(at).addScaledVector(keyOffset, radius * 2.4);
+    key.position.copy(at).addScaledVector(from, radius * 2.4);
     rim.position.copy(at).addScaledVector(rimOffset, radius * 2.4);
     kick.position.copy(at).addScaledVector(kickOffset, radius * 2.4);
+    if (!shadow) {
+      key.shadow.camera.left = -0.005;
+      key.shadow.camera.right = 0.005;
+      key.shadow.camera.top = 0.005;
+      key.shadow.camera.bottom = -0.005;
+      key.shadow.camera.near = 0.01;
+      key.shadow.camera.far = 0.02;
+      key.shadow.camera.updateProjectionMatrix();
+      return;
+    }
     const half = Math.max(0.35, radius * 1.35);
     key.shadow.camera.left = -half;
     key.shadow.camera.right = half;

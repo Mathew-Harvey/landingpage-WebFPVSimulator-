@@ -44,7 +44,7 @@ import { buildCity } from './city.js';
 import { buildYard, planToWorld } from './yard.js';
 import { CITY_ORIGIN, CITY_HEART, BUILT_R, TREE_R, YARD_ORIGIN, YARD_TURN } from './places.js';
 import { createLoader } from './loader.js';
-import { buildRoom, ROOM_AIR } from './room.js';
+import { buildRoom, ROOM_INDOOR } from './room.js';
 import { buildWhoop, WHOOP_FOV, WHOOP_MOUNT_FORWARD, WHOOP_MOUNT_UP, WHOOP_CAM_TILT_DEG } from './whoop.js';
 import { buildPetals } from './petals.js';
 import { bindPatreonLinks, destinations } from './config.js';
@@ -591,6 +591,10 @@ stage.scene.add(yard.group);
 const room = buildRoom();
 stage.scene.add(room.group);
 stage.scene.add(room.lamps);
+/* What indoors is, for the stage, every frame: the room's fog and key
+ * colour, with its air and the key's level filled in from the light switch.
+ * One object, refilled, because this is read on every frame of the page. */
+const indoorNow = { ...ROOM_INDOOR, air: null, key: 0 };
 
 /*
  * The whoop rides its own rig for the same reason the five inch does: the
@@ -2332,10 +2336,10 @@ function roomPose(u, outPos, outQuat, bobPhase, flip = 0, turnBank = 0) {
  * ARRIVING IN THE SHED, and it is two shots rather than one.
  *
  * The act opens on the whole room, because the room is the surprise: four
- * walls, a ceiling, two bulbs and a small white lattice on a mat in the
- * middle of a floor big enough to park a van on. Then it pushes in on the
- * pad, where there is a 23 gram aircraft nobody has noticed yet, and hands
- * over to its camera.
+ * walls with posters on them, a ceiling of lit panels, and a small grey
+ * lattice on a mat in the middle of a floor big enough to park a van on.
+ * Then it pushes in on the pad, where there is a 23 gram aircraft nobody
+ * has noticed yet, and hands over to its camera.
  *
  * Read from the pad and the room rather than typed as six numbers, so that
  * moving the shed or the start of the track moves the shot with it.
@@ -2784,10 +2788,15 @@ function frame(ms) {
    * either end of that window the overlay is more than ninety eight percent
    * opaque, so nothing on screen can see the lighting rig change hands. A
    * long crossfade would be worse than useless: there is no frame in which a
-   * sun and a pair of shed bulbs are both the right answer.
+   * sun and a room's ceiling lights are both the right answer.
    */
   const indoor = REDUCED ? 0 : clamp01((T - (A.room - 0.012)) / 0.016);
-  stage.setIndoor(indoor, ROOM_AIR);
+  /* The light switch, read here because the room's air and key follow it:
+   * see setLamps and airAt in room.js, and `lamps` below. */
+  const lampsNow = REDUCED ? 0 : ease(T, A.room + 0.004, A.room + 0.085);
+  indoorNow.air = room.airAt(lampsNow);
+  indoorNow.key = ROOM_INDOOR.key * lampsNow;
+  stage.setIndoor(indoor, indoorNow);
   course.setFog(stage.scene.fog);
   /* ------------------------------------------------------------- aircraft */
   /*
@@ -2849,7 +2858,7 @@ function frame(ms) {
    *   running  progress through the lap, which the line's own speed profile
    *            then turns into a position: see roomAt.
    */
-  const lamps = REDUCED ? 0 : ease(T, A.room + 0.004, A.room + 0.085);
+  const lamps = lampsNow;
   const lift = ease(T, A.room + 0.20, A.room + 0.27);
   const running = ramp(T, A.room + 0.27, A.room + 0.95, 0.05, 0.08);
   const roomU = roomAt(running);
@@ -3086,8 +3095,8 @@ function frame(ms) {
     }
   } else if (T < A.room + 1) {
     /*
-     * THE ROOM ACT. A shed, one warm pair of bulbs, and 43 m of RaceGOW lap
-     * folded into three metres by two.
+     * THE ROOM ACT. A room with its lights on, the slap pack on its walls,
+     * and 43 m of RaceGOW lap folded into three metres by two.
      *
      * Three shots and two joins, and the order is the argument: the place,
      * then the machine, then the machine's own eye. Nothing here is a
@@ -3363,18 +3372,18 @@ function frame(ms) {
     stage.aimBlob(dronePos, 0, 1);
   } else {
     /*
-     * Indoors the directional light is turned down to a twentieth by
-     * setIndoor and the room's two bulbs do the work, so what is left for it
-     * to do is the shadow map. Aimed at the middle of the room with a seven
-     * metre frustum, which holds the whole track and the mat it stands on.
+     * Indoors the directional light is the lit ceiling's key, set by
+     * setIndoor from the room, and it stands almost straight up over the
+     * middle of the room. It casts nothing, as the simulator's room casts
+     * nothing: a key that high runs down every upright of a gate and each
+     * pipe shadowed itself dark. So its shadow is parked, not switched off,
+     * which would recompile the page. See aimLight in stage.js.
      *
-     * No blob under the aircraft. The painted one is sized for a five inch
-     * over a field, and a whoop 300 mm off a mat casts a shadow the size of
-     * a beer mat: the bulbs and the shadow map have that covered, and a
-     * half metre smudge under an 82 mm machine is a smudge that says the
-     * aircraft is the size of a dinner plate.
+     * No blob under the aircraft either. The painted one is sized for a five
+     * inch over a field, and a half metre smudge under an 82 mm machine is a
+     * smudge that says the aircraft is the size of a dinner plate.
      */
-    stage.aimLight(room.heart, 7);
+    stage.aimLight(room.heart, 7, ROOM_INDOOR.keyDir, false);
     stage.aimBlob(whoopPos, 0, 1);
   }
 
@@ -3609,7 +3618,7 @@ function frame(ms) {
      * The dissolve goes UP, into warm haze, which is what leaving a field in
      * low sun looks like. This goes DOWN, into the dark, because what is on
      * the other side of it is indoors with the lights off. Then the room's
-     * own bulbs come up, in the room, on the room: see setLamps in room.js
+     * own lights come up, in the room, on the room: see setLamps in room.js
      * and `lamps` above. The frame is not uncovered by a veil lifting, it is
      * lit by a switch being thrown, which is a thing that happens in the
      * place rather than a thing that happens to the page.
@@ -3642,7 +3651,8 @@ function frame(ms) {
     setCopy('yard', T > A.yard + 0.01 && T < A.yard + 0.09);
     /* Later into its act than the others, because the room act opens on a
      * dark shed and a headline over black is a headline nobody reads as part
-     * of a film. By 4.06 the bulbs are up and there is something behind it. */
+     * of a film. Six hundredths into the act the lights are up and there is
+     * something behind it. */
     setCopy('room', T > A.room + 0.06 && T < A.room + 0.20);
 
     const row = inChooser ? ROW_CHOOSER
@@ -4001,7 +4011,14 @@ if (!REDUCED) {
       yield* warmPlace('yard', 4);
     }
   });
-  loader.add('shed', () => warmPlace('shed', 1));
+  /* The wall art's picture first, so the warm pass draws the room with its
+   * art up and the picture reaches the GPU here rather than as the lights
+   * come on. A picture that fails or is late leaves the walls bare and the
+   * job goes on: see loadArt in room.js. */
+  loader.add('shed', function* shed() {
+    yield room.loadArt();
+    yield* warmPlace('shed', 1);
+  });
 }
 
 /*

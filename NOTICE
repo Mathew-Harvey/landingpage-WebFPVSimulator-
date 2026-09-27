@@ -33,7 +33,8 @@ here: the tree is already patched.
 ## The simulator's own code
 
     From        Mathew-Harvey/WebFPVSimulator, GPLv3, the same project
-    Held at     src/sim/, laid out as the simulator's src/
+    Held at     src/sim/, laid out as the simulator's src/, and one picture,
+                assets/wallart/atlas.webp, at its path in the simulator
     Recorded in src/sim/MANIFEST.json, the commit and a hash per file
 
 Not third party: the simulator and this page are one product under one
@@ -48,6 +49,15 @@ Yard Tandem, the simulator's showpiece map, with every car's lap as its
 physics module drives it, baked into src/yard-data.js by scripts/bake-yard.js
 rather than copied, for the same reason src/room-data.js is: regenerate, do
 not edit.
+
+And the whoop room's wall art: where each poster and banner hangs, where each
+is in the picture, and the picture itself. The picture is the simulator's
+scripts/wallart.js's work, eleven posters and banners composed around the slap
+pack's stickers in headless Chromium and kept as pixels. The pack is this
+repository's own stickers/index.html, so the art comes home by way of the
+simulator. The pack sets its type in the three faces below, and no font file
+travels with the picture: the OFL governs the font software, not an image
+made with it.
 
 ## RaceGOW5 Track 1
 

@@ -23,12 +23,18 @@
  *            relative imports (static, re-exports and dynamic import()).
  *            'three' and its addons come from the page's import map and are
  *            not followed.
+ *   ASSETS   pictures from outside the simulator's src/ that a copied module
+ *            names by their path from the simulator's root, as the wall art
+ *            table names its atlas. Each lands at the same path from THIS
+ *            repository's root, so the name in the table is still the name
+ *            of the file.
  *
  * Files under src/sim/ that the copy no longer produces are deleted, so a
  * module the simulator dropped does not linger here.
  *
  * THE MANIFEST, src/sim/MANIFEST.json, records the simulator's commit, and
- * whether its tree was clean, and the SHA-256 of every file copied.
+ * whether its tree was clean, and the SHA-256 of every file copied, the
+ * assets under a key of their own.
  * scripts/page-lint.js checks the directory against it, which is what makes
  * "recopy, do not edit" something a check can see. Regenerate, do not edit.
  *
@@ -64,7 +70,11 @@ const WHOLE = ['maps/city/vendored'];
  * town and its bake; then what the yard is built from, the same parts the
  * built map and the builder's 3D view put together: where each element
  * stands, the kit that draws it, the ground, the roads, the cars and the
- * time of day, and the traffic that says which car drives which lane. */
+ * time of day, and the traffic that says which car drives which lane; and
+ * the whoop room's wall art, where each piece hangs and where it is in the
+ * atlas. Not art/wallart.js, which lights the art with render/celmat.js:
+ * src/cel.js is this page's port of that file and both patch the same
+ * shader chunk, so the room lights the art with cel.js instead. */
 const ENTRIES = [
   'maps/city/vendored/world/index.js',
   'maps/city/bake.js',
@@ -75,7 +85,13 @@ const ENTRIES = [
   'maps/built/cars.js',
   'maps/built/looks.js',
   'maps/built/traffic.js',
+  'art/wallart-hang.js',
+  'art/wallart-atlas.js',
 ];
+
+/* Copied as files, to the same path from this repository's root: see
+ * ASSETS in the header. */
+const ASSETS = ['assets/wallart/atlas.webp'];
 
 /* Relative specifiers in a module: static imports, re-exports, and dynamic
  * import() with a string literal. */
@@ -163,6 +179,16 @@ async function main() {
     /* A first copy: there was nothing here to prune. */
   }
 
+  /* The assets, to the same place from this repository's root. */
+  const assets = {};
+  for (const rel of ASSETS) {
+    const buf = await readFile(join(simRoot, rel));
+    const to = join(root, rel);
+    await mkdir(dirname(to), { recursive: true });
+    await writeFile(to, buf);
+    assets[rel] = sha(buf);
+  }
+
   let commit = 'unknown';
   let clean = false;
   try {
@@ -179,9 +205,10 @@ async function main() {
     whole: WHOLE,
     entries: ENTRIES,
     files,
+    assets,
   };
   await writeFile(join(OUT, 'MANIFEST.json'), `${JSON.stringify(manifest, null, 2)}\n`);
-  console.log(`vendor: ${Object.keys(files).length} files from ${commit.slice(0, 12)}${clean ? '' : ' (with uncommitted changes under src/)'}, ${removed} removed`);
+  console.log(`vendor: ${Object.keys(files).length} files and ${Object.keys(assets).length} asset${Object.keys(assets).length === 1 ? '' : 's'} from ${commit.slice(0, 12)}${clean ? '' : ' (with uncommitted changes under src/)'}, ${removed} removed`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

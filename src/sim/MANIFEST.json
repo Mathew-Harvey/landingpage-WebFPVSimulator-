@@ -1,7 +1,7 @@
 {
   "note": "Copied from Mathew-Harvey/WebFPVSimulator by scripts/vendor.js. Regenerate, do not edit: scripts/page-lint.js checks every file here against its hash.",
   "from": "Mathew-Harvey/WebFPVSimulator",
-  "commit": "fbbaab39a8f864de17aa80d9a780559547bcb863",
+  "commit": "7dd506cf9565a123d42a57945641fb1e04a62ec3",
   "clean": true,
   "whole": [
     "maps/city/vendored"
@@ -15,12 +15,16 @@
     "maps/built/roadmesh.js",
     "maps/built/cars.js",
     "maps/built/looks.js",
-    "maps/built/traffic.js"
+    "maps/built/traffic.js",
+    "art/wallart-hang.js",
+    "art/wallart-atlas.js"
   ],
   "files": {
     "art/banners.js": "2646d8f1b499d61d90f1741cd8db37c7a80264d65f9558d234a6f3d5ffd80d48",
     "art/cars.js": "e9e87df88925fae3af2d8874ef6d750cf5c2ca8221c5e9caf98f5a2e601b818b",
     "art/startblock.js": "8de7035f997be106acf94e74efaa2dc2b3fff517d76c768cd790fa962d0ffea4",
+    "art/wallart-atlas.js": "fbc49742fe95aef513136ac4c6637785daba8a1a99fb56415595f1d7eedcb772",
+    "art/wallart-hang.js": "09e72b4e1d74a0b745dcee886d9548299dca0d4df135aa159b6e5940d2fa28a9",
     "game/collide.js": "88745af50138b6ee18590c0f3f73e19d1ae662c24e1240182fc31fabd8c56d2f",
     "game/plantworld.js": "c6cdc1888136ba521e83f03ac39420c3c1c7b30a679cc169c76802ebcbeef8f1",
     "maps/built/cars.js": "1f026b571d5a5b5d29cc0e2ca0ed3fa7944ac87727a34a60c7136b8f96c76ea0",
@@ -114,5 +118,8 @@
     "trackbuilder/model.js": "1b870fa2cb5fb544ce9691d6c727122c93e28d3b402f3aeb2bc40462fcc2ef16",
     "trackbuilder/racegow.js": "370ee3ec2c230bc5c8c0b05fd7c12b9e5c75e1615853c9b0a735398d8e93811a",
     "units.js": "6e2326500c4053ce3495a0ffa6ea59a210f6ca68ba0117146a2d87b2fcf2f84d"
+  },
+  "assets": {
+    "assets/wallart/atlas.webp": "cc911c84d03bf46e202c57019c48704569bf2f555929180b22493c91771ab1ee"
   }
 }

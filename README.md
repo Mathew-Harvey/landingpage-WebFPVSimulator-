@@ -56,11 +56,13 @@ Act 6  The five inch lifts off the pads, runs up the gap between the half
        most of a lap the way drift is shot: from the inside of each corner,
        door to door up a straight, under the overpass, and at the container
        wall. The cars are the simulator's physics module's own laps.
-Act 7  The frame goes to black. Two bulbs come on in a shed, and there is a
-       whoop track in it: four 28 inch gates in 3/4 inch pipe, two of them
-       stacked, a pole and a rail, 13.8 m of lap in a footprint 2.97 m by
-       1.42, as src/room-data.js measures it. A 65 mm whoop lifts off a pad
-       and flies a lap of it from inside.
+Act 7  The frame goes to black. The lights come on in the simulator's whoop
+       room, sakura plaster over a deep green band with the slap pack on its
+       walls as posters and banners, and there is a whoop track in it: four
+       28 inch gates in 3/4 inch pipe, two of them stacked, a pole and a rail,
+       13.8 m of lap in a footprint 2.97 m by 1.42, as src/room-data.js
+       measures it. A 65 mm whoop lifts off a pad and flies a lap of it from
+       inside.
 Act 8  You must practice, in the shed, over the gate the lap closed on.
 ```
 
@@ -87,7 +89,7 @@ race field survives the haze. The two places are two places.
 Act 7's goes DOWN, into the dark, and it is a different device rather than
 the same one twice. What is on the other side of it is indoors with the
 lights off, so the frame does not come back by a veil lifting off a lit room:
-the shed's own two bulbs come on. The light arrives in the place rather than
+the room's own lights come on. The light arrives in the place rather than
 on the page, which is the difference between a scene change and a slide
 transition. Nothing could have been flown between them anyway. The other side
 is hundreds of metres from the yard, it is inside a closed box, and the
@@ -125,6 +127,20 @@ builder sets them down, and the line flown through it, which
 `window.__wf.yard.clearance()` measures against the map's solids and the
 cars. The two drift cars stay in step because the simulator drives them off
 one speed table; the simulator's roads check holds them to a microsecond.
+
+The whoop room is the simulator's room. `src/room.js` builds the same shed
+the simulator builds for a micro track, and since the simulator's owner had
+it recoloured in the sakura theme, that is a basement lit as a room with its
+lights on: a deep green gate band under a sakura rail, pale plaster above,
+honey boards round a dark mat, a cream ceiling of lit panels, four lamps,
+and pale grey pipe, which reads against both the band and the plaster. The
+posters and banners are the simulator's too: where each hangs and the quads
+that hang it are its `src/art/wallart-hang.js`, and where each is in the
+picture its `src/art/wallart-atlas.js`, both copied into `src/sim/`, and the
+picture is its `assets/wallart/atlas.webp`, copied by the same script to the
+same path here and held to its hash like every other copied file. Only the
+lighting of the art is this page's own, because the simulator's lights it
+with a material this page has its own port of in `src/cel.js`.
 
 It costs what a whole town costs. Measured: it builds about eleven and a half
 thousand meshes and paints every sign and fascia with Canvas2D as it goes, and
@@ -438,7 +454,8 @@ screenshot of a wall is an afternoon. On a clean URL, no global.
 | `src/yard.js` | The freestyle map, set down by the builder act, and the chase flown through it |
 | `src/yard-data.js` | The showpiece map and its cars' laps, GENERATED. See `scripts/bake-yard.js` |
 | `src/places.js` | Where the town and the yard stand, and why there |
-| `src/room.js` | The shed, the RaceGOW track standing in it, and its two bulbs |
+| `src/room.js` | The whoop room, the RaceGOW track standing in it, its lights and its wall art |
+| `assets/wallart/atlas.webp` | The wall art's picture, COPIED from the simulator by `scripts/vendor.js` |
 | `src/room-data.js` | The demo micro track, GENERATED. See `scripts/bake-room.js` |
 | `src/whoop.js` | The 65 mm ducted whoop, at the size it actually is |
 | `src/config.js` | Where the simulator and the board are |

@@ -417,7 +417,9 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
  * the thing the page exists to show, and the next recopy quietly undoes the
  * fix. The manifest holds a SHA-256 for every file as it was copied, so an
  * edit is a mismatch, a file the copy did not make is a stray, and an import
- * that points outside the copy is a hole a recopy would not fill.
+ * that points outside the copy is a hole a recopy would not fill. The assets
+ * it copied to this repository's root, the wall art's atlas, are held to
+ * their hashes the same way.
  */
 {
   const SIM = join(root, 'src/sim');
@@ -470,6 +472,13 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
         holes.push(`${rel} is in the manifest and not on disk`);
       }
     }
+    for (const [rel, hash] of Object.entries(manifest.assets || {})) {
+      if (!(await exists(rel))) {
+        holes.push(`${rel} is in the manifest and not on disk`);
+      } else if (createHash('sha256').update(await readFile(join(root, rel))).digest('hex') !== hash) {
+        edited.push(rel);
+      }
+    }
   }
   check(
     'src/sim is the simulator\'s code, unedited',
@@ -480,7 +489,7 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
         edited.length ? `EDITED ${edited.join(', ')}` : '',
         strays.length ? `NOT A COPY ${strays.join(', ')}` : '',
         holes.length ? `UNRESOLVED ${holes.slice(0, 4).join(', ')}` : '',
-      ].filter(Boolean).join('; ') || `${Object.keys(manifest.files).length} files as copied from ${String(manifest.commit).slice(0, 12)}`,
+      ].filter(Boolean).join('; ') || `${Object.keys(manifest.files).length} files and ${Object.keys(manifest.assets || {}).length} asset${Object.keys(manifest.assets || {}).length === 1 ? '' : 's'} as copied from ${String(manifest.commit).slice(0, 12)}`,
   );
 }
 

@@ -23,6 +23,19 @@
  * lands in this room, and the two should not disagree about what it looks
  * like.
  *
+ * THE SAKURA ROOM, since the simulator's owner asked for one on 26 September
+ * 2026: the same basement, recoloured in the brand's palette and lit as a
+ * room with its lights on, with the slap pack's stickers on its walls as
+ * posters and banners. The simulator's WHOOP-ROOM-PLAN.md has the owner's
+ * answers. The art is the simulator's too, and not a copy of it drawn here:
+ * where each piece hangs and the quads that hang it are its
+ * src/art/wallart-hang.js, where each piece is in the picture is its
+ * src/art/wallart-atlas.js, both copied into src/sim/ by scripts/vendor.js,
+ * and the picture is its assets/wallart/atlas.webp, copied to the same path
+ * here. Only the lighting of the art is this page's, because the
+ * simulator's lights it with its celmat.js and this page has its own port
+ * of that, src/cel.js.
+ *
  * WHY IT IS A SHED AND NOT A LIVING ROOM. RaceGOW's rules specify the
  * envelope and say pilots "will need some additional space around the outside
  * of that to fly the tracks optimally", and nothing else: the room is not part
@@ -35,7 +48,8 @@
  * WHERE THE NUMBERS COME FROM. The track is generated: see room-data.js and
  * scripts/bake-room.js. Nothing about the layout is authored here. What is
  * authored here is the shed, the lamps and the furniture, which the simulator
- * has its own versions of and which no data file owns.
+ * has its own versions of and which no data file owns, and of those only the
+ * furniture is this page's own idea: the simulator's room has none.
  *
  * This file is part of the WebFPVSimulator landing page.
  *
@@ -59,6 +73,8 @@ import { LITE, SEG } from './quality.js';
 import {
   DIVES, GATES, LINE_MM, OPENING, PADS, PIPE_OD, POLES, RAILS,
 } from './room-data.js';
+import { wallArtGeometry } from './sim/art/wallart-hang.js';
+import { WALLART } from './sim/art/wallart-atlas.js';
 
 /*
  * WHERE THE SHED STANDS, and it is nowhere near anything.
@@ -96,34 +112,77 @@ export const ROOM_ORIGIN = new THREE.Vector3(0, 0, 300);
 export const ROOM = { width: 10, depth: 12, height: 4 };
 
 /*
- * The palette, from the simulator's own ROOM block.
+ * The palette, from the simulator's own ROOM block, number for number.
  *
  * THE FLOOR IS THE DARKEST THING IN THE PICTURE ON PURPOSE. RaceGOW pilots
  * write about this: white pipe on a pale floor is unflyable, and the mat is
- * what makes a white gate read at all. Everything else is a pine board shed
- * lit by two warm bulbs, which is what every build video on the series looks
- * like.
+ * what makes a gate read at all.
+ *
+ * THE GATE BAND STAYS DARK, and that is the rule the recolour was built
+ * around. The pipe is a pale grey, and a pipe reads against anything clearly
+ * darker or clearly paler than itself and against nothing of its own value.
+ * So the wall is deep green from the floor to 1.2 m, the band a whoop sees a
+ * gate against from racing height, and pale sakura plaster above it, where
+ * the pipe reads darker than the plaster, with a sakura rail between. This
+ * page's pipe was near white while the simulator's was already this grey;
+ * in front of the new plaster a near white pipe would have vanished, so it
+ * is the simulator's grey now, and its fittings a shade darker, as there.
  */
 const PAL = {
-  air: 0x14100c,
-  floor: 0x1c1c1e,
-  floorEdge: 0x3a352e,
-  wall: 0x6b5335,
-  wallLow: 0x4a3a26,
-  ceiling: 0x3d3128,
-  joist: 0x59462e,
-  skirt: 0x2a2118,
-  pipe: 0xe6e3da,
-  fitting: 0xcfcabd,
+  /* The air of the lit room, and of the room before its lights come on,
+   * which is the blackout's own colour. See airAt. */
+  air: 0xcfc3c6,
+  dark: 0x14100c,
+  /* The mat, the town's own dark rather than a neutral black, and the
+   * honey boards round it. */
+  floor: 0x2f2b36,
+  floorEdge: 0xc6a887,
+  wall: 0xeed5d6,
+  wallLow: 0x27332c,
+  rail: 0xe8a8b8,
+  /* A cream ceiling and pale beams. */
+  ceiling: 0xc9beb2,
+  joist: 0xd9cabe,
+  skirt: 0x1b231e,
+  /* The ceiling's light panels, their frames, and the light they give: a
+   * neutral warm white, a room with its lights on and not a sunset. */
+  lamp: 0xfffaf2,
+  lampFrame: 0xd8d0cb,
+  light: 0xfff4ea,
+  /* The simulator's frame and fitting, which every micro gate is built in. */
+  pipe: 0x9aa2b0,
+  fitting: 0x767f8f,
   steel: 0x6d7076,
-  bench: 0x7a6242,
-  bulb: 0xffdaa4,
+  /* This page's furniture, in the floor's honey. */
+  bench: 0xb89a78,
 };
+/* The room's rim light is warm. The default is sky blue, for a sky this room
+ * does not have, and on sakura plaster it reads as a cold edge. The gates
+ * keep the default, because the simulator's gates share their material with
+ * the race field's and keep it too. */
+const RIM = 0xffe8ec;
 
-/* The air of an unlit shed. main.js hands this to the stage, which is why it
- * is exported rather than kept private: the fog, the background and the
- * clear colour indoors are all this one number. */
-export const ROOM_AIR = PAL.air;
+/*
+ * WHAT THE STAGE NEEDS FROM THE ROOM, indoors: the fog's reach and the key.
+ *
+ * The fog is the simulator's: 5.5 to 44 m of pale air takes the far wall a
+ * sixth of the way to the air and no further, which is enough to say it is
+ * far. The key is the lit ceiling's, a neutral white standing almost
+ * straight overhead so it lights the floor and the tops of things evenly and
+ * throws no hot side across the room. It casts nothing: a key that high runs
+ * down every upright of a gate, and on a machine with shadows each pipe
+ * shadowed itself dark from its top to its foot, which put dark pipe in
+ * front of the dark band, the one pairing this room is built to avoid. The
+ * stage parks the shadow instead of turning it off, because turning it off
+ * recompiles every material on the page. See aimLight in stage.js.
+ */
+export const ROOM_INDOOR = {
+  fogNear: 5.5,
+  fogFar: 44,
+  key: 0.45,
+  keyColor: PAL.light,
+  keyDir: new THREE.Vector3(0.16, 1, 0.24).normalize(),
+};
 
 /* Half a pipe, and where an upright's centre sits: the INNER faces of the two
  * uprights are the opening, so each centre is half a tube outboard of it. */
@@ -262,24 +321,43 @@ export function buildRoom() {
   const H = ROOM.height;
   const T = 0.10;
 
-  const wallMat = celMaterial({ color: PAL.wall, rim: 0.16, spec: 0.06 });
-  const wallLowMat = celMaterial({ color: PAL.wallLow, rim: 0.12, spec: 0.04 });
-  const ceilMat = celMaterial({ color: PAL.ceiling, rim: 0.10, spec: 0.03 });
-  const joistMat = celMaterial({ color: PAL.joist, rim: 0.14, spec: 0.05 });
-  const skirtMat = celMaterial({ color: PAL.skirt, rim: 0.18, spec: 0.10 });
-  const matMat = celMaterial({ color: PAL.floor, rim: 0.10, spec: 0.05 });
-  const edgeMat = celMaterial({ color: PAL.floorEdge, rim: 0.08, spec: 0.03 });
-  const pipeMat = celMaterial({ color: PAL.pipe, rim: 0.34, spec: 0.34 });
-  const fittingMat = celMaterial({ color: PAL.fitting, rim: 0.26, spec: 0.20 });
-  const steelMat = celMaterial({ color: PAL.steel, rim: 0.30, spec: 0.40 });
-  const benchMat = celMaterial({ color: PAL.bench, rim: 0.20, spec: 0.10 });
-  const boxMat = celMaterial({ color: 0x2a2f36, rim: 0.22, spec: 0.12 });
+  const wallMat = celMaterial({ color: PAL.wall, rim: 0.16, rimColor: RIM, spec: 0.06 });
+  const wallLowMat = celMaterial({ color: PAL.wallLow, rim: 0.12, rimColor: RIM, spec: 0.04 });
+  const railMat = celMaterial({ color: PAL.rail, rim: 0.16, rimColor: RIM, spec: 0.10 });
+  const joistMat = celMaterial({ color: PAL.joist, rim: 0.14, rimColor: RIM, spec: 0.05 });
+  const skirtMat = celMaterial({ color: PAL.skirt, rim: 0.18, rimColor: RIM, spec: 0.10 });
+  const matMat = celMaterial({ color: PAL.floor, rim: 0.10, rimColor: RIM, spec: 0.05 });
+  const edgeMat = celMaterial({ color: PAL.floorEdge, rim: 0.08, rimColor: RIM, spec: 0.03 });
+  const frameMat = celMaterial({ color: PAL.lampFrame, rim: 0.10, rimColor: RIM, spec: 0.05 });
+  /*
+   * THE CEILING IS PAINTED AS LIT, not lit, which is the simulator's answer
+   * to four lamps a metre under it: lit, it took a hot streak over every lamp
+   * that swallowed the panels and read as the brightest thing in the room,
+   * which a real ceiling, lit only by what comes back off the floor, never
+   * is. So it is one even cream, a step under the plaster, and the beams,
+   * which are lit, and the panels, which are the light, read against it.
+   *
+   * Painted as lit means it does not go dark by itself when the lights go
+   * off, and this act starts with them off. So setLamps paints it down with
+   * them, and the panels too, which are the light and are not lit either.
+   */
+  const ceilMat = new THREE.MeshBasicMaterial({ color: PAL.ceiling });
+  const panelMat = new THREE.MeshBasicMaterial({ color: PAL.lamp, fog: false });
+  const pipeMat = celMaterial({ color: PAL.pipe, rim: 0.26 });
+  const fittingMat = celMaterial({ color: PAL.fitting, rim: 0.26 });
+  const steelMat = celMaterial({ color: PAL.steel, rim: 0.30, rimColor: RIM, spec: 0.40 });
+  const benchMat = celMaterial({ color: PAL.bench, rim: 0.20, rimColor: RIM, spec: 0.10 });
+  const boxMat = celMaterial({ color: 0x2a2f36, rim: 0.22, rimColor: RIM, spec: 0.12 });
 
   /*
-   * The slab and the mat, four and eight millimetres up, so the two planes
-   * cannot fight each other. The slab runs well past the walls: nothing
-   * should ever see under a skirting board, and a floor that stops at one
-   * shows a hairline of nothing at every corner.
+   * The honey boards and the mat, four and eight millimetres up, so the two
+   * planes cannot fight each other. The mat reaches to 200 mm from every
+   * wall, as the simulator's does, so the boards are a border you see at the
+   * skirting and not a floor: this page's mat used to be a smaller rug in
+   * the middle of a concrete floor, which with honey boards round it would
+   * have been a different room. The boards run well past the walls, because
+   * a floor that stops at a skirting shows a hairline of nothing at every
+   * corner.
    */
   const slab = new THREE.Mesh(
     new THREE.PlaneGeometry(ROOM.width + 6, ROOM.depth + 6), edgeMat,
@@ -289,63 +367,56 @@ export function buildRoom() {
   slab.receiveShadow = !LITE;
   group.add(slab);
 
-  const mat = new THREE.Mesh(new THREE.PlaneGeometry(7.2, 8.4), matMat);
+  const mat = new THREE.Mesh(
+    new THREE.PlaneGeometry(ROOM.width - 0.4, ROOM.depth - 0.4), matMat,
+  );
   mat.rotation.x = -Math.PI * 0.5;
-  mat.position.set(0, 0.008, -0.2);
+  mat.position.y = 0.008;
   mat.receiveShadow = !LITE;
   group.add(mat);
 
   /*
-   * Four walls, a dado band and a skirting. The band is what stops a four
-   * metre wall reading as a backdrop: a room has a line round it at the
-   * height a room's furniture is, and without one there is nothing in the
-   * frame to say how big the wall is.
+   * Four walls, each the simulator's: the dark gate band to 1.2 m, a sakura
+   * rail over it, pale plaster to the ceiling, and a skirting. The band and
+   * the plaster are boxes the wall's full thickness; the rail and the
+   * skirting are grown across the thickness, 12 and 10 mm proud of each
+   * face, whichever axis that is for the wall.
    */
-  /* Each wall as its centre, its span and the way it faces INTO the room, so
-   * the band and the skirting can be hung a few millimetres proud of it
-   * without four special cases. */
-  const BAND = 1.15;
   const walls = [
-    { x: 0, z: -halfD - T * 0.5, w: ROOM.width + T * 2, d: T, nx: 0, nz: 1 },
-    { x: 0, z: halfD + T * 0.5, w: ROOM.width + T * 2, d: T, nx: 0, nz: -1 },
-    { x: -halfW - T * 0.5, z: 0, w: T, d: ROOM.depth, nx: 1, nz: 0 },
-    { x: halfW + T * 0.5, z: 0, w: T, d: ROOM.depth, nx: -1, nz: 0 },
+    { x: 0, z: -halfD - T * 0.5, w: ROOM.width + T * 2, d: T },
+    { x: 0, z: halfD + T * 0.5, w: ROOM.width + T * 2, d: T },
+    { x: -halfW - T * 0.5, z: 0, w: T, d: ROOM.depth + T * 2 },
+    { x: halfW + T * 0.5, z: 0, w: T, d: ROOM.depth + T * 2 },
   ];
+  const BAND = 1.2;
+  const RAIL_H = 0.06;
+  const SKIRT_H = 0.08;
+  const upperY = BAND + RAIL_H;
   for (const w of walls) {
-    const wall = new THREE.Mesh(new THREE.BoxGeometry(w.w, H, w.d), wallMat);
-    wall.position.set(w.x, H * 0.5, w.z);
-    wall.receiveShadow = !LITE;
-    group.add(wall);
-
-    /*
-     * Trimmed 20 mm short along the wall so two of these meeting at a corner
-     * do not intersect and z fight down the join.
-     *
-     * `along` is the wall's length and `face` is its thickness, and which of
-     * w.w and w.d is which depends on the wall. Getting that backwards puts
-     * the band six metres inboard of the wall it belongs to, which is not a
-     * subtle bug: it is a two metre partition standing diagonally across the
-     * room with the track behind it.
-     */
-    const along = (w.nx ? w.d : w.w) - 0.02;
-    const face = w.nx ? w.w : w.d;
-    for (const [h, thick, m] of [[BAND, 0.014, wallLowMat], [0.13, 0.030, skirtMat]]) {
-      const piece = new THREE.Mesh(
-        new THREE.BoxGeometry(w.nx ? thick : along, h, w.nx ? along : thick), m,
-      );
-      piece.position.set(
-        w.x + w.nx * (face * 0.5 + thick * 0.5),
-        h * 0.5,
-        w.z + w.nz * (face * 0.5 + thick * 0.5),
-      );
-      group.add(piece);
-    }
+    const upper = new THREE.Mesh(new THREE.BoxGeometry(w.w, H - upperY, w.d), wallMat);
+    upper.position.set(w.x, upperY + (H - upperY) * 0.5, w.z);
+    upper.receiveShadow = !LITE;
+    group.add(upper);
+    const lower = new THREE.Mesh(new THREE.BoxGeometry(w.w, BAND, w.d), wallLowMat);
+    lower.position.set(w.x, BAND * 0.5, w.z);
+    lower.receiveShadow = !LITE;
+    group.add(lower);
+    const across = (grow) => (w.w < w.d ? [w.w + grow, w.d] : [w.w, w.d + grow]);
+    const [rw, rd] = across(0.024);
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(rw, RAIL_H, rd), railMat);
+    rail.position.set(w.x, BAND + RAIL_H * 0.5, w.z);
+    group.add(rail);
+    const [sw, sd] = across(0.02);
+    const skirt = new THREE.Mesh(new THREE.BoxGeometry(sw, SKIRT_H, sd), skirtMat);
+    skirt.position.set(w.x, SKIRT_H * 0.5, w.z);
+    group.add(skirt);
   }
 
   /*
-   * The lid and the joists under it. Counted from the room at a fixed
-   * spacing rather than a fixed number, and 140 mm deep, because a 75 mm
-   * joist over a ten metre clear span is a thing that would be on the floor.
+   * The ceiling and the purlins under it, counted from the room at a fixed
+   * spacing and 140 mm deep, because a 75 mm joist over a ten metre clear
+   * span is a thing that would be on the floor. They are what tell a pilot
+   * how high they are when they are near it.
    */
   const ceil = new THREE.Mesh(
     new THREE.BoxGeometry(ROOM.width + T * 2, T, ROOM.depth + T * 2), ceilMat,
@@ -354,21 +425,50 @@ export function buildRoom() {
   group.add(ceil);
 
   const purlins = Math.max(3, Math.round(ROOM.depth / 0.9));
+  const bay = ROOM.depth / purlins;
   const purlinGeo = new THREE.BoxGeometry(ROOM.width, 0.14, 0.055);
   for (let i = 0; i < purlins; i += 1) {
     const joist = new THREE.Mesh(purlinGeo, joistMat);
-    joist.position.set(0, H - 0.07, -halfD + (i + 0.5) * (ROOM.depth / purlins));
+    joist.position.set(0, H - 0.07, -halfD + (i + 0.5) * bay);
     group.add(joist);
   }
 
   /*
-   * TWO WARM BULBS, and they are the act's only light.
+   * THE LIGHTS YOU CAN SEE: a 1.2 by 0.3 m panel in every other bay, two
+   * rows across the room a sixth of its width either side of the middle,
+   * each in a pale frame flat on the ceiling between two purlins, so nothing
+   * hangs lower than the purlins do. The bays are taken in pairs from both
+   * ends, which keeps the rows symmetric whatever the purlin count is.
+   * Twelve, as the simulator's.
+   */
+  const LAMP_X = ROOM.width / 6;
+  const fixtureRows = [];
+  for (let k = 1; k < purlins / 2; k += 2) {
+    fixtureRows.push(-halfD + k * bay, halfD - k * bay);
+  }
+  const frameGeo = new THREE.PlaneGeometry(1.28, 0.38).rotateX(Math.PI * 0.5);
+  const panelGeo = new THREE.PlaneGeometry(1.2, 0.3).rotateX(Math.PI * 0.5);
+  for (const fz of fixtureRows) {
+    for (const fx of [-LAMP_X, LAMP_X]) {
+      const frame = new THREE.Mesh(frameGeo, frameMat);
+      frame.position.set(fx, H - 0.003, fz);
+      group.add(frame);
+      const panel = new THREE.Mesh(panelGeo, panelMat);
+      panel.position.set(fx, H - 0.006, fz);
+      group.add(panel);
+    }
+  }
+
+  /*
+   * FOUR LAMPS, and they are the act's light.
    *
-   * One over the middle is right for a domestic room. In a hall four metres
-   * high the far corner is nine metres from a single lamp, and with the 1.7
-   * decay a real bulb has that corner falls to a tenth of the middle: a black
-   * shed with a lit patch in it. Two down the long axis overlap in the middle
-   * and reach both ends, which is what a two lamp shed actually looks like.
+   * The simulator's, at its figures brought back to life size: it builds the
+   * room MICRO_SCALE times bigger and lifts each lamp's intensity by that
+   * factor to the 1.7, its decay, so the floor under a lamp sees what it
+   * would in a real hall, and here, where nothing is scaled, that is ten.
+   * On a grid a sixth of the room's width either side of the middle and a
+   * quarter of its depth, which is where a RaceGOW track stands, 0.9 m under
+   * the ceiling. They light the track first and the walls second.
    *
    * They are NOT in the group above. A light inside a hidden subtree leaves
    * the renderer's lighting state when the subtree goes, and every material
@@ -378,58 +478,86 @@ export function buildRoom() {
   const lamps = new THREE.Group();
   lamps.name = 'room-lamps';
   lamps.position.copy(ROOM_ORIGIN);
-  const bulbs = [];
-  const glows = [];
-  for (const lz of [-ROOM.depth * 0.25, ROOM.depth * 0.25]) {
-    /*
-     * ON A LONG FLEX, 700 mm down, which is a fix rather than decoration.
-     *
-     * The simulator hangs its lamps 250 mm under the ceiling, which is right
-     * for a scene nothing ever looks up in. This act looks straight up: a
-     * whoop's lens is tilted 25 degrees back and the aircraft climbs to 2.5 m
-     * over the tower, so the ceiling is in frame for a good part of the lap.
-     * At 250 mm the boards immediately around a lamp take 42 over 0.25 to
-     * the 1.7, which is four hundred: a white hole in the roof with the
-     * joists dissolving into it. Dropping the lamp trades that for a lit
-     * cone on the ceiling, which is what a bare bulb in a shed does.
-     */
-    const bulb = new THREE.PointLight(PAL.bulb, 0, ROOM.depth * 2.5, 1.45);
-    bulb.position.set(0, H - 0.78, lz);
-    bulb.castShadow = false;
-    lamps.add(bulb);
-    bulbs.push(bulb);
-
-    /* The fitting: a flex down from the joists, a shade, and the glass. The
-     * glass is basic rather than cel, because a surface that glows is a
-     * light and shading one just makes it dirty. */
-    const flex = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.006, 0.006, 0.62, 5), skirtMat,
-    );
-    flex.position.set(0, H - 0.31, lz);
-    group.add(flex);
-    const shade = new THREE.Mesh(
-      new THREE.ConeGeometry(0.17, 0.13, SEG.round, 1, true), steelMat,
-    );
-    shade.material.side = THREE.DoubleSide;
-    shade.position.set(0, H - 0.68, lz);
-    group.add(shade);
-    const glass = new THREE.Mesh(
-      new THREE.SphereGeometry(0.055, SEG.round, 8),
-      new THREE.MeshBasicMaterial({ color: PAL.bulb, fog: false }),
-    );
-    glass.position.set(0, H - 0.775, lz);
-    group.add(glass);
-    glows.push(glass.material);
+  const points = [];
+  for (const lx of [-LAMP_X, LAMP_X]) {
+    for (const lz of [-ROOM.depth * 0.25, ROOM.depth * 0.25]) {
+      const lamp = new THREE.PointLight(PAL.light, 0, ROOM.depth * 2.5, 1.7);
+      lamp.position.set(lx, H - 0.9, lz);
+      lamp.castShadow = false;
+      lamps.add(lamp);
+      points.push(lamp);
+    }
   }
-
-  /*
-   * The bounce. Cool from the ceiling, warm off the boards, and it is the
-   * only thing lighting the corners at all: a point light with a real decay
-   * has nothing left to give at nine metres.
-   */
-  const bounce = new THREE.HemisphereLight(0xc9d6e8, 0x2a2420, 0);
+  /* A bright ceiling above and a warm bounce off the floor below, which is
+   * what lights the corners: the simulator's pair. */
+  const bounce = new THREE.HemisphereLight(0xfbf6f4, 0xc8b5b8, 0);
   bounce.position.set(0, H, 0);
   lamps.add(bounce);
+
+  /*
+   * THE POSTERS AND BANNERS, from the slap pack: the simulator's twelve
+   * pieces on its four walls, in one geometry and one draw. Paint, not
+   * solid: nothing here stands proud of its wall by more than a rod's width.
+   *
+   * Lit as the plaster is, with the room's warm rim, so a print sits in the
+   * room's light rather than glowing on it, and hidden until the picture has
+   * decoded: a quad with no picture on it is a grey card on the wall. The
+   * picture is not fetched here. Nothing is fetched at import on this page,
+   * so the shed's loader job asks for it with loadArt, and warms the room
+   * with the art up, which is what puts the picture on the GPU before the
+   * lights come on rather than as they do.
+   */
+  const hung = wallArtGeometry(WALLART, { halfW, halfD, y0: 0, K: 1 });
+  const artTex = new THREE.Texture();
+  artTex.colorSpace = THREE.SRGBColorSpace;
+  artTex.anisotropy = LITE ? 4 : 8;
+  const artMat = celMaterial({
+    color: 0xffffff, rim: 0.08, rimColor: RIM, spec: 0.02, transparent: true, map: artTex,
+  });
+  artMat.depthWrite = false;
+  artMat.polygonOffset = true;
+  artMat.polygonOffsetFactor = -2;
+  artMat.polygonOffsetUnits = -2;
+  const art = new THREE.Mesh(hung.art, artMat);
+  art.name = 'wallArt';
+  art.visible = false;
+  group.add(art);
+  if (hung.rods) {
+    /* Bamboo, in the town's own bamboo green. */
+    const rods = new THREE.Mesh(
+      hung.rods,
+      celMaterial({ color: 0x94b06b, rim: 0.18, rimColor: RIM, spec: 0.12 }),
+    );
+    rods.name = 'wallArtRods';
+    group.add(rods);
+  }
+  let artLoad = null;
+  /* Resolves true when the art is up and false when the room goes on
+   * without it: a picture that failed, or one six seconds late. The room is
+   * then simply bare, which is what the simulator does too. */
+  function loadArt() {
+    if (!artLoad) {
+      artLoad = new Promise((resolve) => {
+        const img = new Image();
+        img.decoding = 'async';
+        const timer = setTimeout(() => resolve(false), 6000);
+        img.onload = () => {
+          artTex.image = img;
+          artTex.needsUpdate = true;
+          art.visible = true;
+          clearTimeout(timer);
+          resolve(true);
+        };
+        img.onerror = () => {
+          console.warn(`room: ${WALLART.url} did not load; the walls are bare`);
+          clearTimeout(timer);
+          resolve(false);
+        };
+        img.src = new URL(`../${WALLART.url}?v=${WALLART.rev}`, import.meta.url).href;
+      });
+    }
+    return artLoad;
+  }
 
   /* --------------------------------------------------------------- the track */
 
@@ -573,15 +701,24 @@ export function buildRoom() {
    * A bench with the pilot's kit on it, and a chair.
    *
    * Four boxes and a claim, and the claim is the point of the act: somebody
-   * flies here on their own. A shed with nothing in it but a track is a
-   * render of a track; a shed with a charger on a bench and one chair pulled
+   * flies here on their own. A room with nothing in it but a track is a
+   * render of a track; a room with a charger on a bench and one chair pulled
    * out is a place a person goes. Well clear of the track, which reaches
-   * 1.63 m from the middle of the room in x and 1.18 in z.
+   * 1.63 m from the middle of the room in x and 1.18 in z, and below the
+   * rail, so no poster is behind it.
+   *
+   * THE ONLY FURNITURE NOW. The shed had a roller shutter, shelving, crates,
+   * a ladder, a pegboard, a clock, a hose, totes, two flat banners and a
+   * door, all there to give each of four bare walls something different at
+   * the end of every heading. The simulator's room answers that with its
+   * art, a different set of prints on every wall, and has none of the rest;
+   * the shutter stood where a poster hangs now and the door where another
+   * does. Kept, they would have been a room the simulator does not have.
    */
   const kit = new THREE.Group();
   /* In the far corner beyond the track rather than beside the camera. The
    * act's opening shot comes in over the near left corner, and a trestle
-   * table a metre from the lens is a brown rectangle across a third of the
+   * table a metre from the lens is a rectangle across a third of the
    * establishing frame. Across the room it is what it is meant to be:
    * something in the background that says a person uses this place. */
   kit.position.set(3.3, 0, -4.2);
@@ -610,8 +747,9 @@ export function buildRoom() {
   goggles.rotation.y = -0.4;
   kit.add(goggles);
   const packsGeo = new THREE.BoxGeometry(0.032, 0.012, 0.058);
+  const packMat = celMaterial({ color: 0x3c4450, rim: 0.24, rimColor: RIM });
   for (let i = 0; i < 5; i += 1) {
-    const cell = new THREE.Mesh(packsGeo, celMaterial({ color: 0x3c4450, rim: 0.24 }));
+    const cell = new THREE.Mesh(packsGeo, packMat);
     cell.position.set(0.16 + (i % 3) * 0.045, 0.7635, -0.16 + Math.floor(i / 3) * 0.07);
     kit.add(cell);
   }
@@ -634,199 +772,67 @@ export function buildRoom() {
     }
   }
 
-  /*
-   * THE REST OF THE SHED, and it earns its place by fixing a shot rather
-   * than by dressing a set.
-   *
-   * The track is 3.25 m by 2.28 in a room 10 by 12. Flown from inside, most
-   * of what is in frame for most of the lap is therefore NOT the track: it
-   * is whatever is across the room, and with four bare walls that was four
-   * bare walls. Every frame of the lap looked like the same frame, and the
-   * aircraft read as hovering in a brown box rather than as flying through
-   * somewhere.
-   *
-   * So the walls get what a shed's walls have on them. None of it is near
-   * the track, none of it is in the flight path, and none of it is more than
-   * a box: what it buys is that every heading out of a corner has something
-   * different at the end of it, which is the only thing that tells a pilot,
-   * and a reader, which way round the room they are.
-   */
-  const clutter = new THREE.Group();
-  group.add(clutter);
-  const put = (geo, mtl, x, y, z, ry = 0) => {
-    const m = new THREE.Mesh(geo, mtl);
-    m.position.set(x, y, z);
-    m.rotation.y = ry;
-    m.receiveShadow = !LITE;
-    clutter.add(m);
-    return m;
-  };
-
-  /* A roller shutter on the long wall, which is the one thing that says shed
-   * rather than spare room. Corrugated as a run of narrow slats, because a
-   * flat panel three metres across is a hole in the wall. */
-  const shutterMat = celMaterial({ color: 0x5a6167, rim: 0.20, spec: 0.24 });
-  const slatGeo = new THREE.BoxGeometry(0.05, 0.155, 3.0);
-  for (let i = 0; i < 17; i += 1) {
-    put(slatGeo, shutterMat, halfW - 0.055, 0.09 + i * 0.16, -1.4);
-  }
-  put(new THREE.BoxGeometry(0.09, 0.10, 3.24), steelMat, halfW - 0.06, 2.83, -1.4);
-
-  /* Shelving against the short wall, with what is on shelving. */
-  const shelf = new THREE.Group();
-  shelf.position.set(-halfW + 0.30, 0, -2.4);
-  shelf.rotation.y = Math.PI * 0.5;
-  clutter.add(shelf);
-  for (let i = 0; i < 4; i += 1) {
-    const board = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.032, 0.44), benchMat);
-    board.position.set(0, 0.42 + i * 0.52, 0);
-    shelf.add(board);
-  }
-  for (const dx of [-1.02, 1.02]) {
-    const stile = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.98, 0.44), steelMat);
-    stile.position.set(dx, 0.99, 0);
-    shelf.add(stile);
-  }
-  /* Boxes on it. Deterministic rather than random: a page whose furniture
-   * moves between reloads is a page whose screenshots cannot be compared. */
-  const BOXES = [
-    [-0.78, 0, 0.36, 0.26, 0.30], [-0.40, 0, 0.30, 0.22, 0.28],
-    [0.34, 0, 0.44, 0.30, 0.32], [-0.62, 1, 0.40, 0.24, 0.30],
-    [0.10, 1, 0.34, 0.30, 0.28], [0.62, 1, 0.28, 0.20, 0.26],
-    [-0.30, 2, 0.46, 0.28, 0.30], [0.48, 2, 0.32, 0.22, 0.28],
-    [-0.84, 3, 0.30, 0.24, 0.26], [0.20, 3, 0.42, 0.26, 0.30],
-  ];
-  for (const [dx, tier, w, h, d] of BOXES) {
-    const box = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), boxMat);
-    box.position.set(dx, 0.436 + tier * 0.52 + h * 0.5, 0);
-    shelf.add(box);
-  }
-
-  /* A stack of crates in the far corner, and a ladder along the wall beside
-   * it, both leaning the way things in a shed lean. */
-  const crateMat = celMaterial({ color: 0x5c4a30, rim: 0.20, spec: 0.08 });
-  for (let i = 0; i < 3; i += 1) {
-    put(new THREE.BoxGeometry(0.62, 0.42, 0.46), crateMat,
-      -halfW + 0.75 + i * 0.04, 0.21 + i * 0.42, 1.9, 0.06 * i);
-  }
-  const ladder = new THREE.Group();
-  ladder.position.set(-halfW + 0.42, 0, 4.1);
-  ladder.rotation.z = -0.075;
-  clutter.add(ladder);
-  for (const dz of [-0.19, 0.19]) {
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(0.05, 2.6, 0.035), steelMat);
-    rail.position.set(0, 1.3, dz);
-    ladder.add(rail);
-  }
-  for (let i = 0; i < 8; i += 1) {
-    const rung = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.028, 0.38), steelMat);
-    rung.position.set(0, 0.24 + i * 0.31, 0);
-    ladder.add(rung);
-  }
-
-  /*
-   * The fourth wall, which had nothing on it and was the reason a third of
-   * the lap had nothing in frame.
-   *
-   * A pegboard with tools on it, a clock, and a coil of hose. All four walls
-   * carry something now, which is the actual requirement: an aircraft above
-   * head height in the middle of this room has only a wall in front of it,
-   * and if every wall is the same wall then every one of those frames is the
-   * same frame.
-   */
-  const pegMat = celMaterial({ color: 0x4a4034, rim: 0.16, spec: 0.06 });
-  put(new THREE.BoxGeometry(2.4, 1.15, 0.03), pegMat, 1.1, 1.85, halfD - 0.06);
-  const TOOLS = [
-    [-0.95, 0.30, 0.055, 0.52], [-0.72, 0.10, 0.045, 0.34], [-0.50, 0.22, 0.05, 0.44],
-    [0.32, 0.24, 0.07, 0.30], [0.55, 0.06, 0.16, 0.09], [0.86, 0.20, 0.05, 0.40],
-  ];
-  for (const [dx, dy, w, h] of TOOLS) {
-    put(new THREE.BoxGeometry(w, h, 0.03), steelMat, 1.1 + dx, 1.85 + dy, halfD - 0.085);
-  }
-  const clock = put(new THREE.CylinderGeometry(0.13, 0.13, 0.035, SEG.round),
-    celMaterial({ color: 0xe4e0d6, rim: 0.24, spec: 0.20 }), -1.9, 2.72, halfD - 0.07);
-  clock.rotation.x = Math.PI * 0.5;
-  const hose = put(new THREE.TorusGeometry(0.24, 0.055, 6, SEG.round),
-    celMaterial({ color: 0x2f4a3a, rim: 0.18 }), 3.2, 1.05, halfD - 0.14);
-  hose.rotation.y = Math.PI * 0.5;
-
-  /* And a stack of totes beside the shutter, so that wall is not one flat
-   * shutter and four metres of board. */
-  const toteMat = celMaterial({ color: 0x3d5568, rim: 0.22, spec: 0.14 });
-  for (let i = 0; i < 4; i += 1) {
-    put(new THREE.BoxGeometry(0.52, 0.34, 0.72), toteMat,
-      halfW - 0.42, 0.17 + i * 0.34, 1.55, 0.03 * i);
-  }
-
-  /*
-   * Two banners on the boards. Flat colour rather than print, and that is
-   * the honest version rather than a shortcut: a sponsor's mark belongs to
-   * the sponsor, and a made up one on a page that is otherwise careful about
-   * whose work is whose would be worse than a rectangle. What the rectangle
-   * has to do is give a wall a colour that is not the wall's, so a pilot
-   * coming round the tower knows which end of the room they are pointing at.
-   */
-  put(new THREE.BoxGeometry(0.02, 0.82, 2.3),
-    celMaterial({ color: 0x8d4a58, rim: 0.20 }), -halfW + 0.055, 2.15, 2.3);
-  put(new THREE.BoxGeometry(2.6, 0.72, 0.02),
-    celMaterial({ color: 0x3f5a6b, rim: 0.20 }), 1.4, 2.25, -halfD + 0.055);
-
-  /* A door on the near wall, so the shed has a way in. Flat panels rather
-   * than a modelled frame: it is nine metres from anything the camera does
-   * and it is there to be recognised, not read. */
-  const door = new THREE.Group();
-  /* On the far wall, so it is in the establishing shot rather than behind
-   * the camera in every frame of the act. */
-  door.position.set(-3.1, 0, -halfD + 0.005);
-  door.rotation.y = Math.PI;
-  group.add(door);
-  const doorParts = [
-    { geo: new THREE.BoxGeometry(1.02, 2.16, 0.03), mat: skirtMat, y: 1.08, z: 0, x: 0 },
-    { geo: new THREE.BoxGeometry(0.90, 2.05, 0.04), mat: benchMat, y: 1.025, z: -0.012, x: 0 },
-    { geo: new THREE.BoxGeometry(0.10, 0.03, 0.03), mat: steelMat, y: 1.02, z: -0.038, x: 0.34 },
-  ];
-  for (const d of doorParts) {
-    const piece = new THREE.Mesh(d.geo, d.mat);
-    piece.position.set(d.x, d.y, d.z);
-    door.add(piece);
-  }
-
   /* ---------------------------------------------------------------- controls */
 
   /*
    * THE LIGHT SWITCH, as a number between nothing and one.
    *
    * The act arrives out of black and this is what brings it up: not a fade
-   * from a veil over the top of a lit room, but the room's own lamps coming
-   * on, so the light lands where light lands. Two bulbs, the bounce, and the
-   * glass all move together, and everything is a plain multiply, which means
-   * the frame is a pure function of the parameter and the whole thing scrubs
-   * backwards as cleanly as it plays forwards.
+   * from a veil over the top of a lit room, but the room's own lights coming
+   * on, so the light lands where light lands. The four lamps, the bounce,
+   * the panels and the painted ceiling all move together, and so does the
+   * air, through airAt, and everything is a plain multiply or a plain mix,
+   * which means the frame is a pure function of the parameter and the whole
+   * thing scrubs backwards as cleanly as it plays forwards.
    *
-   * The simulator's own figures for this room are 42 at a 1.7 decay with a
-   * 0.42 bounce, and they are right for a scene nothing ever looks up in.
-   * This act looks up: the boards a foot from a lamp were taking sixty times
-   * what the floor was, so the ceiling burnt out to white wherever a bulb
-   * was in frame and the white pipe in front of it stopped reading as white.
-   * A softer decay and more bounce spends some of the lamp's contrast on
-   * getting the corners of the room legible, which is what a shot from
-   * inside the room needs and a shot of the track does not.
+   * THE SIMULATOR'S FIGURES, and they are chosen from pictures there: ten a
+   * lamp, the bounce at 0.6 and the key at 0.45 (ROOM_INDOOR above) put the
+   * plaster at about 200 of luma, the gate band at about 88 and a pipe's
+   * core 45 to 75 above the band. This page has none of the simulator's post
+   * chain, so they were read back here the same way, off the act's
+   * establishing frame at 1280 by 720: plaster 199 to 221, a pipe's core 143
+   * to 165, and the band about 50, darker than there because nothing here
+   * lifts the darks as the simulator's grade does. So a gate stands 90 to
+   * 110 above the band on this page, which is more margin rather than less,
+   * and the colours stay the simulator's number for number. The shed they
+   * replace had two warm bulbs at 26 on a softer decay, turned up because a
+   * bulb on a flex a foot from the boards burnt the ceiling white wherever
+   * it was in frame, and this act looks up. The ceiling is painted now, not
+   * lit, and the lamps are hidden behind the panels, so that trade is gone.
+   *
+   * A panel goes down to a sixth rather than to black, because an unlit
+   * diffuser is still a pale shape in a dark room, and the ceiling to a
+   * twenty fifth, because a room with its lights off has a ceiling nobody
+   * can see.
    */
-  const glowBase = new THREE.Color(PAL.bulb);
+  const LAMP = 10;
+  const BOUNCE = 0.6;
+  const panelBase = new THREE.Color(PAL.lamp);
+  const ceilBase = new THREE.Color(PAL.ceiling);
   function setLamps(k) {
     const on = Math.max(0, Math.min(1, k));
-    for (const b of bulbs) {
-      b.intensity = 26 * on;
+    for (const p of points) {
+      p.intensity = LAMP * on;
     }
-    bounce.intensity = 0.72 * on;
-    for (const g of glows) {
-      /* Down to a quarter rather than to black: a cold filament is still a
-       * pale object in a dark room, and a bulb that vanishes reads as a hole
-       * in the shade. */
-      g.color.copy(glowBase).multiplyScalar(0.25 + 0.75 * on);
-    }
+    bounce.intensity = BOUNCE * on;
+    panelMat.color.copy(panelBase).multiplyScalar(0.16 + 0.84 * on);
+    ceilMat.color.copy(ceilBase).multiplyScalar(0.04 + 0.96 * on);
   }
   setLamps(0);
+
+  /*
+   * THE AIR AT A LAMP LEVEL: the blackout's own dark with the lights off,
+   * the simulator's pale room air with them on. The stage paints the fog,
+   * the background and the clear colour with it, so a far wall goes to
+   * dark in a dark room and to pale air in a lit one rather than glowing
+   * pale before the lights are on. One colour, reused: read it now or copy.
+   */
+  const darkAir = new THREE.Color(PAL.dark);
+  const litAir = new THREE.Color(PAL.air);
+  const airNow = new THREE.Color();
+  function airAt(k) {
+    return airNow.copy(darkAir).lerp(litAir, Math.max(0, Math.min(1, k)));
+  }
 
   function setShown(on) {
     group.visible = on;
@@ -846,6 +852,8 @@ export function buildRoom() {
     /* Where the aircraft sits before the run. */
     pad: new THREE.Vector3(ROOM_ORIGIN.x + pad.x, ROOM_ORIGIN.y + 0.024, ROOM_ORIGIN.z + pad.z),
     setLamps,
+    airAt,
+    loadArt,
     setShown,
   };
 }
