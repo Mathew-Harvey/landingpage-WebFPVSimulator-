@@ -383,6 +383,30 @@ next. Mint is still the only thing you press. The airframe's carbon was
 lifted two shades to survive being seen against a lit backdrop instead of a
 void.
 
+## Lettering
+
+The wordmarks and every title are lettered the way the simulator letters
+its own: heavy slanted capitals, a thick ink line round them, a hard drop
+and two cel bands, WEB in cream and FPV in sakura. It is not a font. The
+simulator draws it a glyph at a time over the system's heaviest sans with
+its `src/ui/lettering.js`, and that file is copied into `src/sim/ui/` with
+the rest and held to its hash. `src/titles.js` is the join, as the
+simulator's menus have theirs: it lets the browser break a title into
+lines, puts a canvas on each line's baseline, and paints again only when
+the title's box changes. It starts from a module of its own at the foot of
+`index.html`, not from `main.js`, because the film's graph begins with
+three.js from a CDN and the boot screen's wordmark is up for all of that
+fetch: this way it is lettered from its first frame or the one after. The
+words stay in the page with their fill made transparent, so a screen
+reader, find in page and a search engine read the title the lettering
+shows, and a visitor in forced colours gets the text back.
+
+What stays text is what the simulator keeps as text: the ledes, the
+eyebrows, the cards and the beats. The OSD is inked as the simulator's is,
+a one pixel ink edge round its type and two round its big numbers, so it
+reads over a sky and over a lit room alike. The wiki letters its wordmark
+and nothing else, because its titles are headings that are read.
+
 ## Phones
 
 `src/quality.js` makes one decision, once, from `(pointer: coarse)` and the
@@ -463,6 +487,7 @@ screenshot of a wall is an afternoon. On a clean URL, no global.
 | `src/stickers-data.js` | The eight the film wears, GENERATED. See `scripts/stickers.js` |
 | `src/quality.js` | One decision about how much machine is on the other end |
 | `src/petals.js` | Sakura, one draw call, all of it in the vertex shader |
+| `src/titles.js` | The wordmarks and titles, lettered by the simulator's `src/sim/ui/lettering.js`, COPIED |
 
 Two rules hold the thing together:
 

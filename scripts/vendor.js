@@ -70,11 +70,13 @@ const WHOLE = ['maps/city/vendored'];
  * town and its bake; then what the yard is built from, the same parts the
  * built map and the builder's 3D view put together: where each element
  * stands, the kit that draws it, the ground, the roads, the cars and the
- * time of day, and the traffic that says which car drives which lane; and
- * the whoop room's wall art, where each piece hangs and where it is in the
+ * time of day, and the traffic that says which car drives which lane; the
+ * whoop room's wall art, where each piece hangs and where it is in the
  * atlas. Not art/wallart.js, which lights the art with render/celmat.js:
  * src/cel.js is this page's port of that file and both patch the same
- * shader chunk, so the room lights the art with cel.js instead. */
+ * shader chunk, so the room lights the art with cel.js instead. And the
+ * lettering, the hand the simulator draws its wordmark and its titles in,
+ * which this page's titles are drawn in too: see src/titles.js. */
 const ENTRIES = [
   'maps/city/vendored/world/index.js',
   'maps/city/bake.js',
@@ -87,6 +89,7 @@ const ENTRIES = [
   'maps/built/traffic.js',
   'art/wallart-hang.js',
   'art/wallart-atlas.js',
+  'ui/lettering.js',
 ];
 
 /* Copied as files, to the same path from this repository's root: see

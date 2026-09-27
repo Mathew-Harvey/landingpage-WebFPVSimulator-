@@ -235,7 +235,9 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
   const hasCard = /id="invite"/.test(index);
   const hidden = /id="invite"[^>]*\shidden/.test(index);
   const targeted = /class="invite-fly"[^>]*data-dest="sim"/.test(index);
-  /* Every script tag in the page, and the module is allowed to be one. */
+  /* Every script tag in the page. Three are modules: the titles' lettering,
+   * which is its own so the boot screen's wordmark does not wait on three.js,
+   * the supporters, and the film. The switch is none of them. */
   const modules = (index.match(/<script[^>]*type="module"/g) || []).length;
   /* Count executable scripts, not JSON-LD structured data */
   const allScripts = (index.match(/<script[^>]*>/g) || []).length;
@@ -243,10 +245,10 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
   const importMaps = (index.match(/<script[^>]*type="importmap"/g) || []).length;
   const executableScripts = allScripts - jsonLd - importMaps;
   check(
-    'index.html: exactly 2 module scripts (support-boot and main)',
-    hasCard && hidden && targeted && modules === 2 && executableScripts === 3,
+    'index.html: exactly 3 module scripts (the titles, support-boot and main)',
+    hasCard && hidden && targeted && modules === 3 && executableScripts === 4,
     hasCard
-      ? `${hidden ? 'hidden' : 'NOT hidden, so it flashes'}, ${targeted ? 'data-dest set' : 'NO data-dest, so local serving points at production'}, ${modules} module (support-boot.js, main.js), ${executableScripts - modules} plain, ${jsonLd} JSON-LD`
+      ? `${hidden ? 'hidden' : 'NOT hidden, so it flashes'}, ${targeted ? 'data-dest set' : 'NO data-dest, so local serving points at production'}, ${modules} module (the titles, support-boot.js, main.js), ${executableScripts - modules} plain, ${jsonLd} JSON-LD`
       : 'MISSING, so the only way in is a 12 px label in the corner',
   );
   check(

@@ -84,6 +84,15 @@
     <link rel="icon" href="favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 
+    <!--
+      The lettering, fetched while the rest of this long page is still being
+      parsed, so that the module at the foot of it can run as soon as the
+      parse ends and the boot screen's wordmark is lettered in its first frame
+      rather than a round trip or two after it. See the script at the foot.
+    -->
+    <link rel="modulepreload" href="src/titles.js" />
+    <link rel="modulepreload" href="src/sim/ui/lettering.js" />
+
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -138,6 +147,25 @@
            board is looking at the same furniture. */
         --edge: rgba(232, 168, 184, 0.28);
         --panel-fill: rgba(16, 22, 17, 0.88);
+
+        /* The OSD's ink, the simulator's own tokens: the town's ink, the
+           colour its lettering strokes with, as a hard edge round every
+           readout, eight one pixel offsets on the small print and eight two
+           pixel ones on the big numerals, each with a short drop; and the
+           labels one step lighter than slate, because over a lit world slate
+           with an edge still reads as a gap. See #osd. */
+        --osd-ink: #0b1116;
+        --osd-slate: #c6d4e1;
+        --osd-edge:
+          -1px -1px 0 var(--osd-ink), 0 -1px 0 var(--osd-ink), 1px -1px 0 var(--osd-ink),
+          -1px 0 0 var(--osd-ink), 1px 0 0 var(--osd-ink),
+          -1px 1px 0 var(--osd-ink), 0 1px 0 var(--osd-ink), 1px 1px 0 var(--osd-ink),
+          0 2px 5px rgba(0, 0, 0, 0.55);
+        --osd-edge-2:
+          -2px -2px 0 var(--osd-ink), 0 -2px 0 var(--osd-ink), 2px -2px 0 var(--osd-ink),
+          -2px 0 0 var(--osd-ink), 2px 0 0 var(--osd-ink),
+          -2px 2px 0 var(--osd-ink), 0 2px 0 var(--osd-ink), 2px 2px 0 var(--osd-ink),
+          0 3px 8px rgba(0, 0, 0, 0.55);
 
         --ui-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -955,7 +983,10 @@
 
       /* ------------------------------------------------------------------
          Act 3 instrument: the OSD. Same shapes as the simulator's flight
-         display, because it is the same aircraft.
+         display, because it is the same aircraft, and inked as the
+         simulator's now is: a hard edge in the town's ink round every
+         readout, which is what keeps small print legible over a lit town
+         and a pale room, where a soft shadow only works over a dark world.
          ------------------------------------------------------------------ */
 
       #osd {
@@ -965,7 +996,7 @@
         pointer-events: none;
         opacity: 0;
         transition: opacity 0.5s var(--ease);
-        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+        text-shadow: var(--osd-edge);
       }
       #osd.on { opacity: 1; }
 
@@ -979,7 +1010,7 @@
         font-size: 10px;
         letter-spacing: var(--track-eyebrow);
         text-transform: uppercase;
-        color: var(--slate);
+        color: var(--osd-slate);
         margin-bottom: 4px;
       }
       .osd-timer {
@@ -987,6 +1018,7 @@
         font-weight: 600;
         line-height: 1;
         letter-spacing: 0.02em;
+        text-shadow: var(--osd-edge-2);
       }
       .osd-gate {
         margin-top: 8px;
@@ -1003,12 +1035,12 @@
       }
       .osd-left { left: var(--gutter); }
       .osd-right { right: var(--gutter); text-align: right; }
-      .osd-value { font-size: 22px; font-weight: 600; }
+      .osd-value { font-size: 22px; font-weight: 600; text-shadow: var(--osd-edge-2); }
       .osd-sub {
         font-size: 10px;
         letter-spacing: var(--track-eyebrow);
         text-transform: uppercase;
-        color: var(--slate);
+        color: var(--osd-slate);
       }
       .osd-bar {
         height: 4px;
@@ -2065,8 +2097,11 @@
         transition: opacity 0.7s var(--ease);
       }
       #boot.gone { opacity: 0; pointer-events: none; }
+      /* Lettered (src/titles.js), so it is a logo over the rail rather than a
+         tracked label, and at a logo's size: the thirteen pixels it was set
+         at as a label lettered to a mark a third of the rail's width. */
       .boot-mark {
-        font-size: 13px;
+        font-size: 20px;
         font-weight: 800;
         letter-spacing: 0.3em;
         color: var(--cream);
@@ -2230,6 +2265,53 @@
         .lede + .lede { display: none; }
         .specs { display: none; }
         .wordmark { font-size: clamp(38px, 7vw, 64px); }
+      }
+
+      /*
+       * THE TITLES, LETTERED, in the simulator's hand: src/titles.js lays
+       * the canvases src/sim/ui/lettering.js paints over each wordmark and
+       * title, as the simulator's own menus lay theirs (its letterHeading).
+       * The words stay, in their place, for a screen reader, find in page
+       * and the layout, which is why this hides their fill and not the text:
+       * their colour is still what each run is painted in, the sakura of a
+       * title's <em> and of the wordmark's FPV included. They are set in
+       * heavy capitals because the lettering is, so the lines the browser
+       * breaks a title into are the lines the lettering draws. The probe is
+       * a zero sized box on the text's baseline, where the last line's
+       * lettering goes. After every title's own rule, so it outranks their
+       * shadows and their tracking.
+       */
+      .is-lettered {
+        position: relative;
+        -webkit-text-fill-color: transparent;
+        text-shadow: none;
+        text-transform: uppercase;
+        font-weight: 900;
+        letter-spacing: 0;
+      }
+      /* A title that wraps needs room between its lines for what the
+         lettering adds to a capital: the ink round it and the drop under it,
+         about a fifth of an em between them, which at the 1.02 the titles are
+         set at put one line's drop on the next line's caps. And balanced
+         lines, because capitals are wider than the words were and a wrap that
+         used to fit now leaves a word on a line of its own ("The hard part
+         of / FPV"): the lettering draws whatever lines the browser breaks, so
+         this is the whole of the fix, and a browser without it wraps as it
+         did. */
+      h2.is-lettered { line-height: 1.1; text-wrap: balance; }
+      .lettered-art {
+        position: absolute; left: 0; top: 0;
+        display: block; pointer-events: none;
+      }
+      .lettered-probe {
+        display: inline-block; width: 0; height: 0;
+        vertical-align: baseline;
+      }
+      /* Forced colours is a visitor asking for the system's own text, so they
+         get it: the drawing goes and the words come back. */
+      @media (forced-colors: active) {
+        .is-lettered { -webkit-text-fill-color: currentColor; }
+        .lettered-art { display: none; }
       }
 
       /*
@@ -3321,6 +3403,19 @@
       })();
     </script>
 
+    <!--
+      The wordmarks and the titles, lettered in the simulator's hand, and a
+      module of their own for the reason the invitation's switch is a plain
+      script: main.js starts by importing three.js from a CDN, and the boot
+      screen's wordmark is on screen for the whole of that fetch. This imports
+      the lettering and nothing else, so the mark is lettered from the frame
+      it is first seen in, and every other title is lettered before the boot
+      screen lifts off it. See src/titles.js.
+    -->
+    <script type="module">
+      import { letterTitles } from './src/titles.js';
+      letterTitles();
+    </script>
     <script type="module" src="src/support-boot.js"></script>
     <script type="module" src="src/main.js"></script>
   </body>

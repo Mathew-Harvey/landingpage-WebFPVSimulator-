@@ -59,6 +59,11 @@ simulator. The pack sets its type in the three faces below, and no font file
 travels with the picture: the OFL governs the font software, not an image
 made with it.
 
+And the lettering the page's wordmarks and titles are drawn in, the
+simulator's src/ui/lettering.js. It is not a font and ships none: it sets
+the system's own heaviest sans a glyph at a time and draws the ink, the drop
+and the bands round it.
+
 ## RaceGOW5 Track 1
 
     Series      RaceGOW, an at home whoop time trial series

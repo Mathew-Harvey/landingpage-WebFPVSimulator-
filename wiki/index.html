@@ -160,6 +160,30 @@
         text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
       }
       .mark .fpv { color: var(--sakura); }
+      /* The wordmark, LETTERED in the simulator's hand (src/titles.js, the
+         same as the film's page, where the stylesheet says why). The words
+         stay for a screen reader and find in page, their fill made
+         transparent; forced colours gets them back. */
+      .is-lettered {
+        position: relative;
+        -webkit-text-fill-color: transparent;
+        text-shadow: none;
+        text-transform: uppercase;
+        font-weight: 900;
+        letter-spacing: 0;
+      }
+      .lettered-art {
+        position: absolute; left: 0; top: 0;
+        display: block; pointer-events: none;
+      }
+      .lettered-probe {
+        display: inline-block; width: 0; height: 0;
+        vertical-align: baseline;
+      }
+      @media (forced-colors: active) {
+        .is-lettered { -webkit-text-fill-color: currentColor; }
+        .lettered-art { display: none; }
+      }
 
       .nav { display: flex; align-items: center; gap: 4px; }
       .nav a {
