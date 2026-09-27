@@ -8,7 +8,7 @@
  *   node scripts/bake-yard.js ../WebFPVSimulator > src/yard-data.js
  *
  * from a checkout of Mathew-Harvey/WebFPVSimulator beside this one, at
- * fbbaab39a8f8. Change the map there and regenerate; change it here and the
+ * 6210e59e66e1. Change the map there and regenerate; change it here and the
  * front door starts showing a yard nobody can fly.
  *
  * DOC is the document, normalized exactly as the simulator reads it:

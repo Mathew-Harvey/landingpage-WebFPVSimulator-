@@ -199,11 +199,27 @@ const lines = cars.map((c) => {
   ].join('\n');
 });
 
-/* The first element the showpiece adds to the starter: everything before
- * it is Hibari Yard as every pilot first flies it. */
-const starterIds = new Set(starterMap().elements.map((e) => e.id));
-const added = doc.elements.find((e) => !starterIds.has(e.id));
-if (!added || doc.elements.slice(doc.elements.indexOf(added)).some((e) => starterIds.has(e.id))) {
+/*
+ * The first element the showpiece adds to the starter: everything before
+ * it is Hibari Yard as every pilot first flies it.
+ *
+ * MATCHED ELEMENT BY ELEMENT, BY WHAT EACH ONE IS, NOT BY ITS ID. The
+ * showpiece keeps the starter as it was when the map was made, its first 56
+ * elements, and the starter has grown since: its blue coupe is el-57, which
+ * is also the id of the showpiece's own first element, the drift course. A
+ * set of the starter's ids called the drift course the starter's and put the
+ * showpiece's first element one further on, with nothing to say it had. So
+ * the starter part is the run of elements, from the first, that are the
+ * starter's own element for element, and the next one is the first added.
+ */
+const starterEls = normalize(starterMap()).doc.elements;
+let cut = 0;
+while (cut < doc.elements.length && cut < starterEls.length
+  && JSON.stringify(doc.elements[cut]) === JSON.stringify(starterEls[cut])) {
+  cut += 1;
+}
+const added = doc.elements[cut];
+if (cut === 0 || !added) {
   throw new Error('the showpiece is not the starter with elements added after it');
 }
 
