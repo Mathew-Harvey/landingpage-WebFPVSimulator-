@@ -1205,7 +1205,6 @@ const el = {
   osdBatt: document.getElementById('osd-batt'),
   beats: document.getElementById('beats'),
   progress: document.querySelector('#progress i'),
-  chooser: document.getElementById('worlds'),
   jump: document.getElementById('jump'),
   hold: document.getElementById('hold'),
   holdNote: document.getElementById('hold-note'),
@@ -1227,8 +1226,8 @@ const ACTS = [...document.querySelectorAll('[data-act]')];
  *
  * The first three acts are written as plain numbers and stay that way: the
  * studio, the plan and the lap are the film's opening and nothing comes
- * before them. The chapter menu between the first two is not an act, so it
- * moves none of them. See timeline().
+ * before them. The chapter cards are on act one's own screen, so they
+ * move none of them.
  */
 const A = Object.fromEntries(ACTS.map((node, i) => [node.dataset.act, i]));
 A.tail = ACTS.length;
@@ -1324,12 +1323,12 @@ const SLAPS = [...document.querySelectorAll('.slap')]
  * acts its chapter is made of: racing is the drawing of the track and the
  * lap, freestyle is everything from the dissolve to the blackout. `acts`
  * names them by their data-act, so an act added to a chapter is a word
- * here and nothing is counted by hand. The chapters themselves (the chooser
- * and the close) are named by the section they are.
+ * here and nothing is counted by hand. The close is named by the section it
+ * is. The chapter cards have no row: they are on the first screen, which is
+ * the Build row's.
  */
 const LEDGER = [
   { href: '#top', label: 'Build', acts: ['assemble'] },
-  { href: '#worlds', label: 'Worlds', chooser: true },
   { href: '#racing', label: 'Racing', acts: ['build', 'fly'] },
   { href: '#freestyle', label: 'Freestyle', acts: ['city', 'map', 'yard'] },
   { href: '#whoop', label: 'Whoop', acts: ['room'] },
@@ -1345,7 +1344,6 @@ const ledgerRows = LEDGER.map((r) => {
 });
 /* Which ledger row an act belongs to, by the act's index on the timeline. */
 const ROW_OF_ACT = ACTS.map((node) => Math.max(0, LEDGER.findIndex((r) => r.acts && r.acts.includes(node.dataset.act))));
-const ROW_CHOOSER = LEDGER.findIndex((r) => r.chooser);
 const ROW_TAIL = LEDGER.findIndex((r) => r.tail);
 
 /* The build ticker. */
@@ -1448,10 +1446,7 @@ function measure() {
     closeTop + vh,
     document.documentElement.scrollHeight - vh,
   );
-  const chooser = el.chooser
-    ? { top: el.chooser.offsetTop, height: el.chooser.offsetHeight }
-    : { top: -1, height: 0 };
-  bounds = { list, closeTop, docEnd, vh, chooser };
+  bounds = { list, closeTop, docEnd, vh };
 }
 
 /*
@@ -2667,25 +2662,6 @@ function frame(ms) {
   }
 
   const T = REDUCED ? 2.55 : (PIN !== null ? PIN : (debugT !== null ? debugT : timeline(scrollNow)));
-  /*
-   * THE CHAPTER MENU, measured off the scroll because T cannot see it: T is
-   * held at exactly 1 across the whole of it. `chooserStill` is the stretch
-   * where the film behind is not moving at all, which is what the loader
-   * wants to know. `inChooser` is wider, the stretch where the menu has the
-   * middle of the screen, which is what the ledger and the glass want.
-   */
-  {
-    const { top, height } = bounds.chooser;
-    const y = scrollNow;
-    const vh = bounds.vh;
-    chooserStill = top >= 0 && PIN === null && y >= top && y < top + height;
-    inChooser = top >= 0 && PIN === null && y > top - vh * 0.6 && y < top + height - vh * 0.4;
-    const arrive = REDUCED || (top >= 0 && y > top - vh * 0.8 && y < top + height - vh * 0.2);
-    if (el.chooser && el.chooser.classList.contains('in') !== arrive) {
-      el.chooser.classList.toggle('in', arrive);
-    }
-  }
-
   /* ---------------------------------------------------------------- build */
   /* Pinned, the build is the pin's business alone: an autoplay would race
    * the parameter and the frame would not be reproducible. */
@@ -3548,13 +3524,9 @@ function frame(ms) {
   }
 
   /* --------------------------------------------------------------- the DOM */
-  if (inChooser !== wasInChooser) {
-    wasInChooser = inChooser;
-    lastT = -1;
-  }
   if (Math.abs(T - lastT) > 0.0005) {
     lastT = T;
-    el.ticker.classList.toggle('on', !REDUCED && T < 1.06 && !inChooser);
+    el.ticker.classList.toggle('on', !REDUCED && T < 1.06);
     const building = !REDUCED && T > 1.04 && T < 2.02;
     el.builder.classList.toggle('on', building);
     /* The map builder, from the moment the crane is looking at the plot to
@@ -3642,6 +3614,8 @@ function frame(ms) {
      * The fade out at 0.90 is untouched: leaving is timing, arriving is not.
      */
     setCopy('assemble', T < 0.90);
+    /* The chapter cards leave with the headline they sit under. */
+    setCopy('worlds', T < 0.90);
     setCopy('build', T > 1.06 && T < 1.90);
     setCopy('fly', T > 2.0 && T < 2.2);
     setCopy('city', T > A.city + 0.02 && T < A.city + 0.16);
@@ -3655,8 +3629,7 @@ function frame(ms) {
      * something behind it. */
     setCopy('room', T > A.room + 0.06 && T < A.room + 0.20);
 
-    const row = inChooser ? ROW_CHOOSER
-      : T >= ACTS.length ? ROW_TAIL
+    const row = T >= ACTS.length ? ROW_TAIL
       : ROW_OF_ACT[Math.min(ACTS.length - 1, Math.floor(T))];
     for (let i = 0; i < ledgerRows.length; i += 1) {
       ledgerRows[i].classList.toggle('on', i === row);
@@ -3786,7 +3759,7 @@ function frame(ms) {
     const since = readyAt < 0 ? -1 : now - readyAt;
     for (const s of SLAPS) {
       const due = REDUCED || PIN !== null || since >= s.wait;
-      s.node.classList.toggle('on', due && !inChooser && T >= s.on && T < s.off);
+      s.node.classList.toggle('on', due && T >= s.on && T < s.off);
     }
   }
 
@@ -4034,8 +4007,8 @@ if (!REDUCED) {
  *            is waiting for exactly this, so it gets everything: a lot of work
  *            a frame, with a frame between batches so the note can move.
  *   STILL    the frame is not moving: the invitation is open over a blurred
- *            film, or the film is paused on the chapter cards, or the tab
- *            is in the background. A step here costs nothing visible.
+ *            film, or the tab is in the background. A step here costs
+ *            nothing visible.
  *   QUIET    the visitor has stopped scrolling and the opening build has
  *            finished playing. The frame is nearly still: petals and a pulse,
  *            which a stall freezes for a moment and nobody reads as a fault.
@@ -4049,9 +4022,6 @@ const QUIET_AFTER = 0.45;
 let lastMoveAt = 0;
 let lastScrollSeen = -1;
 let holding = false;
-let chooserStill = false;
-let inChooser = false;
-let wasInChooser = false;
 
 function loaderBudget(now, T) {
   if (loader.idle()) {
@@ -4063,7 +4033,7 @@ function loaderBudget(now, T) {
   if (holding || jumpAt >= 0) {
     return 150;
   }
-  if (chooserStill || document.body.classList.contains('invite-open')) {
+  if (document.body.classList.contains('invite-open')) {
     return 60;
   }
   const building = !REDUCED && autoBuild < 1 && T < 0.9;
