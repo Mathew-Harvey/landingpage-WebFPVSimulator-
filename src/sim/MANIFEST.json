@@ -1,7 +1,7 @@
 {
   "note": "Copied from Mathew-Harvey/WebFPVSimulator by scripts/vendor.js. Regenerate, do not edit: scripts/page-lint.js checks every file here against its hash.",
   "from": "Mathew-Harvey/WebFPVSimulator",
-  "commit": "6210e59e66e11846f72e491037445bab1d422afc",
+  "commit": "bb2ed749ad533d673798d10baa90fcf4d61345df",
   "clean": true,
   "whole": [
     "maps/city/vendored"
@@ -24,9 +24,9 @@
     "art/banners.js": "2646d8f1b499d61d90f1741cd8db37c7a80264d65f9558d234a6f3d5ffd80d48",
     "art/cars.js": "9db2def43c4608cbced4709385826a3b57a4f7af3ad1fc46d969b811bde30f0f",
     "art/startblock.js": "8de7035f997be106acf94e74efaa2dc2b3fff517d76c768cd790fa962d0ffea4",
-    "art/wallart-atlas.js": "fbc49742fe95aef513136ac4c6637785daba8a1a99fb56415595f1d7eedcb772",
+    "art/wallart-atlas.js": "53e259c90429f3bcc357232437dbe7e96696bd9545f87d6abe54d8a7ce138469",
     "art/wallart-hang.js": "09e72b4e1d74a0b745dcee886d9548299dca0d4df135aa159b6e5940d2fa28a9",
-    "game/collide.js": "946e23c5394832d26fab7fa44b64b9ef9566cc7d7bed30d76b301b9de8fedf41",
+    "game/collide.js": "7b753702d67168d9029aaa161d84a2454e6ac7f9d69dbd6056bb505e50f5422d",
     "game/plantworld.js": "c6cdc1888136ba521e83f03ac39420c3c1c7b30a679cc169c76802ebcbeef8f1",
     "maps/built/cars.js": "495c1a6541357ff105d1a00eaaa498c50e0c7bbf5ba505536dab36bab6f51e13",
     "maps/built/ground.js": "eff4df478355388e158e936b3181d3c31f27c95bd19fbdb8222f94312136f90f",
@@ -105,7 +105,7 @@
     "props/buildings.js": "82ce3a33d04f364a9da1893ca9c1f65a06b861be38cbcb51b3f55e535694a182",
     "props/catalog.js": "05f4ecdcc38409c44045bb62757a1fd88e0579ec5015c3636b62448bab954987",
     "props/course.js": "ccc7e932141f1c1fd8abd6b99d14a96979edcc8d34c4ecd1813cf2cc60b909d0",
-    "props/industrial.js": "623bd34f4f7357a615e6abfa262aea21e75946781022a211cc310612f80bbdc5",
+    "props/industrial.js": "d634bd56911476ac029a01fcd8176b7c5a6ac48abf966322d399f5488805b000",
     "props/kit.js": "f3b1fa325f8b990cb97e4d20698e9f8b9dc20ce9e1826291fa90adda0353c1ab",
     "props/parts.js": "5e882c4361b23f08c3565920ee3b79c304b7a286c1be15676690e11433b24e44",
     "props/skate.js": "494cd356e39df56a12781511457dd98fdbfa7d9164f6b4260e12b34731048ef5",
@@ -123,6 +123,6 @@
     "units.js": "6e2326500c4053ce3495a0ffa6ea59a210f6ca68ba0117146a2d87b2fcf2f84d"
   },
   "assets": {
-    "assets/wallart/atlas.webp": "cc911c84d03bf46e202c57019c48704569bf2f555929180b22493c91771ab1ee"
+    "assets/wallart/atlas.webp": "a38d67f8b8bf93bdd8e5c10a4b24ebb056b5c22b667e49162ff3d7bd15f93569"
   }
 }

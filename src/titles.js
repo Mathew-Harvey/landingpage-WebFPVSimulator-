@@ -138,9 +138,9 @@ function linesOf(h) {
 }
 
 /*
- * Back to its words. It counts as never lettered again, so a title that went
- * away with its box (the invitation's, closed) is lettered at once when it is
- * shown again, not after a moment of its plain words.
+ * Back to its words, for a title the lettering cannot draw: there is no 2D
+ * context, or it has no words. It counts as not lettered, so words that
+ * arrive later are lettered at once.
  */
 function unletter(h) {
   for (const c of h.querySelectorAll(`:scope > .${ART}, :scope > .${PROBE}`)) {
@@ -167,7 +167,11 @@ function letter(h) {
   const px = parseFloat(getComputedStyle(h).fontSize);
   const box = h.getBoundingClientRect();
   if (!(px > 0) || !box.width || !box.height) {
-    unletter(h);
+    /* No box, because it is hidden: nothing to draw until it has one. The
+     * capitals stay, so the box it comes back with is already theirs and
+     * lettering it then changes nothing the observer is measuring, and it
+     * counts as not lettered, so that is at once. */
+    h.lettered = false;
     return false;
   }
   let probe = h.querySelector(`:scope > .${PROBE}`);
@@ -284,6 +288,11 @@ export function letterTitles(root = document, which = TITLES) {
     });
   }
   for (const h of titles) {
+    /* Heavy capitals from the start, before the observer first measures,
+     * so lettering never changes the box it is reporting: a ResizeObserver
+     * callback that resizes what it observes is the one thing it must not
+     * do, and Chrome reports it as an error event. */
+    h.classList.add('is-lettered');
     observer.observe(h);
   }
 }

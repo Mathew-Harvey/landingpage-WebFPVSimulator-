@@ -288,10 +288,23 @@ curve being drawn is not a curve.
 `stickers/index.html` is the slap pack: twenty two stickers as inline SVG
 in the house palette, and for each one a download, a PNG at 600 dpi
 rendered from the vector in the tab or the SVG itself with the fonts
-embedded. It is one file on purpose. The three faces it sets its type in
-are base64 in a style block, the export code reads them back out of it,
+embedded. It is one file on purpose. The faces it sets its type in are
+base64 in a style block, the export code reads them back out of it,
 and nothing on the page fetches anything, so it works saved to a desk or
 handed to a printer as an attachment.
+
+The WEBFPV wordmark on every sticker that sets it in type, and the pack's
+own mark, is the simulator's lettering, the same hand as the film's
+titles, and it is still vector, because a sticker is printed. The
+simulator's `drawRuns` draws through a handful of 2D context calls, so
+`node scripts/letter-stickers.js ../WebFPVSimulator` hands it a context
+that writes SVG and letters each `<g data-letter>` spot in the pack, set
+on the pack's own Zen Kaku Gothic New. A spot's attributes are the design
+(the words, the point, the size, the widest it may be, a paper rim for a
+die-cut piece or a dark ground, one colour for vinyl) and what is inside
+it is generated: edit the attributes, rerun it, then rerun `node
+scripts/stickers.js`. The brush handwriting and the small print are drawn
+as they always were.
 
 The film wears eight of them. Somebody has slapped stickers on the
 screen: not on the page, on the glass, over the film, fixed to the
@@ -485,6 +498,7 @@ screenshot of a wall is an afternoon. On a clean URL, no global.
 | `src/config.js` | Where the simulator and the board are |
 | `stickers/index.html` | The slap pack: twenty two stickers, the fonts, and a download for each |
 | `src/stickers-data.js` | The eight the film wears, GENERATED. See `scripts/stickers.js` |
+| `scripts/letter-stickers.js` | The pack's WEBFPV wordmarks, the simulator's lettering drawn into it as vector |
 | `src/quality.js` | One decision about how much machine is on the other end |
 | `src/petals.js` | Sakura, one draw call, all of it in the vertex shader |
 | `src/titles.js` | The wordmarks and titles, lettered by the simulator's `src/sim/ui/lettering.js`, COPIED |

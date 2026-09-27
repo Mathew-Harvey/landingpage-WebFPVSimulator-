@@ -2,8 +2,8 @@
  * stickers.js: the stickers the film wears, cut from the slap pack.
  *
  * stickers/index.html is the copy of record. It is one self contained page
- * holding twenty two stickers as inline SVG and the three fonts they set
- * their type in, base64 in a style block, so it prints from a desk with no
+ * holding twenty two stickers as inline SVG and the fonts they set their
+ * type in, base64 in a style block, so it prints from a desk with no
  * server behind it. The landing page slaps eight of those on the glass,
  * and the film should not have to carry that page to do it: this writes
  * src/stickers-data.js, a module holding the SVG of every sticker index.html
@@ -135,8 +135,10 @@ export async function bake() {
  * block, three faces base64 in one string, so the type on a sticker here is
  * set from the same bytes a printer gets.
  *
- * The faces are Zen Kaku Gothic New, Caveat Brush and M PLUS Rounded 1c,
- * subsetted, under the SIL Open Font License 1.1. See NOTICE.
+ * The faces are Zen Kaku Gothic New at two weights and Caveat Brush,
+ * subsetted, under the SIL Open Font License 1.1. See NOTICE. The WEBFPV
+ * wordmarks are the simulator's lettering set on the first of them, drawn
+ * into the pack by scripts/letter-stickers.js.
  *
  * This file is part of the WebFPVSimulator landing page, GPLv3. See the
  * licence header on the script that writes it.
