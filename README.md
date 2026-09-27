@@ -38,55 +38,47 @@ Act 3  Daylight arrives, the quad drops onto the racing line, and one FPV
        lap runs through the gates. Scroll back up and it does not reverse:
        it yaws around, banked, and flies home nose first. The turn is flown
        from inside the goggles like everything else.
-Act 4  The frame goes to warm haze and comes out of it in a six metre
-       shopping street. A slow cruise under the strung lanterns, then the
-       freestyle line: up over the roofs, hard round, down onto the main
-       road, over a level crossing with its barriers down and a train going
-       under, a climb out at the far end, and the camera leaves the airframe
-       for the whole district at a hundred and twenty metres.
-Act 5  The same crane carries on, up over the roofs and west, turning to
-       look straight down as it goes, and stops over an empty plot on the
-       far side of the town: the track builder's map canvas. It loads Hibari
-       Yard and sets the showpiece down on it, the drift course laid along
-       its length, two drift cars on it, an overpass, a wall of containers,
-       lamps and sakura, and comes down onto the start pads.
-Act 6  The five inch lifts off the pads, runs up the gap between the half
+Act 4  The frame goes to warm haze and comes out of it looking straight
+       down on an empty plot: the track builder's map canvas. It loads
+       Hibari Yard and sets the showpiece down on it, the drift course laid
+       along its length, two drift cars on it, an overpass, a wall of
+       containers, lamps and sakura, and comes down onto the start pads.
+Act 5  The five inch lifts off the pads, runs up the gap between the half
        built office and the bando, and drops in behind two drift cars
        sliding in tandem, smoke off their rear wheels, and chases them round
        most of a lap the way drift is shot: from the inside of each corner,
        door to door up a straight, under the overpass, and at the container
        wall. The cars are the simulator's physics module's own laps.
-Act 7  The frame goes to black. The lights come on in the simulator's whoop
+Act 6  The frame goes to black. The lights come on in the simulator's whoop
        room, sakura plaster over a deep green band with the slap pack on its
        walls as posters and banners, and there is a whoop track in it: four
        28 inch gates in 3/4 inch pipe, two of them stacked, a pole and a rail,
        13.8 m of lap in a footprint 2.97 m by 1.42, as src/room-data.js
        measures it. A 65 mm whoop lifts off a pad and flies a lap of it from
        inside.
-Act 8  You must practice, in the shed, over the gate the lap closed on.
+Act 7  You must practice, in the shed, over the gate the lap closed on.
 ```
 
-Between act 7 and the close sits `#why`, which is not an act: nothing
+Between act 6 and the close sits `#why`, which is not an act: nothing
 assembles or draws itself there, the copy is simply on the page. It is
 sized and placed like one all the same, at the act gutter and in the act
 copy's column, so the reason lands in the exact place the flight's copy
 just left.
 
-There are two cuts in the film, they are at the tops of acts 4 and 7, the
-town and the shed, and they go opposite ways. The yard between them is not
-cut to: the town's last crane is flown on to it. Both are fades rather than hard cuts because the page
-is scrubbable: a reader dragging the bar slowly across a hard cut would see
-it flicker, and a fade has a middle to move the camera in.
+There are two cuts in the film, they are at the tops of acts 4 and 6, the
+map builder and the shed, and they go opposite ways. Both are fades rather
+than hard cuts because the page is scrubbable: a reader dragging the bar
+slowly across a hard cut would see it flicker, and a fade has a middle to
+move the camera in.
 
-Act 4's goes UP, into warm haze. It replaced a transit. The aircraft used to
-fly from the field to the town, and that leg was the weakest thing on the
-page: nothing to look at, flown fast to get it over with, and it still read
-as waiting. Everything awkward about the act was something the transit
-needed, the town's distance included. Nothing has to fly between the two
-places now, so the town sits 460 m out, past the point where anything of the
-race field survives the haze. The two places are two places.
+Act 4's goes UP, into warm haze, out of the lap's goggles and onto the
+builder's plan. Nothing has to fly between a race field and a plot seen from
+three hundred metres up. It used to open on the simulator's town, which the
+film flew through before craning over to the yard; the owner took the town
+out because it took ages to load and pulled attention off the map builder
+and the maps people make with it.
 
-Act 7's goes DOWN, into the dark, and it is a different device rather than
+Act 6's goes DOWN, into the dark, and it is a different device rather than
 the same one twice. What is on the other side of it is indoors with the
 lights off, so the frame does not come back by a veil lifting off a lit room:
 the room's own lights come on. The light arrives in the place rather than
@@ -103,26 +95,21 @@ stretch is also the only place the pull-out ever had room to finish. Measured
 from the close alone it had about a fifth of a screen of scroll and played a
 quarter of its arc.
 
-The town IS the simulator's town, not a drawing of one. `src/sim/` is a
-copy of the parts of the simulator this page draws, laid out exactly as the
-simulator lays out its own `src/` so that every file arrives byte for byte
-and no import is rewritten. `node scripts/vendor.js ../WebFPVSimulator`
-makes it, `src/sim/MANIFEST.json` records the commit and a hash of every
-file, and `npm run lint:page` fails if any file there has been edited. The
-town itself is `src/sim/maps/city/vendored/`: sakura-crossing, by Kenton
-Wang, MIT, which the simulator vendors and credits, copied whole as NOTICE
-requires. `src/city.js` is only a join: where the town stands (the numbers
-are in `src/places.js`), which parts of it are built, and the line flown
-through it. A visitor sees the same streets here that they will fly when
-they click through, because it is the same source drawing them.
+What the film draws of the simulator is the simulator's own code. `src/sim/`
+is a copy of the parts this page draws, laid out exactly as the simulator
+lays out its own `src/` so that every file arrives byte for byte and no import
+is rewritten. `node scripts/vendor.js ../WebFPVSimulator` makes it,
+`src/sim/MANIFEST.json` records the commit and a hash of every file, and
+`npm run lint:page` fails if any file there has been edited. Ten files of it
+are sakura-crossing, by Kenton Wang, MIT, the shared materials and props the
+yard is drawn with, and they travel with their licence as NOTICE requires.
 
 The yard is the simulator's too. Hibari Yard Tandem is its showpiece map,
 `src/maps/built/showpiece.js` there, published on the board, and the page's
 two links in that chapter open it to fly or in the builder. The document and
 every car's lap as the simulator's physics module drives it are baked into
 `src/yard-data.js` by `node scripts/bake-yard.js ../WebFPVSimulator`, and it
-is drawn by the simulator's own built map modules, copied into `src/sim/`
-with the town's. `src/yard.js` is its join: which parts are drawn, how the
+is drawn by the simulator's own built map modules, copied into `src/sim/`. `src/yard.js` is its join: which parts are drawn, how the
 builder sets them down, and the line flown through it, which
 `window.__wf.yard.clearance()` measures against the map's solids and the
 cars. The two drift cars stay in step because the simulator drives them off
@@ -142,23 +129,12 @@ same path here and held to its hash like every other copied file. Only the
 lighting of the art is this page's own, because the simulator's lights it
 with a material this page has its own port of in `src/cel.js`.
 
-It costs what a whole town costs. Measured: it builds about eleven and a half
-thousand meshes and paints every sign and fascia with Canvas2D as it goes, and
-after pruning and the simulator's own merge it settles at about twelve hundred
-meshes and 1.1 M triangles.
-
-That is seconds of work, and for a long time it happened behind the boot
-screen, in one block, followed by a warm pass that compiled every shader and
-uploaded every buffer. Measured in the container, the screen stayed up for
-27 seconds. It comes down on the first frame now, at about two seconds, and
-the rest is built behind the film by `src/loader.js`: the simulator's
-`buildWorldSteps` and `bakeCitySteps` are the same build and bake as
-generators, hashed identical to the single calls, and the loader takes a step
-only when nobody will see the frame be late: the visitor has stopped
-scrolling, the film is paused on the chapter cards, or the invitation is
-open. If a visitor outruns it, the transition into the town stays in its
-haze with a note saying what it is waiting for, and opens when the town is
-there.
+The yard is seconds of work, and it is built behind the film by
+`src/loader.js`, which takes a step only when nobody will see the frame be
+late: the visitor has stopped scrolling, the opening build has finished, or
+the invitation is open. If a visitor outruns it, the dissolve into the map
+builder stays in its haze with a note saying what it is waiting for, and
+opens when the yard is there.
 
 The boot bar names three real phases as they happen, fetching the renderer,
 building the studio and drawing the first frame, and both of its moving parts
@@ -454,24 +430,22 @@ http://127.0.0.1:8080/?t=2.5
 ```
 
 `?t=` pins the timeline. `0` to `1` is the build, `1` to `2` the track, `2`
-to `3` the lap, `3` to `4` the freestyle city, `4` to `5` the close, so
-`?t=2.5` is the middle of a lap and `?t=3.5` is somewhere in the street.
+to `3` the lap, `3` to `4` the map builder, `4` to `5` the chase, `5` to
+`6` the whoop room, and from `6` the close, so `?t=2.5` is the middle of a
+lap and `?t=4.5` is behind the drift cars.
 Without it the page is a function of scroll position and a ten second
 autoplay, and there is no way to name a frame in a bug report or a review.
 
-With `?t=` set, `window.__wf` exposes `{ stage, course, city, drone, petals }` so a
+With `?t=` set, `window.__wf` exposes `{ stage, course, drone, petals }` so a
 frame can be interrogated as well as named. `?debug=1` exposes the same
 handle without pinning, which is what the turn around needs: the heading is
 a half second of animation that only happens while somebody is scrolling the
 other way, and a pinned frame is exactly the state that cannot be in. It adds
 `flight(s, flip)` to pose the aircraft and read the numbers back,
-`heading()`, and `setHeading()` to force one. For the freestyle act it adds
-`cityRoam(T)`, `cityWhere(roam)`, which answers with the aircraft's position
-in the town's own coordinates and the gradient of the line there, and
-`live()`, which reports where the camera and the aircraft actually ended up
-on the last frame. Those three exist because the first version of the act
-flew the quad into a shopfront, and working out which shopfront from a
-screenshot of a wall is an afternoon. On a clean URL, no global.
+`heading()`, and `setHeading()` to force one, `yard` and `yardClock(T)` for
+the freestyle map and its chase, and `live()`, which reports where the camera
+and the aircraft actually ended up on the last frame. On a clean URL, no
+global.
 
 ## How it is put together
 
@@ -487,10 +461,9 @@ screenshot of a wall is an afternoon. On a clean URL, no global.
 | `src/drone.js` | The airframe, and the seven stage build order |
 | `src/gate.js` | One MultiGP gate at published dimensions |
 | `src/course.js` | The layout, the ground, the racing line, the dress |
-| `src/city.js` | The freestyle town, and the line flown through it |
 | `src/yard.js` | The freestyle map, set down by the builder act, and the chase flown through it |
 | `src/yard-data.js` | The showpiece map and its cars' laps, GENERATED. See `scripts/bake-yard.js` |
-| `src/places.js` | Where the town and the yard stand, and why there |
+| `src/places.js` | Where the yard stands, and why there |
 | `src/room.js` | The whoop room, the RaceGOW track standing in it, its lights and its wall art |
 | `assets/wallart/atlas.webp` | The wall art's picture, COPIED from the simulator by `scripts/vendor.js` |
 | `src/room-data.js` | The demo micro track, GENERATED. See `scripts/bake-room.js` |
@@ -512,14 +485,8 @@ a notch survives to the camera. They are tuned together: 640vh over a 145 m
 racing line and a 6.5 lerp is about 0.23 m of line per vh, which puts a
 gate and a bit on a screen.
 
-The city act uses the same 0.23 m per vh once it is down in the streets,
-and about two and a half times that over the wood between the two places.
-That is the one deliberate change of pace in the film and it does the
-transition's work: speed is what makes an arrival read as an arrival. It is
-a table rather than a formula, integrated once at start up, because the
-mapping has to be monotonic and smooth in its derivative and the integral
-of an obvious speed curve is easier to read than a piecewise one that is
-both. See `CITY_S` in `main.js`.
+The chase is geared finer than the lap, because what is in frame is two cars
+and a slide is a thing to see happen: its timings are shares of its act.
 
 The chase act's height is the same rule with a different subject: 900vh for
 about thirty seconds of the physics module's clock, so the gearing is set in
@@ -551,8 +518,7 @@ zero slope at both ends, which is right for a camera move that starts and
 stops and wrong for a lap running into a freestyle line: the quad
 decelerated to a standstill at `T = 3`, hung there for the half screen it
 took to cross the act boundary, and set off again. `ramp()` takes the two
-ends separately, so the lap eases in and finishes at speed and the city
-line starts at speed and eases out into the close.
+ends separately, so the lap eases in and finishes at speed.
 
 **Every visual is a pure function of `T`**, with one deliberate exception:
 which way the quad is pointing. That has to be hysteretic, because it depends
