@@ -116,9 +116,6 @@ const ASSETS = [
   'assets/partners/mantisfpv/mono.svg',
   'assets/partners/wcmrc/colour.png',
   'assets/partners/wcmrc/mono.png',
-  /* Betaflight's mark in cream, for the partner strip and row, which the
-   * simulator makes beside its credits' logo (scripts/partners.js there). */
-  'assets/credits/betaflight-mono.svg',
 ];
 
 /* Relative specifiers in a module: static imports, re-exports, and dynamic

@@ -1,7 +1,7 @@
 {
   "note": "Copied from Mathew-Harvey/WebFPVSimulator by scripts/vendor.js. Regenerate, do not edit: scripts/page-lint.js checks every file here against its hash.",
   "from": "Mathew-Harvey/WebFPVSimulator",
-  "commit": "ae98adf4c49dee813f66135370c303ac00a864d4",
+  "commit": "0e1b0cfe065e46eb525a484c8691915c52c967c2",
   "clean": true,
   "whole": [],
   "loose": [
@@ -80,7 +80,6 @@
     "assets/partners/mantisfpv/colour.svg": "bf0873101aef1ea94f5c51d842363f422e5967db6cae8075f29fbfe1b04fffc9",
     "assets/partners/mantisfpv/mono.svg": "565209023f712b04cfe08780256b2225b56e32d7c19ebd1bafe5ea9074483a26",
     "assets/partners/wcmrc/colour.png": "6e8712facb42430a4a4691b1a2a413d486f212ddc5cd24c96c420897a0513f9f",
-    "assets/partners/wcmrc/mono.png": "0a277c4d54a8b8bb46f870ae39dc815765fa68833db479ed300ef572b9aec8a1",
-    "assets/credits/betaflight-mono.svg": "20b13eb7ebaa0fcd7b8abe51f577e19f9d1ac07cde156ee49b9db096ec90bfce"
+    "assets/partners/wcmrc/mono.png": "0a277c4d54a8b8bb46f870ae39dc815765fa68833db479ed300ef572b9aec8a1"
   }
 }

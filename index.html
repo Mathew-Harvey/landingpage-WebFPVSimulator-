@@ -54,16 +54,16 @@
     <meta property="og:url" content="https://webfpv.org/" />
     <meta property="og:title" content="WebFPV, free FPV drone racing simulator in your browser" />
     <meta property="og:description" content="Free FPV drone racing simulator. Real Betaflight 4.5.1 compiled to WebAssembly. No install, no account. Fly with a radio or game controller." />
-    <meta property="og:image" content="https://webfpv.org/og.jpg?v=4b696fb6" />
+    <meta property="og:image" content="https://webfpv.org/og.jpg?v=47004f98" />
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks, and Betaflight's under Powered by, over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
+    <meta property="og:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="WebFPV, free FPV drone racing simulator in your browser" />
     <meta name="twitter:description" content="Free FPV drone racing simulator. Real Betaflight 4.5.1 compiled to WebAssembly. No install, no account." />
-    <meta name="twitter:image" content="https://webfpv.org/og.jpg?v=4b696fb6" />
-    <meta name="twitter:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks, and Betaflight's under Powered by, over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
+    <meta name="twitter:image" content="https://webfpv.org/og.jpg?v=47004f98" />
+    <meta name="twitter:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
 
     <!--
       The page's own background is the radial gradient below, not this colour,
@@ -109,7 +109,7 @@
   },
   "description": "Free FPV drone racing simulator running Betaflight 4.5.1 flight controller code compiled to WebAssembly. Fly in your browser with no install or account required.",
   "url": "https://webfpv.org/",
-  "screenshot": "https://webfpv.org/og.jpg?v=4b696fb6",
+  "screenshot": "https://webfpv.org/og.jpg?v=47004f98",
   "keywords": "FPV, drone simulator, racing simulator, Betaflight, WebAssembly, browser game",
   "applicationSubCategory": "Flight Simulator",
   "featureList": [
@@ -1162,14 +1162,6 @@
         filter: brightness(0.12);
       }
       .pin-open .hpmark img.wide { height: clamp(13px, calc(1.95 * var(--u)), 44px); }
-      /* Betaflight's mark on the paper, the word two fifths of it, and the
-         hairline before it in the page's own ink rather than the film's. */
-      .pin-open .hpmark img.bf { height: clamp(24px, calc(3.4 * var(--u)), 76px); }
-      .pin-open .hero-powered {
-        padding-left: calc(2.4 * var(--u));
-        margin-left: calc(1.2 * var(--u));
-        border-left-color: rgba(11, 17, 22, 0.28);
-      }
 
       /* The act's number in a narration box, the square balloon a manga
          page gives a caption: typeset, not lettered, as the simulator's
@@ -1300,7 +1292,6 @@
         .pin-open .hero-h1 { font-size: 15px; }
         .pin-open .hpmark img { height: 18px; }
         .pin-open .hpmark img.wide { height: 11px; }
-        .pin-open .hpmark img.bf { height: 19px; }
         .pin-open .wordmark { font-size: max(40px, calc(13 * var(--u))); }
       }
 
@@ -2112,9 +2103,6 @@
       }
       .pmark img { display: block; height: 30px; width: auto; }
       .pmark img.wide { height: 17px; margin: 6px 0 7px; }
-      /* Betaflight's mark, the bird and the word, at the height its capitals
-         match the others': the word is two fifths of it. */
-      .pmark img.bf { height: 28px; margin: 1px 0; }
 
       /* Partner with WebFPV, at the end of the row, in the row's own
          furniture: the words where a role is, the owner's address where a
@@ -2137,26 +2125,16 @@
       /* THE STRIP OVER THE WORDMARK, the first thing on the first screen:
          the label over the three marks, in the eyebrow's type, the marks at
          one height, held back a little and up to full on hover, in the
-         eyebrow's soft shadow so they hold over the studio's light. */
-      /* Two groups: the partners, and after a hairline, Betaflight under
-         "Powered by". On a phone the second goes under the first and the
-         hairline goes with it. */
+         eyebrow's soft shadow so they hold over the studio's light. Only
+         the partners: Betaflight's mark stood beside them under "Powered by"
+         for a day, and came off on the owner's word of 2026-09-27, because
+         Betaflight's permission covers its logo in the game and not on a
+         page that publicises it. See CLAUDE.md. */
       .hero-partners {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: flex-end;
-        gap: 14px 28px;
+        display: grid;
+        gap: 10px;
         margin: 0 0 30px;
-        /* One line wherever the window has room for it, past the copy's own
-           column if need be: the column is 30em at most, and the space right
-           of it at this height is empty above the quad. composeLayout()
-           measures the copy's box, which this does not widen, so the
-           studio's framing is where it was. */
-        width: max-content;
-        max-width: calc(100vw - 2 * var(--gutter));
       }
-      .hero-group { display: grid; gap: 10px; }
-      .hero-powered { padding-left: 28px; border-left: 1px solid var(--line); }
       .hero-partners-label {
         font-size: clamp(9.5px, 0.9vw, 10.5px);
         letter-spacing: var(--track-eyebrow);
@@ -2179,9 +2157,6 @@
         filter: drop-shadow(0 1px 8px rgba(8, 12, 9, 0.7));
       }
       .hpmark img.wide { height: clamp(15px, 1.4vw, 20px); }
-      /* The word is two fifths of Betaflight's mark, the bird the rest: this
-         is the height its capitals match the other marks' at. */
-      .hpmark img.bf { height: clamp(24px, 2.2vw, 32px); }
 
       /* THE MOMENTS. Each partner has one place in the film tied to what
          they do, and it is never in a beat (see #beats) and never two at
@@ -2249,16 +2224,6 @@
         .partner-row { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; column-gap: 18px; }
         .pmark small { letter-spacing: 0.14em; }
         .pjoin { grid-column: 1 / -1; margin: 4px 0 0; }
-        /* A row of its own, or its width sets the first column's and the
-           three partners' row runs off the screen. */
-        .pmark-bf { grid-column: 1 / -1; justify-self: start; }
-      }
-      /* The strip needs about 480 px on one line with its hairline, and the
-         gutters take a tenth of the window: under 530 px it goes to two
-         lines (measured in Chromium), and "Powered by" under the partners
-         needs no hairline down its left edge. */
-      @media (max-width: 529px) {
-        .hero-powered { padding-left: 0; border-left: 0; }
       }
 
       /* ------------------------------------------------------------------
@@ -2972,23 +2937,11 @@
                  under one label, each to the partner's card. It leaves with
                  the copy. Counted as landing_hero. See .hero-partners. -->
             <div class="hero-partners">
-              <div class="hero-group">
-                <span class="hero-partners-label">Official partners</span>
-                <div class="hero-partners-row">
-                  <a class="hpmark" href="https://webfpv.org/board/partners#gds" data-dest="partners-gds" data-partner="gds" data-place="landing_hero"><img src="assets/partners/gds/mono.svg" width="208" height="72" alt="Global Drone Solutions, official training partner" decoding="async" /></a>
-                  <a class="hpmark" href="https://webfpv.org/board/partners#mantisfpv" data-dest="partners-mantisfpv" data-partner="mantisfpv" data-place="landing_hero"><img class="wide" src="assets/partners/mantisfpv/mono.svg" width="567" height="100" alt="Mantis FPV, official retail partner" decoding="async" /></a>
-                  <a class="hpmark" href="https://webfpv.org/board/partners#wcmrc" data-dest="partners-wcmrc" data-partner="wcmrc" data-place="landing_hero"><img src="assets/partners/wcmrc/mono.png" width="708" height="252" alt="West Coast Multirotor Club, official club partner" decoding="async" /></a>
-                </div>
-              </div>
-              <!-- Betaflight, the owner's ask of 2026-09-27: their mark beside
-                   the partners', under "Powered by" because the control loop
-                   is theirs, and straight to betaflight.com, because they have
-                   no card on the partners page. Not counted. -->
-              <div class="hero-group hero-powered">
-                <span class="hero-partners-label">Powered by</span>
-                <div class="hero-partners-row">
-                  <a class="hpmark" href="https://betaflight.com" rel="noreferrer"><img class="bf" src="assets/credits/betaflight-mono.svg" width="861" height="167" alt="Betaflight" decoding="async" /></a>
-                </div>
+              <span class="hero-partners-label">Official partners</span>
+              <div class="hero-partners-row">
+                <a class="hpmark" href="https://webfpv.org/board/partners#gds" data-dest="partners-gds" data-partner="gds" data-place="landing_hero"><img src="assets/partners/gds/mono.svg" width="208" height="72" alt="Global Drone Solutions, official training partner" decoding="async" /></a>
+                <a class="hpmark" href="https://webfpv.org/board/partners#mantisfpv" data-dest="partners-mantisfpv" data-partner="mantisfpv" data-place="landing_hero"><img class="wide" src="assets/partners/mantisfpv/mono.svg" width="567" height="100" alt="Mantis FPV, official retail partner" decoding="async" /></a>
+                <a class="hpmark" href="https://webfpv.org/board/partners#wcmrc" data-dest="partners-wcmrc" data-partner="wcmrc" data-place="landing_hero"><img src="assets/partners/wcmrc/mono.png" width="708" height="252" alt="West Coast Multirotor Club, official club partner" decoding="async" /></a>
               </div>
             </div>
             <p class="eyebrow">01 &#183; The machine</p>
@@ -3401,10 +3354,6 @@
           <a class="pmark" href="https://webfpv.org/board/partners#wcmrc" data-dest="partners-wcmrc" data-partner="wcmrc" data-place="landing_row">
             <small>Club partner</small>
             <img src="assets/partners/wcmrc/mono.png" width="708" height="252" alt="West Coast Multirotor Club" loading="lazy" decoding="async" />
-          </a>
-          <a class="pmark pmark-bf" href="https://betaflight.com" rel="noreferrer">
-            <small>Powered by</small>
-            <img class="bf" src="assets/credits/betaflight-mono.svg" width="861" height="167" alt="Betaflight" loading="lazy" decoding="async" />
           </a>
           <!-- Partner with WebFPV: the owner's own address, which they asked
                for, as it is on the board's partners page. -->

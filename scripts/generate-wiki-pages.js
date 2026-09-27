@@ -149,16 +149,16 @@ ${robotsMeta}    <meta name="theme-color" content="#141c16" />
     <meta property="og:url" content="${url}" />
     <meta property="og:title" content="${escapeHtml(title)}" />
     <meta property="og:description" content="${escapeHtml(description)}" />
-    <meta property="og:image" content="https://webfpv.org/og.jpg?v=4b696fb6" />
+    <meta property="og:image" content="https://webfpv.org/og.jpg?v=47004f98" />
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks, and Betaflight's under Powered by, over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
+    <meta property="og:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${escapeHtml(title)}" />
     <meta name="twitter:description" content="${escapeHtml(description)}" />
-    <meta name="twitter:image" content="https://webfpv.org/og.jpg?v=4b696fb6" />
-    <meta name="twitter:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks, and Betaflight's under Powered by, over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
+    <meta name="twitter:image" content="https://webfpv.org/og.jpg?v=47004f98" />
+    <meta name="twitter:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
@@ -300,16 +300,16 @@ ${robotsMeta}    <meta name="theme-color" content="#141c16" />
     <meta property="og:url" content="${url}" />
     <meta property="og:title" content="${escapeHtml(title)}" />
     <meta property="og:description" content="${escapeHtml(description)}" />
-    <meta property="og:image" content="https://webfpv.org/og.jpg?v=4b696fb6" />
+    <meta property="og:image" content="https://webfpv.org/og.jpg?v=47004f98" />
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks, and Betaflight's under Powered by, over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
+    <meta property="og:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${escapeHtml(title)}" />
     <meta name="twitter:description" content="${escapeHtml(description)}" />
-    <meta name="twitter:image" content="https://webfpv.org/og.jpg?v=4b696fb6" />
-    <meta name="twitter:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks, and Betaflight's under Powered by, over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
+    <meta name="twitter:image" content="https://webfpv.org/og.jpg?v=47004f98" />
+    <meta name="twitter:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
     <link rel="icon" href="../../favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="../../apple-touch-icon.png" />
