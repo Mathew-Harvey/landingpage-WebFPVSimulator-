@@ -1979,6 +1979,7 @@
         gap: 14px clamp(24px, 4vw, 46px);
       }
       .partner-row {
+        flex: 1 1 auto;
         display: flex;
         flex-wrap: wrap;
         align-items: flex-end;
@@ -1999,6 +2000,56 @@
       }
       .pmark img { display: block; height: 30px; width: auto; }
       .pmark img.wide { height: 17px; margin: 6px 0 7px; }
+
+      /* Partner with WebFPV, at the end of the row, in the row's own
+         furniture: the words where a role is, the owner's address where a
+         mark is, in cream. Pushed to the far end on a wide footer and under
+         the marks on a phone. */
+      .pjoin {
+        display: grid;
+        gap: 7px;
+        margin-left: auto;
+      }
+      .pjoin small {
+        font-size: 9.5px;
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: rgba(157, 179, 200, 0.72);
+      }
+      .pjoin span { font-size: 13.5px; line-height: 20px; color: rgba(243, 234, 212, 0.86); }
+      .pjoin:hover span { color: var(--sakura); }
+
+      /* THE STRIP OVER THE WORDMARK, the first thing on the first screen:
+         the label over the three marks, in the eyebrow's type, the marks at
+         one height, held back a little and up to full on hover, in the
+         eyebrow's soft shadow so they hold over the studio's light. */
+      .hero-partners {
+        display: grid;
+        gap: 10px;
+        margin: 0 0 30px;
+      }
+      .hero-partners-label {
+        font-size: clamp(9.5px, 0.9vw, 10.5px);
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: rgba(157, 179, 200, 0.8);
+        text-shadow: 0 1px 8px rgba(8, 12, 9, 0.8);
+      }
+      .hero-partners-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px 28px;
+      }
+      .hpmark { display: block; line-height: 0; opacity: 0.9; transition: opacity 0.3s var(--ease); }
+      .hpmark:hover { opacity: 1; }
+      .hpmark img {
+        display: block;
+        width: auto;
+        height: clamp(26px, 2.4vw, 34px);
+        filter: drop-shadow(0 1px 8px rgba(8, 12, 9, 0.7));
+      }
+      .hpmark img.wide { height: clamp(15px, 1.4vw, 20px); }
 
       /* THE MOMENTS. Each partner has one place in the film tied to what
          they do, and it is never in a beat (see #beats) and never two at
@@ -2065,6 +2116,7 @@
       @media (max-width: 520px) {
         .partner-row { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; column-gap: 18px; }
         .pmark small { letter-spacing: 0.14em; }
+        .pjoin { grid-column: 1 / -1; margin: 4px 0 0; }
       }
 
       /* ------------------------------------------------------------------
@@ -2766,6 +2818,19 @@
       <section class="act" id="top" data-act="assemble" style="min-height: 300vh">
         <div class="pin pin-open">
           <div class="copy" data-copy="assemble">
+            <!-- THE PARTNERS OVER THE MARK, the owner's ask of 2026-09-27:
+                 the first thing on the first screen, over the act's eyebrow
+                 and the wordmark, in the roster's cream files at one height
+                 under one label, each to the partner's card. It leaves with
+                 the copy. Counted as landing_hero. See .hero-partners. -->
+            <div class="hero-partners">
+              <span class="hero-partners-label">Official partners</span>
+              <div class="hero-partners-row">
+                <a class="hpmark" href="https://webfpv.org/board/partners#gds" data-dest="partners-gds" data-partner="gds" data-place="landing_hero"><img src="assets/partners/gds/mono.svg" width="208" height="72" alt="Global Drone Solutions, official training partner" decoding="async" /></a>
+                <a class="hpmark" href="https://webfpv.org/board/partners#mantisfpv" data-dest="partners-mantisfpv" data-partner="mantisfpv" data-place="landing_hero"><img class="wide" src="assets/partners/mantisfpv/mono.svg" width="567" height="100" alt="Mantis FPV, official retail partner" decoding="async" /></a>
+                <a class="hpmark" href="https://webfpv.org/board/partners#wcmrc" data-dest="partners-wcmrc" data-partner="wcmrc" data-place="landing_hero"><img src="assets/partners/wcmrc/mono.png" width="708" height="252" alt="West Coast Multirotor Club, official club partner" decoding="async" /></a>
+              </div>
+            </div>
             <p class="eyebrow">01 &#183; The machine</p>
             <div class="wordmark" aria-hidden="true">WEB<span class="fpv">FPV</span></div>
             <h1 class="hero-h1">Free FPV drone racing simulator in your browser</h1>
@@ -3207,6 +3272,12 @@
           <a class="pmark" href="https://webfpv.org/board/partners#wcmrc" data-dest="partners-wcmrc" data-partner="wcmrc" data-place="landing_row">
             <small>Club partner</small>
             <img src="assets/partners/wcmrc/mono.png" width="708" height="252" alt="West Coast Multirotor Club" loading="lazy" decoding="async" />
+          </a>
+          <!-- Partner with WebFPV: the owner's own address, which they asked
+               for, as it is on the board's partners page. -->
+          <a class="pjoin" href="mailto:mathewharvey@gmail.com?subject=Partnering%20with%20WebFPV">
+            <small>Partner with WebFPV</small>
+            <span>mathewharvey@gmail.com</span>
           </a>
         </div>
       </div>
