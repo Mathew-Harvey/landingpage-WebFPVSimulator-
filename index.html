@@ -1140,7 +1140,7 @@
         z-index: 4;
         left: calc(var(--pm, 3.5vmin) + 2.6 * var(--u));
         top: calc(var(--ptop, 72px) + 2.4 * var(--u));
-        width: min(calc(100% - 2 * var(--pm, 3.5vmin) - 5.2 * var(--u)), calc(76 * var(--u)));
+        width: min(calc(100% - 2 * var(--pm, 3.5vmin) - 5.2 * var(--u)), max(calc(76 * var(--u)), 46%));
         max-width: none;
         margin: 0;
         padding: 0;
@@ -1279,6 +1279,20 @@
       .world-new-x { display: none; }
       @media (min-width: 1400px) { .world-new-x { display: inline; } }
 
+      /* A short landscape window, a phone on its side: the first screen
+         keeps the partners, the mark and the headline, and gives up the
+         act's number, the tagline and the cue, which do not fit over the
+         tier. */
+      @media (max-height: 560px) and (orientation: landscape) {
+        .pin-open .eyebrow,
+        .pin-open .tagline,
+        body.on-paper:not(.page-open) #cue { display: none; }
+        .pin-open .hero-h1 { font-size: 15px; }
+        .pin-open .hpmark img { height: 18px; }
+        .pin-open .hpmark img.wide { height: 11px; }
+        .pin-open .wordmark { font-size: max(40px, calc(13 * var(--u))); }
+      }
+
       /* A strip, on a phone: panels a thumb wide, so the name alone. */
       .pin-open[data-shape="strip"] .world-k { display: none; }
       .pin-open[data-shape="strip"] .world-body { padding: 8px 9px 9px; justify-content: flex-end; }
@@ -1304,12 +1318,24 @@
         transform: none;
         align-items: flex-start;
       }
+      /* On the page the build order stands on the big panel's foot, clear of
+         the tier, and never higher than the sticker in the corner above it
+         lets it. Its offsets are
+         divided by the chrome's zoom, because zoom scales them too. */
       body.on-paper #ticker {
-        right: calc(var(--pm) + var(--pg));
+        right: calc((var(--pm) + var(--pg)) / var(--chrome, 1));
+        top: calc(max(var(--ptop) + 140px, var(--ptier) - 2 * var(--pg) - 320px) / var(--chrome, 1));
+        transform: none;
         background: var(--paper);
         color: var(--page-ink);
         border: max(2px, calc(0.28 * var(--u))) solid var(--page-ink);
         box-shadow: none;
+      }
+      /* A short window has the sticker over the panel's top and the tier
+         under its foot, so the rows close up to fit between them. */
+      @media (max-height: 820px) {
+        body.on-paper .tick-row { padding: 3px 0; }
+        body.on-paper .tick-head { margin-bottom: 8px; }
       }
       body.on-paper .tick-head { color: #4b5763; }
       body.on-paper .tick-head b { color: var(--page-ink); }
@@ -2867,10 +2893,10 @@
       <!-- Act three, the lap, flown from inside a pair of goggles, which is
            what the sticker is. Top left, under the wordmark and above the
            act's copy, because the OSD owns both bottom corners here. -->
-      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="tl" data-on="2.02" data-off="city" data-slap="goggle_view" style="--r: -6deg; --w: 190px"></a>
-      <!-- Act four, the city. The sticker says leave the track, which is
-           what the act says. -->
-      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="r" data-on="city" data-off="city+1" data-slap="railway_town" style="--r: 5deg; --w: 214px"></a>
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="tl" data-on="2.02" data-off="map" data-slap="goggle_view" style="--r: -6deg; --w: 190px"></a>
+      <!-- The chase. A corner of a manga page, because the film's first
+           screen is one and this is the freestyle half of the product. -->
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="r" data-on="yard+0.2" data-off="yard+1" data-slap="manga_corner" style="--r: 5deg; --w: 214px"></a>
       <!-- Act five, the room. It carries no number the copy could disagree
            with, which is why the chibi whoop is not the one used here: that
            one says 16 g on it and the copy beside it says twenty three. -->
@@ -2955,7 +2981,7 @@
                 <span class="world-new">New<span class="world-new-x"> &#183; Map builder</span></span>
               </span>
               <span class="world-body">
-                <span class="world-k">The city</span>
+                <span class="world-k">The map</span>
                 <span class="world-t">Freestyle</span>
                 <span class="world-go">Build it and fly it</span>
               </span>
@@ -3024,45 +3050,20 @@
         </div>
       </section>
 
-      <!-- ACT 4: the freestyle city -->
-      <!-- 760vh. The act used to open with forty metres of transit and needed
-           820 to carry it; the page cuts to the town now, so all of this
-           height is spent on streets. About 180 m of line over 760vh is
-           0.24 m per vh, which is the lap's own gearing: the pace of the film
-           does not change when the place does. The variation inside the act,
-           a slower shopping street and a faster road, lives in CITY_S in
-           main.js. -->
-      <section class="act" data-act="city" style="min-height: 760vh">
-        <span class="chapter-at" id="freestyle" style="--at: 0.09"></span>
-        <div class="pin">
-          <div class="copy copy-tight" data-copy="city">
-            <p class="eyebrow">04 &#183; The city</p>
-            <h2>Leave the track.</h2>
-            <p class="lede">
-              A Japanese town, and a freestyle map. A training park, gaps and
-              open spaces.
-            </p>
-            <p class="lede">
-              <a class="inline-go" href="https://webfpv.org/sim/?map=city" data-dest="city">Fly the city</a>
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <!-- ACT 5: the map -->
-      <!-- The freestyle builder, and it is FLOWN TO rather than cut to: the
-           town's last shot cranes up and carries on west over the roofs, and
-           comes down over an empty plot on the far side of them. See places.js
-           for where the yard stands and why. The builder then loads a yard
+      <!-- ACT 4: the map -->
+      <!-- The freestyle builder, reached through the lap's dissolve: the
+           haze clears on the plan, looking straight down on an empty plot.
+           See places.js for where the yard stands. The builder then loads a yard
            and draws the showpiece on it, road first, and the camera comes
            down onto the pads as the cars start. Like the track act, it is a
            builder at work rather than a flight, so it gets the track act's
            kind of height: about five and a half screens, most of it spent
            watching things arrive. -->
       <section class="act" data-act="map" style="min-height: 560vh">
+        <span class="chapter-at" id="freestyle" style="--at: 0.06"></span>
         <div class="pin">
           <div class="copy copy-beside" data-copy="map">
-            <p class="eyebrow">05 &#183; The map</p>
+            <p class="eyebrow">04 &#183; The map</p>
             <h2>Build a map.</h2>
             <p class="lede">
               Buildings, cranes, containers and named gaps, set out on a plot.
@@ -3076,7 +3077,7 @@
         </div>
       </section>
 
-      <!-- ACT 6: the chase -->
+      <!-- ACT 5: the chase -->
       <!-- 900vh for about thirty seconds of the physics module's clock: off
            the pads, over the yard, down onto the tandem and round most of a
            lap behind it. About thirty screens a minute, a little quicker
@@ -3087,11 +3088,10 @@
       <section class="act" data-act="yard" style="min-height: 900vh">
         <div class="pin">
           <div class="copy copy-tight" data-copy="yard">
-            <p class="eyebrow">06 &#183; The chase</p>
-            <h2>Chase the tandem.</h2>
+            <p class="eyebrow">05 &#183; The chase</p>
+            <h2>Freestyle and <em>car chase.</em></h2>
             <p class="lede">
-              Hibari Yard Tandem, flown from its pads. Two drift cars on one
-              road, in step every lap.
+              Take off from the pads and chase the drift cars round the map.
             </p>
             <p class="lede">
               <a class="inline-go" href="https://webfpv.org/sim/?map=built&amp;mapshare=trk-1b4a7d7a&amp;board=https%3A%2F%2Fwebfpv.org%2Fboard&amp;craft=5inch&amp;fly=1" data-dest="yard">Fly this map</a>
@@ -3100,7 +3100,7 @@
         </div>
       </section>
 
-      <!-- ACT 7: the room -->
+      <!-- ACT 6: the room -->
       <!-- 700vh, and THIS IS THE ONE NUMBER TO TURN IF THE WHOOP FEELS FAST.
 
            An act's height is the gearing between the wheel and the aircraft,
@@ -3128,7 +3128,7 @@
         <span class="chapter-at" id="whoop" style="--at: 0.08"></span>
         <div class="pin">
           <div class="copy copy-tight" data-copy="room">
-            <p class="eyebrow">07 &#183; The room</p>
+            <p class="eyebrow">06 &#183; The room</p>
             <h2>Micro UTT.</h2>
             <p class="lede">
               A 65 mm whoop.
@@ -3165,7 +3165,7 @@
     -->
     <section id="why">
       <div class="why-copy">
-        <p class="eyebrow eyebrow-lit">08 &#183; The reason</p>
+        <p class="eyebrow eyebrow-lit">07 &#183; The reason</p>
         <h2>The hard part of FPV<br /><em>is getting to the first lap.</em></h2>
         <p class="lede">
           A quad, a radio, goggles, batteries, a charger. Hundreds of dollars
@@ -3266,7 +3266,7 @@
     <!-- The close -->
     <section id="close">
       <div class="close-copy">
-        <p class="eyebrow eyebrow-lit" style="justify-content: center">09 &#183; The point</p>
+        <p class="eyebrow eyebrow-lit" style="justify-content: center">08 &#183; The point</p>
         <!-- h2, not h1. The SEO line under the hero wordmark is the h1, and a
              document with two of them has no single heading a crawler or a
              screen reader can name it by. The type is unchanged: .shout is
@@ -3628,6 +3628,6 @@
       letterTitles();
     </script>
     <script type="module" src="src/support-boot.js"></script>
-    <script type="module" src="src/main.js?v=20260927m"></script>
+    <script type="module" src="src/main.js?v=20260927n"></script>
   </body>
 </html>
