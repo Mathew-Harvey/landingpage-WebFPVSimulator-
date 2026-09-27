@@ -37,7 +37,7 @@
  */
 
 import * as THREE from 'three';
-import { createStage } from './stage.js';
+import { createStage } from './stage.js?v=20260927m';
 import { buildDrone, CAMERA_MOUNT_FORWARD, CAMERA_MOUNT_UP } from './drone.js';
 import { buildCourse, GATE_COUNT } from './course.js';
 import { buildCity } from './city.js';

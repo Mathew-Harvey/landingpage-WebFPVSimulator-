@@ -72,6 +72,8 @@ The act's copy now quotes NO measurement, and that is the safest state for it. I
 
 **The marks under "Also by Mat Harvey" belong to other sites.** They are other people's artwork in a block that says so, and Winmarchy's green is the one colour on the page that is not in the palette above. That is deliberate. They carry no `data-dest`, so the local origin retargeting in `main.js` never touches them.
 
+**A deploy that changes a script changes its address.** Pages reach a browser with a ten minute cache, but every script and picture comes through the domain's edge with four hours (the simulator's `DEPLOY.md` measured it), so a returning visitor gets the new stylesheet over the old script, and on 2026-09-27 that put the manga page's inked text over the old dark studio with no panels. Until the edge's Browser Cache TTL is fixed, a module that changes in a deploy gets a new `?v=` on every address it is loaded by: the entry in `index.html`, its `modulepreload`, and the import that names it (`src/main.js`, `src/titles.js` and `./stage.js` carry one now). A module new in a deploy needs none, and one imported under two addresses runs twice, so every importer of a stamped module is stamped together.
+
 ## Style
 
 - Plain JavaScript. No TypeScript, no framework, no state library.

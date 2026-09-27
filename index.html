@@ -90,7 +90,7 @@
       parse ends and the boot screen's wordmark is lettered in its first frame
       rather than a round trip or two after it. See the script at the foot.
     -->
-    <link rel="modulepreload" href="src/titles.js" />
+    <link rel="modulepreload" href="src/titles.js?v=20260927m" />
     <link rel="modulepreload" href="src/sim/ui/lettering.js" />
 
     <script type="application/ld+json">
@@ -3624,10 +3624,10 @@
       screen lifts off it. See src/titles.js.
     -->
     <script type="module">
-      import { letterTitles } from './src/titles.js';
+      import { letterTitles } from './src/titles.js?v=20260927m';
       letterTitles();
     </script>
     <script type="module" src="src/support-boot.js"></script>
-    <script type="module" src="src/main.js"></script>
+    <script type="module" src="src/main.js?v=20260927m"></script>
   </body>
 </html>
