@@ -101,25 +101,15 @@
       <p class="wiki-lede">Not simulated. Parameter group VTX_SETTINGS_CONFIG. Firmware type UINT8. Values: OFF, ON.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>A setting for the video transmitter (VTX), the radio on a real quad that sends the camera picture to the goggles: its band, channel, power or pit mode. This simulator has no video transmitter. The picture you see is drawn in your browser.</p>
+        <p>A setting for the video transmitter (VTX), the radio that sends the camera picture to the goggles: its band, channel, power, pit mode or the serial link to it.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is part of the VTX setting groups, which a real flight controller shares with its transmitter through MSP and VTX tables.</p>
+        <p>Betaflight sends these values to the transmitter over a serial link (SmartAudio, Tramp or MSP), using the VTX table set up for that transmitter.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Not simulated. This part of Betaflight is not compiled into the simulator, so the value is stored and has no effect. The settings catalog&#039;s own note is at the end of this page.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>On a real quad this would change the video power or channel. Here it has no effect.</p>
-        <p>There is no video transmitter to receive the value.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>Lowering it has no effect here either.</p>
-        <p>There is no video transmitter to receive the value.</p>
+        <p>Not simulated. The part of Betaflight that reads it is not compiled into the simulator, so the value is kept in the settings file and changes nothing. The picture you see is drawn in your browser.</p>
       </section>
     </article>
     <div class="wiki-cta">

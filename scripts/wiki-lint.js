@@ -3,6 +3,10 @@
  * to cover, or if a LIVE / GATED / APPLIED_INERT key is still on a family
  * template instead of authored copy.
  *
+ * It holds each settings page to the shape of what the setting is: raise
+ * and lower for a number that works here, the choices for a list that works
+ * here, and neither for a setting that changes nothing here.
+ *
  * It also holds the figures to their side of the bargain: every article
  * carries one, every figure is reached by something, every figure says what
  * it is arguing, and the two places that honour reduced motion still agree
@@ -125,6 +129,36 @@ for (const f of FIELDS) {
   }
   if (page.figure && !figureSet.has(page.figure)) {
     fail(`cli page ${id} figure ${page.figure} is missing`);
+  }
+  /*
+   * What follows In this simulator (see finishPage in cli.js): a number
+   * that works here says what raising and lowering it does, a choice from a
+   * list that works here lists its choices, and a setting that changes
+   * nothing here says neither, because moving it changes nothing. Five
+   * hundred grey pages once each said so twice more, and a page for a
+   * filter type told the reader what raising it would do.
+   */
+  const kinds = new Set(page.sections.map((sec) => sec.id));
+  const numberHere = f.status === STATUS.LIVE && !f.lookup;
+  const listHere = f.status === STATUS.LIVE && Boolean(f.lookup);
+  if (numberHere && !(kinds.has('up') && kinds.has('down'))) {
+    fail(`LIVE number ${f.key} has no If you raise it / If you lower it`);
+  }
+  if (listHere && !kinds.has('choices')) {
+    fail(`LIVE list ${f.key} has no The choices`);
+  }
+  if (!numberHere && (kinds.has('up') || kinds.has('down'))) {
+    fail(`${f.key} (${f.status}${f.lookup ? ', a list' : ''}) says what raising it does`);
+  }
+  if (!listHere && kinds.has('choices')) {
+    fail(`${f.key} (${f.status}) lists choices`);
+  }
+  for (const sec of page.sections) {
+    for (const para of sec.paras || []) {
+      if (para != null && !String(para).trim()) {
+        fail(`cli page ${id} section ${sec.id} has an empty paragraph`);
+      }
+    }
   }
   for (const id2 of page.related || []) {
     if (!pageIds.has(id2)) {

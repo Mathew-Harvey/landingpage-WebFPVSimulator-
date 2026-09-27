@@ -59,7 +59,7 @@ export const GLOSSARY = [
   {
     term: 'flight controller',
     also: ['FC'],
-    short: 'The small computer on the quad that reads the gyro 1,000 times a second and decides how much power each motor should get.',
+    short: 'The small computer on the quad that reads the gyro thousands of times a second and decides how much power each motor should get. This simulator runs its control loop 1,000 times a second.',
     see: 'start-loop',
   },
   {
@@ -143,7 +143,7 @@ export const GLOSSARY = [
   },
   {
     term: 'setpoint',
-    short: 'The rotation rate you asked for, as a number in degrees per second. The flight controller turns the stick position into a setpoint and adjusts the motors every millisecond to reach it.',
+    short: 'The rotation rate you asked for, as a number in degrees per second. The flight controller turns the stick position into a setpoint and adjusts the motors on every loop to reach it.',
     see: 'control-rates',
   },
   {
@@ -153,7 +153,7 @@ export const GLOSSARY = [
   },
   {
     term: 'airmode',
-    short: 'A setting that lets the mixer keep changing the motor speeds at zero throttle, so the pilot keeps control while descending. Without it, cutting the throttle removes all control.',
+    short: 'A Betaflight feature that keeps the PID corrections at full strength at zero throttle, so the pilot keeps full control while descending. Without it, the corrections get half their usual share of the motors at zero throttle.',
     see: 'control-tpa',
   },
   {
@@ -219,7 +219,7 @@ export const GLOSSARY = [
   {
     term: 'CLI',
     also: ['dump'],
-    short: 'The command line in Betaflight Configurator, where every setting can be typed as text. A dump or diff is the list of settings written out as text.',
+    short: 'Betaflight\'s command line, reached through the CLI tab in Configurator, where every setting can be typed as text. A dump or diff is the list of settings written out as text.',
     see: 'cli-index',
   },
   {

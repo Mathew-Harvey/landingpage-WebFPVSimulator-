@@ -101,25 +101,21 @@
       <p class="wiki-lede">CLI setting yaw_spin_recovery. Works here. Parameter group GYRO_CONFIG. Firmware type UINT8. Values: OFF, ON, AUTO.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>If the quad spins in yaw faster than a set threshold, for example after a crash or a desync (when an ESC, the motor&#039;s speed controller, loses track of its motor), Betaflight can cut the motors or try to recover. The options are OFF, ON and AUTO; AUTO lets Betaflight decide.</p>
+        <p>Stops an uncontrolled yaw spin, the kind that can follow a hard hit. When the gyro reads a yaw rate above the threshold, Betaflight sets the yaw target to zero, clears the I term on every axis, switches off P, D and feedforward on roll and pitch, and lets yaw P use the whole motor range to stop the spin. It ends once the yaw rate has stayed 100 degrees per second below the threshold for 20 ms.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>yaw_spin_recovery takes OFF, ON or AUTO and works together with yaw_spin_threshold. The spin detection is in Betaflight&#039;s sensors/gyro.c, which is compiled into the simulator.</p>
+        <p>The detection is in sensors/gyro.c and the response in pid.c and mixer.c, all compiled into the simulator.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Works here. It is stored in Betaflight&#039;s gyro settings. The physics model will spin the quad as fast as you ask it to. This setting is a safety feature in the firmware and adds no aerodynamic damping, the resistance from the air that slows a rotation.</p>
+        <p>Works here. The physics model will spin the quad as fast as the motors can, and this adds no damping of its own: it only changes what the controller does.</p>
       </section>
       <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>Moving towards ON makes Betaflight more likely to act during a yaw spin.</p>
-        <p>ON always enables recovery. AUTO leaves the decision to Betaflight&#039;s own rules.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>With OFF, Betaflight never acts, and stopping a spin is up to you.</p>
-        <p>OFF is a choice some racers make.</p>
+        <h2>The choices</h2>
+        <p>AUTO: the threshold is worked out from your maximum yaw rate, plus a quarter of it or 200 degrees per second, whichever is more. yaw_spin_threshold is not used. This is Betaflight&#039;s default.</p>
+        <p>ON: the threshold is yaw_spin_threshold.</p>
+        <p>OFF: Betaflight never steps in.</p>
       </section>
     </article>
     <div class="wiki-cta">

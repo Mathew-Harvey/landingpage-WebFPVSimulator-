@@ -101,25 +101,15 @@
       <p class="wiki-lede">Not simulated. Parameter group FAILSAFE_CONFIG. Firmware type UINT16. Range 0 to 2000.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>What a real quad does if the radio signal is lost: cut the motors, land, or start a GPS rescue. In this simulator the link only loses packets if you choose a radio preset with packet loss, and even then there is no failsafe code.</p>
+        <p>A setting for failsafe, what a real quad does when the radio link is lost: how long it holds the last sticks, and then whether it drops, lands or starts GPS Rescue.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is part of FAILSAFE_CONFIG. It would need flight/failsafe.c, which is not compiled.</p>
+        <p>It belongs to FAILSAFE_CONFIG and is read by flight/failsafe.c.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Not simulated. This part of Betaflight is not compiled into the simulator, so the value is stored and has no effect. The settings catalog&#039;s own note is at the end of this page.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>On a real quad this would change the failsafe. The failsafe code is not compiled here.</p>
-        <p>There is no failsafe code to read the value.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>Lowering it has no effect here either.</p>
-        <p>There is no failsafe code to read the value.</p>
+        <p>Not simulated. The part of Betaflight that reads it is not compiled into the simulator, so the value is kept in the settings file and changes nothing. The Radio link setting can lose packets, but a lost packet here only means the sticks arrive a little later.</p>
       </section>
     </article>
     <div class="wiki-cta">

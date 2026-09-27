@@ -101,25 +101,15 @@
       <p class="wiki-lede">Not simulated. Parameter group DISPLAY_PORT_MAX7456_CONFIG. Firmware type INT8. Range -6 to 0.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>A real flight controller also has beepers, SD cards, camera control, ESC protocols, debug outputs and processor overclocking. The WebAssembly build has none of these.</p>
+        <p>A setting for analog video: the video system (PAL or NTSC), and the chip that draws the analog OSD and where it places the text.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is part of one of several setting groups that are not in the 1 ms control step.</p>
+        <p>These settings describe the analog OSD hardware.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Not simulated. This part of Betaflight is not compiled into the simulator, so the value is stored and has no effect. The settings catalog&#039;s own note is at the end of this page.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>It has no effect on this aircraft.</p>
-        <p>The code is not compiled, or it does not control flight here.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>Lowering it has no effect here either.</p>
-        <p>The code is not compiled, or it does not control flight here.</p>
+        <p>Not simulated. The part of Betaflight that reads it is not compiled into the simulator, so the value is kept in the settings file and changes nothing.</p>
       </section>
     </article>
     <div class="wiki-cta">

@@ -105,21 +105,16 @@
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>The options are OFF, 2_POINT, 3_POINT and 4_POINT.</p>
+        <p>The average is taken over the rate of change of the setpoint, packet by packet, in fc/rc.c.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
         <p>Works here. With the perfect radio link this setting seems unnecessary. With an ELRS preset it becomes clear why it exists.</p>
       </section>
       <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>Averaging more packets makes feedforward calmer but later.</p>
-        <p>More points make a longer moving average of the setpoint&#039;s rate of change, written d(setpoint).</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>With OFF, feedforward uses the rate of change of the stick with no averaging. That is sharp on the perfect link and rough on a link with timing jitter, which means packets arriving at uneven times.</p>
-        <p>OFF uses each new value of d(setpoint) on its own.</p>
+        <h2>The choices</h2>
+        <p>OFF: each packet&#039;s rate of change is used on its own. Sharp on a perfect link, rough on a link with uneven timing.</p>
+        <p>2_POINT, 3_POINT and 4_POINT: the average of the last 2, 3 or 4 packets. More points are smoother and later.</p>
       </section>
     </article>
     <div class="wiki-cta">

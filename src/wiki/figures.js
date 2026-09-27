@@ -51,7 +51,7 @@ import {
   hoverInduced, motorSteady, packOpenCircuit, packUnderLoad, pt1Gain,
   rateLoop, rollDamping, rotorTau,
 } from './model.js';
-import { FIELDS, STATUS } from '../fc/catalog.js';
+import { FIELDS, STATUS } from '../fc/catalog.js?v=20260927w';
 
 const HOVER_DUTY = hoverDuty();
 const HOVER = packUnderLoad(HOVER_DUTY);
@@ -595,7 +595,7 @@ const FIGURES = {
         ],
       },
     ],
-    caption: 'Every article has three sections and a figure. The idea explains what happens and why, in plain words. How it works gives the equations and numbers the simulator uses, each one explained. In this simulator says which file does the work, which parts are not modelled, and whether a setting has any effect. Settings pages have What it does, How it works and In this simulator, then If you raise it and If you lower it. Choose a part to read what it contains.',
+    caption: 'Every article has three sections and a figure. The idea explains what happens and why, in plain words. How it works gives the equations and numbers the simulator uses, each one explained. In this simulator says which file does the work, which parts are not modelled, and whether a setting has any effect. Settings pages have What it does, How it works and In this simulator, then If you raise it and If you lower it for a number that works here, or The choices for a list. Choose a part to read what it contains.',
     draw(ctx, W, H, s) {
       const notes = {
         chip: ['The status label', 'Each settings page shows one of five labels. Works here: the setting reaches Betaflight code that runs. Off at 1 kHz: Betaflight ignores it at this loop rate. Stored, not used: nothing in the flight reads it. Not simulated and Configurator only: it has no effect here.'],
@@ -1718,7 +1718,7 @@ const FIGURES = {
    */
   yawtorque: () => makeFigure({
     id: 'yawtorque',
-    label: 'Yaw authority against throttle, and where it runs out',
+    label: 'Yaw torque against throttle, and what the mixer gives up for it',
     eyebrow: 'Yaw comes from drag torque',
     w: 680,
     h: 330,
@@ -1727,26 +1727,30 @@ const FIGURES = {
       { key: 'throttle', label: 'Throttle', min: 0.1, max: 1, step: 0.01, value: 0.5, fmt: (v) => `${f0(v * 100)} percent` },
       { key: 'yaw', label: 'Yaw demand', min: 0, max: 0.3, step: 0.01, value: 0.2, fmt: (v) => `${f0(v * 100)} percent` },
     ],
-    caption: 'A quad has no tail rotor. To turn the nose right, the mixer speeds up the two anticlockwise propellers and slows the two clockwise ones, and the difference in their drag torque turns the frame. As the throttle rises, the motors that should speed up reach full power and can go no faster, so the yaw torque falls short of what was asked for. That is why yaw becomes weak at full throttle. Airmode deals with the same problem at zero throttle.',
+    caption: 'A quad has no tail rotor. To turn the nose right, the mixer speeds up the two anticlockwise propellers and slows the two clockwise ones, and the difference in their drag torque turns the frame. Drag torque grows with the square of motor speed, so the same split makes more yaw torque at higher throttle. Near full throttle the propellers that should speed up have no room left, so Betaflight\'s mixer lowers the throttle until the split fits: the yaw torque stops growing, and the quad gives up thrust instead of yaw. Near zero throttle it raises the throttle for the same reason.',
     draw(ctx, W, H, s) {
       const V = FULL.voc;
+      /*
+       * Betaflight's LEGACY mixer with airmode on: the yaw split fits in the
+       * motor range (it is at most 0.3 each way here), so it is kept whole
+       * and the throttle is moved until every motor fits, as
+       * applyMixerAdjustment in mixer.c does. This figure once clipped each
+       * motor at full power on its own and showed yaw torque being lost,
+       * which is not what the firmware does.
+       */
+      const fit = (thr, yawCmd) => Math.min(Math.max(thr, yawCmd), 1 - yawCmd);
       const net = (thr, yawCmd) => {
-        const up = Math.min(1, thr + yawCmd);
-        const dn = Math.max(0, thr - yawCmd);
-        const a = motorSteady(up, V);
-        const b = motorSteady(dn, V);
-        return 2 * (a.torque - b.torque);
-      };
-      const ideal = (thr, yawCmd) => {
-        const a = motorSteady(thr + yawCmd, V);
-        const b = motorSteady(Math.max(0, thr - yawCmd), V);
-        return 2 * (a.torque - b.torque);
+        const t = fit(thr, yawCmd);
+        return 2 * (motorSteady(t + yawCmd, V).torque - motorSteady(t - yawCmd, V).torque);
       };
       const now = net(s.throttle, s.yaw);
-      const want = ideal(s.throttle, s.yaw);
+      const used = fit(s.throttle, s.yaw);
+      const thrust = (t, y) => 2 * motorSteady(t + y, V).thrust + 2 * motorSteady(t - y, V).thrust;
+      const asked = 4 * motorSteady(s.throttle, V).thrust;
+      const gaveUp = asked > 1e-9 ? 1 - thrust(used, s.yaw) / asked : 0;
 
       const ax = new Axes(ctx, {
-        x: 56, y: 54, w: W * 0.58, h: 190, xmin: 0.1, xmax: 1, ymin: 0, ymax: Math.max(0.09, ideal(0.5, 0.3) * 1.2),
+        x: 56, y: 54, w: W * 0.58, h: 190, xmin: 0.1, xmax: 1, ymin: 0, ymax: Math.max(0.09, net(0.7, 0.3) * 1.2),
         xlabel: 'throttle', ylabel: 'yaw torque, N m',
       });
       /* Ticks derived from the axis, because ymax is computed and a
@@ -1758,28 +1762,27 @@ const FIGURES = {
         fmtX: (v) => `${f0(v * 100)}%`,
         fmtY: (v) => v.toFixed(2),
       });
-      ax.fn((x) => ideal(x, s.yaw), alpha(C.slate, 0.55), 2, 120, [5, 4]);
       ax.fn((x) => net(x, s.yaw), C.mint, 2.8, 120);
       ax.mark(s.throttle, now, C.cream, 5);
-      ax.key([['what the mixer asks for', alpha(C.slate, 0.55)], ['what the motors can give', C.mint]]);
+      ax.key([['yaw torque from the mixer', C.mint]]);
 
       /* The four motors as bars, because the ceiling is the story. */
       const bx = ax.x + ax.w + 34;
       const names = ['0 RR', '1 FR', '2 RL', '3 FL'];
-      const cmds = [s.throttle - s.yaw, s.throttle + s.yaw, s.throttle + s.yaw, s.throttle - s.yaw];
+      const cmds = [used - s.yaw, used + s.yaw, used + s.yaw, used - s.yaw];
       eyebrow(ctx, 'the four duties', bx, 62);
       cmds.forEach((c, i) => {
         const y = 84 + i * 34;
-        const clipped = c > 1 || c < 0;
+        const edge = c >= 1 - 1e-9 || c <= 1e-9;
         text(ctx, names[i], bx, y + 8, { fill: C.slate, size: 10.5, mono: true });
-        meter(ctx, bx + 40, y, W - bx - 64, 12, Math.max(0, Math.min(1, c)), clipped ? C.sakura : C.mint);
-        if (clipped) {
-          text(ctx, 'clipped', W - 24, y + 9, { fill: C.sakura, size: 10, align: 'right', weight: 700 });
+        meter(ctx, bx + 40, y, W - bx - 64, 12, c, edge ? C.amber : C.mint);
+        if (edge) {
+          text(ctx, c >= 1 - 1e-9 ? 'at full' : 'at zero', W - 24, y + 9, { fill: C.amber, size: 10, align: 'right', weight: 700 });
         }
       });
-      const lost = want > 1e-9 ? 1 - now / want : 0;
-      text(ctx, 'Yaw torque lost at full power', bx, 250, { fill: C.slate, size: 10.5 });
-      text(ctx, `${f0(lost * 100)} percent`, bx, 274, { fill: lost > 0.2 ? C.sakura : C.mint, size: 20, weight: 700, mono: true });
+      text(ctx, `Throttle used ${f0(used * 100)}, asked ${f0(s.throttle * 100)}`, bx, 236, { fill: C.slate, size: 10.5 });
+      text(ctx, 'Thrust given up for yaw', bx, 254, { fill: C.slate, size: 10.5 });
+      text(ctx, `${f0(Math.max(0, gaveUp) * 100)} percent`, bx, 278, { fill: gaveUp > 0.05 ? C.amber : C.mint, size: 20, weight: 700, mono: true });
       note(ctx, 24, H - 11, 'drag torque, kq w |w| in still air, is where all the yaw comes from');
     },
   }),
@@ -2443,7 +2446,7 @@ const FIGURES = {
       { key: 'sr', label: 'Max rate', min: 10, max: 120, step: 1, value: 67, fmt: (v) => `${f0(v * 10)} deg/s` },
       { key: 'expo', label: 'Expo', min: 0, max: 100, step: 1, value: 0, fmt: (v) => f2(v / 100) },
     ],
-    caption: 'With ACTUAL rates both numbers mean exactly what they say. Centre sensitivity is the slope of the curve at the centre, in degrees per second for each unit of stick movement, and max rate is the rotation rate at full stick. Expo lowers the middle of the curve without changing either end, so small stick movements give gentle rotation and full stick still gives the maximum. The dot follows a stick sweeping from side to side: as expo rises, more of the stick travel gives slow rotation.',
+    caption: 'With ACTUAL rates both numbers mean exactly what they say. Centre sensitivity is the slope of the curve at the centre, given as the rate a straight line with that slope would reach at full stick, and max rate is the rotation rate at full stick. Expo lowers the middle of the curve without changing either end, so small stick movements give gentle rotation and full stick still gives the maximum. The dot follows a stick sweeping from side to side: as expo rises, more of the stick travel gives slow rotation.',
     draw(ctx, W, H, s, t) {
       /*
        * Betaflight's ACTUAL curve takes stickMovement as max(0, srate*10 -
@@ -2668,7 +2671,7 @@ const FIGURES = {
       { key: 'brk', label: 'tpa_breakpoint', min: 1000, max: 2000, step: 10, value: 1350, fmt: f0 },
       { key: 'airmode', label: 'Airmode', type: 'toggle', value: true, on: 'on', off: 'off' },
     ],
-    caption: 'At high motor speed a small change in motor power changes the thrust more, so gains that suit a hover are too strong at full throttle. TPA reduces P and D above a throttle point called the breakpoint. Airmode deals with the same kind of problem at zero throttle. When the throttle is cut, some motors would need to go below idle for the mixer to keep control, so airmode raises all four together until the difference between them fits above the idle floor. Without airmode, zero throttle leaves all four motors at idle and the pilot has no control.',
+    caption: 'At high motor speed a small change in motor power changes the thrust more, so gains that suit a hover are too strong at full throttle. TPA reduces the gains above a throttle point called the breakpoint: D alone by default, or P and D. On the right is a roll at zero throttle, as Betaflight 4.5\'s mixer handles it. Two motors would need to go below idle, so the mixer raises the throttle until the lowest motors sit on idle, with or without airmode. What airmode changes is the size of the correction: without it, Betaflight halves the correction at zero throttle, so the roll is half as strong.',
     draw(ctx, W, H, s) {
       const atten = (thr) => {
         const bp = (s.brk - 1000) / 1000;
@@ -2677,7 +2680,7 @@ const FIGURES = {
       };
       const ax = new Axes(ctx, {
         x: 54, y: 54, w: W * 0.50, h: 182, xmin: 0, xmax: 1, ymin: 0, ymax: 1.08,
-        xlabel: 'throttle', ylabel: 'P and D, x set value',
+        xlabel: 'throttle', ylabel: 'gain, x set value',
       });
       ax.frame({ xticks: [0, 0.5, 1], yticks: [0, 0.5, 1], fmtX: (v) => `${f0(v * 100)}%`, fmtY: (v) => v.toFixed(1) });
       ax.fn(atten, C.mint, 2.8, 120);
@@ -2687,25 +2690,38 @@ const FIGURES = {
         fill: C.mint, size: 11.5, align: 'right', weight: 700,
       });
 
-      /* Airmode, as the four numbers it is actually about. */
+      /*
+       * Airmode, as the four numbers it is actually about: a roll at zero
+       * throttle through applyMixerAdjustment in Betaflight 4.5's mixer.c,
+       * the LEGACY mixer. The roll correction is 0.18 of the motor range
+       * each way. Without airmode, below half throttle the correction is
+       * scaled by scaleRangef(throttle, 0, 0.5, 0.5, 1), which is 0.5 at
+       * zero throttle. With or without it, the throttle is then raised until
+       * the lowest motor sits at the bottom of the range, and the output
+       * maps that range onto idle to full power. This figure once drew the
+       * motors pinned at idle without airmode, which is not what the
+       * firmware does.
+       */
       const bx = ax.x + ax.w + 44;
       const idle = 0.055;
-      const thr = 0;
-      const cmds = [thr - 0.18, thr + 0.18, thr + 0.18, thr - 0.18];
+      const roll = [-0.18, 0.18, 0.18, -0.18];
+      const share = s.airmode ? 1 : 0.5;
+      const mix = roll.map((r) => r * share);
+      const lift = -Math.min(...mix);
       const names = ['0 RR', '1 FR', '2 RL', '3 FL'];
-      eyebrow(ctx, 'a flip at zero throttle', bx, 66);
-      cmds.forEach((c, i) => {
+      eyebrow(ctx, 'a roll at zero throttle', bx, 66);
+      mix.forEach((m, i) => {
         const y = 88 + i * 40;
-        const applied = s.airmode ? Math.max(idle, c + 0.18) : Math.max(idle, c);
+        const applied = idle + (1 - idle) * (m + lift);
         text(ctx, names[i], bx, y + 9, { fill: C.slate, size: 10.5, mono: true });
         meter(ctx, bx + 42, y, W - bx - 66, 13, applied, applied > idle + 0.01 ? C.mint : alpha(C.slate, 0.5), idle);
-        if (!s.airmode && applied <= idle + 0.001) {
-          text(ctx, 'stuck at idle', W - 26, y + 10, { fill: C.sakura, size: 10, align: 'right', weight: 700 });
+        if (applied <= idle + 0.001) {
+          text(ctx, 'on idle', W - 26, y + 10, { fill: C.slate, size: 10, align: 'right', weight: 700 });
         }
       });
       const after = wrapText(ctx, s.airmode
-        ? 'Airmode raised all four motors, so the difference remains. You still have roll.'
-        : 'Two motors are already at the floor. The difference is gone, and so is the roll.',
+        ? `The throttle was raised so the whole correction fits: ${f0(share * 100)} percent of it.`
+        : `The throttle was still raised, but Betaflight halved the correction: ${f0(share * 100)} percent of it.`,
       bx, 262, W - bx - 26, { fill: s.airmode ? C.mint : C.sakura, size: 11.5, weight: 700, lead: 16 });
       text(ctx, 'the pink line is the real idle floor', bx, after + 2, { fill: C.slate, size: 10.5 });
       note(ctx, 24, H - 11, 'anti-gravity is a third feature: it raises I while the throttle changes quickly');
@@ -2728,7 +2744,7 @@ const FIGURES = {
       { key: 'pitch', label: 'Pitch', min: -0.5, max: 0.5, step: 0.01, value: 0, fmt: (v) => f2(v) },
       { key: 'yaw', label: 'Yaw', min: -0.5, max: 0.5, step: 0.01, value: 0, fmt: (v) => f2(v) },
     ],
-    caption: 'Each motor\'s output is the throttle plus the roll, pitch and yaw commands, each multiplied by +1 or −1 for that motor. Push any command far enough and a motor reaches idle or full power, and then the mixer cannot produce the rotation asked for, whatever the PID controller calculates. That limit is why yaw becomes weak at full throttle, and why a quad at full throttle has no spare power to correct with.',
+    caption: 'Each motor\'s output is the throttle plus the roll, pitch and yaw corrections, each multiplied by +1 or −1 for that motor. When the result would push a motor below idle or above full power, Betaflight\'s LEGACY mixer, with airmode on, first moves the throttle up or down until every motor fits: the quad keeps the rotation and gives up height. Only when the corrections need more than the whole range from idle to full does it scale them down, and then the quad rotates more slowly than asked.',
     draw(ctx, W, H, s) {
       const M = [
         { tag: '0 RR', roll: -1, pitch: 1, yaw: -1 },
@@ -2736,15 +2752,29 @@ const FIGURES = {
         { tag: '2 RL', roll: 1, pitch: 1, yaw: 1 },
         { tag: '3 FL', roll: 1, pitch: -1, yaw: -1 },
       ];
+      /*
+       * applyMixerAdjustment in Betaflight 4.5's mixer.c, the LEGACY mixer,
+       * with airmode on as it is in this simulator: the corrections are
+       * scaled down only if their spread is more than the whole range, the
+       * throttle is then moved until every motor fits, and the result is
+       * mapped onto idle to full power. This figure once clipped each motor
+       * on its own, which is not what the firmware does.
+       */
       const idle = 0.055;
-      const raw = M.map((m) => s.thr + m.roll * s.roll + m.pitch * s.pitch + m.yaw * s.yaw);
-      const clipped = raw.map((v) => Math.max(idle, Math.min(1, v)));
-      const anyClip = raw.some((v, i) => Math.abs(v - clipped[i]) > 1e-6);
+      const pid = M.map((m) => m.roll * s.roll + m.pitch * s.pitch + m.yaw * s.yaw);
+      const range = Math.max(...pid) - Math.min(...pid);
+      const scale = range > 1 ? 1 / range : 1;
+      const mixv = pid.map((v) => v * scale);
+      const thr = Math.min(Math.max(s.thr, -Math.min(...mixv)), 1 - Math.max(...mixv));
+      const duty = mixv.map((v) => idle + (1 - idle) * (thr + v));
+      const moved = Math.abs(thr - s.thr) > 1e-6;
+      const shrunk = scale < 1 - 1e-6;
 
       const bx = 40;
       const x0 = bx + 52;
       const bw = W - x0 - 96;
       const idleX = x0 + idle * bw;
+      const span = (1 - idle) * bw;
       /* The rails first, so every bar is read against them. */
       line(ctx, x0 + bw, 58, x0 + bw, 276, alpha(C.sakura, 0.35), 1.4, [4, 4]);
       line(ctx, idleX, 58, idleX, 276, alpha(C.sakura, 0.35), 1.4, [4, 4]);
@@ -2772,8 +2802,8 @@ const FIGURES = {
         let run = 0;
         const seg = (v, col) => {
           if (Math.abs(v) < 1e-9) { return; }
-          const a = x0 + run * bw;
-          const bpx = x0 + (run + v) * bw;
+          const a = idleX + run * span;
+          const bpx = idleX + (run + v) * span;
           const lo = Math.min(a, bpx);
           const w = Math.abs(bpx - a);
           if (v >= 0) {
@@ -2791,11 +2821,11 @@ const FIGURES = {
            */
           run += v;
         };
-        seg(s.thr, C.amber);
-        seg(m.roll * s.roll, C.sakura);
-        seg(m.pitch * s.pitch, C.mint);
-        seg(m.yaw * s.yaw, C.slate);
-        const endX = x0 + clipped[i] * bw;
+        seg(thr, C.amber);
+        seg(m.roll * s.roll * scale, C.sakura);
+        seg(m.pitch * s.pitch * scale, C.mint);
+        seg(m.yaw * s.yaw * scale, C.slate);
+        const endX = x0 + duty[i] * bw;
         line(ctx, endX, y - 1, endX, y + 27, C.cream, 2.2);
         line(ctx, x0, y + 32, x0 + bw, y + 32, alpha(C.cream, 0.05), 1);
       });
@@ -2804,14 +2834,15 @@ const FIGURES = {
       /* Names and the duty column, unclipped. */
       M.forEach((m, i) => {
         const y = rowY(i);
-        const off = Math.abs(raw[i] - clipped[i]) > 1e-6;
+        const top = duty[i] >= 1 - 1e-6;
+        const floor = duty[i] <= idle + 1e-6;
         text(ctx, m.tag, bx, y + 15, { fill: C.cream, size: 12, weight: 700, mono: true });
-        text(ctx, f2(clipped[i]), W - 24, y + 13, {
-          fill: off ? C.sakura : C.cream, size: 13, mono: true, weight: 700, align: 'right',
+        text(ctx, f2(duty[i]), W - 24, y + 13, {
+          fill: top || floor ? C.amber : C.cream, size: 13, mono: true, weight: 700, align: 'right',
         });
-        if (off) {
-          text(ctx, raw[i] > 1 ? 'clipped' : 'at idle', W - 24, y + 26, {
-            fill: C.sakura, size: 9.5, align: 'right', weight: 700,
+        if (top || floor) {
+          text(ctx, top ? 'at full' : 'at idle', W - 24, y + 26, {
+            fill: C.amber, size: 9.5, align: 'right', weight: 700,
           });
         }
       });
@@ -2831,17 +2862,21 @@ const FIGURES = {
       });
       text(ctx, 'duty', W - 24, 30, { fill: C.slate, size: 10, align: 'right', weight: 700, track: 1.2 });
 
-      text(ctx, anyClip ? 'A motor is at its limit.' : 'Every command fits.', bx, 312, {
-        fill: anyClip ? C.sakura : C.mint, size: 13, weight: 700,
-      });
-      text(ctx, anyClip
-        ? 'What comes out is not the rotation that was asked for.'
-        : 'What comes out is the rotation that was asked for.',
-      bx, 330, { fill: C.slate, size: 11.5 });
-      text(ctx, `spread ${f2(Math.max(...clipped) - Math.min(...clipped))}`, W - 24, 312, {
+      let head = 'Every command fits.';
+      let tail = 'What comes out is the rotation and the throttle that were asked for.';
+      if (shrunk) {
+        head = 'The corrections were scaled down.';
+        tail = `Cut to ${f0(scale * 100)} percent, as they needed more than the whole range. The rotation is slower than asked.`;
+      } else if (moved) {
+        head = 'The mixer moved the throttle.';
+        tail = `Throttle ${f0(s.thr * 100)} became ${f0(thr * 100)} percent so every motor fits. The rotation is as asked.`;
+      }
+      text(ctx, head, bx, 312, { fill: shrunk ? C.sakura : (moved ? C.amber : C.mint), size: 13, weight: 700 });
+      text(ctx, tail, bx, 330, { fill: C.slate, size: 11.5 });
+      text(ctx, `spread ${f2(Math.max(...duty) - Math.min(...duty))}`, W - 24, 312, {
         fill: C.cream, size: 12.5, mono: true, weight: 700, align: 'right',
       });
-      note(ctx, 24, H - 11, 'mixtable in mixer.c, then the idle floor');
+      note(ctx, 24, H - 11, 'applyMixerAdjustment in mixer.c, the LEGACY mixer, with airmode on');
     },
   }),
 
@@ -2860,7 +2895,7 @@ const FIGURES = {
       { key: 'master', label: 'Master multiplier', min: 50, max: 200, step: 1, value: 100, fmt: (v) => f2(v / 100) },
       { key: 'dgain', label: 'D slider', min: 50, max: 200, step: 1, value: 100, fmt: (v) => f2(v / 100) },
     ],
-    caption: 'The sliders are Betaflight\'s own code: simplified_tuning.c is compiled here, so moving a slider writes p_roll and the other eleven gains as the firmware would. The order matters. If you type gains and then apply a slider, the slider\'s values replace the typed ones, and a diff file that ends with a simplified tuning apply line replaces any gains typed above it.',
+    caption: 'The sliders are Betaflight\'s own code: simplified_tuning.c is compiled here, so moving a slider writes p_roll and the other gains as the firmware would. The order matters. If you type gains and then apply a slider, the slider\'s values replace the typed ones, and a diff file that ends with a simplified tuning apply line replaces any gains typed above it.',
     draw(ctx, W, H, s) {
       const m = s.master / 100;
       const dg = s.dgain / 100;

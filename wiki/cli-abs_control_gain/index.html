@@ -101,7 +101,7 @@
       <p class="wiki-lede">CLI setting abs_control_gain. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 0 to 20.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>Absolute control keeps a running total of the angle by which the quad has drifted from where the sticks sent it, on roll, pitch and yaw, and adds a correction to the target rate to bring it back. This holds the heading while you hold a roll. Racers often run it at 0; freestyle pilots often want a little.</p>
+        <p>Absolute control keeps a running total of the angle by which the quad has drifted from where the sticks sent it, on roll, pitch and yaw, and adds a correction to the target rate to bring it back. It is off by default.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
@@ -119,7 +119,7 @@
       <section class="wiki-section">
         <h2>If you lower it</h2>
         <p>At 0 absolute control is off. A roll then yaws by whatever amount the physics model produces.</p>
-        <p>Many racing Betaflight settings files (diffs) set it to 0.</p>
+        <p>At 0 the code does not run.</p>
       </section>
     </article>
     <div class="wiki-cta">

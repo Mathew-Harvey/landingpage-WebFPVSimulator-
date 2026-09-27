@@ -101,25 +101,15 @@
       <p class="wiki-lede">Not simulated. Parameter group MOTOR_CONFIG. Firmware type UINT8. Values: OFF, ON.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>A real flight controller also has beepers, SD cards, camera control, ESC protocols, debug outputs and processor overclocking. The WebAssembly build has none of these.</p>
+        <p>Bidirectional DShot: each ESC sends its motor&#039;s speed back to the flight controller on the same wire that carries the motor command. The RPM filter and dynamic idle need it.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is part of one of several setting groups that are not in the 1 ms control step.</p>
+        <p>It belongs to the MOTOR_CONFIG setting group. The ESC firmware has to support it.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Not simulated. This part of Betaflight is not compiled into the simulator, so the value is stored and has no effect. The settings catalog&#039;s own note is at the end of this page.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>It has no effect on this aircraft.</p>
-        <p>The code is not compiled, or it does not control flight here.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>Lowering it has no effect here either.</p>
-        <p>The code is not compiled, or it does not control flight here.</p>
+        <p>Not simulated. The part of Betaflight that reads it is not compiled into the simulator, so the value is kept in the settings file and changes nothing. The simulator gives Betaflight each motor&#039;s speed from the physics model, with the delay real motor speed reports have, as if this were on.</p>
       </section>
     </article>
     <div class="wiki-cta">

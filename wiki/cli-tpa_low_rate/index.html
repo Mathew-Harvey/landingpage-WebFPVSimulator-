@@ -101,11 +101,11 @@
       <p class="wiki-lede">CLI setting tpa_low_rate. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 0 to 100.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>How much TPA (throttle PID attenuation) reduces the gains at low throttle, near idle, where the propellers have little control authority and a D gain tuned for the hover can be too strong in a descent.</p>
+        <p>How much TPA reduces the gains at very low throttle, below tpa_low_breakpoint. With tpa_low_always OFF, the default, it applies only from arming until the throttle first rises past that breakpoint, which covers the take-off.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>tpa_low_rate is a percentage. The reduction is tpa_low_rate percent at zero throttle and falls in a straight line to nothing at tpa_low_breakpoint.</p>
+        <p>tpa_low_rate is a percentage from 0 to 100. The reduction is tpa_low_rate percent at zero throttle and falls in a straight line to nothing at tpa_low_breakpoint (pidUpdateTpaFactor in pid.c).</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
@@ -113,12 +113,12 @@
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>The gains are reduced more at idle. Descents are calmer, but yaw may feel weak.</p>
+        <p>The gains are lower near zero throttle while low TPA applies.</p>
         <p>A higher rate means a larger reduction at low throttle.</p>
       </section>
       <section class="wiki-section">
         <h2>If you lower it</h2>
-        <p>The gains stay at full strength at idle, and descents in airmode can buzz.</p>
+        <p>The gains stay at full strength at low throttle.</p>
         <p>A rate of 0 turns low-throttle TPA off.</p>
       </section>
     </article>

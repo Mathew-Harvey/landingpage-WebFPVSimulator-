@@ -101,25 +101,15 @@
       <p class="wiki-lede">Not simulated. Parameter group GPS_RESCUE. Firmware type UINT16. Range 0 to 3000.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>A GPS or GPS rescue setting, such as return to home, the rescue altitude or the number of satellites needed. The physics model has no GPS sensor and no map of the Earth.</p>
+        <p>A setting for GPS Rescue, which flies a quad back towards where it took off when the radio link is lost, or when the pilot switches it on.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is part of the GPS and GPS_RESCUE setting groups, which are not compiled into the 1 ms loop.</p>
+        <p>It belongs to the GPS_RESCUE setting group. GPS Rescue needs a GPS module and an accelerometer, and it flies with its own climb, speed, angle and throttle limits.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Not simulated. This part of Betaflight is not compiled into the simulator, so the value is stored and has no effect. The settings catalog&#039;s own note is at the end of this page.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>On a quad with GPS this would change how a rescue behaves. This aircraft has no GPS.</p>
-        <p>There is no GPS code in this build.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>Lowering it has no effect here either.</p>
-        <p>There is no GPS code in this build.</p>
+        <p>Not simulated. The part of Betaflight that reads it is not compiled into the simulator, so the value is kept in the settings file and changes nothing.</p>
       </section>
     </article>
     <div class="wiki-cta">

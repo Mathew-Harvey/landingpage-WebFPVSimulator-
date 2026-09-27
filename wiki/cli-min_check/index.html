@@ -101,25 +101,25 @@
       <p class="wiki-lede">CLI setting min_check. Works here. Parameter group RX_CONFIG. Firmware type UINT16. Range 0 to 2000.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>The PWM value below which Betaflight treats a stick as at its minimum, which matters for arming and for zero throttle.</p>
+        <p>The throttle value, on the 1000 to 2000 scale, below which Betaflight treats the throttle as zero. Betaflight stretches the throttle above it to cover the whole range, so the bottom of the stick travel up to this point is a dead zone.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>Stored as mincheck.</p>
+        <p>Stored as mincheck. fc/rc.c maps the throttle from min_check to 2000 onto the full throttle range. On a real flight controller core.c also uses it to decide when the throttle is low, for arming and for the I term reset without airmode.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Works here, but the quad is always armed and the sticks are analogue values from −1 to 1. It is here mainly so that a Betaflight settings file (diff) keeps its value, rather than as a minimum-throttle switch.</p>
+        <p>Works here, through fc/rc.c. The simulator sends each stick as 1500 + 500 × its position, so a throttle stick at the bottom arrives as 1000.</p>
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>A larger part of the stick travel counts as minimum.</p>
-        <p>A higher mincheck raises the point below which a stick counts as at its minimum.</p>
+        <p>More of the bottom of the throttle stick does nothing, and the rest of the travel gives slightly larger steps.</p>
+        <p>A higher mincheck raises the point where the throttle starts.</p>
       </section>
       <section class="wiki-section">
         <h2>If you lower it</h2>
-        <p>A smaller part of the stick travel counts as minimum.</p>
-        <p>A lower mincheck lowers that point. Never set min_check above max_check.</p>
+        <p>Less of the bottom of the stick is dead zone.</p>
+        <p>At 1000 there is no dead zone at the bottom. Keep it below max_check.</p>
       </section>
     </article>
     <div class="wiki-cta">

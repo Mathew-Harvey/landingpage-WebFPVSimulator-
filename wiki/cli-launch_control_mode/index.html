@@ -101,7 +101,7 @@
       <p class="wiki-lede">CLI setting launch_control_mode. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Values: NORMAL, PITCHONLY, FULL.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>Chooses which axes launch control holds: NORMAL, PITCHONLY or FULL. Launch control holds the quad at idle on the start line until the throttle passes the trigger point. In this simulator you turn the feature on with the Launch control switch on the Quad screen, and press L on the start line to use it.</p>
+        <p>Chooses how launch control holds the quad on the start line. Launch control holds the quad at idle, leaning against the gate or a launch stand at the angle you set with the sticks, until the throttle passes the trigger point. In this simulator you turn the feature on with the Launch control switch on the Quad screen, and press L on the start line to use it.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
@@ -112,14 +112,10 @@
         <p>Works here, through the copy of the launch control logic in bf_glue.c and Betaflight&#039;s own launch control code in pid.c.</p>
       </section>
       <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>This is a list of options, not a number. Changing the mode changes which axes are held.</p>
-        <p>PITCHONLY is the most popular choice for racing: it holds pitch and leaves roll alone.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>There is no OFF option in this setting. The mode only chooses how launch control behaves while it is active.</p>
-        <p>To turn launch control on or off, use the Launch control switch on the Quad screen. The same switch is the LAUNCH CONTROL row on the Modes tab of the firmware bench.</p>
+        <h2>The choices</h2>
+        <p>NORMAL: roll and pitch hold their angle, and the yaw I term is kept at zero. This is Betaflight&#039;s default.</p>
+        <p>PITCHONLY: only pitch is held. Roll and yaw P and I are switched off, and the pitch I term may only push the nose forward.</p>
+        <p>FULL: all three axes are held, with the yaw I term limited to a small value.</p>
       </section>
     </article>
     <div class="wiki-cta">

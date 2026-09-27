@@ -101,25 +101,15 @@
       <p class="wiki-lede">Not simulated. Parameter group BLACKBOX_CONFIG. Firmware type UINT32.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>A setting for the onboard blackbox, the flight recorder on a real flight controller: how often it records, which values, and where it stores them. This simulator can save a flight log as a CSV file when Flight log is on in Settings, but that is a different recorder.</p>
+        <p>A setting for the blackbox, the flight recorder on a real flight controller: how often it records, which values it leaves out, and whether it writes to flash memory or an SD card.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is part of BLACKBOX_CONFIG. There is no flash memory or SD card recorder in the WebAssembly loop.</p>
+        <p>It belongs to the BLACKBOX_CONFIG setting group. A log is read afterwards with Betaflight&#039;s Blackbox Explorer, or turned into a table with its blackbox_decode tool.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Not simulated. This part of Betaflight is not compiled into the simulator, so the value is stored and has no effect. The settings catalog&#039;s own note is at the end of this page.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>On a real flight controller this would change the onboard recording. Here, use the Flight log setting instead.</p>
-        <p>There is no blackbox device in this build.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>Lowering it has no effect here either.</p>
-        <p>There is no blackbox device in this build.</p>
+        <p>Not simulated. The part of Betaflight that reads it is not compiled into the simulator, so the value is kept in the settings file and changes nothing. The simulator&#039;s own Flight log, in Settings, records a flight in memory and saves it as a CSV file in the layout blackbox_decode produces.</p>
       </section>
     </article>
     <div class="wiki-cta">

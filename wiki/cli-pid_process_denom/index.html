@@ -101,25 +101,15 @@
       <p class="wiki-lede">CLI setting pid_process_denom. Off at 1 kHz. Parameter group PID_CONFIG. Firmware type UINT8. Range 1 to 16.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>On a real flight controller, this sets how often the PID calculation runs compared with how often the gyro is read. The PID rate is the gyro rate divided by this number: 1 means they run at the same rate, and 4 means the PID runs at a quarter of the gyro rate.</p>
+        <p>On a real flight controller, this sets how often the PID controller runs compared with how often the gyro is read. The PID rate is the gyro rate divided by this number: 1 means they run at the same rate, and 2 means the PID runs at half the gyro rate.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>The value is stored in Betaflight&#039;s pidConfig as pid_process_denom. The physics model steps at 1 kHz. After a tune, or a change saved on the firmware bench, has been applied as Betaflight command line (CLI) text, bf_config_finish in bf_glue.c sets this value back to 1. This stops any setting from making the compiled control loop drift out of step with the physics model without anyone noticing.</p>
+        <p>The value is stored in Betaflight&#039;s pidConfig as pid_process_denom. The physics model steps at 1 kHz, and after a tune or a change saved on the firmware bench is applied, bf_config_finish in bf_glue.c sets this value back to 1, so that no setting can make the control loop drift out of step with the physics.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Off at 1 kHz. The value is stored and then set to 1, so if you read it back after Betaflight has started, it is always 1.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>On a flight controller that uses this setting, a higher value makes the PID run less often. Here nothing changes.</p>
-        <p>The value is applied and then overwritten with 1, so raising it cannot be used to make D easier to tune.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>1 is the only value that describes what this simulator does.</p>
-        <p>The simulator forces the value to 1, whatever you set.</p>
+        <p>Off at 1 kHz. The value is stored and then set to 1, so reading it back after Betaflight has started always gives 1.</p>
       </section>
     </article>
     <div class="wiki-cta">

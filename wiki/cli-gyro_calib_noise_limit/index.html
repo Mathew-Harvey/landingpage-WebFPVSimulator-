@@ -101,25 +101,15 @@
       <p class="wiki-lede">Not simulated. Parameter group GYRO_CONFIG. Firmware type UINT8. Range 0 to 200.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>A setting for sensor hardware: the accelerometer, the magnetometer (compass), the barometer (air pressure altimeter), how the board is mounted, calibration, or which gyro chip to use. The simulated gyro needs none of these. Angle mode takes the quad&#039;s attitude from the physics model, not from combining accelerometer readings.</p>
+        <p>A setting for gyro calibration, in which Betaflight measures what the gyro reads while the quad is still and subtracts it from every later reading.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is part of the sensor setup groups. Modes that rely on the accelerometer are not flown, there is no compass heading, and there is no altitude from air pressure.</p>
+        <p>Betaflight calibrates the gyro before arming, and waits if the quad is being moved.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Not simulated. This part of Betaflight is not compiled into the simulator, so the value is stored and has no effect. The settings catalog&#039;s own note is at the end of this page.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>On a real board this would calibrate or align a sensor. Here it has no effect.</p>
-        <p>These sensors do not exist in the simulator.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>Lowering it has no effect here either.</p>
-        <p>These sensors do not exist in the simulator.</p>
+        <p>Not simulated. The part of Betaflight that reads it is not compiled into the simulator, so the value is kept in the settings file and changes nothing. The simulated gyro reads the physics model directly, and angle mode takes the attitude from the physics model.</p>
       </section>
     </article>
     <div class="wiki-cta">

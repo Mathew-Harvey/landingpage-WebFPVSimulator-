@@ -101,25 +101,15 @@
       <p class="wiki-lede">CLI setting runaway_takeoff_prevention. Stored, not used. Parameter group PID_CONFIG. Firmware type UINT8. Values: OFF, ON.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>A firmware safety check that disarms the quad if it takes off without a stick input that could explain it. It guards against mistakes with a real arming switch.</p>
+        <p>A safety check that disarms the quad if, just after arming, the PID controller is at its limit and the quad keeps rotating away from what it is asked for. That is what happens when the motors are in the wrong order, spin the wrong way, or the board is mounted in the wrong direction.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>Stored as runaway_takeoff_prevention. The code that acts on it is in fc/core.c, which is not compiled. The quad is always armed.</p>
+        <p>Stored as runaway_takeoff_prevention. The code that acts on it is in fc/core.c, which is not compiled. It stops watching once the quad has flown normally for a while (runaway_takeoff_deactivate_delay and runaway_takeoff_deactivate_throttle_percent).</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Stored, not used.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>On a real flight controller, turning it on enables a safety check. Here it has no effect.</p>
-        <p>The value is only stored in its setting group.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>Turning it off has no effect here either.</p>
-        <p>The value is only stored, so turning it off changes nothing.</p>
+        <p>Stored, not used. The quad is always armed, and its motor order and directions are fixed in the physics model.</p>
       </section>
     </article>
     <div class="wiki-cta">

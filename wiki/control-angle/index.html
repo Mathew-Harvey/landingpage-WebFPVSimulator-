@@ -100,13 +100,13 @@
       <p class="wiki-lede">In acro mode the stick sets a rotation rate. In angle mode the stick sets a tilt angle. Most pilots learn in angle mode and race in acro.</p>
       <section class="wiki-section">
         <h2>The idea</h2>
-        <p>In angle mode, moving the pitch stick asks for a tilt, not a flip, and letting go returns the quad to level by itself. Most people use it to learn to hover. It also teaches habits a racer has to unlearn, because a racing quad spends much of a lap at angles angle mode will not allow: it holds the quad to about thirty degrees of bank. Horizon mode, which mixes the two, is stored here but never switched on.</p>
+        <p>In angle mode, moving the pitch stick asks for a tilt, not a flip, and letting go returns the quad to level by itself. Most people use it to learn to hover. It also teaches habits a racer has to unlearn, because a racing quad spends much of a lap at angles angle mode will not allow: it holds the quad to 60 degrees of tilt, Betaflight&#039;s default angle_limit. Horizon mode, which mixes the two, is stored here but never switched on.</p>
         <p>Racing with a keyboard starts in angle mode, because a key is either on or off. Freestyle uses the flight mode setting whatever you fly with. Pressing M in flight switches between angle and acro and keeps the choice. You can use launch control in angle mode: while launch control holds the quad on the start line, Betaflight&#039;s rules switch angle mode off, and it comes back after the launch.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
         <p>sim_set_angle_mode switches ANGLE_MODE on, and pidLevel reads angle_p_gain, angle_feedforward, angle_limit, angle_earth_ref and angle_feedforward_smoothing_ms. It takes the quad&#039;s attitude from the physics model&#039;s quaternion through a stand-in for the IMU, the part of a real flight controller that works out the attitude from its sensors. The horizon_* settings are stored but not used, because HORIZON_MODE is never switched on.</p>
-        <p>level_race_mode works here. It is a Betaflight option that changes how angle mode levels the quad; its page in the settings reference has the detail.</p>
+        <p>level_race_mode works here. With it ON, angle mode levels roll only, and pitch is flown as in acro.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>

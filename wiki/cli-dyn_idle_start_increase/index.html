@@ -25,7 +25,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Dynamic idle start increase, FPV wiki</title>
-    <meta name="description" content="CLI setting dyn_idle_start_increase. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 10 to 255." />
+    <meta name="description" content="CLI setting dyn_idle_start_increase. Stored, not used. Parameter group PID_PROFILE. Firmware type UINT8. Range 10 to 255." />
     <meta name="robots" content="noindex">
     <meta name="theme-color" content="#141c16" />
     <link rel="canonical" href="https://webfpv.org/wiki/cli-dyn_idle_start_increase/" />
@@ -33,7 +33,7 @@
     <meta property="og:site_name" content="WebFPV" />
     <meta property="og:url" content="https://webfpv.org/wiki/cli-dyn_idle_start_increase/" />
     <meta property="og:title" content="Dynamic idle start increase, FPV wiki" />
-    <meta property="og:description" content="CLI setting dyn_idle_start_increase. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 10 to 255." />
+    <meta property="og:description" content="CLI setting dyn_idle_start_increase. Stored, not used. Parameter group PID_PROFILE. Firmware type UINT8. Range 10 to 255." />
     <meta property="og:image" content="https://webfpv.org/og.jpg?v=47004f98" />
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
@@ -41,7 +41,7 @@
     <meta property="og:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Dynamic idle start increase, FPV wiki" />
-    <meta name="twitter:description" content="CLI setting dyn_idle_start_increase. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 10 to 255." />
+    <meta name="twitter:description" content="CLI setting dyn_idle_start_increase. Stored, not used. Parameter group PID_PROFILE. Firmware type UINT8. Range 10 to 255." />
     <meta name="twitter:image" content="https://webfpv.org/og.jpg?v=47004f98" />
     <meta name="twitter:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
@@ -52,7 +52,7 @@
   "@context": "https://schema.org",
   "@type": "TechArticle",
   "headline": "Dynamic idle start increase",
-  "description": "CLI setting dyn_idle_start_increase. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 10 to 255.",
+  "description": "CLI setting dyn_idle_start_increase. Stored, not used. Parameter group PID_PROFILE. Firmware type UINT8. Range 10 to 255.",
   "url": "https://webfpv.org/wiki/cli-dyn_idle_start_increase/",
   "mainEntityOfPage": {
     "@type": "WebPage",
@@ -98,10 +98,10 @@
     <article>
       <p class="wiki-kicker">Betaflight 4.5.1 settings reference</p>
       <h1>Dynamic idle start increase</h1>
-      <p class="wiki-lede">CLI setting dyn_idle_start_increase. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 10 to 255.</p>
+      <p class="wiki-lede">CLI setting dyn_idle_start_increase. Stored, not used. Parameter group PID_PROFILE. Firmware type UINT8. Range 10 to 255.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>The largest amount by which dynamic idle may raise the minimum motor output before airmode is activated. On a real quad that is the time after arming until the throttle first passes airmode_start_throttle_percent. After that, dyn_idle_max_increase is the limit.</p>
+        <p>On a real quad, the largest amount by which dynamic idle may raise the minimum motor output before airmode is activated: from arming until the throttle first passes airmode_start_throttle_percent. After that, dyn_idle_max_increase is the limit.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
@@ -109,17 +109,7 @@
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>The settings catalog marks this as working here, but it has no effect. Betaflight stores it and the mixer reads it, but in this simulator isAirmodeActivated() always returns true (bf_stubs.c stands in for fc/core.c, which is not compiled), so this limit never applies and dyn_idle_max_increase is used from the start.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>On a real quad, dynamic idle can raise the idle further before takeoff. In this simulator you will not notice a change.</p>
-        <p>A larger value allows a higher minimum motor output before airmode is activated.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>On a real quad, the idle rises less before takeoff. In this simulator lowering it has no effect.</p>
-        <p>A smaller value limits the minimum motor output more before airmode is activated.</p>
+        <p>Stored, not used. isAirmodeActivated() always returns true here (bf_stubs.c stands in for fc/core.c, which is not compiled), so dyn_idle_max_increase is the limit from the start.</p>
       </section>
     </article>
     <div class="wiki-cta">

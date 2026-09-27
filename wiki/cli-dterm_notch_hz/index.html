@@ -101,11 +101,11 @@
       <p class="wiki-lede">CLI setting dterm_notch_hz. Works here. Parameter group PID_PROFILE. Firmware type UINT16. Range 0 to 1000 Hz.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>A static notch filter on the D term only. Use it for a vibration that affects D, without adding delay to P. 0 turns it off.</p>
+        <p>The centre frequency of a static notch filter on the D term only, for a fixed vibration that affects D without adding delay to P. 0 turns it off.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is dterm_notch_hz in the PID profile, handled in pid_init.c.</p>
+        <p>This is dterm_notch_hz in the PID profile, set up in pid_init.c. Its width is set by dterm_notch_cutoff.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
@@ -113,13 +113,13 @@
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>It moves the D notch to a higher frequency.</p>
-        <p>The D term is where noise turns into motor heat. A well-placed D notch can let you raise D. A badly placed one only delays the stop.</p>
+        <p>The D notch moves to a higher frequency.</p>
+        <p>The D term turns high frequency noise into motor heat. A notch on a real peak can let D be raised; one that misses only adds delay to D.</p>
       </section>
       <section class="wiki-section">
         <h2>If you lower it</h2>
-        <p>It moves the notch to a lower frequency, and 0 turns it off.</p>
-        <p>0 turns it off.</p>
+        <p>The notch moves to a lower frequency. 0 turns it off.</p>
+        <p>A notch at a low frequency delays the D term where it is doing its job.</p>
       </section>
     </article>
     <div class="wiki-cta">

@@ -101,25 +101,25 @@
       <p class="wiki-lede">CLI setting d_max_gain. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 0 to 100.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>How quickly D is allowed to rise from D min towards the full D value as you move the stick.</p>
+        <p>How strongly a fast change raises D from d_min towards the full D value.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is d_min_gain in the PID profile. A larger value means D reaches the full d_ value sooner for a given rate of change of the setpoint.</p>
+        <p>In Betaflight 4.5 this is d_max_gain, stored as d_min_gain in the PID profile. pid.c smooths the rate of change of the gyro reading and multiplies its size by this gain, so a quick change in rotation, such as propwash or the end of a flip, raises D. The same gain, scaled by d_max_advance, sets the rise from fast stick movement. Whichever is larger is used.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Works here.</p>
+        <p>Works here. It has an effect only on an axis whose d_min is above 0 and below its D.</p>
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>Quick flicks get their full D sooner. The hover stays at D min if D min is low.</p>
-        <p>D rises faster. If you fly with lots of stick movement, D can seem to be at its full value all the time.</p>
+        <p>D rises further for the same disturbance, so the quad reaches full damping in smaller bumps too.</p>
+        <p>A higher gain turns the same rate of change into a larger rise. With a high enough gain D sits near its full value for most of a flight.</p>
       </section>
       <section class="wiki-section">
         <h2>If you lower it</h2>
-        <p>D stays close to D min unless you move the stick very quickly.</p>
-        <p>D rises more slowly, and gentle stick movements never reach the full d_roll value.</p>
+        <p>D stays closer to d_min unless the change is large.</p>
+        <p>At 0 nothing raises D, and it stays at d_min.</p>
       </section>
     </article>
     <div class="wiki-cta">

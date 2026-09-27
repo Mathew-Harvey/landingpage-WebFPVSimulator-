@@ -101,25 +101,25 @@
       <p class="wiki-lede">CLI setting dterm_lpf1_static_hz. Works here. Parameter group PID_PROFILE. Firmware type INT16. Range 0 to 1000 Hz.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>A low-pass filter on the D term (the first D term low-pass filter). A low-pass filter lets slow changes through and removes fast ones. A lower cutoff frequency in Hz means more smoothing and more delay, so the PID controller reacts later and more calmly. On some of these settings, 0 turns the filter off.</p>
+        <p>The cutoff frequency, in hertz, of low-pass filter 1 on the D term. A low-pass filter lets changes slower than its cutoff through and removes faster ones, and only D sees the result, so P and I get no extra delay from it. 0 turns the filter off, as long as its dynamic minimum is 0 too.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>The filter type can be PT1, BIQUAD, PT2 or PT3, and the static Hz is the cutoff frequency. When the dynamic minimum, maximum and expo are set, the cutoff moves with the throttle, through the dynamic low-pass logic in gyro_init and pid_init. A 1 kHz loop cannot record anything faster than 500 Hz, so this setting trades delay against noise in the range from 0 to 500 Hz.</p>
+        <p>When the dynamic minimum is above 0, Betaflight uses the dynamic cutoff, which moves with the throttle, and ignores this value. A real flight controller reads its gyro thousands of times a second. This simulator reads it 1,000 times a second, so nothing above 500 Hz reaches the filter here.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Works here. The gyro filters are Betaflight&#039;s compiled gyro.c, and the D term filters are the compiled pid_init.c. The vibration they smooth is added to the gyro reading in bf_glue.c, not to the motion of the quad.</p>
+        <p>Works here, in Betaflight&#039;s compiled pid_init.c and pid.c. The vibration it removes is added to the simulated gyro reading, not to the quad&#039;s motion.</p>
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>For a cutoff in Hz, raising it lets more noise through and adds less delay. The quad feels more directly connected and less smooth.</p>
-        <p>A higher cutoff gives less delay and more noise in the D term. Judge it in a full throttle climb, not in a hover.</p>
+        <p>Less smoothing and less delay. The quad feels more directly connected to the sticks, and more noise gets through to the motors.</p>
+        <p>A higher cutoff lets faster changes through. Judge it in a full throttle climb, where the vibration is strongest, not in a hover.</p>
       </section>
       <section class="wiki-section">
         <h2>If you lower it</h2>
-        <p>The quad feels smoother and later, which makes it easier to fly badly. Too low, and it feels slow to respond to everything.</p>
-        <p>More delay in the loop. Pilots often raise P to make up for it and then get oscillation, so change the filter instead.</p>
+        <p>More smoothing and more delay. The quad feels softer, and too low a cutoff makes it slow to respond to everything.</p>
+        <p>A lower cutoff removes more noise and adds delay to the loop, and delay in a feedback loop brings it closer to oscillating.</p>
       </section>
     </article>
     <div class="wiki-cta">

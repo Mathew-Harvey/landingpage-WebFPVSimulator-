@@ -101,12 +101,12 @@
       <section class="wiki-section">
         <h2>The idea</h2>
         <p>Two of the propellers spin clockwise and two spin anticlockwise. In steady flight the torques needed to turn them cancel out. To turn the nose right, the mixer speeds up the pair that spins one way and slows down the other pair. The torques no longer cancel, and the reaction on the motors turns the frame. Yaw is weaker and slower than roll or pitch, and it affects everything else, because the motors that make it also hold the quad up.</p>
-        <p>This explains several things pilots notice. Yaw feels slow when the idle setting is low, because the motors that need to slow down are already close to their minimum. Yaw becomes weak at full throttle, because the motors that need to speed up are already at their maximum. Airmode matters for the same reason: at zero throttle without airmode, the mixer has no room to change any motor&#039;s speed.</p>
+        <p>This explains several things pilots notice. Yaw is weakest at low throttle, because drag torque grows with the square of motor speed, so the same change in power makes less torque when the motors are turning slowly, and a low idle makes that worse. At full throttle the motors that need to speed up are already at their maximum, so Betaflight&#039;s mixer lowers the throttle to make room, and a hard yaw at full throttle costs thrust. Airmode matters for the same reason: without it, Betaflight halves the share of the motor range the PID corrections get at zero throttle.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
         <p>The reaction on the frame from each motor is −spin × ke × i along the motor&#039;s axis, which is slightly tilted by the cant. The propeller&#039;s drag torque is kq ωrel |ωrel| in still air (the Motors page explains how it changes with the air flow). With yaw_motors_reversed off, the mixer&#039;s yaw column is −1, +1, +1, −1 for the rear right, front right, rear left and front left motors, and mixer.c reverses the sign of the yaw PID output. The code that connects Betaflight to the physics model passes the gyro&#039;s yaw rate as +r. The comment on PLANT_SPIN in plant.c lists the whole chain of signs, and reversing any one of them makes the loop run away.</p>
-        <p>Integrated yaw (use_integrated_yaw) is a Betaflight mixer option that treats yaw as the integral of the difference between the motor pairs, instead of a direct torque command. It works here, and it is off in this simulator&#039;s tunes unless a preset turns it on.</p>
+        <p>Integrated yaw (use_integrated_yaw) is a Betaflight PID option that adds up the yaw PID output over time before it reaches the mixer, so the PID sets how fast the yaw command changes instead of the command itself. It works here, and it is off unless a tune turns it on.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>

@@ -112,14 +112,9 @@
         <p>Works here. The simulator clears the flag each time it resets the quad; patches/0002 adds that reset to Betaflight.</p>
       </section>
       <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>ON: low-throttle TPA applies in every low-throttle descent, not only at the start of the flight.</p>
-        <p>ON makes Betaflight use the low-throttle reduction whenever the throttle is below the breakpoint.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>OFF: once the throttle has first passed the breakpoint, later descents fly with the normal gains.</p>
-        <p>OFF is the default in many profiles.</p>
+        <h2>The choices</h2>
+        <p>OFF: low throttle TPA applies only until the throttle first passes tpa_low_breakpoint after arming, and normal TPA after that. This is Betaflight&#039;s default.</p>
+        <p>ON: low throttle TPA applies every time the throttle is below the breakpoint, for the whole flight.</p>
       </section>
     </article>
     <div class="wiki-cta">

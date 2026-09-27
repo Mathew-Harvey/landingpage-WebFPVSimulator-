@@ -101,11 +101,11 @@
       <p class="wiki-lede">CLI setting rc_smoothing_auto_factor_throttle. Works here. Parameter group RX_CONFIG. Firmware type UINT8. Range 0 to 255.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>The throttle version of the auto factor. The throttle has no feedforward in the same sense as the other sticks, so this one is about a smooth response when you add throttle quickly, which pilots call a punch.</p>
+        <p>The throttle version of the auto factor. A higher value gives a lower cutoff on the throttle: a smoother, later response to a punch.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>Stored as rc_smoothing_auto_factor_throttle. Auto mode uses it when it chooses the throttle cutoff.</p>
+        <p>Stored as rc_smoothing_auto_factor_throttle. fc/rc.c sets the throttle cutoff to the measured packet rate × 1.5 / (1 + factor / 10).</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
@@ -113,13 +113,13 @@
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>The throttle usually feels smoother.</p>
-        <p>A higher factor means more filtering on the throttle.</p>
+        <p>The throttle feels smoother and slightly later.</p>
+        <p>A higher factor lowers the throttle cutoff.</p>
       </section>
       <section class="wiki-section">
         <h2>If you lower it</h2>
         <p>Throttle changes pass through with less smoothing.</p>
-        <p>A lower factor means less filtering on the throttle.</p>
+        <p>A lower factor raises the throttle cutoff.</p>
       </section>
     </article>
     <div class="wiki-cta">

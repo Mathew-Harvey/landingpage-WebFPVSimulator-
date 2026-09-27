@@ -100,7 +100,7 @@
       <p class="wiki-lede">The sliders are Betaflight&#039;s own code. They calculate the real PID gains from a few slider positions.</p>
       <section class="wiki-section">
         <h2>The idea</h2>
-        <p>The sliders are Master, P, I, D, D Max, feedforward and pitch compared with roll. They let a pilot change a tune as a whole instead of as twelve separate numbers, and the firmware calculates p_roll and the other gains from the slider positions. The order matters: if you type gains and then move a slider, the slider&#039;s values replace the typed ones. A diff file that ends with a simplified tuning apply line replaces any gains typed above it.</p>
+        <p>The PID sliders are a master multiplier, P and I together, I alone, D, D max, feedforward, and two that set pitch against roll: one for D, and one for P, I and feedforward. They let a pilot change a tune as a whole instead of as fifteen separate numbers, and the firmware calculates p_roll and the other gains from Betaflight&#039;s default gains and the slider positions. The order matters: if you type gains and then move a slider, the slider&#039;s values replace the typed ones. A diff file that ends with a simplified tuning apply line replaces any gains typed above it.</p>
         <p>The filter sliders do the same for the gyro and D term filter frequencies. Turn the simplified filter switch off if you want typed frequencies to stay.</p>
       </section>
       <section class="wiki-section">
@@ -109,7 +109,7 @@
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>The sliders work here. If moving a slider changes nothing, the apply line was not read. That happened once, and it is why bf_settings.c uses a table of settings instead of a chain of text comparisons that reported success for settings it did not know.</p>
+        <p>The sliders work here. If moving a slider changes nothing, the simplified_tuning apply line was not read.</p>
       </section>
     </article>
     <div class="wiki-cta">

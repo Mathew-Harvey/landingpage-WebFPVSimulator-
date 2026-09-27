@@ -101,11 +101,11 @@
       <p class="wiki-lede">CLI setting gyro_notch1_cutoff. Works here. Parameter group GYRO_CONFIG. Firmware type UINT16. Range 0 to 1000.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>Sets the width of gyro notch 1. The closer the cutoff is to the notch&#039;s centre frequency, the narrower and gentler the notch; the further away, the wider it is.</p>
+        <p>Sets the width of gyro notch 1. It is the frequency below the centre where the notch begins. The closer it is to the centre, the narrower the notch.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is gyro_soft_notch_cutoff_1, using Betaflight&#039;s standard biquad notch from filter.c. The centre frequency and the cutoff together set the notch&#039;s Q, its sharpness.</p>
+        <p>This is gyro_soft_notch_cutoff_1. Betaflight works out the notch&#039;s Q, its sharpness, from the centre frequency and this cutoff, and the notch is a biquad filter from filter.c. The cutoff must be below the centre frequency. On a real flight controller Betaflight&#039;s configuration check turns the notch off when it is not; that check is in config/config.c, which is not compiled here, so nothing does it for you.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
@@ -113,13 +113,13 @@
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>The notch becomes wider or narrower depending on where the cutoff sits relative to the centre. Change it together with gyro_notch1_hz.</p>
-        <p>The cutoff relative to the centre frequency sets Q. Read both settings before changing either one.</p>
+        <p>The cutoff moves towards the centre, so the notch gets narrower.</p>
+        <p>A higher cutoff gives a higher Q. It must stay below the centre frequency.</p>
       </section>
       <section class="wiki-section">
         <h2>If you lower it</h2>
-        <p>If the cutoff is still below the centre frequency, the notch becomes narrower.</p>
-        <p>A cutoff equal to the centre frequency gives a notch of zero width, which does nothing useful.</p>
+        <p>The cutoff moves away from the centre, so the notch gets wider and removes more of the signal around it.</p>
+        <p>A lower cutoff gives a lower Q, a wider notch and more delay below it.</p>
       </section>
     </article>
     <div class="wiki-cta">

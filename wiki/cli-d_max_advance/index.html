@@ -101,11 +101,11 @@
       <p class="wiki-lede">CLI setting d_max_advance. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 0 to 200.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>How early D starts to rise, compared with the stick movement.</p>
+        <p>How much a fast stick movement raises D, on top of the rise that fast changes in the gyro reading cause. It lets D rise at the start of a move, before the gyro has seen it.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is d_min_advance. It changes the timing of the same blend that d_max_gain controls. It is not a second D term.</p>
+        <p>In Betaflight 4.5 this is d_max_advance, stored as d_min_advance. pid.c multiplies the rate of change of the setpoint by d_max_gain and by this value, compares the result with the rise from the gyro, and uses the larger.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
@@ -113,13 +113,13 @@
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>D arrives earlier in a movement, which can feel like extra P at the start of a flick.</p>
-        <p>It moves the rise in D earlier. It interacts with feedforward, which also acts at the start of a movement.</p>
+        <p>D rises earlier in a stick movement, which can feel as if the start of a flick is damped.</p>
+        <p>A higher value gives the stick&#039;s rate of change more weight. It acts at the start of a movement, as feedforward does.</p>
       </section>
       <section class="wiki-section">
         <h2>If you lower it</h2>
-        <p>The rise in D waits. The stop at the end of a movement still gets full D if the blend has caught up.</p>
-        <p>The rise comes later, which helps if early D is reacting to stick jitter.</p>
+        <p>D rises only when the gyro sees a fast change.</p>
+        <p>At 0 the stick movement plays no part, and only the gyro raises D.</p>
       </section>
     </article>
     <div class="wiki-cta">

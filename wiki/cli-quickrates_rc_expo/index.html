@@ -101,25 +101,20 @@
       <p class="wiki-lede">CLI setting quickrates_rc_expo. Works here. Parameter group CONTROL_RATE_PROFILES. Firmware type UINT8. Values: OFF, ON.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>An on/off switch that only QUICK rates use: it decides whether expo is applied the Quick rates way. ACTUAL rates ignore it.</p>
+        <p>Decides where QUICK rates apply expo. The other rate types ignore it.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>Stored as quickRatesRcExpo and read in applyQuickRates in fc/rc.c.</p>
+        <p>Stored as quickRatesRcExpo and read in applyQuickRates in fc/rc.c. The drawing copy of the formula is applyQuickRates in src/fc/ratescurve.js.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Works here, and it matters only when rates_type is QUICK. The Rates menu in Settings writes it as OFF every time it writes the rate profile, so in this simulator it stays off.</p>
+        <p>Works here, and it matters only when rates_type is QUICK. The Rates menu in Settings writes it as OFF every time it writes the rate profile.</p>
       </section>
       <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>Turned ON, QUICK rates apply expo the Quick rates way.</p>
-        <p>applyQuickRates takes its expo path when this is on. The drawing copy of the formula is applyQuickRates in src/fc/ratescurve.js.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>Turned OFF, QUICK rates use their other curve.</p>
-        <p>OFF is Betaflight&#039;s default, and it is the curve the rates graph draws.</p>
+        <h2>The choices</h2>
+        <p>OFF: expo bends only the part of the curve that rises towards the maximum rate, and the stick position itself is used as it is. This is Betaflight&#039;s default, and the curve the rates graph draws.</p>
+        <p>ON: expo is applied to the stick position first, as the BETAFLIGHT type applies RC expo, and the rise towards the maximum rate uses the raw stick.</p>
       </section>
     </article>
     <div class="wiki-cta">

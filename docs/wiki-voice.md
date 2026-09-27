@@ -50,9 +50,12 @@ left in the code comment it came from.
 **6. Plain structure.** Short and medium sentences, active voice, one idea
 per sentence where possible. Each article has three sections, The idea, How
 it works and In this simulator. Each settings page has What it does, How it
-works, In this simulator, If you raise it and If you lower it, and each of
-those is one to three sentences, because a settings page is looked up rather
-than read through.
+works and In this simulator. A number that works here adds If you raise it
+and If you lower it; a choice from a list that works here adds The choices,
+a sentence for each option; a setting that has no effect here adds neither,
+because moving it changes nothing. Each section is one to three sentences,
+because a settings page is looked up rather than read through.
+`scripts/wiki-lint.js` holds every page to its shape.
 
 **7. No humanizer tells.** No "not X but Y" contrast unless both halves
 carry information or the negative half corrects something a reader would
@@ -61,6 +64,16 @@ opener ("Here is the thing"), no forced group of three, no inflated words, no
 bold, no filler adverbs (really, quietly, very as an intensifier). History of
 earlier versions of the model belongs in PROGRESS.md and the code comments,
 not in an article, except where it is the evidence that a term is needed.
+
+**8. Betaflight is checked against Betaflight.** A sentence about what a
+Betaflight setting or feature does is checked against the 4.5.1 source in
+the simulator's `vendor/betaflight` before it is written, and the page names
+the file it came from. Where the source cannot show a thing (a Configurator
+label, which version first had a feature, what pilots usually do, why a
+feature was added), leave it out. A figure that shows Betaflight at work
+computes what Betaflight's code does, not a simpler rule that looks like it.
+On 27 September 2026 the owner asked for the wiki to be fixed, and
+`docs/wiki-betaflight-2026-09.md` records what was wrong.
 
 ## Still true from before
 

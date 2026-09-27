@@ -101,7 +101,7 @@
       <p class="wiki-lede">CLI setting iterm_relax_type. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Values: GYRO, SETPOINT.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>Chooses how I-term relax decides how much to hold the I term back. SETPOINT reduces the error that I adds up, by more the faster the setpoint (the target rate set by your sticks) is changing. It depends only on the sticks, so it works even if the quad has not caught up yet. GYRO compares the gyro rate with a smoothed copy of the setpoint and ignores any difference smaller than the fast part of the stick movement.</p>
+        <p>Chooses how I-term relax decides how much to hold the I term back.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
@@ -112,14 +112,9 @@
         <p>Works here.</p>
       </section>
       <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>This is a choice between two options, not a number. SETPOINT is usually what pilots want for acro, and it is Betaflight&#039;s default.</p>
-        <p>SETPOINT scales down the error that I adds up, using the high-pass filtered setpoint: the fast part of the rate you ask for with the sticks.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>With GYRO, the calculation depends on the gyro, so if the quad falls behind the target during a movement, the I term still builds up.</p>
-        <p>GYRO is the older of the two methods.</p>
+        <h2>The choices</h2>
+        <p>SETPOINT: the error the I term adds up is scaled down by how fast the setpoint is changing. It depends only on the sticks. This is Betaflight&#039;s default.</p>
+        <p>GYRO: the error the I term adds up is the difference between the gyro rate and a smoothed copy of the setpoint, with any difference smaller than the fast part of the stick movement ignored. If the quad falls behind during a movement, the I term still grows.</p>
       </section>
     </article>
     <div class="wiki-cta">

@@ -25,7 +25,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Max check, FPV wiki</title>
-    <meta name="description" content="CLI setting max_check. Works here. Parameter group RX_CONFIG. Firmware type UINT16. Range 0 to 2000." />
+    <meta name="description" content="CLI setting max_check. Stored, not used. Parameter group RX_CONFIG. Firmware type UINT16. Range 0 to 2000." />
     <meta name="robots" content="noindex">
     <meta name="theme-color" content="#141c16" />
     <link rel="canonical" href="https://webfpv.org/wiki/cli-max_check/" />
@@ -33,7 +33,7 @@
     <meta property="og:site_name" content="WebFPV" />
     <meta property="og:url" content="https://webfpv.org/wiki/cli-max_check/" />
     <meta property="og:title" content="Max check, FPV wiki" />
-    <meta property="og:description" content="CLI setting max_check. Works here. Parameter group RX_CONFIG. Firmware type UINT16. Range 0 to 2000." />
+    <meta property="og:description" content="CLI setting max_check. Stored, not used. Parameter group RX_CONFIG. Firmware type UINT16. Range 0 to 2000." />
     <meta property="og:image" content="https://webfpv.org/og.jpg?v=47004f98" />
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
@@ -41,7 +41,7 @@
     <meta property="og:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Max check, FPV wiki" />
-    <meta name="twitter:description" content="CLI setting max_check. Works here. Parameter group RX_CONFIG. Firmware type UINT16. Range 0 to 2000." />
+    <meta name="twitter:description" content="CLI setting max_check. Stored, not used. Parameter group RX_CONFIG. Firmware type UINT16. Range 0 to 2000." />
     <meta name="twitter:image" content="https://webfpv.org/og.jpg?v=47004f98" />
     <meta name="twitter:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
@@ -52,7 +52,7 @@
   "@context": "https://schema.org",
   "@type": "TechArticle",
   "headline": "Max check",
-  "description": "CLI setting max_check. Works here. Parameter group RX_CONFIG. Firmware type UINT16. Range 0 to 2000.",
+  "description": "CLI setting max_check. Stored, not used. Parameter group RX_CONFIG. Firmware type UINT16. Range 0 to 2000.",
   "url": "https://webfpv.org/wiki/cli-max_check/",
   "mainEntityOfPage": {
     "@type": "WebPage",
@@ -98,28 +98,18 @@
     <article>
       <p class="wiki-kicker">Betaflight 4.5.1 settings reference</p>
       <h1>Max check</h1>
-      <p class="wiki-lede">CLI setting max_check. Works here. Parameter group RX_CONFIG. Firmware type UINT16. Range 0 to 2000.</p>
+      <p class="wiki-lede">CLI setting max_check. Stored, not used. Parameter group RX_CONFIG. Firmware type UINT16. Range 0 to 2000.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>The PWM value above which Betaflight treats a stick as at its maximum.</p>
+        <p>The stick value, on the 1000 to 2000 scale, above which Betaflight treats a stick as at its maximum. It is used for stick commands, such as arming or calibrating with the sticks, and by the RPM limiter.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>Stored as maxcheck.</p>
+        <p>Stored as maxcheck in the receiver settings.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Works here, with the same limits as min_check: the quad is always armed and the sticks are analogue values from −1 to 1.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>The stick has to travel further before it counts as at maximum.</p>
-        <p>A higher maxcheck raises the point above which a stick counts as at its maximum.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>The stick counts as at maximum sooner.</p>
-        <p>A lower maxcheck lowers that point on the PWM scale.</p>
+        <p>Stored, not used. The stick commands are in fc/core.c, which is not compiled, and the RPM limiter does not run here.</p>
       </section>
     </article>
     <div class="wiki-cta">

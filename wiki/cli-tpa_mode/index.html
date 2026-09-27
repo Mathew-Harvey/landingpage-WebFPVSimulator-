@@ -101,7 +101,7 @@
       <p class="wiki-lede">CLI setting tpa_mode. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Values: PD, D.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>Chooses which terms of the PID controller TPA reduces. TPA, throttle PID attenuation, turns the gains down at high throttle. PD reduces P and D. D reduces only D, which is common on modern five inch quads whose pilots want to set the hover P and the full-throttle D separately.</p>
+        <p>Chooses which terms of the PID controller TPA reduces. TPA, throttle PID attenuation, turns the gains down at high throttle.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
@@ -112,14 +112,9 @@
         <p>Works here.</p>
       </section>
       <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>This setting is a choice between two modes, not a number. PD reduces more of the controller at high throttle than D does.</p>
-        <p>PD applies the reduction to two terms, P and D.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>D mode leaves P at full strength at high throttle.</p>
-        <p>In D mode only the D term is reduced, and P keeps its full value at every throttle.</p>
+        <h2>The choices</h2>
+        <p>D: only the D term is reduced, and P keeps its full value at every throttle. This is Betaflight 4.5&#039;s default.</p>
+        <p>PD: both P and D are reduced.</p>
       </section>
     </article>
     <div class="wiki-cta">

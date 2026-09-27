@@ -101,25 +101,25 @@
       <p class="wiki-lede">CLI setting thrust_linear. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 0 to 150.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>Compensates for thrust not rising in a straight line with motor output. Thrust is proportional to the square of the motor speed, and the motor speed does not rise in a straight line with the power level either. The compensation makes the throttle stick feel more even across its travel.</p>
+        <p>Compensates for the thrust of a propeller not rising in a straight line with motor output. Thrust grows with the square of motor speed, so a correction at low motor output changes the thrust less than the same correction at high output. Thrust linearisation raises low outputs more than high ones, so the PID corrections have a more even effect across the throttle range.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>In Betaflight&#039;s code this is thrustLinearization in the PID profile, applied in the mixer (mixer.c). It raises low motor outputs more than high ones. 0 turns it off.</p>
+        <p>In pid.c each motor&#039;s output is multiplied by 1 + thrust_linear / 100 × (1 − output)², which raises low outputs most. The mixer also divides the throttle by a matching amount, so that the throttle stick itself feels about the same. The net change is that PID corrections have more effect at low throttle. 0 turns it off, and 0 is Betaflight&#039;s default.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Works here. The physics model calculates each propeller&#039;s thrust as a constant multiplied by the square of its speed (kt ω²), so the non-linear behaviour this setting corrects for is present in the simulator.</p>
+        <p>Works here. The physics model calculates each propeller&#039;s thrust as a constant multiplied by the square of its speed (kt ω²), so the curve this setting corrects for is present in the simulator.</p>
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>There is more compensation. The throttle positions where the quad hovers and where it punches both shift, so the spacing between them on the stick changes.</p>
-        <p>A higher percentage applies more of the linearisation correction.</p>
+        <p>Corrections at low throttle get stronger, which can steady a descent. With too much, the quad twitches at low throttle.</p>
+        <p>A higher percentage raises low motor outputs more.</p>
       </section>
       <section class="wiki-section">
         <h2>If you lower it</h2>
-        <p>At 0 there is no compensation, and hover sits low on the stick because the quad has far more thrust than it needs to hover. At the normal Weight setting, the five inch makes about 5 times its weight in thrust and hovers at about 35 percent of the throttle stick.</p>
-        <p>0 is the firmware default in many profiles. Racers often use throttle_limit_type SCALE instead.</p>
+        <p>Corrections at low throttle are weaker than the same corrections at high throttle.</p>
+        <p>At 0 the motor outputs are left as the mixer made them.</p>
       </section>
     </article>
     <div class="wiki-cta">

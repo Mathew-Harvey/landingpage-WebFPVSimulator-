@@ -108,7 +108,7 @@
         <h2>How it works</h2>
         <p>Each cell of the five inch&#039;s battery has an internal resistance r_cell of 0.0025 Ω, so the six-cell battery has 0.015 Ω. The voltage under load comes from the calculation on the Motors page, which solves for the battery voltage and the motor currents together. The battery current is the sum over the motors of the duty cycle times the motor current, wherever that product is positive.</p>
         <p>Check 11 measures sag. It flies the same full throttle climb with the cells at 4.20 V and at 3.60 V, and the peak motor speed with the lower voltage must be between 4 and 15 percent lower. The result is 11.1 percent.</p>
-        <p>The vbat_* settings are inert, because the physics model owns the battery. Betaflight&#039;s vbat_sag_compensation works here: it scales the controller&#039;s output according to the cell voltage it is given, and the simulator gives it the physics model&#039;s sagged voltage. It changes what the controller asks for. It does not change the battery.</p>
+        <p>The battery meter settings, such as vbat_warning_cell_voltage, are not used, because the physics model calculates the battery. vbat_sag_compensation is the exception and works here: it scales the controller&#039;s output according to the cell voltage it is given, and the simulator gives it the physics model&#039;s sagged voltage. It changes what the controller asks for. It does not change the battery.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>

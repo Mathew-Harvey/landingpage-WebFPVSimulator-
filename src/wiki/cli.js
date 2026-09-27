@@ -10,8 +10,13 @@
  * kept short, because these pages are looked up rather than read through.
  * Every string is a complete sentence in plain English with no analogies.
  * A page shows air, lab and sim as What it does, How it works and In this
- * simulator, then If you raise it (upAir, upLab) and If you lower it
- * (downAir, downLab): what the pilot notices first, then why.
+ * simulator. What follows depends on the setting, and finishPage holds the
+ * rule. A number that works here adds If you raise it (upAir, upLab) and If
+ * you lower it (downAir, downLab): what the pilot notices first, then why.
+ * A choice from a list that works here adds The choices (choices), a
+ * sentence for each option. A setting that has no effect here adds
+ * neither, because moving it changes nothing and saying so twice more is
+ * padding. scripts/wiki-lint.js holds all three to it.
  *
  * This file is part of the WebFPVSimulator landing page.
  *
@@ -36,7 +41,7 @@ import {
   TABS,
   fieldBounds,
   lookupValues,
-} from '../fc/catalog.js';
+} from '../fc/catalog.js?v=20260927w';
 
 /*
  * The words a reader sees for each catalog status. The codes stay the
@@ -51,7 +56,7 @@ export const STATUS_LABEL = {
 };
 
 function copy({
-  title, air, lab, sim, upAir, upLab, downAir, downLab, related, figure,
+  title, air, lab, sim, upAir, upLab, downAir, downLab, choices, related, figure,
 }) {
   return {
     title,
@@ -62,6 +67,7 @@ function copy({
     upLab,
     downAir,
     downLab,
+    choices: choices || null,
     related: related || [],
     figure: figure || null,
   };
@@ -110,10 +116,10 @@ for (const axis of ['roll', 'pitch', 'yaw']) {
     title: `P ${a.axis}`,
     figure: 'pid',
     related: ['control-pid', `cli-i_${axis}`, `cli-d_${axis}`, `cli-f_${axis}`],
-    air: `P ${a.axis} is the proportional gain for the ${a.axis} axis. When the quad is ${a.motion} faster or slower than you asked, P changes the power to ${a.mixer} in proportion to the difference. It is the setting pilots usually mean when they call a quad snappy or lazy.`,
+    air: `P ${a.axis} is the proportional gain for the ${a.axis} axis. When the quad is ${a.motion} faster or slower than you asked, P changes the power to ${a.mixer} in proportion to the difference.`,
     lab: `Betaflight's PID code calculates the ${a.axis} P term as the P gain multiplied by the error: the target ${a.axis} rate minus the filtered gyro rate. The gain is in Betaflight's own units, not SI units. P has no memory of earlier errors, so a disturbance that lasts, such as ${a.lasting}, is corrected by the I term.`,
     sim: `Works here. It sets the ${a.axis} P gain in Betaflight's PID profile. The physics model never reads it: it only receives the motor power levels that come out of the mixer.`,
-    upAir: `${a.Axis} starts sooner, and small movements of ${a.stick} feel more directly connected to the quad. Past a certain point the quad buzzes, especially when you add throttle quickly and the gyro vibration is strongest.`,
+    upAir: `${a.Axis} follows ${a.stick} more tightly. Past a certain point the axis oscillates, a fast wobble that is worst at high throttle.`,
     upLab: `A higher P corrects errors faster and shortens the delay between the stick and the quad. It also magnifies any vibration that gets past the gyro filters, and the quad settles less smoothly after each movement, so D has to do more work to stop overshoot.${a.pNote}`,
     downAir: `${a.Axis} feels soft and late. You wait for the quad to respond, then move the stick too far.`,
     downLab: 'A lower P takes longer to correct a rate error, and the I term builds up more in the meantime. Feedforward can hide a low P during stick movements, but the quad still recovers more slowly from a disturbance.',
@@ -125,8 +131,8 @@ for (const axis of ['roll', 'pitch', 'yaw']) {
     air: `I ${a.axis} is the integral gain for the ${a.axis} axis. The I term adds up the error over time, so when a small error lasts, such as ${a.lasting}, the I term keeps growing until the error is gone. You notice it as a correction you never have to hold on the stick.`,
     lab: `The I term is the I gain multiplied by a running total of the error. The settings iterm_limit, iterm_windup, iterm_relax and iterm_rotation all work here, and they can stop the total growing or move it between axes. Anti-gravity raises I when the throttle changes quickly, so that a sudden climb does not tip the quad.`,
     sim: `Works here. It sets the ${a.axis} I gain in Betaflight's PID profile. The motor cant table gives a small yaw drift in a hover, and I corrects it, as it would on a real quad.`,
-    upAir: `${a.Axis} holds its line better and resists drift you would otherwise correct with the stick. Too much I makes the quad lurch when you stop a flip, unless I-term relax is working.`,
-    upLab: 'A higher I removes a steady error faster. The risk is the stored total: a large total released into the mixer at once makes the quad twitch, which is why I-term relax, iterm_windup and iterm_limit exist.',
+    upAir: `${a.Axis} holds its line better and resists drift you would otherwise correct with the stick. Too much I can make the quad wobble slowly, or bounce back at the end of a flip if I-term relax is off.`,
+    upLab: 'A higher I removes a steady error faster. An I term that grew large during a movement keeps pushing after the movement ends, which is why I-term relax, iterm_windup and iterm_limit exist.',
     downAir: `You have to hold a little ${a.axis} correction on the stick all the time. Fast movements may still look fine, because P and feedforward handle those.`,
     downLab: `A lower I leaves a small error that never goes away.${a.iNote}`,
   }));
@@ -135,10 +141,10 @@ for (const axis of ['roll', 'pitch', 'yaw']) {
     figure: 'pid',
     related: ['control-pid', 'control-filters', `cli-d_min_${axis === 'yaw' ? 'yaw' : axis}`, 'cli-dterm_lpf1_static_hz'],
     air: `D ${a.axis} is the derivative gain for the ${a.axis} axis. D acts against fast changes in the rotation rate, which stops the quad rotating past the point where you stopped the stick. It also reacts to every vibration in the gyro signal, which is why D has its own filter, and why a simulator with a clean gyro makes a high D look harmless.`,
-    lab: 'The D term is the D gain multiplied by the filtered rate of change of the gyro reading, not of the error, so a smooth stick movement does not produce a D response by itself. d_min (called D max in Configurator) keeps D low in a hover and raises it when the stick moves quickly. TPA often reduces D at high throttle. On real five inch quads yaw D is often low.',
+    lab: 'The D term is the D gain multiplied by the filtered rate of change of the gyro reading, not of the error, so a smooth stick movement does not produce a D response by itself. This value is the most D the axis gets: with a lower d_min set, Betaflight holds D down at d_min in calm flight and raises it towards this value when the gyro shows a fast change, such as propwash or the end of a flip, or when the stick moves quickly. TPA can also reduce D at high throttle. Betaflight\'s default yaw D is 0.',
     sim: 'Works here. The gyro vibration added in bf_glue.c means a high D is not free in this simulator. If you raise D and hear a buzz when you add throttle quickly, keep the filters, or you will export a tune that works only here.',
     upAir: `The quad stops ${a.motion} more cleanly. Too much D gives a grinding buzz that you can hear from the motors and see in the picture.`,
-    upLab: 'More D adds damping to the rate control, and also more gain at high frequencies. Past a certain point the axis oscillates at a few tens of times a second, and the D filter either hides that or makes it worse.',
+    upLab: 'More D adds damping to the rate control, and it also magnifies high frequency noise, which reaches the motors as heat and a grinding sound. With too much D and too little filtering the axis can oscillate.',
     downAir: `${a.Axis} goes past the point where you stop and bounces back. You feel snap-back when you centre the stick.`,
     downLab: 'A lower D gives less damping. The physics model still has aerodynamic rate damping, so too little D does less harm here than it would in a model without it, but the stop is still worse.',
   }));
@@ -156,82 +162,131 @@ for (const axis of ['roll', 'pitch', 'yaw']) {
 }
 
 put('d_min_roll', copy({
-  title: 'D min roll (D max)',
+  title: 'D min roll',
   related: ['control-pid', 'cli-d_roll', 'cli-d_max_gain'],
-  air: 'The D you want in a hover, when you are not moving the stick quickly. Betaflight\'s Configurator calls the high value D max; the CLI still calls the low value d_min. The firmware raises D towards the full value as the setpoint changes faster.',
-  lab: 'This is d_min for roll in the PID profile. d_max_gain and d_max_advance set how quickly and how far D rises from this lower value towards d_roll, so D stays low and quiet in a hover while a quick flick still gets damping.',
-  sim: 'Works here, on the same physics as d_roll. It only changes when the extra D is used.',
-  upAir: 'More D even when you are not moving the stick quickly. The quad is quieter if you then lower d_roll, and noisier if you do not.',
-  upLab: 'It raises the lower end of the D range, which leaves the blend less room to work.',
-  downAir: 'The hover becomes calmer. Quick flicks may bounce unless d_roll and d_max_gain supply the damping.',
-  downLab: 'A low d_min with a high d_roll is the intended arrangement: full D only when it is needed.',
+  air: 'The lower D value for roll. Betaflight uses it in calm flight and raises D towards d_roll when the gyro shows a fast change, such as propwash or the end of a flip, or when the stick moves quickly. The motors stay quieter in a cruise and still get full damping when they need it.',
+  lab: 'This is d_min_roll in the PID profile, and Betaflight 4.5 calls the feature D_min. It works on an axis only when d_min is above 0 and below that axis\'s D. The two settings that control the rise are named d_max_gain and d_max_advance in this version, although they belong to the same feature.',
+  sim: 'Works here. The gyro vibration and propwash in the physics model are what the rise responds to.',
+  upAir: 'D in calm flight moves closer to d_roll, so the motors are busier, and there is less difference between calm flight and a hard stop.',
+  upLab: 'A higher d_min raises the bottom of the D range. At d_roll or above, the feature is off for this axis and D stays at d_roll.',
+  downAir: 'D is lower in calm flight, which is quieter. A fast change still raises D towards d_roll.',
+  downLab: 'At 0 the feature is off for this axis, and D stays at d_roll all the time.',
 }));
 put('d_min_pitch', copy({
-  title: 'D min pitch (D max)',
+  title: 'D min pitch',
   related: ['control-pid', 'cli-d_pitch', 'cli-d_max_gain'],
-  air: 'The pitch version of D min. Pitch often needs a little more D than roll, because the quad is longer in that direction and the camera makes pitch errors easier to see.',
-  lab: 'This is d_min for pitch, with the same blend as roll. Pitch also carries the nose-up turning effect of rotor drag, so the D you feel when you stop is mixed with the I term correcting that effect.',
+  air: 'The lower D value for pitch, used in the same way as d_min_roll. Betaflight\'s defaults give pitch a little more D than roll, because a quad is harder to rotate about its pitch axis: its moment of inertia about pitch is larger.',
+  lab: 'This is d_min_pitch in the PID profile. The rise towards d_pitch works as it does on roll. Pitch also carries the nose-up turning effect of rotor drag at speed, which the I term corrects.',
   sim: 'Works here.',
-  upAir: 'Pitch stops harder in slow flight, and may buzz in a hover if the gyro vibration is strong.',
-  upLab: 'The same as for roll, on the pitch axis.',
-  downAir: 'Pitch bounces at the end of a flip, and the picture nods.',
-  downLab: 'D stays low until quick stick movements raise it towards d_pitch.',
+  upAir: 'D on pitch in calm flight moves closer to d_pitch, so the motors are busier.',
+  upLab: 'A higher d_min raises the bottom of the D range. At d_pitch or above, the feature is off for this axis.',
+  downAir: 'Pitch D is lower in calm flight. A fast change, such as the end of a flip, still raises it towards d_pitch.',
+  downLab: 'At 0 the feature is off for this axis, and D stays at d_pitch all the time.',
 }));
 put('d_min_yaw', copy({
-  title: 'D min yaw (D max)',
+  title: 'D min yaw',
   related: ['control-pid', 'cli-d_yaw', 'physics-yaw'],
-  air: 'The yaw version of D min. Many real five inch quads fly with yaw D at zero and do not miss it, because the yaw measurement is noisy and yaw changes slowly anyway.',
-  lab: 'This is d_min for yaw. If d_yaw is already 0, this setting has no useful effect.',
-  sim: 'Works here. The drag torque of the propellers already slows yaw in the physics model, so yaw D is optional.',
-  upAir: 'Usually a hiss from the motors rather than a better stop.',
-  upLab: 'It adds a noisy derivative to an axis where the mixer already has little torque to work with.',
-  downAir: 'This is the usual setting, and often the right one.',
-  downLab: 'Prefer 0 unless a flight log shows a real yaw overshoot that the filters cannot explain.',
+  air: 'The lower D value for yaw. Betaflight\'s default yaw D is 0, and while d_yaw is 0 this setting has no effect.',
+  lab: 'This is d_min_yaw in the PID profile. D_min works on an axis only when d_min is above 0 and below that axis\'s D, so with yaw D at 0 there is nothing to lower.',
+  sim: 'Works here. The drag torque of the propellers already slows yaw rotation in the physics model.',
+  upAir: 'If d_yaw is above 0, yaw D in calm flight moves closer to it.',
+  upLab: 'A higher d_min raises the bottom of the yaw D range. At d_yaw or above, the feature is off for yaw.',
+  downAir: 'If d_yaw is above 0, yaw D is lower in calm flight.',
+  downLab: 'At 0 the feature is off for yaw, and yaw D stays at d_yaw.',
 }));
 put('d_max_gain', copy({
   title: 'D max gain',
   related: ['cli-d_min_roll', 'control-pid'],
-  air: 'How quickly D is allowed to rise from D min towards the full D value as you move the stick.',
-  lab: 'This is d_min_gain in the PID profile. A larger value means D reaches the full d_ value sooner for a given rate of change of the setpoint.',
-  sim: 'Works here.',
-  upAir: 'Quick flicks get their full D sooner. The hover stays at D min if D min is low.',
-  upLab: 'D rises faster. If you fly with lots of stick movement, D can seem to be at its full value all the time.',
-  downAir: 'D stays close to D min unless you move the stick very quickly.',
-  downLab: 'D rises more slowly, and gentle stick movements never reach the full d_roll value.',
+  air: 'How strongly a fast change raises D from d_min towards the full D value.',
+  lab: 'In Betaflight 4.5 this is d_max_gain, stored as d_min_gain in the PID profile. pid.c smooths the rate of change of the gyro reading and multiplies its size by this gain, so a quick change in rotation, such as propwash or the end of a flip, raises D. The same gain, scaled by d_max_advance, sets the rise from fast stick movement. Whichever is larger is used.',
+  sim: 'Works here. It has an effect only on an axis whose d_min is above 0 and below its D.',
+  upAir: 'D rises further for the same disturbance, so the quad reaches full damping in smaller bumps too.',
+  upLab: 'A higher gain turns the same rate of change into a larger rise. With a high enough gain D sits near its full value for most of a flight.',
+  downAir: 'D stays closer to d_min unless the change is large.',
+  downLab: 'At 0 nothing raises D, and it stays at d_min.',
 }));
 put('d_max_advance', copy({
   title: 'D max advance',
   related: ['cli-d_max_gain', 'control-pid'],
-  air: 'How early D starts to rise, compared with the stick movement.',
-  lab: 'This is d_min_advance. It changes the timing of the same blend that d_max_gain controls. It is not a second D term.',
+  air: 'How much a fast stick movement raises D, on top of the rise that fast changes in the gyro reading cause. It lets D rise at the start of a move, before the gyro has seen it.',
+  lab: 'In Betaflight 4.5 this is d_max_advance, stored as d_min_advance. pid.c multiplies the rate of change of the setpoint by d_max_gain and by this value, compares the result with the rise from the gyro, and uses the larger.',
   sim: 'Works here.',
-  upAir: 'D arrives earlier in a movement, which can feel like extra P at the start of a flick.',
-  upLab: 'It moves the rise in D earlier. It interacts with feedforward, which also acts at the start of a movement.',
-  downAir: 'The rise in D waits. The stop at the end of a movement still gets full D if the blend has caught up.',
-  downLab: 'The rise comes later, which helps if early D is reacting to stick jitter.',
+  upAir: 'D rises earlier in a stick movement, which can feel as if the start of a flick is damped.',
+  upLab: 'A higher value gives the stick\'s rate of change more weight. It acts at the start of a movement, as feedforward does.',
+  downAir: 'D rises only when the gyro sees a fast change.',
+  downLab: 'At 0 the stick movement plays no part, and only the gyro raises D.',
 }));
 
-function lpfPut(key, title, where, related) {
+/*
+ * The low-pass filters have three kinds of page: the filter's type, which is
+ * a choice from a list; its static cutoff; and the two ends of the dynamic
+ * cutoff, which moves with the throttle. They were one template, so a page
+ * for a filter TYPE told the reader what raising it would do. The gyro
+ * filters act on the gyro signal that every term reads; the D term filters
+ * act on the D term alone.
+ */
+function lpfWhere(key) {
+  return key.startsWith('gyro_')
+    ? { what: 'the gyro signal', who: 'P, I, D and everything else that reads the gyro see the result', file: 'gyro_init.c and gyro.c' }
+    : { what: 'the D term', who: 'only D sees the result, so P and I get no extra delay from it', file: 'pid_init.c and pid.c' };
+}
+
+function lpfTypePut(key, title, n, related) {
+  const w = lpfWhere(key);
   put(key, copy({
     title,
     figure: 'filters',
     related,
-    air: `A low-pass filter on ${where}. A low-pass filter lets slow changes through and removes fast ones. A lower cutoff frequency in Hz means more smoothing and more delay, so the PID controller reacts later and more calmly. On some of these settings, 0 turns the filter off.`,
-    lab: 'The filter type can be PT1, BIQUAD, PT2 or PT3, and the static Hz is the cutoff frequency. When the dynamic minimum, maximum and expo are set, the cutoff moves with the throttle, through the dynamic low-pass logic in gyro_init and pid_init. A 1 kHz loop cannot record anything faster than 500 Hz, so this setting trades delay against noise in the range from 0 to 500 Hz.',
-    sim: 'Works here. The gyro filters are Betaflight\'s compiled gyro.c, and the D term filters are the compiled pid_init.c. The vibration they smooth is added to the gyro reading in bf_glue.c, not to the motion of the quad.',
-    upAir: 'For a cutoff in Hz, raising it lets more noise through and adds less delay. The quad feels more directly connected and less smooth.',
-    upLab: 'A higher cutoff gives less delay and more noise in the D term. Judge it in a full throttle climb, not in a hover.',
-    downAir: 'The quad feels smoother and later, which makes it easier to fly badly. Too low, and it feels slow to respond to everything.',
-    downLab: 'More delay in the loop. Pilots often raise P to make up for it and then get oscillation, so change the filter instead.',
+    air: `Chooses the kind of filter used for low-pass filter ${n} on ${w.what}. A low-pass filter lets slow changes through and removes fast ones. The kinds differ in how sharply they cut above the cutoff frequency and how much delay they add below it.`,
+    lab: 'The kinds come from Betaflight\'s filter.c. PT1 is a first-order filter. PT2 and PT3 are two and three first-order stages in a row, each set a little higher so that the whole filter still cuts at the frequency you choose. BIQUAD is a second-order filter with a sharper bend at the cutoff. The cutoff frequency is a separate setting.',
+    sim: `Works here, in Betaflight's compiled ${w.file}.`,
+    choices: [
+      'PT1: the gentlest cut, and the least delay for its cutoff.',
+      'BIQUAD: a second-order filter, like PT2 but with a sharper bend at the cutoff.',
+      'PT2: two first-order stages. It removes more above the cutoff than PT1, and adds more delay.',
+      'PT3: three first-order stages. It removes more again, and adds more delay again.',
+    ],
   }));
 }
 
-lpfPut('gyro_lpf1_type', 'Gyro low-pass 1 type', 'the gyro signal (the first gyro low-pass filter)', ['control-filters', 'cli-gyro_lpf1_static_hz']);
-lpfPut('gyro_lpf1_static_hz', 'Gyro low-pass 1 (Hz)', 'the gyro signal (the first gyro low-pass filter)', ['control-filters', 'physics-gyro']);
-lpfPut('gyro_lpf2_type', 'Gyro low-pass 2 type', 'the gyro signal (the second gyro low-pass filter)', ['control-filters', 'cli-gyro_lpf2_static_hz']);
-lpfPut('gyro_lpf2_static_hz', 'Gyro low-pass 2 (Hz)', 'the gyro signal (the second gyro low-pass filter)', ['control-filters']);
-lpfPut('gyro_lpf1_dyn_min_hz', 'Gyro low-pass 1, dynamic minimum (Hz)', 'the gyro signal, used as the dynamic filter\'s cutoff at low throttle', ['cli-gyro_lpf1_dyn_max_hz']);
-lpfPut('gyro_lpf1_dyn_max_hz', 'Gyro low-pass 1, dynamic maximum (Hz)', 'the gyro signal, used as the dynamic filter\'s cutoff at high throttle', ['cli-gyro_lpf1_dyn_min_hz']);
+function lpfHzPut(key, title, n, related) {
+  const w = lpfWhere(key);
+  put(key, copy({
+    title,
+    figure: 'filters',
+    related,
+    air: `The cutoff frequency, in hertz, of low-pass filter ${n} on ${w.what}. A low-pass filter lets changes slower than its cutoff through and removes faster ones, and ${w.who}. ${n === 1 ? '0 turns the filter off, as long as its dynamic minimum is 0 too.' : '0 turns the filter off.'}`,
+    lab: `${n === 1 ? 'When the dynamic minimum is above 0, Betaflight uses the dynamic cutoff, which moves with the throttle, and ignores this value.' : 'Filter 2 has no dynamic version, so this is its cutoff whenever it is above 0.'} A real flight controller reads its gyro thousands of times a second. This simulator reads it 1,000 times a second, so nothing above 500 Hz reaches the filter here.`,
+    sim: `Works here, in Betaflight's compiled ${w.file}. The vibration it removes is added to the simulated gyro reading, not to the quad's motion.`,
+    upAir: 'Less smoothing and less delay. The quad feels more directly connected to the sticks, and more noise gets through to the motors.',
+    upLab: 'A higher cutoff lets faster changes through. Judge it in a full throttle climb, where the vibration is strongest, not in a hover.',
+    downAir: 'More smoothing and more delay. The quad feels softer, and too low a cutoff makes it slow to respond to everything.',
+    downLab: 'A lower cutoff removes more noise and adds delay to the loop, and delay in a feedback loop brings it closer to oscillating.',
+  }));
+}
+
+function lpfDynPut(key, title, end, related) {
+  const w = lpfWhere(key);
+  put(key, copy({
+    title,
+    figure: 'filters',
+    related,
+    air: `The cutoff frequency, in hertz, of low-pass filter 1 on ${w.what} at ${end === 'min' ? 'zero throttle' : 'full throttle'}. The dynamic cutoff moves from the minimum to the maximum as the throttle rises, because the vibration a quad makes rises in frequency with motor speed.`,
+    lab: `${end === 'min' ? 'A minimum above 0 switches the dynamic cutoff on, and the static cutoff is then ignored. 0 switches it off.' : 'It is used only while the dynamic minimum is above 0.'} The dynamic expo setting shapes the curve between the two ends.`,
+    sim: `Works here, in Betaflight's compiled ${w.file}.`,
+    upAir: `Less smoothing and less delay ${end === 'min' ? 'at low throttle' : 'at high throttle'}, and more noise let through there.`,
+    upLab: `A higher ${end === 'min' ? 'minimum' : 'maximum'} lets faster changes through at that end of the throttle.`,
+    downAir: `More smoothing and more delay ${end === 'min' ? 'at low throttle' : 'at high throttle'}.`,
+    downLab: end === 'min' ? 'At 0 the dynamic cutoff is off, and the static cutoff applies instead.' : 'Keep the maximum above the minimum. On a real flight controller Betaflight\'s configuration check turns the dynamic cutoff off when it is not, and that check is not compiled here.',
+  }));
+}
+
+lpfTypePut('gyro_lpf1_type', 'Gyro low-pass 1 type', 1, ['control-filters', 'cli-gyro_lpf1_static_hz']);
+lpfHzPut('gyro_lpf1_static_hz', 'Gyro low-pass 1 (Hz)', 1, ['control-filters', 'physics-gyro']);
+lpfTypePut('gyro_lpf2_type', 'Gyro low-pass 2 type', 2, ['control-filters', 'cli-gyro_lpf2_static_hz']);
+lpfHzPut('gyro_lpf2_static_hz', 'Gyro low-pass 2 (Hz)', 2, ['control-filters']);
+lpfDynPut('gyro_lpf1_dyn_min_hz', 'Gyro low-pass 1, dynamic minimum (Hz)', 'min', ['cli-gyro_lpf1_dyn_max_hz', 'cli-gyro_lpf1_static_hz']);
+lpfDynPut('gyro_lpf1_dyn_max_hz', 'Gyro low-pass 1, dynamic maximum (Hz)', 'max', ['cli-gyro_lpf1_dyn_min_hz']);
 put('gyro_lpf1_dyn_expo', copy({
   title: 'Gyro low-pass 1, dynamic expo',
   related: ['cli-gyro_lpf1_dyn_min_hz', 'control-filters'],
@@ -246,54 +301,54 @@ put('gyro_lpf1_dyn_expo', copy({
 put('gyro_notch1_hz', copy({
   title: 'Gyro notch 1 (Hz)',
   related: ['control-filters', 'cli-gyro_notch1_cutoff'],
-  air: 'The centre frequency of a static notch filter on the gyro. A notch filter removes a narrow band of frequencies. Use it on a vibration that does not change with motor speed, such as a vibration of the frame. 0 turns it off.',
-  lab: 'This is gyro_soft_notch_hz_1. It needs a matching cutoff to be complete. Vibration that changes with motor speed belongs to the RPM filter, not to a static notch.',
-  sim: 'Works here. The imbalance lines added to the gyro change with motor speed, so a static notch can only help with a fixed peak.',
-  upAir: 'It moves the notch to a higher frequency.',
-  upLab: 'If the notch misses the peak, it adds delay and removes nothing useful.',
-  downAir: 'It moves the notch to a lower frequency, and 0 turns it off.',
-  downLab: '0 is off. Do not leave a leftover notch at a very low frequency from an experiment.',
+  air: 'The centre frequency of a static notch filter on the gyro. A notch filter removes a narrow band of frequencies and leaves the rest. A static notch suits a vibration that stays at one frequency whatever the motors do, such as a resonance of the frame. 0 turns it off.',
+  lab: 'This is gyro_notch1_hz, stored as gyro_soft_notch_hz_1. Its width is set by gyro_notch1_cutoff, which must be below this frequency. Vibration that moves with motor speed belongs to the RPM filter.',
+  sim: 'Works here. The imbalance lines added to the simulated gyro move with motor speed, so a static notch can only catch one of them at one throttle.',
+  upAir: 'The notch moves to a higher frequency.',
+  upLab: 'If the notch misses the peak it was meant for, it adds delay and removes nothing useful.',
+  downAir: 'The notch moves to a lower frequency. 0 turns it off.',
+  downLab: 'A notch at a low frequency adds delay where the controller is working. Do not leave one from an experiment.',
 }));
 put('gyro_notch1_cutoff', copy({
   title: 'Gyro notch 1 cutoff',
   related: ['cli-gyro_notch1_hz'],
-  air: 'Sets the width of gyro notch 1. The closer the cutoff is to the notch\'s centre frequency, the narrower and gentler the notch; the further away, the wider it is.',
-  lab: 'This is gyro_soft_notch_cutoff_1, using Betaflight\'s standard biquad notch from filter.c. The centre frequency and the cutoff together set the notch\'s Q, its sharpness.',
+  air: 'Sets the width of gyro notch 1. It is the frequency below the centre where the notch begins. The closer it is to the centre, the narrower the notch.',
+  lab: 'This is gyro_soft_notch_cutoff_1. Betaflight works out the notch\'s Q, its sharpness, from the centre frequency and this cutoff, and the notch is a biquad filter from filter.c. The cutoff must be below the centre frequency. On a real flight controller Betaflight\'s configuration check turns the notch off when it is not; that check is in config/config.c, which is not compiled here, so nothing does it for you.',
   sim: 'Works here.',
-  upAir: 'The notch becomes wider or narrower depending on where the cutoff sits relative to the centre. Change it together with gyro_notch1_hz.',
-  upLab: 'The cutoff relative to the centre frequency sets Q. Read both settings before changing either one.',
-  downAir: 'If the cutoff is still below the centre frequency, the notch becomes narrower.',
-  downLab: 'A cutoff equal to the centre frequency gives a notch of zero width, which does nothing useful.',
+  upAir: 'The cutoff moves towards the centre, so the notch gets narrower.',
+  upLab: 'A higher cutoff gives a higher Q. It must stay below the centre frequency.',
+  downAir: 'The cutoff moves away from the centre, so the notch gets wider and removes more of the signal around it.',
+  downLab: 'A lower cutoff gives a lower Q, a wider notch and more delay below it.',
 }));
 put('gyro_notch2_hz', copy({
   title: 'Gyro notch 2 (Hz)',
   related: ['cli-gyro_notch1_hz', 'cli-gyro_notch2_cutoff'],
-  air: 'A second static notch filter on the gyro. It works like notch 1, for a second fixed peak.',
-  lab: 'This is gyro_soft_notch_hz_2.',
+  air: 'A second static notch filter on the gyro, for a second fixed peak. It works like notch 1. 0 turns it off.',
+  lab: 'This is gyro_notch2_hz, stored as gyro_soft_notch_hz_2, with its width set by gyro_notch2_cutoff.',
   sim: 'Works here.',
-  upAir: 'It moves the second notch to a higher frequency.',
-  upLab: 'Each static notch adds its own delay. For vibration that changes with motor speed, use the RPM filter instead.',
-  downAir: 'It moves the notch to a lower frequency, and 0 turns it off.',
-  downLab: '0 turns it off.',
+  upAir: 'The second notch moves to a higher frequency.',
+  upLab: 'Each static notch adds its own delay. For vibration that moves with motor speed, the RPM filter is the tool.',
+  downAir: 'The notch moves to a lower frequency. 0 turns it off.',
+  downLab: 'A notch at a low frequency adds delay where the controller is working.',
 }));
 put('gyro_notch2_cutoff', copy({
   title: 'Gyro notch 2 cutoff',
   related: ['cli-gyro_notch2_hz'],
-  air: 'Sets the width of gyro notch 2.',
-  lab: 'This is gyro_soft_notch_cutoff_2.',
+  air: 'Sets the width of gyro notch 2, in the same way as gyro_notch1_cutoff: the closer it is to the centre, the narrower the notch.',
+  lab: 'This is gyro_soft_notch_cutoff_2. It must be below gyro_notch2_hz. On a real flight controller Betaflight\'s configuration check turns the notch off when it is not, and that check is not compiled here.',
   sim: 'Works here.',
-  upAir: 'The notch becomes wider or narrower depending on the centre frequency. Change the two together.',
-  upLab: 'The shape works in the same way as notch 1.',
-  downAir: 'The same applies when you lower it: the width depends on the centre frequency too.',
-  downLab: 'The shape works in the same way as notch 1.',
+  upAir: 'The cutoff moves towards the centre, so the notch gets narrower.',
+  upLab: 'A higher cutoff gives a higher Q. It must stay below the centre frequency.',
+  downAir: 'The notch gets wider and removes more of the signal around its centre.',
+  downLab: 'A lower cutoff gives a lower Q and more delay below the notch.',
 }));
 
-lpfPut('dterm_lpf1_type', 'D term low-pass 1 type', 'the D term (the first D term low-pass filter)', ['control-filters', 'cli-d_roll']);
-lpfPut('dterm_lpf1_static_hz', 'D term low-pass 1 (Hz)', 'the D term (the first D term low-pass filter)', ['control-filters']);
-lpfPut('dterm_lpf2_type', 'D term low-pass 2 type', 'the D term (the second D term low-pass filter)', ['control-filters']);
-lpfPut('dterm_lpf2_static_hz', 'D term low-pass 2 (Hz)', 'the D term (the second D term low-pass filter)', ['control-filters']);
-lpfPut('dterm_lpf1_dyn_min_hz', 'D term low-pass 1, dynamic minimum (Hz)', 'the D term, used as the dynamic filter\'s cutoff at low throttle', ['cli-dterm_lpf1_dyn_max_hz']);
-lpfPut('dterm_lpf1_dyn_max_hz', 'D term low-pass 1, dynamic maximum (Hz)', 'the D term, used as the dynamic filter\'s cutoff at high throttle', ['cli-dterm_lpf1_dyn_min_hz']);
+lpfTypePut('dterm_lpf1_type', 'D term low-pass 1 type', 1, ['control-filters', 'cli-d_roll']);
+lpfHzPut('dterm_lpf1_static_hz', 'D term low-pass 1 (Hz)', 1, ['control-filters']);
+lpfTypePut('dterm_lpf2_type', 'D term low-pass 2 type', 2, ['control-filters']);
+lpfHzPut('dterm_lpf2_static_hz', 'D term low-pass 2 (Hz)', 2, ['control-filters']);
+lpfDynPut('dterm_lpf1_dyn_min_hz', 'D term low-pass 1, dynamic minimum (Hz)', 'min', ['cli-dterm_lpf1_dyn_max_hz', 'cli-dterm_lpf1_static_hz']);
+lpfDynPut('dterm_lpf1_dyn_max_hz', 'D term low-pass 1, dynamic maximum (Hz)', 'max', ['cli-dterm_lpf1_dyn_min_hz']);
 put('dterm_lpf1_dyn_expo', copy({
   title: 'D term low-pass 1, dynamic expo',
   related: ['cli-dterm_lpf1_dyn_min_hz'],
@@ -308,35 +363,35 @@ put('dterm_lpf1_dyn_expo', copy({
 put('dterm_notch_hz', copy({
   title: 'D term notch (Hz)',
   related: ['cli-dterm_notch_cutoff', 'control-filters'],
-  air: 'A static notch filter on the D term only. Use it for a vibration that affects D, without adding delay to P. 0 turns it off.',
-  lab: 'This is dterm_notch_hz in the PID profile, handled in pid_init.c.',
+  air: 'The centre frequency of a static notch filter on the D term only, for a fixed vibration that affects D without adding delay to P. 0 turns it off.',
+  lab: 'This is dterm_notch_hz in the PID profile, set up in pid_init.c. Its width is set by dterm_notch_cutoff.',
   sim: 'Works here.',
-  upAir: 'It moves the D notch to a higher frequency.',
-  upLab: 'The D term is where noise turns into motor heat. A well-placed D notch can let you raise D. A badly placed one only delays the stop.',
-  downAir: 'It moves the notch to a lower frequency, and 0 turns it off.',
-  downLab: '0 turns it off.',
+  upAir: 'The D notch moves to a higher frequency.',
+  upLab: 'The D term turns high frequency noise into motor heat. A notch on a real peak can let D be raised; one that misses only adds delay to D.',
+  downAir: 'The notch moves to a lower frequency. 0 turns it off.',
+  downLab: 'A notch at a low frequency delays the D term where it is doing its job.',
 }));
 put('dterm_notch_cutoff', copy({
   title: 'D term notch cutoff',
   related: ['cli-dterm_notch_hz'],
-  air: 'Sets the width of the D term notch.',
-  lab: 'This is dterm_notch_cutoff.',
+  air: 'Sets the width of the D term notch: the closer it is to dterm_notch_hz, the narrower the notch.',
+  lab: 'This is dterm_notch_cutoff. It must be below dterm_notch_hz. On a real flight controller Betaflight\'s configuration check turns the notch off when it is not, and that check is not compiled here.',
   sim: 'Works here.',
-  upAir: 'Change it together with the centre frequency, dterm_notch_hz.',
-  upLab: 'The centre frequency and the cutoff set the notch\'s Q, as for the other notches.',
-  downAir: 'The same applies when you lower it: change it together with the centre frequency.',
-  downLab: 'The shape works in the same way as the gyro notches.',
+  upAir: 'The cutoff moves towards the centre, so the notch gets narrower.',
+  upLab: 'A higher cutoff gives a higher Q.',
+  downAir: 'The notch gets wider and removes more of the D term around its centre.',
+  downLab: 'A lower cutoff gives a lower Q and more delay on D.',
 }));
 put('yaw_lowpass_hz', copy({
   title: 'Yaw low-pass (Hz)',
   related: ['control-filters', 'cli-p_yaw', 'physics-gyro'],
-  air: 'Extra smoothing on yaw only. Yaw is measured with the most noise of the three axes, and this filter smooths it without adding delay to roll and pitch.',
-  lab: 'This is yaw_lowpass_hz. 0 turns it off. It works in addition to the gyro low-pass filters.',
-  sim: 'Works here. The yaw part of the simulated gyro vibration is 0.5 of the imbalance line, a chosen value. If yaw D is noisy, this filter is still the right place to add delay.',
-  upAir: 'A higher cutoff means less yaw filtering. For more smoothing, lower it.',
-  upLab: 'A higher cutoff gives less delay on yaw.',
-  downAir: 'Yaw feels later and calmer.',
-  downLab: 'More delay on yaw. If you go too low, yaw P starts to feel disconnected from the stick.',
+  air: 'A low-pass filter on the yaw P term only. It smooths what P sends to the motors on yaw without adding delay to roll and pitch. 0 turns it off.',
+  lab: 'This is yaw_lowpass_hz, a first-order filter in pid.c applied to the yaw P term. It works in addition to the gyro filters, which act on every axis.',
+  sim: 'Works here. The yaw part of the simulated gyro vibration is half the size of the roll and pitch part, a chosen value.',
+  upAir: 'Less smoothing on yaw P, and yaw follows the stick a little more directly.',
+  upLab: 'A higher cutoff gives less delay on the yaw P term.',
+  downAir: 'Yaw feels calmer and later.',
+  downLab: 'More delay on the yaw P term. Too low, and yaw P starts to feel disconnected from the stick.',
 }));
 
 const RPM = (key, title, air, lab, upA, upL, downA, downL) => {
@@ -357,8 +412,8 @@ RPM(
   'rpm_filter_harmonics',
   'RPM filter harmonics',
   'How many multiples of the motor speed the RPM filter removes. 1 is the vibration once per revolution, and 2 and 3 are twice and three times that frequency.',
-  'This is rpm_filter_harmonics. Each harmonic is a notch that follows the motor speed. More harmonics means more delay, and more chance of removing part of the signal the controller needs.',
-  'More of the noise at multiples of the motor speed is removed. That can help a quad with a bent motor bell, and it can also reduce the controller\'s response.',
+  'This is rpm_filter_harmonics. For each harmonic Betaflight runs a notch that follows each motor\'s speed, on each axis, so three harmonics on a quad is thirty six notches. More notches mean more delay.',
+  'More of the noise at multiples of the motor speed is removed, at the cost of a little more delay.',
   'More notch filters to run at 1 kHz, each one of less use beyond the lines that actually exist.',
   'Fewer notches. The loop has less delay, and the gyro signal is noisier at those multiples.',
   '1 covers the imbalance line this simulator adds.',
@@ -367,7 +422,7 @@ RPM(
   'rpm_filter_weights_1',
   'RPM filter weight, harmonic 1',
   'How strongly the first RPM notch removes its frequency. 0 leaves that harmonic alone.',
-  'This is rpm_filter_weights[0]. Exported settings use the list form that Configurator 4.5 accepts.',
+  'This is the first of the three rpm_filter_weights, as a percentage. Betaflight 4.5 prints the three as one list, rpm_filter_weights = 100,100,100, and an export here writes the same list.',
   'The first harmonic notch removes more.',
   'A higher weight reduces the signal more at the motor\'s rotation frequency.',
   'The notch removes less, and 0 turns it off for this harmonic.',
@@ -377,7 +432,7 @@ RPM(
   'rpm_filter_weights_2',
   'RPM filter weight, harmonic 2',
   'How strongly the second harmonic notch removes its frequency.',
-  'This is rpm_filter_weights[1].',
+  'This is the second of the three rpm_filter_weights.',
   'The second harmonic notch removes more.',
   'The simulator does not add a line at twice the rotation frequency, so this notch may add delay without removing anything.',
   'The notch removes less, or nothing at 0.',
@@ -387,7 +442,7 @@ RPM(
   'rpm_filter_weights_3',
   'RPM filter weight, harmonic 3',
   'How strongly the third harmonic notch removes its frequency. On a real quad with three-blade propellers the blade passing vibration is close to this frequency. This simulator does not add it.',
-  'This is rpm_filter_weights[2].',
+  'This is the third of the three rpm_filter_weights.',
   'The third harmonic notch removes more. On a real three-blade quad this can be the most useful notch. Here it mostly adds delay.',
   'Blade passing was deliberately not modelled, because the once-per-revolution line is the larger effect and a 1 kHz loop records little above 500 Hz.',
   'The notch removes less, or nothing at 0.',
@@ -417,13 +472,13 @@ put('rpm_filter_fade_range_hz', copy({
 put('rpm_filter_q', copy({
   title: 'RPM filter Q',
   related: ['cli-rpm_filter_harmonics', 'control-filters'],
-  air: 'Sets how narrow the RPM notches are. A high Q gives a narrow notch. A low Q gives a wide notch with more delay.',
-  lab: 'This is rpm_filter_q. As for the other biquad filters, Q is the centre frequency divided by the width of the notch.',
-  sim: 'Works here. The simulated imbalance lines are narrow, so a high Q can remove them. A low Q removes more of the signal around them.',
-  upAir: 'Narrower notches, with less extra delay, but they miss the vibration more easily.',
-  upLab: 'A high Q means a narrow band.',
-  downAir: 'Wider notches: more certain to catch the vibration, with more delay.',
-  downLab: 'A low Q also removes frequencies next to the vibration.',
+  air: 'Sets how narrow the RPM notches are. A high Q gives a narrow notch. A low Q gives a wide notch, which removes more of the signal around the motor frequency and adds more delay.',
+  lab: 'This is rpm_filter_q, stored as the Q multiplied by 100, so 500 means a Q of 5. Q is the centre frequency divided by the width of the notch.',
+  sim: 'Works here. The simulated imbalance lines are narrow, so a high Q can remove them.',
+  upAir: 'Narrower notches, with less extra delay. They miss more easily if the motor speed they follow is late or wrong.',
+  upLab: 'A higher Q means a narrower band.',
+  downAir: 'Wider notches, which catch the vibration more surely and add more delay.',
+  downLab: 'A lower Q also removes frequencies next to the motor\'s.',
 }));
 put('rpm_filter_lpf_hz', copy({
   title: 'RPM filter low-pass (Hz)',
@@ -438,57 +493,51 @@ put('rpm_filter_lpf_hz', copy({
 }));
 
 for (const [key, title, air] of [
-  ['dyn_notch_count', 'Dynamic notch count', 'Sets how many noise peaks the dynamic notch filter follows at once, with one notch for each peak.'],
-  ['dyn_notch_q', 'Dynamic notch Q', 'Sets the Q of each dynamic notch, which decides how wide the notch is. A higher Q gives a narrower notch.'],
+  ['dyn_notch_count', 'Dynamic notch count', 'Sets how many noise peaks the dynamic notch filter follows on each axis, with one notch for each peak.'],
+  ['dyn_notch_q', 'Dynamic notch Q', 'Sets the Q of each dynamic notch, which decides how wide it is. A higher Q gives a narrower notch.'],
   ['dyn_notch_min_hz', 'Dynamic notch minimum (Hz)', 'Sets the lowest frequency, in hertz, at which the dynamic notch filter looks for noise peaks.'],
   ['dyn_notch_max_hz', 'Dynamic notch maximum (Hz)', 'Sets the highest frequency, in hertz, at which the dynamic notch filter looks for noise peaks.'],
 ]) {
   put(key, copy({
     title,
     related: ['control-filters', 'start-honesty', 'physics-gyro'],
-    air: `${air} A notch filter removes a narrow band of frequencies. On a real flight controller whose loop runs at 8 kHz, the dynamic notch measures the frequencies of the vibration while the quad flies and places its notches on the strongest peaks. It is one of the reasons modern five inch quads can use more D than quads built in 2018 could.`,
-    lab: 'The code is Betaflight\'s dyn_notch_filter.c, and it is compiled into the simulator. It finds the peaks with a sliding discrete Fourier transform (SDFT), a calculation that splits the gyro signal into its separate frequencies. Betaflight will not start it when the loop runs slower than DYN_NOTCH_UPDATE_MIN_HZ (2 kHz), because at 1 kHz the SDFT cannot separate the frequencies finely enough to be useful. This simulator runs at 1 kHz, a rate fixed by the project\'s rules.',
-    sim: 'Off at 1 kHz. The setting is written into Betaflight\'s real setting group, so a tune keeps the value it sets, and an Export from the firmware bench writes it out unchanged. At 1 kHz the firmware does what it does on a real 1 kHz flight controller, which is nothing. Making the setting work would mean raising the loop rate, and that is a decision for the project\'s owner.',
-    upAir: 'On a real 8 kHz flight controller, the filter would search for and remove noise differently. Here you will feel no change in flight.',
-    upLab: 'The stored value changes, but the SDFT never starts, so the flight does not change. The check scripts/fc-trace.js flies the same stick inputs with dyn_notch_count at 0 and at 3 and confirms that the two flights are identical.',
-    downAir: 'Lowering it does not change how the quad flies here either.',
-    downLab: 'The stored value changes and the SDFT still never starts, so the flight stays the same.',
+    air: `${air} A notch filter removes a narrow band of frequencies. On a real flight controller the dynamic notch measures the frequencies of the vibration while the quad flies and places its notches on the strongest peaks.`,
+    lab: 'The code is Betaflight\'s dyn_notch_filter.c, and it is compiled into the simulator. It finds the peaks with a sliding discrete Fourier transform (SDFT), a calculation that splits the gyro signal into its separate frequencies. dynNotchInit does not start it when the PID loop runs slower than 2 kHz (DYN_NOTCH_UPDATE_MIN_HZ), on any flight controller.',
+    sim: 'Off at 1 kHz. This simulator\'s loop runs at 1 kHz, a rate fixed by the project\'s rules, so the firmware does what it does on a real board with a 1 kHz PID loop: nothing. The value is written into Betaflight\'s real setting group, so a tune keeps it and an export writes it out unchanged. The check scripts/fc-trace.js flies the same stick inputs with dyn_notch_count at 0 and at 3 and confirms that the two flights are identical.',
   }));
 }
 
 put('pid_process_denom', copy({
   title: 'PID process denominator',
   related: ['physics-timestep', 'start-honesty'],
-  air: 'On a real flight controller, this sets how often the PID calculation runs compared with how often the gyro is read. The PID rate is the gyro rate divided by this number: 1 means they run at the same rate, and 4 means the PID runs at a quarter of the gyro rate.',
-  lab: 'The value is stored in Betaflight\'s pidConfig as pid_process_denom. The physics model steps at 1 kHz. After a tune, or a change saved on the firmware bench, has been applied as Betaflight command line (CLI) text, bf_config_finish in bf_glue.c sets this value back to 1. This stops any setting from making the compiled control loop drift out of step with the physics model without anyone noticing.',
-  sim: 'Off at 1 kHz. The value is stored and then set to 1, so if you read it back after Betaflight has started, it is always 1.',
-  upAir: 'On a flight controller that uses this setting, a higher value makes the PID run less often. Here nothing changes.',
-  upLab: 'The value is applied and then overwritten with 1, so raising it cannot be used to make D easier to tune.',
-  downAir: '1 is the only value that describes what this simulator does.',
-  downLab: 'The simulator forces the value to 1, whatever you set.',
+  air: 'On a real flight controller, this sets how often the PID controller runs compared with how often the gyro is read. The PID rate is the gyro rate divided by this number: 1 means they run at the same rate, and 2 means the PID runs at half the gyro rate.',
+  lab: 'The value is stored in Betaflight\'s pidConfig as pid_process_denom. The physics model steps at 1 kHz, and after a tune or a change saved on the firmware bench is applied, bf_config_finish in bf_glue.c sets this value back to 1, so that no setting can make the control loop drift out of step with the physics.',
+  sim: 'Off at 1 kHz. The value is stored and then set to 1, so reading it back after Betaflight has started always gives 1.',
 }));
 
 put('iterm_relax', copy({
   title: 'I-term relax',
   related: ['control-pid', 'cli-iterm_relax_cutoff'],
-  air: 'Stops the I term growing during a fast stick movement, so that a flip does not build up a correction that pushes the quad on when you stop. The options are OFF, RP (roll and pitch), RPY (roll, pitch and yaw), and RP_INC and RPY_INC, which hold I back only while it would be growing.',
-  lab: 'The options are the itermRelax_e values in pid.h. Betaflight passes the setpoint, the target rate, through a high-pass filter, which keeps only its fast changes. The faster the setpoint is changing, the more the I term is held back. iterm_relax_type chooses how the held-back amount is worked out.',
+  air: 'Stops the I term growing during a fast stick movement, so that a flip does not build up a correction that keeps pushing the quad on when you stop. A quick stick movement is not a disturbance, so it should not be added to the I term.',
+  lab: 'Betaflight passes the setpoint, the target rate, through a high-pass filter, which keeps only its fast changes. The faster the setpoint is changing, the more the I term is held back. iterm_relax_type chooses how the held-back amount is worked out, and iterm_relax_cutoff sets what counts as fast.',
   sim: 'Works here, in Betaflight\'s compiled pid.c.',
-  upAir: 'This is a list of options, not a number. Moving from RP to RPY adds yaw to the relaxed axes. The I term builds up less during fast movements, so it also corrects less while they last.',
-  upLab: 'RPY includes the yaw axis. The _INC options hold I back less, because they still let the I term shrink during a movement.',
-  downAir: 'With OFF, the I term builds up during a flip and works against it, then pushes the quad on when you stop.',
-  downLab: 'OFF was the default in older versions of Betaflight, and it is a common reason for a quad to twitch at the end of a roll.',
+  choices: [
+    'OFF: the I term grows during a flip as it does at any other time, and keeps pushing when you stop.',
+    'RP: relax on roll and pitch. This is Betaflight\'s default.',
+    'RPY: relax on roll, pitch and yaw.',
+    'RP_INC and RPY_INC: the same axes, but the I term is held back only while it would grow. It can still shrink during a movement.',
+  ],
 }));
 put('iterm_relax_type', copy({
   title: 'I-term relax type',
   related: ['cli-iterm_relax'],
-  air: 'Chooses how I-term relax decides how much to hold the I term back. SETPOINT reduces the error that I adds up, by more the faster the setpoint (the target rate set by your sticks) is changing. It depends only on the sticks, so it works even if the quad has not caught up yet. GYRO compares the gyro rate with a smoothed copy of the setpoint and ignores any difference smaller than the fast part of the stick movement.',
+  air: 'Chooses how I-term relax decides how much to hold the I term back.',
   lab: 'The options are the itermRelaxType_e values in pid.h, and the calculation is applyItermRelax in pid.c. Both types use the same high-pass filtered setpoint, whose filter is set by iterm_relax_cutoff.',
   sim: 'Works here.',
-  upAir: 'This is a choice between two options, not a number. SETPOINT is usually what pilots want for acro, and it is Betaflight\'s default.',
-  upLab: 'SETPOINT scales down the error that I adds up, using the high-pass filtered setpoint: the fast part of the rate you ask for with the sticks.',
-  downAir: 'With GYRO, the calculation depends on the gyro, so if the quad falls behind the target during a movement, the I term still builds up.',
-  downLab: 'GYRO is the older of the two methods.',
+  choices: [
+    'SETPOINT: the error the I term adds up is scaled down by how fast the setpoint is changing. It depends only on the sticks. This is Betaflight\'s default.',
+    'GYRO: the error the I term adds up is the difference between the gyro rate and a smoothed copy of the setpoint, with any difference smaller than the fast part of the stick movement ignored. If the quad falls behind during a movement, the I term still grows.',
+  ],
 }));
 put('iterm_relax_cutoff', copy({
   title: 'I-term relax cutoff (Hz)',
@@ -526,13 +575,13 @@ put('iterm_limit', copy({
 put('iterm_rotation', copy({
   title: 'I-term rotation',
   related: ['control-pid', 'physics-gyroscopic'],
-  air: 'Rotates the stored I term with the quad as it yaws, so that a stored roll correction becomes a pitch correction and keeps pointing the same way relative to the ground. Some pilots like it, and some find it strange.',
-  lab: 'The setting is OFF or ON. It rotates the stored I values between the axes and does not add a gain of its own.',
+  air: 'Rotates the stored I term with the quad as it yaws, so that a stored roll correction becomes a pitch correction and keeps pointing the same way relative to the ground.',
+  lab: 'It rotates the stored I values between the axes by the angle the gyro measures on each step, and adds no gain of its own.',
   sim: 'Works here.',
-  upAir: 'With ON, the I term follows the quad\'s attitude, its angle relative to the ground. It helps in slow moves that combine yaw with roll or pitch. Some pilots find it strange in quick racing flicks.',
-  upLab: 'ON makes Betaflight rotate the stored I values as the quad rotates.',
-  downAir: 'With OFF, each stored I value stays on the axis of the quad where it built up.',
-  downLab: 'Many race tunes (Betaflight settings files) leave it OFF, which is also Betaflight\'s default.',
+  choices: [
+    'OFF: each stored I value stays on the axis where it built up. This is Betaflight\'s default.',
+    'ON: the stored I values turn with the quad. It helps in slow moves that mix yaw with roll or pitch.',
+  ],
 }));
 
 put('pidsum_limit', copy({
@@ -560,13 +609,9 @@ put('pidsum_limit_yaw', copy({
 put('pid_at_min_throttle', copy({
   title: 'PID at minimum throttle',
   related: ['control-tpa', 'control-mixer'],
-  air: 'On a real quad, this decides whether the PID controller keeps running when the throttle is at its lowest and airmode is not active. When ON, the PID still changes the motor power at idle. When OFF, the motors stay at idle and nothing corrects the quad\'s rotation, so a flip at zero throttle is out of your control.',
-  lab: 'In Betaflight\'s code this is pidAtMinThrottle, and the code that reads it is in fc/core.c. When the throttle is low and neither airmode nor launch control is active, core.c resets the I term and switches the PID controller on or off according to this setting. When airmode is active, the PID controller runs whatever this setting says.',
-  sim: 'The settings catalog marks this as working here, but it has no effect. The only Betaflight code that reads this setting is in fc/core.c, which is not compiled here. The simulator switches the PID controller on once when Betaflight starts (in bf_glue.c) and never switches it off, so the PID keeps working at zero throttle whatever this setting says.',
-  upAir: 'ON is the usual race setting. Here it changes nothing, because the PID controller already runs at every throttle position.',
-  upLab: 'On a real quad, ON keeps the PID controller running at the lowest throttle. The mixer still keeps every motor at or above idle, or dynamic idle if that is on.',
-  downAir: 'On a real quad without airmode, OFF means that cutting the throttle removes all control. Here the quad flies the same, because the setting is not read.',
-  downLab: 'On a real quad, OFF shows why airmode exists, and it is a poor choice for a race tune. To see the effect of zero throttle without airmode here, turn the AIRMODE feature off instead.',
+  air: 'On a real quad, this decides whether the PID controller keeps running while the throttle stick is at the bottom and airmode is not active. In both cases Betaflight resets the I term there.',
+  lab: 'In Betaflight\'s code this is pidAtMinThrottle, and the only code that reads it is in fc/core.c. When the throttle is low and neither airmode nor launch control is active, core.c resets the I term and switches the PID controller on or off according to this setting.',
+  sim: 'Stored, not used. fc/core.c is not compiled. The simulator switches the PID controller on once when Betaflight starts, in bf_glue.c, and never switches it off. To see what zero throttle is like without airmode here, turn the AIRMODE feature off.',
 }));
 put('motor_output_limit', copy({
   title: 'Motor output limit (%)',
@@ -582,36 +627,37 @@ put('motor_output_limit', copy({
 put('thrust_linear', copy({
   title: 'Thrust linearisation',
   related: ['control-mixer', 'physics-fm'],
-  air: 'Compensates for thrust not rising in a straight line with motor output. Thrust is proportional to the square of the motor speed, and the motor speed does not rise in a straight line with the power level either. The compensation makes the throttle stick feel more even across its travel.',
-  lab: 'In Betaflight\'s code this is thrustLinearization in the PID profile, applied in the mixer (mixer.c). It raises low motor outputs more than high ones. 0 turns it off.',
-  sim: 'Works here. The physics model calculates each propeller\'s thrust as a constant multiplied by the square of its speed (kt ω²), so the non-linear behaviour this setting corrects for is present in the simulator.',
-  upAir: 'There is more compensation. The throttle positions where the quad hovers and where it punches both shift, so the spacing between them on the stick changes.',
-  upLab: 'A higher percentage applies more of the linearisation correction.',
-  downAir: 'At 0 there is no compensation, and hover sits low on the stick because the quad has far more thrust than it needs to hover. At the normal Weight setting, the five inch makes about 5 times its weight in thrust and hovers at about 35 percent of the throttle stick.',
-  downLab: '0 is the firmware default in many profiles. Racers often use throttle_limit_type SCALE instead.',
+  air: 'Compensates for the thrust of a propeller not rising in a straight line with motor output. Thrust grows with the square of motor speed, so a correction at low motor output changes the thrust less than the same correction at high output. Thrust linearisation raises low outputs more than high ones, so the PID corrections have a more even effect across the throttle range.',
+  lab: 'In pid.c each motor\'s output is multiplied by 1 + thrust_linear / 100 × (1 − output)², which raises low outputs most. The mixer also divides the throttle by a matching amount, so that the throttle stick itself feels about the same. The net change is that PID corrections have more effect at low throttle. 0 turns it off, and 0 is Betaflight\'s default.',
+  sim: 'Works here. The physics model calculates each propeller\'s thrust as a constant multiplied by the square of its speed (kt ω²), so the curve this setting corrects for is present in the simulator.',
+  upAir: 'Corrections at low throttle get stronger, which can steady a descent. With too much, the quad twitches at low throttle.',
+  upLab: 'A higher percentage raises low motor outputs more.',
+  downAir: 'Corrections at low throttle are weaker than the same corrections at high throttle.',
+  downLab: 'At 0 the motor outputs are left as the mixer made them.',
 }));
 put('transient_throttle_limit', copy({
   title: 'Transient throttle limit',
   related: ['control-mixer'],
-  air: 'When the PID asks for a bigger difference between the motors than fits between idle and full power, airmode moves the throttle up or down to make room. This setting makes Betaflight hold on to that throttle shift for a short time after a fast correction, and sets the largest shift it may hold, as a percentage of the throttle range. 0, the default, turns it off.',
-  lab: 'In Betaflight\'s code this is transient_throttle_limit, which sets airmodeThrottleOffsetLimit (pid_init.c). On each step the mixer measures how far airmode moved the throttle. Betaflight keeps the fast-changing part of that shift, lets it fade through a low-pass filter at 7 Hz, and adds it to the throttle on the next step, limited to this percentage. A code comment says the aim is to stop a fast oscillation from being distorted when the motors reach the edge of their range.',
-  sim: 'Works here. The physics model has no ESC current limit, and this setting does not act as one: it changes only the throttle shift that airmode makes.',
-  upAir: 'After airmode has moved the throttle to make room for a large correction, Betaflight may hold a larger shift. Nothing changes while the corrections fit between idle and full power.',
+  air: 'When the PID asks for a bigger difference between the motors than fits between idle and full power, the mixer moves the throttle up or down to make room. This setting makes Betaflight hold on to that throttle shift for a short time after a fast correction, and sets the largest shift it may hold, as a percentage of the throttle range. 0, the default, turns it off.',
+  lab: 'In Betaflight\'s code this is transient_throttle_limit, which sets airmodeThrottleOffsetLimit (pid_init.c). On each step the mixer measures how far it moved the throttle. Betaflight\'s code calls this the airmode throttle offset, although the mixer makes the shift with or without airmode. Betaflight keeps the fast-changing part of that shift, lets it fade through a low-pass filter at 7 Hz, and adds it to the throttle on the next step, limited to this percentage. A code comment says the aim is to stop a fast oscillation from being distorted when the motors reach the edge of their range.',
+  sim: 'Works here. The physics model has no ESC current limit, and this setting does not act as one: it changes only the throttle shift that the mixer makes.',
+  upAir: 'After the mixer has moved the throttle to make room for a large correction, Betaflight may hold a larger shift. Nothing changes while the corrections fit between idle and full power.',
   upLab: 'A higher limit lets the held shift grow larger before it is clamped.',
-  downAir: 'Less of the throttle shift is held. At 0, airmode moves the throttle only as far as each step needs.',
+  downAir: 'Less of the throttle shift is held. At 0, the mixer moves the throttle only as far as each step needs.',
   downLab: 'At 0 Betaflight skips this code completely.',
 }));
 
 put('launch_control_mode', copy({
   title: 'Launch control mode',
   related: ['control-mixer', 'cli-launch_control_gain'],
-  air: 'Chooses which axes launch control holds: NORMAL, PITCHONLY or FULL. Launch control holds the quad at idle on the start line until the throttle passes the trigger point. In this simulator you turn the feature on with the Launch control switch on the Quad screen, and press L on the start line to use it.',
+  air: 'Chooses how launch control holds the quad on the start line. Launch control holds the quad at idle, leaning against the gate or a launch stand at the angle you set with the sticks, until the throttle passes the trigger point. In this simulator you turn the feature on with the Launch control switch on the Quad screen, and press L on the start line to use it.',
   lab: 'This is launchControlMode in the PID profile. On a real quad, the code that starts launch control, detects the throttle trigger and resets it is in Betaflight\'s fc/core.c. That file is not compiled here, so a copy of that logic is in bf_glue.c. The settings it reads are Betaflight\'s own.',
   sim: 'Works here, through the copy of the launch control logic in bf_glue.c and Betaflight\'s own launch control code in pid.c.',
-  upAir: 'This is a list of options, not a number. Changing the mode changes which axes are held.',
-  upLab: 'PITCHONLY is the most popular choice for racing: it holds pitch and leaves roll alone.',
-  downAir: 'There is no OFF option in this setting. The mode only chooses how launch control behaves while it is active.',
-  downLab: 'To turn launch control on or off, use the Launch control switch on the Quad screen. The same switch is the LAUNCH CONTROL row on the Modes tab of the firmware bench.',
+  choices: [
+    'NORMAL: roll and pitch hold their angle, and the yaw I term is kept at zero. This is Betaflight\'s default.',
+    'PITCHONLY: only pitch is held. Roll and yaw P and I are switched off, and the pitch I term may only push the nose forward.',
+    'FULL: all three axes are held, with the yaw I term limited to a small value.',
+  ],
 }));
 put('launch_trigger_allow_reset', copy({
   title: 'Launch trigger allow reset',
@@ -619,10 +665,10 @@ put('launch_trigger_allow_reset', copy({
   air: 'Decides whether launch control can be used again after it has triggered. There is no disarm in this simulator, so this setting is what allows a second try.',
   lab: 'In Betaflight\'s code this is launchControlAllowTriggerReset. In bf_glue.c, a launch that has triggered goes back to the off state when the launch control switch goes off, but only if this setting is ON.',
   sim: 'Works here, in the launch control logic in bf_glue.c.',
-  upAir: 'With ON, after a launch you can land, press L to switch launch control off, and press L again to be held on the line once more.',
-  upLab: 'With ON, switching launch control off after a trigger clears the triggered state, so switching it on again starts a new hold.',
-  downAir: 'With OFF, once launch control has triggered it stays finished, and it cannot hold you again until the simulator resets Betaflight.',
-  downLab: 'OFF is the stricter choice: one launch for each reset.',
+  choices: [
+    'ON: switching launch control off after a launch clears it, so switching it on again gives a new hold. With the L key: land, press L to switch it off, and press L again. This is Betaflight\'s default.',
+    'OFF: one launch for each reset of the firmware.',
+  ],
 }));
 put('launch_trigger_throttle_percent', copy({
   title: 'Launch trigger throttle (%)',
@@ -689,7 +735,7 @@ put('anti_gravity_p_gain', copy({
   upAir: 'The quad corrects its attitude faster during a punch, and may become twitchy.',
   upLab: 'A higher value gives a larger P boost whenever anti-gravity detects a fast throttle change.',
   downAir: 'At 0, anti-gravity raises only I. Betaflight\'s default is 100, so the P boost is normally on.',
-  downLab: 'Setting it to 0 is a reasonable choice.',
+  downLab: 'At 0 the P boost is off.',
 }));
 
 put('feedforward_transition', copy({
@@ -707,12 +753,12 @@ put('feedforward_averaging', copy({
   title: 'Feedforward averaging',
   related: ['control-ff', 'physics-radio'],
   air: 'Averages the rate of change of the stick over the last 2, 3 or 4 radio packets. Feedforward becomes smoother, but it also arrives later.',
-  lab: 'The options are OFF, 2_POINT, 3_POINT and 4_POINT.',
+  lab: 'The average is taken over the rate of change of the setpoint, packet by packet, in fc/rc.c.',
   sim: 'Works here. With the perfect radio link this setting seems unnecessary. With an ELRS preset it becomes clear why it exists.',
-  upAir: 'Averaging more packets makes feedforward calmer but later.',
-  upLab: 'More points make a longer moving average of the setpoint\'s rate of change, written d(setpoint).',
-  downAir: 'With OFF, feedforward uses the rate of change of the stick with no averaging. That is sharp on the perfect link and rough on a link with timing jitter, which means packets arriving at uneven times.',
-  downLab: 'OFF uses each new value of d(setpoint) on its own.',
+  choices: [
+    'OFF: each packet\'s rate of change is used on its own. Sharp on a perfect link, rough on a link with uneven timing.',
+    '2_POINT, 3_POINT and 4_POINT: the average of the last 2, 3 or 4 packets. More points are smoother and later.',
+  ],
 }));
 put('feedforward_smooth_factor', copy({
   title: 'Feedforward smooth factor',
@@ -739,10 +785,10 @@ put('feedforward_jitter_factor', copy({
 put('feedforward_boost', copy({
   title: 'Feedforward boost',
   related: ['control-ff'],
-  air: 'Adds extra feedforward at the start of a stick movement, which then dies away. Pilots call this effect breakout.',
+  air: 'Adds extra feedforward at the start of a stick movement, which then dies away.',
   lab: 'In Betaflight\'s code this is feedforward_boost. It adds feedforward in proportion to how fast the setpoint\'s rate of change is itself changing, which is the acceleration of the stick.',
   sim: 'Works here.',
-  upAir: 'The quad starts each movement harder, and it can overshoot in the first 50 ms.',
+  upAir: 'The quad starts each movement harder, and can overshoot at the start.',
   upLab: 'A higher value gives a larger boost at the start of each movement.',
   downAir: 'Feedforward stays more even through a movement.',
   downLab: 'At 0 there is no boost, and feedforward is only the F gain multiplied by the setpoint\'s rate of change.',
@@ -762,13 +808,13 @@ put('feedforward_max_rate_limit', copy({
 put('tpa_mode', copy({
   title: 'TPA mode',
   related: ['control-tpa', 'cli-tpa_rate'],
-  air: 'Chooses which terms of the PID controller TPA reduces. TPA, throttle PID attenuation, turns the gains down at high throttle. PD reduces P and D. D reduces only D, which is common on modern five inch quads whose pilots want to set the hover P and the full-throttle D separately.',
+  air: 'Chooses which terms of the PID controller TPA reduces. TPA, throttle PID attenuation, turns the gains down at high throttle.',
   lab: 'tpa_mode is PD or D (tpaMode_e). In PD mode pid.c multiplies both the P term and the D term by the TPA factor. In D mode it multiplies only the D term.',
   sim: 'Works here.',
-  upAir: 'This setting is a choice between two modes, not a number. PD reduces more of the controller at high throttle than D does.',
-  upLab: 'PD applies the reduction to two terms, P and D.',
-  downAir: 'D mode leaves P at full strength at high throttle.',
-  downLab: 'In D mode only the D term is reduced, and P keeps its full value at every throttle.',
+  choices: [
+    'D: only the D term is reduced, and P keeps its full value at every throttle. This is Betaflight 4.5\'s default.',
+    'PD: both P and D are reduced.',
+  ],
 }));
 put('tpa_rate', copy({
   title: 'TPA rate',
@@ -795,12 +841,12 @@ put('tpa_breakpoint', copy({
 put('tpa_low_rate', copy({
   title: 'TPA low rate',
   related: ['cli-tpa_low_breakpoint', 'control-tpa'],
-  air: 'How much TPA (throttle PID attenuation) reduces the gains at low throttle, near idle, where the propellers have little control authority and a D gain tuned for the hover can be too strong in a descent.',
-  lab: 'tpa_low_rate is a percentage. The reduction is tpa_low_rate percent at zero throttle and falls in a straight line to nothing at tpa_low_breakpoint.',
+  air: 'How much TPA reduces the gains at very low throttle, below tpa_low_breakpoint. With tpa_low_always OFF, the default, it applies only from arming until the throttle first rises past that breakpoint, which covers the take-off.',
+  lab: 'tpa_low_rate is a percentage from 0 to 100. The reduction is tpa_low_rate percent at zero throttle and falls in a straight line to nothing at tpa_low_breakpoint (pidUpdateTpaFactor in pid.c).',
   sim: 'Works here.',
-  upAir: 'The gains are reduced more at idle. Descents are calmer, but yaw may feel weak.',
+  upAir: 'The gains are lower near zero throttle while low TPA applies.',
   upLab: 'A higher rate means a larger reduction at low throttle.',
-  downAir: 'The gains stay at full strength at idle, and descents in airmode can buzz.',
+  downAir: 'The gains stay at full strength at low throttle.',
   downLab: 'A rate of 0 turns low-throttle TPA off.',
 }));
 put('tpa_low_breakpoint', copy({
@@ -820,10 +866,10 @@ put('tpa_low_always', copy({
   air: 'Decides when low-throttle TPA applies. With OFF, it applies only at the start of a flight, until the throttle first rises past tpa_low_breakpoint. With ON, it applies every time the throttle is below that breakpoint.',
   lab: 'tpa_low_always is OFF or ON. With OFF, pidUpdateTpaFactor in pid.c sets a flag the first time the throttle passes the low breakpoint, and after that only the normal TPA applies. With ON the flag is never set.',
   sim: 'Works here. The simulator clears the flag each time it resets the quad; patches/0002 adds that reset to Betaflight.',
-  upAir: 'ON: low-throttle TPA applies in every low-throttle descent, not only at the start of the flight.',
-  upLab: 'ON makes Betaflight use the low-throttle reduction whenever the throttle is below the breakpoint.',
-  downAir: 'OFF: once the throttle has first passed the breakpoint, later descents fly with the normal gains.',
-  downLab: 'OFF is the default in many profiles.',
+  choices: [
+    'OFF: low throttle TPA applies only until the throttle first passes tpa_low_breakpoint after arming, and normal TPA after that. This is Betaflight\'s default.',
+    'ON: low throttle TPA applies every time the throttle is below the breakpoint, for the whole flight.',
+  ],
 }));
 
 put('throttle_boost', copy({
@@ -875,13 +921,13 @@ put('acc_limit_yaw', copy({
 put('abs_control_gain', copy({
   title: 'Absolute control gain',
   related: ['control-pid', 'cli-use_integrated_yaw'],
-  air: 'Absolute control keeps a running total of the angle by which the quad has drifted from where the sticks sent it, on roll, pitch and yaw, and adds a correction to the target rate to bring it back. This holds the heading while you hold a roll. Racers often run it at 0; freestyle pilots often want a little.',
+  air: 'Absolute control keeps a running total of the angle by which the quad has drifted from where the sticks sent it, on roll, pitch and yaw, and adds a correction to the target rate to bring it back. It is off by default.',
   lab: 'In pid.c the stored angle error, multiplied by abs_control_gain, is added to the setpoint (the target rate), and the other abs_control settings set its limits and its filter. Because this does part of the I term\'s job, Betaflight lowers the I gains when it is on. It runs only when iterm_relax is on, and 0 turns it off.',
   sim: 'Works here.',
   upAir: 'The quad holds its heading more firmly during rolls. Too much can work against you when you mix yaw into a roll on purpose.',
   upLab: 'A higher gain adds a larger correction for the same stored error, and Betaflight lowers the I gains further.',
   downAir: 'At 0 absolute control is off. A roll then yaws by whatever amount the physics model produces.',
-  downLab: 'Many racing Betaflight settings files (diffs) set it to 0.',
+  downLab: 'At 0 the code does not run.',
 }));
 put('abs_control_limit', copy({
   title: 'Absolute control limit',
@@ -919,13 +965,13 @@ put('abs_control_cutoff', copy({
 put('use_integrated_yaw', copy({
   title: 'Integrated yaw',
   related: ['physics-yaw', 'control-mixer'],
-  air: 'With integrated yaw on, the yaw output of the PID controller is added up over time before it goes to the mixer, so the PID sets how fast the yaw command changes instead of setting the yaw command itself. Yaw can feel more firmly held, and it can also feel delayed. Most racing Betaflight settings files (diffs) leave it off.',
-  lab: 'use_integrated_yaw is OFF or ON. When it is ON, pid.c adds the yaw PID sum, multiplied by the loop time, to a running total on every step, and integrated_yaw_relax makes that total decay toward zero.',
+  air: 'With integrated yaw on, the yaw output of the PID controller is added up over time before it goes to the mixer, so the PID sets how fast the yaw command changes instead of setting the yaw command itself. It is off by default.',
+  lab: 'use_integrated_yaw is in the PID profile. When it is ON, pid.c adds the yaw PID sum, multiplied by the loop time, to a running total on every step, and integrated_yaw_relax makes that total decay towards zero.',
   sim: 'Works here. The integrated yaw code in pid.c is compiled into this build.',
-  upAir: 'Switching it ON changes how yaw feels. Try it over open grass before you fly it through a gate.',
-  upLab: 'ON sends the yaw PID output through the running total in pid.c before the mixer uses it.',
-  downAir: 'With it OFF, yaw works in the usual way.',
-  downLab: 'OFF sends the yaw PID sum straight to the mixer, as on roll and pitch.',
+  choices: [
+    'OFF: the yaw PID sum goes straight to the mixer, as on roll and pitch.',
+    'ON: the yaw PID sum goes through the running total first. Yaw can feel more firmly held, and later.',
+  ],
 }));
 put('integrated_yaw_relax', copy({
   title: 'Integrated yaw relax',
@@ -1009,13 +1055,9 @@ put('dyn_idle_max_increase', copy({
 put('dyn_idle_start_increase', copy({
   title: 'Dynamic idle start increase',
   related: ['cli-dyn_idle_min_rpm'],
-  air: 'The largest amount by which dynamic idle may raise the minimum motor output before airmode is activated. On a real quad that is the time after arming until the throttle first passes airmode_start_throttle_percent. After that, dyn_idle_max_increase is the limit.',
+  air: 'On a real quad, the largest amount by which dynamic idle may raise the minimum motor output before airmode is activated: from arming until the throttle first passes airmode_start_throttle_percent. After that, dyn_idle_max_increase is the limit.',
   lab: 'dyn_idle_start_increase is in tenths of a percent of the motor output range. mixer.c uses it as the limit while isAirmodeActivated() is false.',
-  sim: 'The settings catalog marks this as working here, but it has no effect. Betaflight stores it and the mixer reads it, but in this simulator isAirmodeActivated() always returns true (bf_stubs.c stands in for fc/core.c, which is not compiled), so this limit never applies and dyn_idle_max_increase is used from the start.',
-  upAir: 'On a real quad, dynamic idle can raise the idle further before takeoff. In this simulator you will not notice a change.',
-  upLab: 'A larger value allows a higher minimum motor output before airmode is activated.',
-  downAir: 'On a real quad, the idle rises less before takeoff. In this simulator lowering it has no effect.',
-  downLab: 'A smaller value limits the minimum motor output more before airmode is activated.',
+  sim: 'Stored, not used. isAirmodeActivated() always returns true here (bf_stubs.c stands in for fc/core.c, which is not compiled), so dyn_idle_max_increase is the limit from the start.',
 }));
 
 put('ez_landing_threshold', copy({
@@ -1044,36 +1086,55 @@ put('ez_landing_speed', copy({
   title: 'EZ landing speed',
   related: ['cli-ez_landing_threshold'],
   air: 'Used when mixer_type is EZLANDING. The speed, measured by GPS, at which EZ landing stops limiting the mixer, so that a fast-moving quad keeps its full control authority.',
-  lab: 'In mixer.c the limit relaxes in proportion to the GPS speed and is gone at 2 × ez_landing_speed / 10 metres per second, so 50 means 10 m/s. At 0 the speed is not used.',
-  sim: 'The settings catalog marks this as working here, but it has no effect. The mixer reads it when mixer_type is EZLANDING, but the speed comes from GPS, which the simulator does not have, so the speed is always zero and this setting does not change the flight. It does not affect the simulator\'s own crash count either, which uses the impact speed in metres per second.',
-  upAir: 'On a real quad with GPS, EZ landing keeps limiting the mixer up to a higher speed. In this simulator nothing changes.',
-  upLab: 'A higher value means the quad must move faster before the limit is lifted.',
-  downAir: 'On a real quad with GPS, the limit is lifted at a lower speed. In this simulator nothing changes.',
-  downLab: 'A lower value lifts the limit at a lower speed.',
+  lab: 'In mixer.c the limit relaxes in proportion to the GPS ground speed and is gone at 2 × ez_landing_speed / 10 metres per second, so 50 means 10 m/s. At 0 the speed is not used.',
+  sim: 'Stored, not used. There is no GPS, so the speed the mixer reads is always zero. The simulator\'s own crash count uses the impact speed and does not read this either.',
 }));
 
-function crashPut(key, title, air, lab) {
+function crashPut(key, title, air, lab, up, down) {
   put(key, copy({
     title,
     related: ['control-pid', 'physics-ground'],
     air,
     lab,
     sim: 'Works here. The crash recovery code in pid.c runs whenever crash_recovery is not OFF. It levels the quad from Betaflight\'s record of the roll and pitch angles, which this simulator updates only in angle mode and during launch control, so in acro mode those angles are out of date. The simulator\'s own flip for a quad resting upside down, Betaflight\'s crashflip mixer (which runs only while you hold T) and the simulator setting a stuck quad down nearby are all separate from crash recovery.',
-    upAir: 'What changes depends on which setting this is, and none of them has any effect while crash_recovery is OFF. Raising crash_dthreshold or crash_gthreshold means a harder hit is needed before Betaflight counts a crash; raising crash_time or crash_delay makes recovery last longer or start later.',
-    upLab: 'The code is the crash recovery section of pid.c. The values are in Betaflight\'s own units, based on degrees and milliseconds, not SI units.',
-    downAir: 'Lowering crash_dthreshold or crash_gthreshold makes smaller disturbances count as crashes. Lowering crash_time or crash_delay makes recovery shorter or start sooner.',
-    downLab: 'Setting crash_recovery to OFF, the usual choice for racing, turns the whole feature off.',
+    upAir: up && up[0],
+    upLab: up && up[1],
+    downAir: down && down[0],
+    downLab: down && down[1],
   }));
 }
-crashPut('crash_recovery', 'Crash recovery', 'Chooses what Betaflight does when it detects a crash: OFF, ON, BEEP or DISARM. With ON, it tries to level a quad that has been hit hard or knocked upside down. Racers leave it off.', 'In pid.c, ON levels the quad after a detected crash, BEEP does the same and sounds the buzzer, and DISARM stops the motors instead. This simulator has no buzzer and never disarms, so BEEP acts like ON and DISARM does nothing.');
-crashPut('crash_dthreshold', 'Crash D threshold', 'How fast the measured rotation rate must be changing, as the D term sees it, before Betaflight counts a crash.', 'A crash is detected only when four things are true at once: the mixer is using the whole motor output range, the D term\'s input is above crash_dthreshold, the rate error is above crash_gthreshold, and the requested rate is below crash_setpoint_threshold.');
-crashPut('crash_gthreshold', 'Crash gyro threshold', 'How large the rate error must be, in degrees per second, before Betaflight counts a crash. The rate error is the requested rotation rate minus the rate the gyro measures.', 'Despite its name, pid.c compares this value with the rate error, not with the gyro rate itself.');
-crashPut('crash_setpoint_threshold', 'Crash setpoint threshold', 'If you are asking for a rotation rate above this, in degrees per second, Betaflight does not count a crash, because you asked for the fast rotation.', 'pid.c compares the setpoint, the requested rotation rate, with this value. If the setpoint rises above it during crash_delay, a detected crash is cancelled.');
-crashPut('crash_time', 'Crash recovery time', 'The time, in milliseconds, after which recovery stops waiting for the quad to stop rotating.', 'Recovery ends when the quad is within crash_recovery_angle of level and has either slowed below crash_recovery_rate or been recovering for crash_time milliseconds.');
-crashPut('crash_delay', 'Crash recovery delay', 'How long Betaflight waits, in milliseconds, after it detects a crash before recovery starts.', 'During the delay the crash is cancelled if the rate error falls below crash_gthreshold or the setpoint rises above crash_setpoint_threshold.');
-crashPut('crash_recovery_angle', 'Crash recovery angle', 'How close to level the quad must be, in degrees, before recovery can end.', 'Recovery ends only when both roll and pitch are within this many degrees of level. Recovery always steers toward level; this setting decides when the quad is level enough to stop.');
-crashPut('crash_recovery_rate', 'Crash recovery rate', 'How slowly the quad must be rotating, in degrees per second, before recovery can end early.', 'Recovery can end before crash_time once the rotation rate on all three axes is below this value, the mixer is no longer using the whole motor output range, and the quad is within crash_recovery_angle of level.');
-crashPut('crash_limit_yaw', 'Crash yaw limit', 'The largest yaw rate error, in degrees per second, that the PID controller acts on during recovery.', 'During recovery pid.c limits the yaw rate error to plus or minus this value. Recovery also holds the I term at zero on every axis.');
+crashPut('crash_recovery', 'Crash recovery', 'Chooses what Betaflight does when it detects a crash, meaning the motors are at their limit and the quad is rotating fast in a way the sticks did not ask for. It is off by default.', 'The detection and the recovery are in pid.c. This simulator has no buzzer and never disarms, so BEEP acts like ON and DISARM does nothing.');
+AUTHORED.crash_recovery.choices = [
+  'OFF: nothing happens. This is Betaflight\'s default.',
+  'ON: Betaflight takes over and steers the quad back towards level until it has settled.',
+  'BEEP: the same as ON, and the buzzer sounds.',
+  'DISARM: the motors are stopped instead.',
+];
+AUTHORED.crash_recovery.upAir = null;
+crashPut('crash_dthreshold', 'Crash D threshold', 'How fast the measured rotation rate must be changing, as the D term sees it, before Betaflight counts a crash.', 'A crash is detected only when four things are true at once: the mixer is using the whole motor output range, the D term\'s input is above crash_dthreshold, the rate error is above crash_gthreshold, and the requested rate is below crash_setpoint_threshold.',
+  ['A harder hit is needed before Betaflight counts a crash.', 'A higher threshold on the rate of change the D term sees.'],
+  ['A smaller disturbance can count as a crash.', 'A lower threshold on the same quantity.']);
+crashPut('crash_gthreshold', 'Crash gyro threshold', 'How large the rate error must be, in degrees per second, before Betaflight counts a crash. The rate error is the requested rotation rate minus the rate the gyro measures.', 'Despite its name, pid.c compares this value with the rate error, not with the gyro rate itself.',
+  ['A larger rate error is needed before Betaflight counts a crash.', 'A higher threshold on the rate error.'],
+  ['A smaller rate error can count as a crash.', 'A lower threshold on the rate error.']);
+crashPut('crash_setpoint_threshold', 'Crash setpoint threshold', 'If you are asking for a rotation rate above this, in degrees per second, Betaflight does not count a crash, because you asked for the fast rotation.', 'pid.c compares the setpoint, the requested rotation rate, with this value. If the setpoint rises above it during crash_delay, a detected crash is cancelled.',
+  ['You can ask for faster rotation before your own stick movement stops a crash being counted.', 'A higher threshold on the setpoint.'],
+  ['A slower requested rotation is enough to rule a crash out.', 'A lower threshold on the setpoint.']);
+crashPut('crash_time', 'Crash recovery time', 'The time, in milliseconds, after which recovery stops waiting for the quad to stop rotating.', 'Recovery ends when the quad is within crash_recovery_angle of level and has either slowed below crash_recovery_rate or been recovering for crash_time milliseconds.',
+  ['Recovery can last longer.', 'A longer time before recovery stops waiting.'],
+  ['Recovery gives up waiting sooner.', 'A shorter time before recovery stops waiting.']);
+crashPut('crash_delay', 'Crash recovery delay', 'How long Betaflight waits, in milliseconds, after it detects a crash before recovery starts.', 'During the delay the crash is cancelled if the rate error falls below crash_gthreshold or the setpoint rises above crash_setpoint_threshold.',
+  ['Recovery starts later, which gives the quad more time to sort itself out first.', 'A longer wait before recovery.'],
+  ['Recovery starts sooner after a crash is detected.', 'A shorter wait before recovery.']);
+crashPut('crash_recovery_angle', 'Crash recovery angle', 'How close to level the quad must be, in degrees, before recovery can end.', 'Recovery ends only when both roll and pitch are within this many degrees of level. Recovery always steers towards level; this setting decides when the quad is level enough to stop.',
+  ['Recovery can end further from level.', 'A wider band around level counts as level.'],
+  ['The quad has to be closer to level before recovery ends.', 'A narrower band around level counts as level.']);
+crashPut('crash_recovery_rate', 'Crash recovery rate', 'How slowly the quad must be rotating, in degrees per second, before recovery can end early.', 'Recovery can end before crash_time once the rotation rate on all three axes is below this value, the mixer is no longer using the whole motor output range, and the quad is within crash_recovery_angle of level.',
+  ['Recovery can end while the quad is still rotating faster.', 'A higher rate counts as settled.'],
+  ['The quad has to be rotating more slowly before recovery ends early.', 'A lower rate counts as settled.']);
+crashPut('crash_limit_yaw', 'Crash yaw limit', 'The largest yaw rate error, in degrees per second, that the PID controller acts on during recovery.', 'During recovery pid.c limits the yaw rate error to plus or minus this value. Recovery also holds the I term at zero on every axis.',
+  ['Yaw can make a larger correction during recovery.', 'A higher limit on the yaw rate error.'],
+  ['Yaw corrections during recovery are smaller.', 'A lower limit on the yaw rate error.']);
 
 put('angle_p_gain', copy({
   title: 'Angle mode P gain',
@@ -1133,13 +1194,13 @@ put('angle_earth_ref', copy({
 put('level_race_mode', copy({
   title: 'Level race mode',
   related: ['control-angle'],
-  air: 'An on or off setting in Betaflight that changes how angle mode levels the quad, for racing. It switches between two behaviours and is not a second angle gain.',
-  lab: 'level_race_mode takes OFF or ON and is stored in the PID profile.',
+  air: 'Makes angle mode level the roll axis only. Pitch is then flown as in acro, so you can tilt forward as far as you like and the quad stays there, while roll still returns to level when you let go.',
+  lab: 'level_race_mode is in the PID profile. When it is ON, pid.c uses a self-level mode for roll alone (LEVEL_MODE_R), and angle mode\'s earth-referenced yaw is not used.',
   sim: 'Works here. It only makes a difference in angle mode.',
-  upAir: 'With ON, angle mode uses its racing behaviour.',
-  upLab: 'ON enables the racing behaviour. It has an effect only while ANGLE_MODE is on.',
-  downAir: 'With OFF, angle mode handles yaw in the standard way.',
-  downLab: 'OFF disables the racing behaviour, and angle mode works as standard.',
+  choices: [
+    'OFF: angle mode levels roll and pitch. This is Betaflight\'s default.',
+    'ON: angle mode levels roll only, and pitch is flown in acro.',
+  ],
 }));
 
 for (const [key, title, air] of [
@@ -1155,10 +1216,6 @@ for (const [key, title, air] of [
     air: `${air} This simulator never switches HORIZON_MODE on. It has only acro and angle mode, and no mode in between.`,
     lab: 'The value is stored in the PID profile, in the level I and D fields (pid[PID_LEVEL]) and related fields, which pidLevel, Betaflight\'s self-levelling function, would read in Horizon mode. The simulator switches angle mode on through sim_set_angle_mode. There are no AUX channels, so no switch can turn Horizon mode on.',
     sim: 'Stored, not used. A Betaflight settings file (diff) that contains these settings still contains them when you export it, but they do not change how the quad flies.',
-    upAir: 'On a real quad with a switch set up for Horizon mode, this would change how Horizon mode flies. Here the flight does not change.',
-    upLab: 'The value is only written to Betaflight\'s setting group. Nothing in the flight calculation reads it.',
-    downAir: 'Lowering it has no effect here either.',
-    downLab: 'The value is stored, and nothing in the flight calculation reads it.',
   }));
 }
 
@@ -1168,10 +1225,11 @@ put('simplified_pids_mode', copy({
   air: 'Chooses which axes the simplified tuning sliders control: OFF (none), RP (roll and pitch) or RPY (roll, pitch and yaw). When it is not OFF, applying the sliders replaces the PID gains you typed for those axes.',
   lab: 'This is simplified_pids_mode in the PID profile. applySimplifiedTuning, the Betaflight function that calculates the PID gains from the sliders, is compiled into the simulator.',
   sim: 'Works here. The Betaflight default tune sets it to RPY. The expert table on the PIDs screen sets it to OFF, as Betaflight Configurator\'s expert mode does, so the gains you type there are the ones that fly.',
-  upAir: 'Moving towards RPY puts yaw under the sliders as well as roll and pitch.',
-  upLab: 'More axes take their gains from the sliders when the sliders are applied.',
-  downAir: 'With OFF, gains you type, such as p_roll, stay as you typed them until a Betaflight settings file (diff) turns the mode on and applies the sliders.',
-  downLab: 'With OFF, applying the sliders leaves every PID gain unchanged.',
+  choices: [
+    'OFF: applying the sliders leaves every PID gain as it was typed.',
+    'RP: the sliders set roll and pitch.',
+    'RPY: the sliders set roll, pitch and yaw. This is Betaflight\'s default.',
+  ],
 }));
 function simp(key, title, air) {
   put(key, copy({
@@ -1186,35 +1244,35 @@ function simp(key, title, air) {
     downLab: 'A lower multiplier gives smaller gains. A value of 0 can leave a tune that does not fly properly, so the PIDs screen stops the gain sliders at 30; only the D max and feedforward sliders can go to 0.',
   }));
 }
-simp('simplified_master_multiplier', 'Simplified master multiplier', 'The master slider. It raises or lowers all the PID gains together and keeps the ratios between them.');
+simp('simplified_master_multiplier', 'Simplified master multiplier', 'The master slider. It raises or lowers P, I, D, D min and feedforward together and keeps the ratios between them.');
 simp('simplified_i_gain', 'Simplified I slider', 'The I slider. It raises or lowers the I gains compared with the rest of the tune.');
-simp('simplified_d_gain', 'Simplified D slider', 'The D slider. It raises or lowers the D gains.');
+simp('simplified_d_gain', 'Simplified D slider', 'The D slider. It raises or lowers the D gains and the D min values together.');
 simp('simplified_pi_gain', 'Simplified PI slider', 'The PI slider. It raises or lowers P and I together and leaves D where it is compared with the rest of the tune.');
-simp('simplified_dmax_gain', 'Simplified D max slider', 'The D max slider. It sets the ratio between D max and D min, which decides how far D can rise above its base value during fast stick movements.');
+simp('simplified_dmax_gain', 'Simplified D max slider', 'The D max slider. It sets how far the full D value sits above D min, which decides how far D can rise in fast movements and propwash. It is stored as simplified_dmin_ratio.');
 simp('simplified_feedforward_gain', 'Simplified feedforward slider', 'The feedforward (F) slider. It raises or lowers the feedforward gains.');
 simp('simplified_pitch_d_gain', 'Simplified pitch D slider', 'Sets pitch D compared with roll D. In Betaflight\'s code the value is still stored under an older name, simplified_roll_pitch_ratio.');
-simp('simplified_pitch_pi_gain', 'Simplified pitch PI slider', 'Sets pitch P and I compared with roll P and I.');
+simp('simplified_pitch_pi_gain', 'Simplified pitch PI slider', 'Sets pitch P, I and feedforward compared with roll.');
 put('simplified_dterm_filter', copy({
   title: 'Simplified D-term filter',
   related: ['control-simplified', 'control-filters'],
   air: 'With ON, the D term filter slider may replace the D term low-pass filter frequencies, in Hz. A low-pass filter lets slow changes through and removes fast ones. With OFF, the frequencies you type stay as they are.',
   lab: 'This is simplified_dterm_filter in the PID profile. When it is ON, Betaflight\'s simplified_tuning.c calculates the D term filter frequencies from the slider.',
   sim: 'Works here. The Betaflight default tune turns it ON.',
-  upAir: 'With ON, the slider sets the D term filter frequencies.',
-  upLab: 'ON lets simplified_tuning.c write the dterm_lpf frequency settings from the multiplier.',
-  downAir: 'With OFF, the dterm_lpf frequencies you type stay as they are.',
-  downLab: 'OFF stops the slider from writing the D term filter settings.',
+  choices: [
+    'ON: applying the sliders sets the D term filter cutoffs from the multiplier. This is Betaflight\'s default.',
+    'OFF: the D term filter cutoffs you typed stay as they are.',
+  ],
 }));
 put('simplified_dterm_filter_multiplier', copy({
   title: 'Simplified D-term filter multiplier',
   related: ['cli-simplified_dterm_filter'],
-  air: 'The slider that sets the D term filter frequencies, in Hz. A higher value usually means less filtering, because it gives higher frequencies, which matches how Betaflight Configurator describes its multipliers. Check the frequency settings after applying.',
-  lab: 'This is simplified_dterm_filter_multiplier, a value in a range of roughly 10 to 200.',
+  air: 'The slider that sets the D term filter cutoffs. Each cutoff becomes Betaflight\'s default cutoff for that filter multiplied by this value divided by 100, so 100 gives the defaults and a higher value gives higher cutoffs and less filtering.',
+  lab: 'This is simplified_dterm_filter_multiplier, from 10 to 200. simplified_tuning.c rewrites only the D term filters that are switched on: the dynamic minimum and maximum if the dynamic cutoff is on, the static cutoff of filter 1 if it is not 0, and the cutoff of filter 2 if it is not 0.',
   sim: 'Works here. It has an effect only when simplified_dterm_filter is ON.',
-  upAir: 'The D term usually gets less filtering, so more noise reaches it. Check the frequency the slider wrote.',
-  upLab: 'After applying, read dterm_lpf1_static_hz to see what the slider set. Check the direction each time instead of assuming it.',
-  downAir: 'The D term usually gets more filtering, which removes more noise and adds more delay.',
-  downLab: 'After applying, read dterm_lpf1_static_hz again to confirm the change.',
+  upAir: 'Higher cutoffs: less smoothing and less delay on the D term, and more noise let through.',
+  upLab: 'Every D term cutoff the slider writes rises in proportion.',
+  downAir: 'Lower cutoffs: more smoothing and more delay on the D term.',
+  downLab: 'Every D term cutoff the slider writes falls in proportion.',
 }));
 put('simplified_gyro_filter', copy({
   title: 'Simplified gyro filter',
@@ -1222,21 +1280,21 @@ put('simplified_gyro_filter', copy({
   air: 'With ON, the gyro filter slider may replace the gyro low-pass filter frequencies, in Hz. A low-pass filter lets slow changes through and removes fast ones. With OFF, the frequencies you type stay as they are.',
   lab: 'This is simplified_gyro_filter. It is stored in Betaflight\'s gyro settings (gyroConfig), not in the PID profile.',
   sim: 'Works here. The Betaflight default tune and the three whoop tunes all turn it ON.',
-  upAir: 'With ON, the slider sets the gyro filter frequencies.',
-  upLab: 'ON lets simplified_tuning.c write the gyro_lpf frequency settings from the multiplier.',
-  downAir: 'With OFF, the gyro_lpf frequencies you type stay as they are.',
-  downLab: 'OFF stops the slider from writing the gyro filter settings.',
+  choices: [
+    'ON: applying the sliders sets the gyro filter cutoffs from the multiplier. This is Betaflight\'s default.',
+    'OFF: the gyro filter cutoffs you typed stay as they are.',
+  ],
 }));
 put('simplified_gyro_filter_multiplier', copy({
   title: 'Simplified gyro filter multiplier',
   related: ['cli-simplified_gyro_filter'],
-  air: 'The slider that sets the gyro low-pass filter frequencies. After applying, read gyro_lpf1_static_hz to see the frequency it set.',
-  lab: 'This is simplified_gyro_filter_multiplier, stored in Betaflight\'s gyro settings. Betaflight\'s simplified_tuning.c turns it into the gyro filter frequencies.',
+  air: 'The slider that sets the gyro filter cutoffs. Each cutoff becomes Betaflight\'s default cutoff for that filter multiplied by this value divided by 100, so 100 gives the defaults and a higher value gives higher cutoffs and less filtering.',
+  lab: 'This is simplified_gyro_filter_multiplier, from 10 to 200, stored in Betaflight\'s gyro settings. simplified_tuning.c rewrites only the gyro filters that are switched on, in the same way as the D term slider.',
   sim: 'Works here. It has an effect only when simplified_gyro_filter is ON. The Betaflight default tune sets it to 100, and the whoop tunes set 110 or 120.',
-  upAir: 'The gyro signal usually gets less filtering. Check the frequency setting to confirm.',
-  upLab: 'Read gyro_lpf1_static_hz after applying to see the frequency the slider set.',
-  downAir: 'The gyro signal usually gets more filtering, which removes more noise and adds more delay.',
-  downLab: 'Read gyro_lpf1_static_hz again after applying to confirm the change.',
+  upAir: 'Higher cutoffs: less smoothing and less delay on the gyro signal, and more noise let through.',
+  upLab: 'Every gyro cutoff the slider writes rises in proportion.',
+  downAir: 'Lower cutoffs: more smoothing and more delay on the gyro signal.',
+  downLab: 'Every gyro cutoff the slider writes falls in proportion.',
 }));
 
 put('gyro_hardware_lpf', copy({
@@ -1245,10 +1303,6 @@ put('gyro_hardware_lpf', copy({
   air: 'On a real flight controller this chooses the analog or on-chip low-pass filter inside the gyro chip, such as an ICM or MPU chip, which acts before the reading reaches Betaflight. A low-pass filter lets slow changes through and removes fast ones. The options are NORMAL, OPTION_1, OPTION_2 and EXPERIMENTAL.',
   lab: 'This is gyro_hardware_lpf. The simulator has no gyro chip, and the digital gyro path that feeds Betaflight does not read this setting.',
   sim: 'Stored, not used. The value is kept in Betaflight\'s gyro settings (gyroConfig). The simulated gyro, built like the one in Betaflight\'s own software-in-the-loop (SITL) simulator, takes the rotation rate from the physics model as a decimal number and rounds it like a 16-bit gyro chip that measures up to 2,000 degrees per second in either direction.',
-  upAir: 'On a real quad this would change the gyro chip\'s own filter. Here the flight does not change.',
-  upLab: 'The value is only written to Betaflight\'s gyro setting group. Nothing in the flight calculation reads it.',
-  downAir: 'Lowering it has no effect here either.',
-  downLab: 'The value is stored, and nothing in the flight calculation reads it.',
 }));
 put('gyro_filter_debug_axis', copy({
   title: 'Gyro filter debug axis',
@@ -1256,31 +1310,28 @@ put('gyro_filter_debug_axis', copy({
   air: 'Chooses which axis, ROLL, PITCH or YAW, a debug recording shows when developers work on Betaflight\'s gyro filters.',
   lab: 'This is gyro_filter_debug_axis. Only DEBUG_SET, the Betaflight code that writes values into the blackbox debug channels, would read it. Blackbox debug output does not control the flight here.',
   sim: 'Stored, not used. The value is kept in Betaflight\'s gyro settings, and nothing in the flight calculation reads it.',
-  upAir: 'On a real quad this changes which axis the debug recording shows. The flight does not change.',
-  upLab: 'The value is only written to Betaflight\'s gyro setting group, where only debug code would read it.',
-  downAir: 'Lowering it has no effect on the flight either.',
-  downLab: 'Nothing in the flight calculation reads the value.',
 }));
 put('yaw_spin_recovery', copy({
   title: 'Yaw spin recovery',
   related: ['physics-yaw', 'control-pid'],
-  air: 'If the quad spins in yaw faster than a set threshold, for example after a crash or a desync (when an ESC, the motor\'s speed controller, loses track of its motor), Betaflight can cut the motors or try to recover. The options are OFF, ON and AUTO; AUTO lets Betaflight decide.',
-  lab: 'yaw_spin_recovery takes OFF, ON or AUTO and works together with yaw_spin_threshold. The spin detection is in Betaflight\'s sensors/gyro.c, which is compiled into the simulator.',
-  sim: 'Works here. It is stored in Betaflight\'s gyro settings. The physics model will spin the quad as fast as you ask it to. This setting is a safety feature in the firmware and adds no aerodynamic damping, the resistance from the air that slows a rotation.',
-  upAir: 'Moving towards ON makes Betaflight more likely to act during a yaw spin.',
-  upLab: 'ON always enables recovery. AUTO leaves the decision to Betaflight\'s own rules.',
-  downAir: 'With OFF, Betaflight never acts, and stopping a spin is up to you.',
-  downLab: 'OFF is a choice some racers make.',
+  air: 'Stops an uncontrolled yaw spin, the kind that can follow a hard hit. When the gyro reads a yaw rate above the threshold, Betaflight sets the yaw target to zero, clears the I term on every axis, switches off P, D and feedforward on roll and pitch, and lets yaw P use the whole motor range to stop the spin. It ends once the yaw rate has stayed 100 degrees per second below the threshold for 20 ms.',
+  lab: 'The detection is in sensors/gyro.c and the response in pid.c and mixer.c, all compiled into the simulator.',
+  sim: 'Works here. The physics model will spin the quad as fast as the motors can, and this adds no damping of its own: it only changes what the controller does.',
+  choices: [
+    'AUTO: the threshold is worked out from your maximum yaw rate, plus a quarter of it or 200 degrees per second, whichever is more. yaw_spin_threshold is not used. This is Betaflight\'s default.',
+    'ON: the threshold is yaw_spin_threshold.',
+    'OFF: Betaflight never steps in.',
+  ],
 }));
 put('yaw_spin_threshold', copy({
   title: 'Yaw spin threshold',
   related: ['cli-yaw_spin_recovery'],
   air: 'The yaw rate, in degrees per second, above which yaw spin recovery treats the quad as spinning out of control.',
   lab: 'This is yaw_spin_threshold, stored in Betaflight\'s gyro settings and read by the yaw spin check in sensors/gyro.c.',
-  sim: 'Works here. It has an effect only when yaw_spin_recovery is not OFF.',
+  sim: 'Works here. It is used only when yaw_spin_recovery is ON; AUTO works out its own threshold.',
   upAir: 'Recovery is harder to trigger, so you can yaw faster on purpose without it acting.',
   upLab: 'A higher threshold means the yaw rate must be higher before recovery starts.',
-  downAir: 'Recovery triggers more easily in a fast yaw.',
+  downAir: 'Recovery triggers more easily in a fast yaw. Below your own maximum yaw rate, full yaw stick would trigger it.',
   downLab: 'A lower threshold lets a slower yaw rate start recovery.',
 }));
 
@@ -1291,21 +1342,24 @@ put('rates_type', copy({
   air: 'Chooses the formula that turns stick position into rotation rate: BETAFLIGHT, RACEFLIGHT, KISS, ACTUAL or QUICK. The same three numbers give a different curve under each type. ACTUAL is the type whose maximum rate is exactly the number shown at full stick, and the Rates menu in Settings writes ACTUAL unless you choose another type there.',
   lab: 'rates_type selects one of the apply*Rates functions in fc/rc.c, and all five are compiled. The rates graph is drawn by a JavaScript copy of those formulas (src/fc/ratescurve.js), which is used only for drawing and does not fly the quad.',
   sim: 'Works here. Check 9, one of the automatic tests, reads the maximum roll rate from its own diff file and checks that full stick reaches it to within 3 percent. The same rc_rate, srate and expo numbers give a different curve under a different type, which is why the Rates type row in Settings loads the new type\'s own default numbers when you change it.',
-  upAir: 'This is a choice from a list, so there is no higher or lower value. Choose the type on purpose: rate numbers written for KISS will not give 670 deg/s if you use them with ACTUAL.',
-  upLab: 'rates_type is an enumeration, a setting that picks one item from a fixed list.',
-  downAir: 'There is no lower value either, because the setting is a choice from a list.',
-  downLab: 'Each type is its own formula, so changing the type changes the whole curve.',
+  choices: [
+    'BETAFLIGHT: RC rate, super rate and RC expo, Betaflight\'s original curve.',
+    'RACEFLIGHT: the curve from RaceFlight. RC rate sets the rotation rate, rate adds more of it towards full stick, and expo bends the middle.',
+    'KISS: the curve from the KISS flight controller, with an RC rate, a rate and an RC curve.',
+    'ACTUAL: centre sensitivity, maximum rate and expo, each meaning exactly what it says. The Rates menu in Settings writes this type unless you choose another.',
+    'QUICK: an RC rate and a maximum rate, with expo applied as quickrates_rc_expo chooses.',
+  ],
 }));
 put('quickrates_rc_expo', copy({
   title: 'Quick rates RC expo',
   related: ['cli-rates_type'],
-  air: 'An on/off switch that only QUICK rates use: it decides whether expo is applied the Quick rates way. ACTUAL rates ignore it.',
-  lab: 'Stored as quickRatesRcExpo and read in applyQuickRates in fc/rc.c.',
-  sim: 'Works here, and it matters only when rates_type is QUICK. The Rates menu in Settings writes it as OFF every time it writes the rate profile, so in this simulator it stays off.',
-  upAir: 'Turned ON, QUICK rates apply expo the Quick rates way.',
-  upLab: 'applyQuickRates takes its expo path when this is on. The drawing copy of the formula is applyQuickRates in src/fc/ratescurve.js.',
-  downAir: 'Turned OFF, QUICK rates use their other curve.',
-  downLab: 'OFF is Betaflight\'s default, and it is the curve the rates graph draws.',
+  air: 'Decides where QUICK rates apply expo. The other rate types ignore it.',
+  lab: 'Stored as quickRatesRcExpo and read in applyQuickRates in fc/rc.c. The drawing copy of the formula is applyQuickRates in src/fc/ratescurve.js.',
+  sim: 'Works here, and it matters only when rates_type is QUICK. The Rates menu in Settings writes it as OFF every time it writes the rate profile.',
+  choices: [
+    'OFF: expo bends only the part of the curve that rises towards the maximum rate, and the stick position itself is used as it is. This is Betaflight\'s default, and the curve the rates graph draws.',
+    'ON: expo is applied to the stick position first, as the BETAFLIGHT type applies RC expo, and the rise towards the maximum rate uses the raw stick.',
+  ],
 }));
 
 function rateAxis(axis) {
@@ -1313,7 +1367,7 @@ function rateAxis(axis) {
   put(`${axis}_rc_rate`, copy({
     title: `${a.Axis} RC rate (centre)`,
     related: ['control-rates', `cli-${axis}_srate`, `cli-${axis}_expo`],
-    air: `On ACTUAL rates this is the ${a.axis} centre sensitivity, in tens of deg/s: how fast the rotation rate rises as the stick leaves the centre. A value of 7 means 70 deg/s for each unit of stick movement at the centre. It is the slope of the curve at the middle, not the rate at half stick.`,
+    air: `On ACTUAL rates this is the ${a.axis} centre sensitivity, in tens of deg/s: how fast the rotation rate rises as the stick leaves the centre. A value of 7 means that near the centre the rate rises as steeply as a straight line that would reach 70 deg/s at full stick. It is the slope of the curve at the middle, not the rate at half stick.`,
     lab: `Stored in rcRates[FD_${a.Axis.toUpperCase()}] as a whole number up to 255. On ACTUAL, centre sensitivity = rc_rate × 10. The other types use the number differently: see applyBetaflightRates and the other rate functions in fc/rc.c.`,
     sim: 'Works here. It is set on the Rates menu in Settings. Roll and pitch share one value unless you turn on Separate pitch, and yaw has its own.',
     upAir: `The quad's ${a.axis} becomes twitchier near the centre of the stick, and fine aiming gets harder.`,
@@ -1362,10 +1416,10 @@ rateAxis('yaw');
 put('thr_mid', copy({
   title: 'Throttle mid',
   related: ['cli-thr_expo', 'cli-throttle_limit_type', 'physics-airframe'],
-  air: 'Moves the point that Betaflight treats as the middle of the throttle curve. With thr_expo, this lets hover sit at a comfortable stick position without a SCALE throttle limit.',
+  air: 'Moves the point that Betaflight treats as the middle of the throttle curve, where thr_expo makes the curve flattest. With thr_expo set, putting thr_mid at your hover throttle gives the stick the most travel around hover.',
   lab: 'thrMid8, from 0 to 100, stored in hundredths, so 50 means 0.50. It is the pivot of the throttle curve that fc/rc.c builds for rcLookupThrottle.',
   sim: 'Works here, and it is set on the Rates menu in Settings. At the normal Weight setting the five inch hovers at about 35 percent of the stick, so with thr_mid at 50 and no expo, hover sits about a third of the way up the stick.',
-  upAir: 'If thr_expo is also set, more of the stick travel is below hover. It is easy to overthink; a SCALE throttle limit is simpler to understand.',
+  upAir: 'If thr_expo is also set, the flat part of the curve moves up the stick.',
   upLab: 'A higher mid moves the pivot of the throttle curve up the stick.',
   downAir: 'The pivot moves down the stick. Pilots who hover low often bring it down toward their hover point, so that thr_expo softens the part of the travel they use most.',
   downLab: 'A lower mid moves the pivot of the throttle curve down the stick.',
@@ -1373,7 +1427,7 @@ put('thr_mid', copy({
 put('thr_expo', copy({
   title: 'Throttle expo',
   related: ['cli-thr_mid'],
-  air: 'Bends the throttle curve so that the stick is gentler around the mid point. It does not add motor range. On the five inch, a SCALE throttle limit is usually the better way to make hover easier to hold.',
+  air: 'Bends the throttle curve so that the stick is gentler around the mid point, set by thr_mid. It does not add motor range. A SCALE throttle limit is the other way to give hover more of the stick.',
   lab: 'thrExpo8, from 0 to 100, stored in hundredths. It flattens the throttle curve around thr_mid and steepens the ends. 0 is a straight line.',
   sim: 'Works here, and it is set on the Rates menu in Settings.',
   upAir: 'The throttle is softer around the mid point.',
@@ -1384,13 +1438,14 @@ put('thr_expo', copy({
 put('throttle_limit_type', copy({
   title: 'Throttle limit type',
   related: ['control-rates', 'cli-throttle_limit_percent', 'physics-airframe'],
-  air: 'OFF, SCALE or CLIP. SCALE spreads the whole stick travel from zero up to the cap, which is how racers move hover higher up the stick on a quad with far more thrust than it needs to hover. CLIP ignores the top of the stick.',
+  air: 'Chooses how throttle_limit_percent limits the throttle. SCALE spreads the whole stick travel from zero up to the cap, which puts hover higher up the stick on a quad with far more thrust than it needs to hover.',
   lab: 'applyThrottleLimit in mixer.c. SCALE: output = stick × cap. CLIP: output = the smaller of stick and cap.',
   sim: 'Works here. The Throttle limit row on the Rates menu in Settings writes SCALE when the cap is below 100 and OFF at 100, so CLIP cannot be chosen there.',
-  upAir: 'This is a choice from a list, so there is no higher or lower value. SCALE is the type that gives back fine control of the throttle.',
-  upLab: 'SCALE multiplies the throttle by the cap, so the full stick travel covers a smaller throttle range and each part of the stick changes the throttle less.',
-  downAir: 'OFF gives the five inch its full thrust, about 8 times its weight under Earth\'s gravity and about 5 times at the normal Weight setting. CLIP is a poor choice: you lose the top of the stick and keep the touchy bottom part.',
-  downLab: 'OFF applies no limit. CLIP cuts the throttle off at the cap and leaves the stick below it unchanged.',
+  choices: [
+    'OFF: no limit. The five inch then has its full thrust, about 8 times its weight under Earth\'s gravity and about 5 times at the normal Weight setting.',
+    'SCALE: the throttle is multiplied by the cap, so every part of the stick changes the throttle less.',
+    'CLIP: the throttle stops at the cap. The stick below the cap is unchanged, and the top of the stick does nothing.',
+  ],
 }));
 put('throttle_limit_percent', copy({
   title: 'Throttle limit percent',
@@ -1407,35 +1462,35 @@ put('throttle_limit_percent', copy({
 put('rc_smoothing', copy({
   title: 'RC smoothing',
   related: ['physics-radio', 'control-ff'],
-  air: 'A low-pass filter on the stick signal before it becomes a setpoint. A low-pass filter lets slow changes through and removes fast ones. In auto mode, Betaflight sets the filter\'s cutoff from the measured time between radio packets, so a perfect link gets a sharper filter than ELRS would.',
-  lab: 'rc_smoothing_mode, plus the auto factors and a separate cutoff for each path. The code is in fc/rc.c, which is compiled.',
+  air: 'Smooths the stick signal between radio packets. Betaflight filters the setpoint, the feedforward and the throttle separately. In auto mode it sets each filter\'s cutoff from the measured packet rate.',
+  lab: 'rc_smoothing, plus the auto factors and a separate manual cutoff for each path. The code is in fc/rc.c, which is compiled.',
   sim: 'Works here. The default perfect link does not test auto smoothing properly, because its packets arrive at perfectly even times. Choose an ELRS preset in the Radio link setting to see it work.',
-  upAir: 'ON is the usual setting, and the sticks are smoothed. OFF passes the raw packets through, which looks rough when packets are lost.',
-  upLab: 'ON switches the smoothing filters on.',
-  downAir: 'Turned OFF, every jitter in the packet timing becomes a jump in the setpoint.',
-  downLab: 'OFF switches the smoothing filters off.',
+  choices: [
+    'ON: the sticks are smoothed. This is Betaflight\'s default.',
+    'OFF: each packet reaches the setpoint as a step, and uneven packet timing becomes a jump in the setpoint.',
+  ],
 }));
 put('rc_smoothing_auto_factor', copy({
   title: 'RC smoothing auto factor (roll, pitch, yaw)',
   related: ['cli-rc_smoothing'],
-  air: 'Sets how cautious auto smoothing is on roll, pitch and yaw. A higher value usually means more smoothing, which also makes the response later. If you have a log, the active cutoff in it confirms which way it moved.',
-  lab: 'Stored as rc_smoothing_auto_factor_rpy. Auto mode uses it when it chooses the roll, pitch and yaw cutoffs.',
-  sim: 'Works here.',
-  upAir: 'The sticks usually feel smoother.',
-  upLab: 'In Betaflight Configurator\'s wording, more factor means more filtering. Betaflight\'s documentation for 4.5.1 gives the exact values.',
-  downAir: 'The sticks usually feel more direct, with less smoothing.',
-  downLab: 'A lower factor means less filtering.',
+  air: 'Sets how much auto smoothing filters roll, pitch and yaw. A higher value gives a lower cutoff: more smoothing, and a later response.',
+  lab: 'Stored as rc_smoothing_auto_factor_rpy. fc/rc.c sets the setpoint and feedforward cutoffs to the measured packet rate × 1.5 / (1 + factor / 10). At 250 packets a second and the default of 30 that is about 94 Hz.',
+  sim: 'Works here. With the perfect radio link the packet rate is exactly 250 per second.',
+  upAir: 'The sticks feel smoother and slightly later.',
+  upLab: 'A higher factor lowers both cutoffs.',
+  downAir: 'The sticks feel more direct, with less smoothing.',
+  downLab: 'A lower factor raises both cutoffs.',
 }));
 put('rc_smoothing_auto_factor_throttle', copy({
   title: 'RC smoothing auto factor (throttle)',
   related: ['cli-rc_smoothing'],
-  air: 'The throttle version of the auto factor. The throttle has no feedforward in the same sense as the other sticks, so this one is about a smooth response when you add throttle quickly, which pilots call a punch.',
-  lab: 'Stored as rc_smoothing_auto_factor_throttle. Auto mode uses it when it chooses the throttle cutoff.',
+  air: 'The throttle version of the auto factor. A higher value gives a lower cutoff on the throttle: a smoother, later response to a punch.',
+  lab: 'Stored as rc_smoothing_auto_factor_throttle. fc/rc.c sets the throttle cutoff to the measured packet rate × 1.5 / (1 + factor / 10).',
   sim: 'Works here.',
-  upAir: 'The throttle usually feels smoother.',
-  upLab: 'A higher factor means more filtering on the throttle.',
+  upAir: 'The throttle feels smoother and slightly later.',
+  upLab: 'A higher factor lowers the throttle cutoff.',
   downAir: 'Throttle changes pass through with less smoothing.',
-  downLab: 'A lower factor means less filtering on the throttle.',
+  downLab: 'A lower factor raises the throttle cutoff.',
 }));
 put('rc_smoothing_setpoint_cutoff', copy({
   title: 'RC smoothing setpoint cutoff',
@@ -1485,35 +1540,27 @@ put('mid_rc', copy({
 put('min_check', copy({
   title: 'Min check',
   related: ['cli-mid_rc', 'cli-max_check'],
-  air: 'The PWM value below which Betaflight treats a stick as at its minimum, which matters for arming and for zero throttle.',
-  lab: 'Stored as mincheck.',
-  sim: 'Works here, but the quad is always armed and the sticks are analogue values from −1 to 1. It is here mainly so that a Betaflight settings file (diff) keeps its value, rather than as a minimum-throttle switch.',
-  upAir: 'A larger part of the stick travel counts as minimum.',
-  upLab: 'A higher mincheck raises the point below which a stick counts as at its minimum.',
-  downAir: 'A smaller part of the stick travel counts as minimum.',
-  downLab: 'A lower mincheck lowers that point. Never set min_check above max_check.',
+  air: 'The throttle value, on the 1000 to 2000 scale, below which Betaflight treats the throttle as zero. Betaflight stretches the throttle above it to cover the whole range, so the bottom of the stick travel up to this point is a dead zone.',
+  lab: 'Stored as mincheck. fc/rc.c maps the throttle from min_check to 2000 onto the full throttle range. On a real flight controller core.c also uses it to decide when the throttle is low, for arming and for the I term reset without airmode.',
+  sim: 'Works here, through fc/rc.c. The simulator sends each stick as 1500 + 500 × its position, so a throttle stick at the bottom arrives as 1000.',
+  upAir: 'More of the bottom of the throttle stick does nothing, and the rest of the travel gives slightly larger steps.',
+  upLab: 'A higher mincheck raises the point where the throttle starts.',
+  downAir: 'Less of the bottom of the stick is dead zone.',
+  downLab: 'At 1000 there is no dead zone at the bottom. Keep it below max_check.',
 }));
 put('max_check', copy({
   title: 'Max check',
   related: ['cli-min_check'],
-  air: 'The PWM value above which Betaflight treats a stick as at its maximum.',
-  lab: 'Stored as maxcheck.',
-  sim: 'Works here, with the same limits as min_check: the quad is always armed and the sticks are analogue values from −1 to 1.',
-  upAir: 'The stick has to travel further before it counts as at maximum.',
-  upLab: 'A higher maxcheck raises the point above which a stick counts as at its maximum.',
-  downAir: 'The stick counts as at maximum sooner.',
-  downLab: 'A lower maxcheck lowers that point on the PWM scale.',
+  air: 'The stick value, on the 1000 to 2000 scale, above which Betaflight treats a stick as at its maximum. It is used for stick commands, such as arming or calibrating with the sticks, and by the RPM limiter.',
+  lab: 'Stored as maxcheck in the receiver settings.',
+  sim: 'Stored, not used. The stick commands are in fc/core.c, which is not compiled, and the RPM limiter does not run here.',
 }));
 put('airmode_start_throttle_percent', copy({
   title: 'Airmode start throttle (%)',
   related: ['control-tpa', 'cli-pid_at_min_throttle'],
-  air: 'The throttle percentage at which airmode switches on, if nothing has already forced it on. Airmode lets the mixer keep control of the motors at low throttle. Racers usually want it on across the whole throttle range.',
-  lab: 'Stored as airModeActivateThreshold in the receiver setting group. On a real flight controller, fc/core.c compares the throttle with it and latches airmode on once the throttle passes it.',
-  sim: 'The settings catalog marks this as working here, but it has no effect. fc/core.c is not compiled, and its stand-in, isAirmodeActivated in bf_stubs.c, always reports airmode as active, so airmode acts from zero throttle whatever this is set to. The AIRMODE feature is a separate switch, and there is no AUX channel to turn airmode off in flight.',
-  upAir: 'On a real quad, airmode waits for more throttle before it switches on. Here nothing changes.',
-  upLab: 'A higher threshold on a real flight controller. The stand-in here ignores it.',
-  downAir: 'On a real quad, airmode starts at a lower throttle, and from idle if this is 0 and the AIRMODE feature is on. Here airmode is already active from zero throttle.',
-  downLab: 'A lower threshold on a real flight controller. The stand-in here ignores it.',
+  air: 'On a real quad with airmode on, airmode does not start until the throttle first passes this percentage after arming, so that a quad sitting on the ground at zero throttle does not react to every bump.',
+  lab: 'Stored as airModeActivateThreshold in the receiver settings. fc/core.c compares the throttle with it and latches airmode on once the throttle passes it.',
+  sim: 'Stored, not used. fc/core.c is not compiled, and its stand-in, isAirmodeActivated in bf_stubs.c, always reports airmode as active, so airmode works from zero throttle whatever this is set to.',
 }));
 put('fpv_mix_degrees', copy({
   title: 'FPV mix degrees',
@@ -1521,19 +1568,15 @@ put('fpv_mix_degrees', copy({
   air: 'On a real flight controller this mixes the camera tilt into roll and yaw, so that "left" in the goggles is left along the horizon. This simulator never switches on the mode that uses it (BOXFPVANGLEMIX), so you correct for the camera tilt yourself as you fly.',
   lab: 'Stored in rxConfig.fpvCamAngleDegrees. fc/rc.c would mix it in if the mode were on.',
   sim: 'Stored, not used. The Camera angle setting on the Quad screen is the camera mount, a different number, and it does change what you see, because it sets the view the renderer draws.',
-  upAir: 'On a flight controller with the mode on, it would mix in more. Here it has no effect.',
-  upLab: 'The value is stored in its setting group and nothing in the flight reads it.',
-  downAir: 'Lowering it has no effect here either.',
-  downLab: 'The value is only stored, so a lower value changes nothing.',
 }));
 
 put('dshot_idle_value', copy({
   title: 'DShot idle',
   related: ['control-mixer', 'physics-motor', 'cli-dyn_idle_min_rpm'],
-  air: 'The lowest power the mixer will send to a motor, in DShot units: percent times 100, so 550 is 5.5 percent. Too low, and yaw stops working at idle. Too high, and the quad will not come down.',
+  air: 'The lowest command the mixer sends to a motor, in DShot units: percent times 100, so 550 is 5.5 percent. The motors spin at this idle whenever the quad is armed, so they still have room to slow down for a correction at zero throttle.',
   lab: 'Stored as digitalIdleOffsetValue. motorInitEndpoints in bf_glue.c, the code that connects Betaflight to the physics, sets the motor range from DShot values, not from the PWM setting min_throttle.',
-  sim: 'Works here. This is the idle that airmode relies on.',
-  upAir: 'The motors spin faster at idle. The quad floats more at low throttle, yaw is stronger at the bottom of the throttle, and the quad is harder to bring down.',
+  sim: 'Works here.',
+  upAir: 'The motors spin faster at idle. The quad floats more and descends more slowly at low throttle, and yaw is stronger at the bottom of the throttle.',
   upLab: 'A higher digital idle raises the lowest power a motor can receive.',
   downAir: 'The motors come closer to stopping at idle. Drops are quicker and yaw feels weak at the bottom. On a real electronic speed controller (ESC), a very low idle risks a desync, where the ESC loses track of the motor; that is not modelled.',
   downLab: 'A lower idle lowers the lowest power a motor can receive. The physics model spins the motor at whatever power it is given and cannot desync.',
@@ -1544,10 +1587,6 @@ put('motor_kv', copy({
   air: 'The kV figure on a motor\'s label: its speed in RPM for each volt, with nothing attached. Real setup pages ask for it, and people often type a new value here expecting the quad to fly differently. The physics model\'s motor constant is a value under load, not 60/(2π kV).',
   lab: 'Stored in motorConfig.kv. Each aircraft\'s motor constant ke is fixed in the physics model and does not depend on this setting: on the five inch it is 0.006336 V s/rad.',
   sim: 'Stored, not used. The motors belong to the aircraft chosen with the Aircraft row at the top of the Quad screen, and typing a different kV does not change them.',
-  upAir: 'On a flight controller that used it for the on-screen display or for RPM conversion, a higher value would mean a faster motor with nothing attached. It does not change the thrust here.',
-  upLab: 'The value is only stored in its setting group. The RPM filter does not convert motor speed through this setting, because the motor speed comes straight from the physics model.',
-  downAir: 'Lowering it has no effect here either.',
-  downLab: 'The value is only stored, so a lower value changes nothing.',
 }));
 put('motor_poles', copy({
   title: 'Motor poles',
@@ -1555,10 +1594,6 @@ put('motor_poles', copy({
   air: 'The number of magnetic poles in the motor. A real flight controller uses it to convert the electrical RPM (eRPM) that an ESC reports into the motor\'s real RPM.',
   lab: 'Stored as motorPoleCount. Here the motor speed in revolutions per second comes straight from the physics model, so the RPM filter does not need the pole count.',
   sim: 'Stored, not used.',
-  upAir: 'On a real flight controller it would change the eRPM conversion. Here it has no effect.',
-  upLab: 'The value is only stored in its setting group.',
-  downAir: 'Lowering it has no effect here either.',
-  downLab: 'The value is only stored, so a lower value changes nothing.',
 }));
 put('min_throttle', copy({
   title: 'Min throttle (PWM)',
@@ -1566,10 +1601,6 @@ put('min_throttle', copy({
   air: 'The lowest motor output for the older PWM motor signal. DShot idle replaced it for digital motor protocols.',
   lab: 'Stored in motorConfig.minthrottle. motorInitEndpoints in bf_glue.c uses DShot values instead.',
   sim: 'Stored, not used.',
-  upAir: 'On a board that uses PWM it would raise the idle. It does not change this mixer.',
-  upLab: 'The value is only stored in its setting group.',
-  downAir: 'Lowering it has no effect here either.',
-  downLab: 'The value is only stored, so a lower value changes nothing.',
 }));
 put('max_throttle', copy({
   title: 'Max throttle (PWM)',
@@ -1577,10 +1608,6 @@ put('max_throttle', copy({
   air: 'The highest motor output for the older PWM motor signal.',
   lab: 'Stored as maxthrottle. The DShot motor path used here does not read it.',
   sim: 'Stored, not used.',
-  upAir: 'Raising it changes nothing in flight here.',
-  upLab: 'The value is only stored in its setting group.',
-  downAir: 'Lowering it has no effect here either.',
-  downLab: 'The value is only stored, so a lower value changes nothing.',
 }));
 put('min_command', copy({
   title: 'Min command (PWM)',
@@ -1588,23 +1615,21 @@ put('min_command', copy({
   air: 'The PWM value sent to a stopped motor, below idle: the "off" signal for the older PWM motor protocol.',
   lab: 'Stored as mincommand. With DShot, stopping a motor is a DShot command, not this value.',
   sim: 'Stored, not used.',
-  upAir: 'Raising it changes nothing in flight here.',
-  upLab: 'The value is only stored in its setting group.',
-  downAir: 'Lowering it has no effect here either.',
-  downLab: 'The value is only stored, so a lower value changes nothing.',
 }));
 
 put('mixer_type', copy({
   title: 'Mixer type',
   figure: 'mixer',
   related: ['control-mixer', 'cli-ez_landing_threshold'],
-  air: 'LEGACY, LINEAR, DYNAMIC or EZLANDING. It decides how the throttle and the PID corrections share the four motors when one motor is asked for more than 100 percent. EZLANDING is a landing aid and is not meant for racing.',
-  lab: 'mixer_type chooses the mixer adjustment in mixer.c, which is compiled: LEGACY uses applyMixerAdjustment, LINEAR and DYNAMIC use applyMixerAdjustmentLinear, and EZLANDING uses applyMixerAdjustmentEzLand.',
+  air: 'Decides how the mixer fits the PID corrections and the throttle into the motor range when they do not fit as they are.',
+  lab: 'mixer_type chooses the adjustment in mixer.c, which is compiled: LEGACY uses applyMixerAdjustment, LINEAR and DYNAMIC use applyMixerAdjustmentLinear, and EZLANDING uses applyMixerAdjustmentEzLand.',
   sim: 'Works here.',
-  upAir: 'This is a choice from a list, so there is no higher or lower value. DYNAMIC is a common modern racing choice. EZLANDING changes how the quad descends, so try it over grass first.',
-  upLab: 'LINEAR and DYNAMIC change how the sum of the PID output and the throttle is fitted into the motor range.',
-  downAir: 'LEGACY is the textbook method: it adds the throttle and the corrections together, which easily drives a motor to its limit.',
-  downLab: 'LEGACY uses applyMixerAdjustment, the original Betaflight method.',
+  choices: [
+    'LEGACY: if the corrections need more than the whole motor range, they are scaled down to fit, and then the throttle is moved up or down so every motor fits. This is Betaflight\'s default.',
+    'LINEAR: the corrections are also shifted with the throttle. At low throttle they are made mostly by speeding motors up, and at high throttle mostly by slowing them down, by the same amount on every motor.',
+    'DYNAMIC: the same shift, but each motor is shifted by the size of its own correction.',
+    'EZLANDING: a landing aid. At low throttle with the sticks near centre it limits how far the mixer may raise the throttle to make room for corrections, so a quad touching down is not lifted by them.',
+  ],
 }));
 put('yaw_motors_reversed', copy({
   title: 'Yaw motors reversed',
@@ -1612,10 +1637,10 @@ put('yaw_motors_reversed', copy({
   air: 'Reverses the sign of yaw in the mixer, for propellers that spin "props out" instead of "props in". If it does not match the direction the motors spin on the quad, yaw runs away: the yaw correction pushes the wrong way and the quad spins faster and faster.',
   lab: 'yaw_motors_reversed. When it is OFF, mixer.c reverses the sign of the yaw PID output, which matches the props-in motor directions in the physics model.',
   sim: 'Works here. The physics model\'s motor spin directions do not change with this setting, so turning it on makes yaw run away. Betaflight and the physics model then disagree about which way the motors spin, and fixing that disagreement on a real quad is what this setting is for.',
-  upAir: 'Turned ON, yaw is reversed compared with the motor directions in the physics model, and yaw runs away. Do not turn it on here.',
-  upLab: 'It flips one sign. The comment above the motor spin table in plant.c traces the whole chain of signs.',
-  downAir: 'Turned OFF, it matches the motor spin directions the physics model uses.',
-  downLab: 'OFF is the setting for props-in motors.',
+  choices: [
+    'OFF: the propellers spin props in, which is what the physics model has. This is Betaflight\'s default.',
+    'ON: for props out. Here it makes yaw run away, because the physics model\'s propellers do not change direction with it.',
+  ],
 }));
 put('crashflip_motor_percent', copy({
   title: 'Crashflip motor percent',
@@ -1643,38 +1668,49 @@ put('crashflip_expo', copy({
 put('runaway_takeoff_prevention', copy({
   title: 'Runaway takeoff prevention',
   related: ['start-honesty'],
-  air: 'A firmware safety check that disarms the quad if it takes off without a stick input that could explain it. It guards against mistakes with a real arming switch.',
-  lab: 'Stored as runaway_takeoff_prevention. The code that acts on it is in fc/core.c, which is not compiled. The quad is always armed.',
-  sim: 'Stored, not used.',
-  upAir: 'On a real flight controller, turning it on enables a safety check. Here it has no effect.',
-  upLab: 'The value is only stored in its setting group.',
-  downAir: 'Turning it off has no effect here either.',
-  downLab: 'The value is only stored, so turning it off changes nothing.',
+  air: 'A safety check that disarms the quad if, just after arming, the PID controller is at its limit and the quad keeps rotating away from what it is asked for. That is what happens when the motors are in the wrong order, spin the wrong way, or the board is mounted in the wrong direction.',
+  lab: 'Stored as runaway_takeoff_prevention. The code that acts on it is in fc/core.c, which is not compiled. It stops watching once the quad has flown normally for a while (runaway_takeoff_deactivate_delay and runaway_takeoff_deactivate_throttle_percent).',
+  sim: 'Stored, not used. The quad is always armed, and its motor order and directions are fixed in the physics model.',
 }));
 
 const FEATURE_COPY = {
   AIRMODE: copy({
     title: 'Feature AIRMODE',
-    related: ['control-tpa', 'cli-pid_at_min_throttle'],
-    air: 'Airmode keeps the PID controller working at zero throttle, so the mixer can still speed one motor up and slow another down. Without it, cutting the throttle leaves you with no control.',
-    lab: 'This is the line feature AIRMODE in a settings file. It uses Betaflight\'s compiled mixer and PID code.',
-    sim: 'Works here, as a CLI feature line.',
-    upAir: 'On: flips at zero throttle still have motors that can respond.',
-    upLab: 'The feature is switched on.',
-    downAir: 'Off: cutting the throttle removes the controller\'s ability to rotate the quad.',
-    downLab: 'The feature is switched off.',
+    related: ['control-tpa', 'control-mixer'],
+    air: 'Airmode keeps the PID controller at full strength at zero throttle, so a flip or a roll with the throttle cut stays under control. Without it, Betaflight gives the PID corrections half their usual share of the motor range at zero throttle, rising to all of it at half throttle, and a real flight controller also resets the I term whenever the throttle stick is at the bottom.',
+    lab: 'This is the line feature AIRMODE in a settings file. mixer.c reads it through airmodeIsEnabled(). With or without it, the mixer moves the throttle up or down so that every motor\'s command fits between idle and full power; airmode decides how large the corrections may be at low throttle.',
+    sim: 'Works here, as a CLI feature line. The I term reset at the bottom of the stick is in fc/core.c, which is not compiled, so turning airmode off here changes only the mixer\'s share.',
+    choices: [
+      'ON: the PID corrections keep their full share of the motor range at every throttle position. This is the usual setting for racing and freestyle.',
+      'OFF: below half throttle the corrections get a smaller share, down to half at zero throttle, so a flip with the throttle cut is less well controlled.',
+    ],
   }),
   ANTI_GRAVITY: copy({
     title: 'Feature ANTI_GRAVITY',
     related: ['cli-anti_gravity_gain', 'control-tpa'],
-    air: 'The main switch for anti-gravity. The anti-gravity gains have no effect while it is off.',
-    lab: 'This is the line feature ANTI_GRAVITY in a settings file.',
-    sim: 'Works here, as a CLI feature line.',
-    upAir: 'On: the anti-gravity gains can keep the quad level when you add throttle suddenly.',
-    upLab: 'The feature is switched on.',
-    downAir: 'Off: the quad tips when you add throttle suddenly, and the anti-gravity gains are ignored.',
-    downLab: 'The feature is switched off.',
+    air: 'The main switch for anti-gravity, which raises I, and P on roll and pitch, while the throttle is changing quickly, so that the quad does not tip in pitch or roll when you punch.',
+    lab: 'This is the line feature ANTI_GRAVITY in a settings file. On a real flight controller, fc/core.c switches anti-gravity on when this feature is set or when the ANTI GRAVITY mode is on a switch.',
+    sim: 'Works here, as a CLI feature line. bf_glue.c switches anti-gravity on from this feature in the same way, and there is no mode switch.',
+    choices: [
+      'ON: anti_gravity_gain and anti_gravity_p_gain take effect. Betaflight turns it on by default.',
+      'OFF: anti-gravity does nothing, whatever its gains are set to.',
+    ],
   }),
+};
+
+/*
+ * What each grey feature switches on, on a real flight controller. Betaflight
+ * spells them as its CLI prints them (featureNames in cli/cli.c).
+ */
+const FEATURE_WHAT = {
+  GPS: 'Switches on GPS support: the GPS module, GPS Rescue and the GPS readouts on the OSD.',
+  OSD: 'Switches on Betaflight\'s on-screen display, the text drawn over the camera picture in the goggles.',
+  LED_STRIP: 'Switches on the LED strip.',
+  TELEMETRY: 'Switches on telemetry, the data the quad sends back to the pilot\'s radio.',
+  RX_SPI: 'Tells Betaflight to use a radio receiver built into the flight controller board, on its SPI bus.',
+  '3D': 'Switches on 3D mode, in which reversible motors can spin either way.',
+  SERVO_TILT: 'Switches on servo tilt, which moves a camera gimbal with servos.',
+  SOFTSERIAL: 'Switches on software serial ports, extra serial ports made in software on spare pins.',
 };
 
 /* The plain status words for a page line, falling back to the code. */
@@ -1686,13 +1722,9 @@ function featurePage(feat) {
   const authored = FEATURE_COPY[feat.name];
   const base = authored || copy({
     title: `Feature ${feat.name}`,
-    air: `A Betaflight feature switch named ${feat.name}. On a real flight controller it turns a whole part of the firmware on.`,
-    lab: 'Features are CLI commands, not ordinary settings.',
-    sim: `${statusWords(feat.status)}. This part of Betaflight is not compiled into the simulator, so the switch is stored and has no effect. The settings catalog\'s own note is at the end of this page.`,
-    upAir: 'On a real quad this would switch that part of the firmware on.',
-    upLab: 'It sets the feature switch.',
-    downAir: 'On a real quad this would switch that part of the firmware off.',
-    downLab: 'It clears the feature switch.',
+    air: FEATURE_WHAT[feat.name] || `A Betaflight feature switch named ${feat.name}.`,
+    lab: `This is the line feature ${feat.name} in a settings file. Features are switched with the feature command in the CLI, not set like ordinary settings.`,
+    sim: `${statusWords(feat.status)}. This part of Betaflight is not compiled into the simulator, so the switch is kept in the settings file and changes nothing.`,
   });
   return finishPage(`feature-${feat.name}`, {
     ...base,
@@ -1717,184 +1749,427 @@ function period(s) {
 }
 
 /*
- * The shared closing sentences of the grey families. A grey key does the
- * same nothing whichever way it moves, so the lower half of the page says so
- * in a sentence rather than a one-word "Same".
+ * THE GREY FAMILIES. A setting with no page of its own gets one here: a
+ * sentence on what it does on a real quad, a sentence on where it lives in
+ * Betaflight, and what the simulator does instead. The table is read top
+ * down and the first match wins, so a narrow pattern sits above a wide one.
+ *
+ * These pages used to be a dozen templates, each shared by settings that
+ * had little to do with one another: a DShot telemetry switch opened with
+ * "A real flight controller also has beepers, SD cards, camera control",
+ * and a hundred settings with no template at all said only that they were
+ * "a real Betaflight 4.5.1 setting". Each also carried If you raise it and
+ * If you lower it, which on a setting that changes nothing said so twice
+ * more. The owner asked on 27 September 2026 for the wiki to make sense,
+ * so every family now names its own subject, and a grey page stops at In
+ * this simulator. The descriptions say what the setting is for and no
+ * more, because a number a page cannot check against the firmware is a
+ * number it should not print.
  */
-const LOWER_TOO = 'Lowering it has no effect here either.';
+const OSD_ALARM = {
+  rssi: 'signal strength (RSSI)',
+  'link quality': 'link quality',
+  'rssi dbm': 'signal strength in dBm',
+  rsnr: 'signal to noise ratio',
+  cap: 'battery capacity used',
+  alt: 'altitude',
+};
+
+const RX_SIM = ' The sticks come from a joystick, a gamepad or the keyboard, and the Radio link setting adds the delay, timing jitter and lost packets of a real link.';
+const BAT_SIM = ' The physics model calculates the battery voltage and current, and Pack charge in Settings sets the starting voltage.';
+const SENSOR_SIM = ' The simulated gyro reads the physics model directly, and angle mode takes the attitude from the physics model.';
+
+const GREY_FAMILIES = [
+  {
+    re: /^osd_.*_pos$/,
+    related: ['start-honesty', 'physics-lens'],
+    air: (k) => `Where the ${prettyOsd(k)} readout sits on the on-screen display (OSD), the text Betaflight draws over the camera picture in the goggles, and whether it is shown.`,
+    lab: 'Betaflight packs the readout\'s position and the OSD profiles that show it into one number. Configurator\'s OSD tab sets it when a readout is dragged into place.',
+    sim: ' The lap clock and the battery readout in the simulator are drawn by the simulator itself.',
+  },
+  {
+    re: /^osd_.*_alarm$/,
+    related: ['start-honesty'],
+    air: (k) => `The level at which the on-screen display (OSD) warns about ${OSD_ALARM[prettyOsd(k).replace(/ alarm$/, '')] || prettyOsd(k)}.`,
+    lab: 'It is one of the OSD settings. When the value it watches crosses this level, the readout flashes in the goggles.',
+    sim: '',
+  },
+  {
+    re: /^osd_/,
+    related: ['start-honesty'],
+    air: (k) => `A setting for the on-screen display (OSD), the text Betaflight draws over the camera picture in the goggles: ${prettyOsd(k)}.`,
+    lab: 'It is one of the OSD settings, which decide what the OSD shows and in which units.',
+    sim: ' The lap clock and the battery readout in the simulator are drawn by the simulator itself.',
+  },
+  {
+    re: /^vtx_/,
+    related: ['start-honesty'],
+    air: () => 'A setting for the video transmitter (VTX), the radio that sends the camera picture to the goggles: its band, channel, power, pit mode or the serial link to it.',
+    lab: 'Betaflight sends these values to the transmitter over a serial link (SmartAudio, Tramp or MSP), using the VTX table set up for that transmitter.',
+    sim: ' The picture you see is drawn in your browser.',
+  },
+  {
+    re: /^gps_lap_timer/,
+    related: ['start-honesty'],
+    air: () => 'A setting for Betaflight\'s GPS lap timer, which times laps past a gate position saved from GPS.',
+    lab: 'It belongs to the GPS lap timer settings and needs a GPS module.',
+    sim: ' The simulator times laps itself, from the gates of the track.',
+  },
+  {
+    re: /^gps_rescue_/,
+    related: ['start-honesty', 'physics-missing'],
+    air: () => 'A setting for GPS Rescue, which flies a quad back towards where it took off when the radio link is lost, or when the pilot switches it on.',
+    lab: 'It belongs to the GPS_RESCUE setting group. GPS Rescue needs a GPS module and an accelerometer, and it flies with its own climb, speed, angle and throttle limits.',
+    sim: '',
+  },
+  {
+    re: /^gps/,
+    related: ['start-honesty', 'physics-missing'],
+    air: () => 'A setting for the GPS module: which protocol it speaks, how Betaflight configures it, and how it sets the home point.',
+    lab: 'It belongs to the GPS setting group.',
+    sim: '',
+  },
+  {
+    re: /^(led_|ledstrip)/,
+    related: ['start-honesty'],
+    air: () => 'A setting for an LED strip: which LEDs light, in what colour, and what they show, such as the flight mode, a warning or a beacon for finding a crashed quad.',
+    lab: 'It belongs to the LEDSTRIP setting group. LEDs have no effect on how a quad flies.',
+    sim: '',
+  },
+  {
+    re: /^blackbox_/,
+    related: ['physics-gyro'],
+    air: () => 'A setting for the blackbox, the flight recorder on a real flight controller: how often it records, which values it leaves out, and whether it writes to flash memory or an SD card.',
+    lab: 'It belongs to the BLACKBOX_CONFIG setting group. A log is read afterwards with Betaflight\'s Blackbox Explorer, or turned into a table with its blackbox_decode tool.',
+    sim: ' The simulator\'s own Flight log, in Settings, records a flight in memory and saves it as a CSV file in the layout blackbox_decode produces.',
+  },
+  {
+    re: /^failsafe_/,
+    related: ['physics-radio'],
+    air: () => 'A setting for failsafe, what a real quad does when the radio link is lost: how long it holds the last sticks, and then whether it drops, lands or starts GPS Rescue.',
+    lab: 'It belongs to FAILSAFE_CONFIG and is read by flight/failsafe.c.',
+    sim: ' The Radio link setting can lose packets, but a lost packet here only means the sticks arrive a little later.',
+  },
+  {
+    re: /^(mag_|align_mag)/,
+    related: ['start-honesty'],
+    air: () => 'A setting for the compass (magnetometer), which measures the direction of the Earth\'s magnetic field. Betaflight uses it for heading in GPS Rescue.',
+    lab: 'It belongs to the COMPASS_CONFIG setting group: the chip, how it is wired and mounted, and its calibration.',
+    sim: '',
+  },
+  {
+    re: /^baro_/,
+    related: ['start-honesty'],
+    air: () => 'A setting for the barometer, which measures air pressure so that Betaflight can estimate height.',
+    lab: 'It belongs to the BAROMETER_CONFIG setting group: the chip and how it is wired.',
+    sim: '',
+  },
+  {
+    re: /^acc_/,
+    related: ['control-angle'],
+    air: () => 'A setting for the accelerometer, which measures acceleration. When the quad is not accelerating, it shows which way is down, which angle mode and GPS Rescue need.',
+    lab: 'It belongs to the ACCELEROMETER_CONFIG setting group: the chip, its filter, its trims and its calibration.',
+    sim: SENSOR_SIM,
+  },
+  {
+    re: /^align_board_/,
+    related: ['physics-gyro'],
+    air: () => 'How the flight controller board is mounted on the frame, in degrees, so that a board fitted at an angle still reads roll, pitch and yaw correctly.',
+    lab: 'It belongs to the BOARD_ALIGNMENT setting group.',
+    sim: SENSOR_SIM,
+  },
+  {
+    re: /^(gyro_calib|gyro_offset|gyro_cal_on_first_arm)/,
+    related: ['physics-gyro'],
+    air: () => 'A setting for gyro calibration, in which Betaflight measures what the gyro reads while the quad is still and subtracts it from every later reading.',
+    lab: 'Betaflight calibrates the gyro before arming, and waits if the quad is being moved.',
+    sim: SENSOR_SIM,
+  },
+  {
+    re: /^(gyro_overflow|gyro_high_range|gyro_to_use|gyro_[12]_)/,
+    related: ['physics-gyro'],
+    air: () => 'A setting for the gyro chip itself: which chip to use on a board with two, how it is wired and mounted, its measuring range, and what Betaflight does if a very fast rotation overflows it.',
+    lab: 'These settings describe the hardware. The filters and the PID controller come after them.',
+    sim: SENSOR_SIM,
+  },
+  {
+    re: /^(expresslrs_|flysky_|frsky_spi|frsky_x_rx|cc2500_|rx_spi_|spektrum_spi_)/,
+    related: ['physics-radio'],
+    air: () => 'A setting for a radio receiver built into the flight controller board, on its SPI bus: the protocol, binding and channel settings.',
+    lab: 'It belongs to the SPI receiver settings, which only boards with a built-in receiver use.',
+    sim: RX_SIM,
+  },
+  {
+    re: /^(serialrx_|sbus_|spektrum_|srxl2_|crsf_|rx_|msp_override|input_filtering_mode)/,
+    related: ['physics-radio'],
+    air: () => 'A setting for the radio receiver: its protocol, its serial wiring or the range of stick values it sends.',
+    lab: 'It belongs to the receiver setting group (RX_CONFIG) or the serial receiver settings.',
+    sim: RX_SIM,
+  },
+  {
+    re: /^rssi_/,
+    related: ['physics-radio'],
+    air: () => 'A setting for RSSI, the received signal strength: where Betaflight reads it from and how it scales and smooths it.',
+    lab: 'It belongs to the receiver settings. RSSI is shown on the OSD and can trigger warnings.',
+    sim: RX_SIM,
+  },
+  {
+    re: /^(telemetry_|tlm_|hott_|ibus_sensor|mavlink_|pid_in_tlm|report_cell_voltage|frsky_)/,
+    related: ['physics-radio'],
+    air: () => 'A setting for telemetry, the data the quad sends back to the pilot\'s radio, such as battery voltage and signal quality, and which values are left out.',
+    lab: 'It belongs to the TELEMETRY_CONFIG setting group or to the settings of one telemetry protocol.',
+    sim: RX_SIM,
+  },
+  {
+    re: /^(vcd_|max7456_|displayport_max7456)/,
+    related: ['start-honesty'],
+    air: () => 'A setting for analog video: the video system (PAL or NTSC), and the chip that draws the analog OSD and where it places the text.',
+    lab: 'These settings describe the analog OSD hardware.',
+    sim: '',
+  },
+  {
+    re: /^(serial|msp_|reboot_character|displayport_)/,
+    related: ['start-honesty'],
+    air: () => 'A setting for the serial ports (UARTs) and the MSP protocol that Configurator, digital video systems and other devices use to talk to the flight controller.',
+    lab: 'It belongs to the SERIAL_CONFIG or MSP settings.',
+    sim: ' Settings reach the firmware as CLI text.',
+  },
+  {
+    re: /^(vbat_|ibat_|ibatv_|bat_|battery_|current_meter|cbat_|use_vbat|use_cbat|force_battery|ibata|ibatt)/,
+    related: ['physics-sag', 'cli-vbat_sag_compensation'],
+    air: () => 'A setting for the flight controller\'s battery monitoring: how it measures voltage and current, how it counts cells, and when it warns.',
+    lab: 'It belongs to BATTERY_CONFIG or to the voltage and current sensor settings.',
+    sim: BAT_SIM,
+  },
+  {
+    re: /^dshot_bidir/,
+    related: ['control-filters', 'cli-rpm_filter_harmonics'],
+    air: () => 'Bidirectional DShot: each ESC sends its motor\'s speed back to the flight controller on the same wire that carries the motor command. The RPM filter and dynamic idle need it.',
+    lab: 'It belongs to the MOTOR_CONFIG setting group. The ESC firmware has to support it.',
+    sim: ' The simulator gives Betaflight each motor\'s speed from the physics model, with the delay real motor speed reports have, as if this were on.',
+  },
+  {
+    re: /^dshot_/,
+    related: ['control-mixer'],
+    air: () => 'A setting for DShot, the digital protocol that carries motor commands to the ESCs: how the board generates the signal, and extended DShot telemetry.',
+    lab: 'It belongs to the MOTOR_CONFIG setting group.',
+    sim: ' Only dshot_idle_value is used here.',
+  },
+  {
+    re: /^esc_sensor/,
+    related: ['start-honesty'],
+    air: () => 'A setting for ESC sensor telemetry, in which the ESCs report voltage, current and temperature to the flight controller over a serial wire.',
+    lab: 'It belongs to the ESC sensor settings.',
+    sim: '',
+  },
+  {
+    re: /^beeper_/,
+    related: ['start-honesty'],
+    air: () => 'A setting for the buzzer: how it is driven, its frequency, and the tone the motors play through DShot as a beacon.',
+    lab: 'It belongs to the BEEPER_CONFIG setting group.',
+    sim: '',
+  },
+  {
+    re: /^(sdcard_|sdio_|flash_spi_bus)/,
+    related: ['start-honesty'],
+    air: () => 'A setting for the storage the blackbox writes to: an SD card or a flash memory chip.',
+    lab: 'These settings describe the hardware and how it is wired.',
+    sim: '',
+  },
+  {
+    re: /^(camera_|cam_|rcdevice_)/,
+    related: ['physics-lens'],
+    air: () => 'A setting for camera control, which lets the pilot change the FPV camera\'s own settings from the radio sticks.',
+    lab: 'It belongs to the camera control or RunCam device settings.',
+    sim: ' The camera angle and field of view are set on the Quad screen.',
+  },
+  {
+    re: /^(pinio|box_user_)/,
+    related: ['start-honesty'],
+    air: () => 'A setting for PINIO and the user modes: spare output pins that a switch on the radio can turn on and off, for example to power a video transmitter, and the names those modes show.',
+    lab: 'It belongs to the PINIO or mode settings.',
+    sim: ' There are no AUX channels.',
+  },
+  {
+    re: /^(i2c|mco|adc_|usb_|dashboard_|system_|cpu_overclock|scheduler_|cpu_late_limit|task_statistics|rangefinder_)/,
+    related: ['start-honesty'],
+    air: () => 'A setting for the flight controller board itself: its processor, clocks, buses, USB connection or an attached device.',
+    lab: 'These settings describe the hardware Betaflight runs on.',
+    sim: ' The simulator runs Betaflight\'s control loop as WebAssembly at a fixed 1 kHz, with no board.',
+  },
+  {
+    re: /^stats_/,
+    related: ['start-honesty'],
+    air: () => 'One of the flight controller\'s own statistics: the number of flights, total flight time, distance or battery capacity used.',
+    lab: 'Betaflight adds to these after each flight that lasts longer than stats_min_armed_time_s.',
+    sim: '',
+  },
+  {
+    re: /^(debug_mode|rc_smoothing_debug_axis|acro_trainer_debug_axis)$/,
+    related: ['physics-gyro'],
+    air: () => 'Chooses which internal values Betaflight writes into the four debug columns of a blackbox log, for looking into one part of the firmware.',
+    lab: 'Debug values are recorded, not acted on, so they do not change how a quad flies.',
+    sim: ' The simulator\'s Flight log records its own set of values.',
+  },
+  {
+    re: /^(motor_pwm|use_unsynced_pwm)/,
+    related: ['control-mixer'],
+    air: () => 'A setting for the motor protocol: which protocol the ESCs use (PWM, Oneshot, Multishot or DShot), and for the older analog protocols their update rate and signal polarity.',
+    lab: 'It belongs to the MOTOR_CONFIG setting group.',
+    sim: ' The motors are driven the DShot way.',
+  },
+  {
+    re: /^motor_output_reordering/,
+    related: ['control-mixer'],
+    air: () => 'Which output pin on the board drives which motor, so that a quad wired in a different order can still use Betaflight\'s motor numbers.',
+    lab: 'It belongs to the MOTOR_CONFIG setting group.',
+    sim: ' The motors are always in Betaflight\'s order: rear right, front right, rear left, front left.',
+  },
+  {
+    re: /^3d_/,
+    related: ['control-mixer'],
+    air: () => 'A setting for 3D mode, in which reversible motors can spin either way, so that the quad can fly upside down with thrust pointing up.',
+    lab: 'It sets the dead band around centre throttle and the limits used when the motors reverse.',
+    sim: ' The motors in the physics model do not reverse.',
+  },
+  {
+    re: /^(servo|gimbal_mode|channel_forwarding_start|tri_unarmed_servo)/,
+    related: ['start-honesty'],
+    air: () => 'A setting for servos, used on aircraft with moving control surfaces, a tilting tail motor or a camera gimbal.',
+    lab: 'It belongs to the servo settings.',
+    sim: ' The quad has four fixed motors and no servos.',
+  },
+  {
+    re: /^(deadband|yaw_deadband)$/,
+    related: ['physics-radio'],
+    air: () => 'A band of stick movement around centre that Betaflight treats as exactly centre, so that a radio whose sticks do not centre perfectly does not make the quad drift.',
+    lab: 'It belongs to the RC_CONTROLS setting group.',
+    sim: ' Stick calibration and the dead zone are set in Settings.',
+  },
+  {
+    re: /^yaw_control_reversed/,
+    related: ['cli-yaw_motors_reversed'],
+    air: () => 'Reverses the direction of the yaw stick.',
+    lab: 'It belongs to the RC_CONTROLS setting group. It is not the same as yaw_motors_reversed, which tells the mixer which way the propellers spin.',
+    sim: '',
+  },
+  {
+    re: /^(small_angle|auto_disarm_delay|enable_stick_arming|pwr_on_arm_grace)/,
+    related: ['start-honesty'],
+    air: () => 'A setting for arming, the step that switches the motors on: the largest tilt at which arming is allowed, arming with a stick movement instead of a switch, a wait after power on before arming is allowed, or disarming after a delay at zero throttle.',
+    lab: 'It belongs to the arming settings, which fc/core.c reads.',
+    sim: ' The quad is always armed.',
+  },
+  {
+    re: /^runaway_takeoff_deactivate/,
+    related: ['cli-runaway_takeoff_prevention'],
+    air: () => 'Decides when runaway takeoff prevention stops watching, after how long and above what throttle, once the quad has taken off normally.',
+    lab: 'It is read by fc/core.c together with runaway_takeoff_prevention.',
+    sim: '',
+  },
+  {
+    re: /^acro_trainer_/,
+    related: ['control-angle'],
+    air: () => 'A setting for the acro trainer, which lets a learner fly acro while Betaflight stops the quad tilting past a set angle.',
+    lab: 'It belongs to the PID profile.',
+    sim: ' Angle mode, switched with M, is the simulator\'s way to fly with a tilt limit.',
+  },
+  {
+    re: /^rpm_limit/,
+    related: ['control-mixer'],
+    air: () => 'A setting for the RPM limiter, which caps the average motor speed with its own PID controller. Some spec racing classes use it so that every quad has the same top speed.',
+    lab: 'It needs the motor speeds that bidirectional DShot reports, and it reads motor_kv to estimate the speed at full throttle.',
+    sim: '',
+  },
+  {
+    re: /^(imu_|altitude_)/,
+    related: ['control-angle'],
+    air: () => 'A setting for the attitude and altitude estimate, which combines the gyro with the accelerometer, and the barometer or GPS, to work out which way is up and how high the quad is.',
+    lab: 'It belongs to the IMU or position settings.',
+    sim: ' The simulator gives Betaflight the attitude straight from the physics model.',
+  },
+  {
+    re: /^(thr_corr_)/,
+    related: ['control-angle'],
+    air: () => 'Throttle angle correction: extra throttle when the quad is tilted in angle mode, so that it holds its height better.',
+    lab: 'It belongs to the throttle correction settings.',
+    sim: '',
+  },
+  {
+    re: /^(max_aux_channels|rate_6pos_switch)/,
+    related: ['start-honesty'],
+    air: () => 'A setting for the AUX channels, the radio switches that change modes, and for choosing a rate profile with a six position switch.',
+    lab: 'It belongs to the receiver and adjustment settings.',
+    sim: ' There are no AUX channels.',
+  },
+  {
+    re: /^(craft_name|pilot_name|profile_name|rateprofile_name|name)$/,
+    related: ['start-honesty'],
+    air: () => 'A name that the flight controller stores and can show on the OSD: the craft, the pilot, a PID profile or a rate profile.',
+    lab: 'Names are stored as text and have no effect on flight.',
+    sim: ' The simulator keeps its own names in its menus.',
+  },
+  {
+    re: /^auto_profile_cell_count/,
+    related: ['start-honesty'],
+    air: () => 'Switches to this PID profile automatically when a battery with this many cells is plugged in.',
+    lab: 'It belongs to the PID profile.',
+    sim: ' The simulator uses one PID profile.',
+  },
+  {
+    re: /^timezone_offset_minutes/,
+    related: ['start-honesty'],
+    air: () => 'The time zone of the flight controller\'s clock, used to stamp blackbox logs.',
+    lab: 'It has no effect on flight.',
+    sim: '',
+  },
+  {
+    re: /^mixer_/,
+    related: ['control-mixer'],
+    air: () => 'A mixer setting for aircraft other than a four motor X quad, such as a custom motor layout.',
+    lab: 'It belongs to the MIXER_CONFIG setting group. mixer_type is the one mixer setting used here, and it has its own page.',
+    sim: ' The quad here is a four motor X.',
+  },
+  {
+    re: /^rpm_filter_weights$/,
+    related: ['cli-rpm_filter_weights_1', 'control-filters'],
+    air: () => 'The RPM filter\'s three weights in the list form Betaflight 4.5 prints, one per harmonic, as percentages.',
+    lab: 'rpm_filter_weights = 100,100,100 in a settings file sets all three at once.',
+    sim: ' The simulator reads the list as rpm_filter_weights_1, _2 and _3, which have their own pages, and writes it back as the list when you export.',
+  },
+];
 
 function family(field) {
   const k = field.key;
-  /* The catalog's own reason is printed at the foot of every grey page under
-   * "Why, from the settings catalog", in the catalog's words. The section
-   * above it says the same thing in plain ones rather than repeating it. */
-  const inert = field.status === STATUS.ABSENT
-    ? 'Configurator only. It is not a Betaflight CLI setting, so nothing in the simulator reads it. The settings catalog\'s own note is at the end of this page.'
-    : `${statusWords(field.status)}. This part of Betaflight is not compiled into the simulator, so the value is stored and has no effect. The settings catalog\'s own note is at the end of this page.`;
-  if (k.startsWith('osd_')) {
-    const elName = prettyOsd(k);
-    return copy({
-      title: `OSD: ${elName}`,
-      related: ['start-honesty', 'physics-lens'],
-      air: `On a real quad, the on-screen display (OSD) draws information over the camera picture in the goggles. This setting controls the ${elName} item, one of the readouts such as the timer, the battery voltage or a warning, placed on a grid of character positions. This simulator does not draw Betaflight's OSD. The lap clock and battery readout you see are drawn by the simulator itself, not by this setting.`,
-      lab: 'This is part of Betaflight 4.5.1\'s OSD settings. Positions are grid coordinates packed into one number, alarms are thresholds, and the units setting chooses metric or imperial for the OSD text.',
-      sim: inert,
-      upAir: 'On a real quad this would move, raise or switch on that OSD item. Here the value is kept in the settings file and the picture does not change.',
-      upLab: 'On a full firmware this would change the OSD settings. This build does not compile osd.c into the loop.',
-      downAir: 'Lowering it only changes the value saved in the settings file.',
-      downLab: 'The OSD code is not compiled, so no value has an effect.',
-    });
-  }
-  if (k.startsWith('vtx_')) {
-    return copy({
-      title: k,
-      related: ['start-honesty'],
-      air: 'A setting for the video transmitter (VTX), the radio on a real quad that sends the camera picture to the goggles: its band, channel, power or pit mode. This simulator has no video transmitter. The picture you see is drawn in your browser.',
-      lab: 'This is part of the VTX setting groups, which a real flight controller shares with its transmitter through MSP and VTX tables.',
-      sim: inert,
-      upAir: 'On a real quad this would change the video power or channel. Here it has no effect.',
-      upLab: 'There is no video transmitter to receive the value.',
-      downAir: LOWER_TOO,
-      downLab: 'There is no video transmitter to receive the value.',
-    });
-  }
-  if (k.startsWith('gps_') || k === 'gps') {
-    return copy({
-      title: k,
-      related: ['start-honesty', 'physics-missing'],
-      air: 'A GPS or GPS rescue setting, such as return to home, the rescue altitude or the number of satellites needed. The physics model has no GPS sensor and no map of the Earth.',
-      lab: 'This is part of the GPS and GPS_RESCUE setting groups, which are not compiled into the 1 ms loop.',
-      sim: inert,
-      upAir: 'On a quad with GPS this would change how a rescue behaves. This aircraft has no GPS.',
-      upLab: 'There is no GPS code in this build.',
-      downAir: LOWER_TOO,
-      downLab: 'There is no GPS code in this build.',
-    });
-  }
-  if (k.startsWith('led_') || k.startsWith('ledstrip')) {
-    return copy({
-      title: k,
-      air: 'A setting for an LED strip: its colours, modes and layout. LEDs draw current from the power board and have no effect on how the quad flies.',
-      lab: 'This is part of the LEDSTRIP setting group.',
-      sim: inert,
-      upAir: 'On a real quad this would change the lights. There are no LEDs in the simulator.',
-      upLab: 'There is no LED strip to receive the value.',
-      downAir: LOWER_TOO,
-      downLab: 'There is no LED strip to receive the value.',
-    });
-  }
-  if (k.startsWith('blackbox_')) {
-    return copy({
-      title: k,
-      related: ['physics-gyro'],
-      air: 'A setting for the onboard blackbox, the flight recorder on a real flight controller: how often it records, which values, and where it stores them. This simulator can save a flight log as a CSV file when Flight log is on in Settings, but that is a different recorder.',
-      lab: 'This is part of BLACKBOX_CONFIG. There is no flash memory or SD card recorder in the WebAssembly loop.',
-      sim: inert,
-      upAir: 'On a real flight controller this would change the onboard recording. Here, use the Flight log setting instead.',
-      upLab: 'There is no blackbox device in this build.',
-      downAir: LOWER_TOO,
-      downLab: 'There is no blackbox device in this build.',
-    });
-  }
-  if (k.startsWith('failsafe_')) {
-    return copy({
-      title: k,
-      air: 'What a real quad does if the radio signal is lost: cut the motors, land, or start a GPS rescue. In this simulator the link only loses packets if you choose a radio preset with packet loss, and even then there is no failsafe code.',
-      lab: 'This is part of FAILSAFE_CONFIG. It would need flight/failsafe.c, which is not compiled.',
-      sim: inert,
-      upAir: 'On a real quad this would change the failsafe. The failsafe code is not compiled here.',
-      upLab: 'There is no failsafe code to read the value.',
-      downAir: LOWER_TOO,
-      downLab: 'There is no failsafe code to read the value.',
-    });
-  }
-  if (/^(mag_|baro_|acc_|align_|gyro_calib|gyro_overflow|gyro_offset|gyro_high_range|gyro_to_use)/.test(k)) {
-    return copy({
-      title: k,
-      related: ['physics-gyro', 'control-angle'],
-      air: 'A setting for sensor hardware: the accelerometer, the magnetometer (compass), the barometer (air pressure altimeter), how the board is mounted, calibration, or which gyro chip to use. The simulated gyro needs none of these. Angle mode takes the quad\'s attitude from the physics model, not from combining accelerometer readings.',
-      lab: 'This is part of the sensor setup groups. Modes that rely on the accelerometer are not flown, there is no compass heading, and there is no altitude from air pressure.',
-      sim: inert,
-      upAir: 'On a real board this would calibrate or align a sensor. Here it has no effect.',
-      upLab: 'These sensors do not exist in the simulator.',
-      downAir: LOWER_TOO,
-      downLab: 'These sensors do not exist in the simulator.',
-    });
-  }
-  if (/^(serial|telemetry_|msp_|rssi_|sbus_|spektrum_|srxl2_|crsf_|rx_)/.test(k)) {
-    return copy({
-      title: k,
-      related: ['physics-radio'],
-      air: 'A setting for the serial ports (UARTs), the receiver protocol, the signal strength reading (RSSI) or telemetry sent back to the radio. In this simulator the sticks come from a joystick, a gamepad or the keyboard, and can pass through the radio link model. There is no receiver wire, such as CRSF.',
-      lab: 'This is part of the SERIAL, RX and TELEMETRY setting groups. The simulator has no radio receiver code.',
-      sim: inert,
-      upAir: 'On a real quad this would change a port or a protocol. To change delay and packet loss here, use the Radio link setting.',
-      upLab: 'There are no serial ports in this build.',
-      downAir: LOWER_TOO,
-      downLab: 'There are no serial ports in this build.',
-    });
-  }
-  if (/^(vbat_|ibat_|bat_|battery_|current_meter|cbat_|use_vbat|use_cbat|force_battery|ibata|ibatt)/.test(k)) {
-    return copy({
-      title: k,
-      related: ['physics-sag', 'cli-vbat_sag_compensation'],
-      air: 'A setting for the flight controller\'s battery meter: its scale, warnings and capacity. In this simulator the physics model calculates the battery voltage and current, and the Pack charge setting sets the starting voltage. These meter settings do not.',
-      lab: 'This is part of BATTERY_CONFIG and the ADC setting groups. The number of cells and each cell\'s resistance are fixed in the physics model.',
-      sim: inert,
-      upAir: 'On a real flight controller this would change the battery warnings. Here, use Pack charge to change the battery.',
-      upLab: 'The physics model owns the battery, so the meter settings are not read.',
-      downAir: LOWER_TOO,
-      downLab: 'The physics model owns the battery, so the meter settings are not read.',
-    });
-  }
-  if (/^(beeper_|sdcard_|dashboard_|camera_|cam_|esc_|dshot_|usb_|pinio|displayport_|frsky_|sdio_|system_|scheduler_|cpu_overclock|stats_|rcdevice_|debug_)/.test(k)) {
-    return copy({
-      title: k,
-      air: 'A real flight controller also has beepers, SD cards, camera control, ESC protocols, debug outputs and processor overclocking. The WebAssembly build has none of these.',
-      lab: 'This is part of one of several setting groups that are not in the 1 ms control step.',
-      sim: inert || `${statusWords(field.status)}. It would need the matching part of Betaflight to be compiled.`,
-      upAir: 'It has no effect on this aircraft.',
-      upLab: 'The code is not compiled, or it does not control flight here.',
-      downAir: LOWER_TOO,
-      downLab: 'The code is not compiled, or it does not control flight here.',
-    });
-  }
-  if (/^(motor_pwm|motor_output_reordering|3d_|servo|deadband|yaw_deadband|yaw_control_reversed|small_angle|mixer_)/.test(k) && k !== 'mixer_type') {
-    return copy({
-      title: k,
-      related: ['control-mixer'],
-      air: 'A setting for PWM motor signals, 3D (reversible) motors, servos, stick deadband or extra mixer options. This aircraft is an X-shaped quad using DShot, with stick calibration in Settings. It is always armed, and it has no servos and no 3D mode.',
-      lab: 'This is part of the MOTOR, MIXER and RC setting groups, which are not connected to the physics model.',
-      sim: inert,
-      upAir: 'It has no effect. For the idle speed, use dshot_idle_value.',
-      upLab: 'This part of the firmware is not modelled.',
-      downAir: LOWER_TOO,
-      downLab: 'This part of the firmware is not modelled.',
-    });
-  }
   if (k.startsWith('#')) {
     return copy({
       title: field.tab ? `${field.tab} (Configurator only)` : k,
       related: ['start-honesty'],
-      air: 'A Configurator tab or tool that is not a CLI setting in the 4.5.1 firmware, such as the firmware flasher, cloud backups, the LED painter or autotune. None of these are part of this WebAssembly module.',
-      lab: 'catalog.js marks it ABSENT, so it is shown as a grey tab with its reason.',
-      sim: inert,
-      upAir: 'There is nothing to raise. The tab is shown in grey.',
-      upLab: 'It is not a CLI setting.',
-      downAir: 'There is nothing to lower either.',
-      downLab: 'It is not a CLI setting.',
+      air: 'A tab or tool in Betaflight Configurator, the program that sets up a flight controller from a computer, such as the firmware flasher, cloud backups or the LED painter. It is not a setting stored on the flight controller.',
+      lab: 'Configurator runs it on the computer. Nothing it does is a CLI setting the firmware could read.',
+      sim: 'Configurator only. The simulator\'s settings screen shows the tab in grey. The note from the settings catalog is below.',
+    });
+  }
+  /* The catalog's own reason is printed at the foot of every grey page under
+   * "Why, from the settings catalog", in the catalog's words, so the section
+   * here says what the simulator does instead rather than repeating it. */
+  const inert = `${statusWords(field.status)}. The part of Betaflight that reads it is not compiled into the simulator, so the value is kept in the settings file and changes nothing.`;
+  const fam = GREY_FAMILIES.find((f) => f.re.test(k));
+  if (fam) {
+    return copy({
+      title: k,
+      related: fam.related,
+      air: fam.air(k),
+      lab: fam.lab,
+      sim: `${inert}${fam.sim}`,
     });
   }
   return copy({
     title: k,
     related: ['start-honesty'],
-    air: 'A real Betaflight 4.5.1 setting, kept in this catalog so that a settings file loads and saves again unchanged.',
-    lab: field.pg ? `It belongs to the setting group ${field.pg}.` : 'It has no setting group in the live table.',
-    sim: inert || `${statusWords(field.status)}. It would need the matching part of Betaflight to be compiled.`,
-    upAir: 'On a flight controller that uses this setting, the quantity it names increases. Here it is kept in the settings file and changes nothing.',
-    upLab: 'It is not one of the settings that pidController and mixTable read every millisecond.',
-    downAir: LOWER_TOO,
-    downLab: 'It is not one of the settings that pidController and mixTable read every millisecond.',
+    air: 'A Betaflight 4.5.1 setting for a part of the firmware that does not take part in flight control.',
+    lab: field.pg ? `It belongs to the setting group ${field.pg}.` : 'It has no setting group in the value table.',
+    sim: inert,
   });
 }
 
@@ -1903,9 +2178,15 @@ function finishPage(id, spec) {
     { id: 'air', title: 'What it does', paras: [spec.air] },
     { id: 'lab', title: 'How it works', paras: [spec.lab] },
     { id: 'sim', title: 'In this simulator', paras: [spec.sim] },
-    { id: 'up', title: 'If you raise it', paras: [spec.upAir, spec.upLab] },
-    { id: 'down', title: 'If you lower it', paras: [spec.downAir, spec.downLab] },
   ];
+  if (spec.choices && spec.choices.length) {
+    sections.push({ id: 'choices', title: 'The choices', paras: spec.choices });
+  } else if (spec.upAir) {
+    sections.push(
+      { id: 'up', title: 'If you raise it', paras: [spec.upAir, spec.upLab] },
+      { id: 'down', title: 'If you lower it', paras: [spec.downAir, spec.downLab] },
+    );
+  }
   return {
     id,
     chapter: 'cli',
@@ -1954,11 +2235,16 @@ export function pageForField(field) {
     boundText,
     lutText,
   ].filter(Boolean).join(' ');
+  /* The catalog's note goes at the foot of a grey page unless the page has
+   * already said it: its fallback note is the sentence the grey families
+   * open In this simulator with. */
+  const note = String(field.reason || '').replace(/\.$/, '');
+  const said = note && String(spec.sim || '').includes(note);
   return finishPage(cliPageId(field.key), {
     ...spec,
     status: field.status,
     key: field.key,
-    reason: field.reason,
+    reason: said ? '' : field.reason,
     metaLine,
     meta: { bounds, lut, type: field.type, pg: field.pg, tab: field.tab, page: field.page },
     source: authored

@@ -37,12 +37,12 @@
  */
 
 import { stopFigures } from './anim.js';
-import { ARTICLES, ARTICLE_BY_ID, CHAPTERS } from './articles.js';
+import { ARTICLES, ARTICLE_BY_ID, CHAPTERS } from './articles.js?v=20260927w';
 import {
   STATUS_LABEL, allCliPages, cliIndexPage, cliPageId,
-} from './cli.js';
-import { wikiFigure } from './figures.js';
-import { FIELDS, TABS } from '../fc/catalog.js';
+} from './cli.js?v=20260927w';
+import { wikiFigure } from './figures.js?v=20260927w';
+import { FIELDS, TABS } from '../fc/catalog.js?v=20260927w';
 
 function el(tag, cls, text) {
   const n = document.createElement(tag);

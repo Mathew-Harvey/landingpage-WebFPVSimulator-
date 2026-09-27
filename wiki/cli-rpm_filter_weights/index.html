@@ -101,25 +101,15 @@
       <p class="wiki-lede">Not simulated. Parameter group RPM_FILTER_CONFIG. Firmware type UINT8.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>A real Betaflight 4.5.1 setting, kept in this catalog so that a settings file loads and saves again unchanged.</p>
+        <p>The RPM filter&#039;s three weights in the list form Betaflight 4.5 prints, one per harmonic, as percentages.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>It belongs to the setting group RPM_FILTER_CONFIG.</p>
+        <p>rpm_filter_weights = 100,100,100 in a settings file sets all three at once.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Not simulated. This part of Betaflight is not compiled into the simulator, so the value is stored and has no effect. The settings catalog&#039;s own note is at the end of this page.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>On a flight controller that uses this setting, the quantity it names increases. Here it is kept in the settings file and changes nothing.</p>
-        <p>It is not one of the settings that pidController and mixTable read every millisecond.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>Lowering it has no effect here either.</p>
-        <p>It is not one of the settings that pidController and mixTable read every millisecond.</p>
+        <p>Not simulated. The part of Betaflight that reads it is not compiled into the simulator, so the value is kept in the settings file and changes nothing. The simulator reads the list as rpm_filter_weights_1, _2 and _3, which have their own pages, and writes it back as the list when you export.</p>
       </section>
     </article>
     <div class="wiki-cta">

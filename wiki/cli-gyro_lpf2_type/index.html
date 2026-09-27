@@ -101,25 +101,22 @@
       <p class="wiki-lede">CLI setting gyro_lpf2_type. Works here. Parameter group GYRO_CONFIG. Firmware type UINT8. Values: PT1, BIQUAD, PT2, PT3.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>A low-pass filter on the gyro signal (the second gyro low-pass filter). A low-pass filter lets slow changes through and removes fast ones. A lower cutoff frequency in Hz means more smoothing and more delay, so the PID controller reacts later and more calmly. On some of these settings, 0 turns the filter off.</p>
+        <p>Chooses the kind of filter used for low-pass filter 2 on the gyro signal. A low-pass filter lets slow changes through and removes fast ones. The kinds differ in how sharply they cut above the cutoff frequency and how much delay they add below it.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>The filter type can be PT1, BIQUAD, PT2 or PT3, and the static Hz is the cutoff frequency. When the dynamic minimum, maximum and expo are set, the cutoff moves with the throttle, through the dynamic low-pass logic in gyro_init and pid_init. A 1 kHz loop cannot record anything faster than 500 Hz, so this setting trades delay against noise in the range from 0 to 500 Hz.</p>
+        <p>The kinds come from Betaflight&#039;s filter.c. PT1 is a first-order filter. PT2 and PT3 are two and three first-order stages in a row, each set a little higher so that the whole filter still cuts at the frequency you choose. BIQUAD is a second-order filter with a sharper bend at the cutoff. The cutoff frequency is a separate setting.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Works here. The gyro filters are Betaflight&#039;s compiled gyro.c, and the D term filters are the compiled pid_init.c. The vibration they smooth is added to the gyro reading in bf_glue.c, not to the motion of the quad.</p>
+        <p>Works here, in Betaflight&#039;s compiled gyro_init.c and gyro.c.</p>
       </section>
       <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>For a cutoff in Hz, raising it lets more noise through and adds less delay. The quad feels more directly connected and less smooth.</p>
-        <p>A higher cutoff gives less delay and more noise in the D term. Judge it in a full throttle climb, not in a hover.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>The quad feels smoother and later, which makes it easier to fly badly. Too low, and it feels slow to respond to everything.</p>
-        <p>More delay in the loop. Pilots often raise P to make up for it and then get oscillation, so change the filter instead.</p>
+        <h2>The choices</h2>
+        <p>PT1: the gentlest cut, and the least delay for its cutoff.</p>
+        <p>BIQUAD: a second-order filter, like PT2 but with a sharper bend at the cutoff.</p>
+        <p>PT2: two first-order stages. It removes more above the cutoff than PT1, and adds more delay.</p>
+        <p>PT3: three first-order stages. It removes more again, and adds more delay again.</p>
       </section>
     </article>
     <div class="wiki-cta">

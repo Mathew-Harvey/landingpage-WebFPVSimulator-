@@ -101,25 +101,25 @@
       <p class="wiki-lede">CLI setting rc_smoothing_auto_factor. Works here. Parameter group RX_CONFIG. Firmware type UINT8. Range 0 to 255.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>Sets how cautious auto smoothing is on roll, pitch and yaw. A higher value usually means more smoothing, which also makes the response later. If you have a log, the active cutoff in it confirms which way it moved.</p>
+        <p>Sets how much auto smoothing filters roll, pitch and yaw. A higher value gives a lower cutoff: more smoothing, and a later response.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>Stored as rc_smoothing_auto_factor_rpy. Auto mode uses it when it chooses the roll, pitch and yaw cutoffs.</p>
+        <p>Stored as rc_smoothing_auto_factor_rpy. fc/rc.c sets the setpoint and feedforward cutoffs to the measured packet rate × 1.5 / (1 + factor / 10). At 250 packets a second and the default of 30 that is about 94 Hz.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Works here.</p>
+        <p>Works here. With the perfect radio link the packet rate is exactly 250 per second.</p>
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>The sticks usually feel smoother.</p>
-        <p>In Betaflight Configurator&#039;s wording, more factor means more filtering. Betaflight&#039;s documentation for 4.5.1 gives the exact values.</p>
+        <p>The sticks feel smoother and slightly later.</p>
+        <p>A higher factor lowers both cutoffs.</p>
       </section>
       <section class="wiki-section">
         <h2>If you lower it</h2>
-        <p>The sticks usually feel more direct, with less smoothing.</p>
-        <p>A lower factor means less filtering.</p>
+        <p>The sticks feel more direct, with less smoothing.</p>
+        <p>A lower factor raises both cutoffs.</p>
       </section>
     </article>
     <div class="wiki-cta">

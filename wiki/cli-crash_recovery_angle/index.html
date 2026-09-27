@@ -105,7 +105,7 @@
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>Recovery ends only when both roll and pitch are within this many degrees of level. Recovery always steers toward level; this setting decides when the quad is level enough to stop.</p>
+        <p>Recovery ends only when both roll and pitch are within this many degrees of level. Recovery always steers towards level; this setting decides when the quad is level enough to stop.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
@@ -113,13 +113,13 @@
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>What changes depends on which setting this is, and none of them has any effect while crash_recovery is OFF. Raising crash_dthreshold or crash_gthreshold means a harder hit is needed before Betaflight counts a crash; raising crash_time or crash_delay makes recovery last longer or start later.</p>
-        <p>The code is the crash recovery section of pid.c. The values are in Betaflight&#039;s own units, based on degrees and milliseconds, not SI units.</p>
+        <p>Recovery can end further from level.</p>
+        <p>A wider band around level counts as level.</p>
       </section>
       <section class="wiki-section">
         <h2>If you lower it</h2>
-        <p>Lowering crash_dthreshold or crash_gthreshold makes smaller disturbances count as crashes. Lowering crash_time or crash_delay makes recovery shorter or start sooner.</p>
-        <p>Setting crash_recovery to OFF, the usual choice for racing, turns the whole feature off.</p>
+        <p>The quad has to be closer to level before recovery ends.</p>
+        <p>A narrower band around level counts as level.</p>
       </section>
     </article>
     <div class="wiki-cta">

@@ -101,25 +101,15 @@
       <p class="wiki-lede">Not simulated. Parameter group MOTOR_3D_CONFIG. Firmware type UINT8. Values: OFF, ON.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>A setting for PWM motor signals, 3D (reversible) motors, servos, stick deadband or extra mixer options. This aircraft is an X-shaped quad using DShot, with stick calibration in Settings. It is always armed, and it has no servos and no 3D mode.</p>
+        <p>A setting for 3D mode, in which reversible motors can spin either way, so that the quad can fly upside down with thrust pointing up.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is part of the MOTOR, MIXER and RC setting groups, which are not connected to the physics model.</p>
+        <p>It sets the dead band around centre throttle and the limits used when the motors reverse.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Not simulated. This part of Betaflight is not compiled into the simulator, so the value is stored and has no effect. The settings catalog&#039;s own note is at the end of this page.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>It has no effect. For the idle speed, use dshot_idle_value.</p>
-        <p>This part of the firmware is not modelled.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>Lowering it has no effect here either.</p>
-        <p>This part of the firmware is not modelled.</p>
+        <p>Not simulated. The part of Betaflight that reads it is not compiled into the simulator, so the value is kept in the settings file and changes nothing. The motors in the physics model do not reverse.</p>
       </section>
     </article>
     <div class="wiki-cta">

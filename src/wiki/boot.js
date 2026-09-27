@@ -22,7 +22,7 @@
 
 import { bindPatreonLinks, destinations, simOrigin } from '../config.js';
 import { appendAttribution } from '../attribution.js';
-import { mountWiki } from './wiki.js';
+import { mountWiki } from './wiki.js?v=20260927w';
 /* At the film's address, stamp and all. The edge keeps a script for four
  * hours, so the bare address could hand the wiki the lettering from before
  * a deploy while the film had the new one. A stamp bumped in index.html is

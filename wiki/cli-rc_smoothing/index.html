@@ -101,25 +101,20 @@
       <p class="wiki-lede">CLI setting rc_smoothing. Works here. Parameter group RX_CONFIG. Firmware type UINT8. Values: OFF, ON.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>A low-pass filter on the stick signal before it becomes a setpoint. A low-pass filter lets slow changes through and removes fast ones. In auto mode, Betaflight sets the filter&#039;s cutoff from the measured time between radio packets, so a perfect link gets a sharper filter than ELRS would.</p>
+        <p>Smooths the stick signal between radio packets. Betaflight filters the setpoint, the feedforward and the throttle separately. In auto mode it sets each filter&#039;s cutoff from the measured packet rate.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>rc_smoothing_mode, plus the auto factors and a separate cutoff for each path. The code is in fc/rc.c, which is compiled.</p>
+        <p>rc_smoothing, plus the auto factors and a separate manual cutoff for each path. The code is in fc/rc.c, which is compiled.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
         <p>Works here. The default perfect link does not test auto smoothing properly, because its packets arrive at perfectly even times. Choose an ELRS preset in the Radio link setting to see it work.</p>
       </section>
       <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>ON is the usual setting, and the sticks are smoothed. OFF passes the raw packets through, which looks rough when packets are lost.</p>
-        <p>ON switches the smoothing filters on.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>Turned OFF, every jitter in the packet timing becomes a jump in the setpoint.</p>
-        <p>OFF switches the smoothing filters off.</p>
+        <h2>The choices</h2>
+        <p>ON: the sticks are smoothed. This is Betaflight&#039;s default.</p>
+        <p>OFF: each packet reaches the setpoint as a step, and uneven packet timing becomes a jump in the setpoint.</p>
       </section>
     </article>
     <div class="wiki-cta">

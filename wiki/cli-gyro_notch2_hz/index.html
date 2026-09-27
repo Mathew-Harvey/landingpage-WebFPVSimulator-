@@ -101,11 +101,11 @@
       <p class="wiki-lede">CLI setting gyro_notch2_hz. Works here. Parameter group GYRO_CONFIG. Firmware type UINT16. Range 0 to 1000 Hz.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>A second static notch filter on the gyro. It works like notch 1, for a second fixed peak.</p>
+        <p>A second static notch filter on the gyro, for a second fixed peak. It works like notch 1. 0 turns it off.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is gyro_soft_notch_hz_2.</p>
+        <p>This is gyro_notch2_hz, stored as gyro_soft_notch_hz_2, with its width set by gyro_notch2_cutoff.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
@@ -113,13 +113,13 @@
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>It moves the second notch to a higher frequency.</p>
-        <p>Each static notch adds its own delay. For vibration that changes with motor speed, use the RPM filter instead.</p>
+        <p>The second notch moves to a higher frequency.</p>
+        <p>Each static notch adds its own delay. For vibration that moves with motor speed, the RPM filter is the tool.</p>
       </section>
       <section class="wiki-section">
         <h2>If you lower it</h2>
-        <p>It moves the notch to a lower frequency, and 0 turns it off.</p>
-        <p>0 turns it off.</p>
+        <p>The notch moves to a lower frequency. 0 turns it off.</p>
+        <p>A notch at a low frequency adds delay where the controller is working.</p>
       </section>
     </article>
     <div class="wiki-cta">

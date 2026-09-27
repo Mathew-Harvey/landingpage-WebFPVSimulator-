@@ -105,7 +105,7 @@
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is rpm_filter_harmonics. Each harmonic is a notch that follows the motor speed. More harmonics means more delay, and more chance of removing part of the signal the controller needs.</p>
+        <p>This is rpm_filter_harmonics. For each harmonic Betaflight runs a notch that follows each motor&#039;s speed, on each axis, so three harmonics on a quad is thirty six notches. More notches mean more delay.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
@@ -113,7 +113,7 @@
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>More of the noise at multiples of the motor speed is removed. That can help a quad with a bent motor bell, and it can also reduce the controller&#039;s response.</p>
+        <p>More of the noise at multiples of the motor speed is removed, at the cost of a little more delay.</p>
         <p>More notch filters to run at 1 kHz, each one of less use beyond the lines that actually exist.</p>
       </section>
       <section class="wiki-section">

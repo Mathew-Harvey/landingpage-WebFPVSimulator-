@@ -101,25 +101,15 @@
       <p class="wiki-lede">Not simulated. Parameter group LED_STRIP_CONFIG. Firmware type UINT8. Range 5 to 100.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>A setting for an LED strip: its colours, modes and layout. LEDs draw current from the power board and have no effect on how the quad flies.</p>
+        <p>A setting for an LED strip: which LEDs light, in what colour, and what they show, such as the flight mode, a warning or a beacon for finding a crashed quad.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is part of the LEDSTRIP setting group.</p>
+        <p>It belongs to the LEDSTRIP setting group. LEDs have no effect on how a quad flies.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Not simulated. This part of Betaflight is not compiled into the simulator, so the value is stored and has no effect. The settings catalog&#039;s own note is at the end of this page.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>On a real quad this would change the lights. There are no LEDs in the simulator.</p>
-        <p>There is no LED strip to receive the value.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>Lowering it has no effect here either.</p>
-        <p>There is no LED strip to receive the value.</p>
+        <p>Not simulated. The part of Betaflight that reads it is not compiled into the simulator, so the value is kept in the settings file and changes nothing.</p>
       </section>
     </article>
     <div class="wiki-cta">

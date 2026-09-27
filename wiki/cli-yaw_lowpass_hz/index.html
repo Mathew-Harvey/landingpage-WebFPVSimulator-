@@ -101,25 +101,25 @@
       <p class="wiki-lede">CLI setting yaw_lowpass_hz. Works here. Parameter group PID_PROFILE. Firmware type UINT16. Range 0 to 500 Hz.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>Extra smoothing on yaw only. Yaw is measured with the most noise of the three axes, and this filter smooths it without adding delay to roll and pitch.</p>
+        <p>A low-pass filter on the yaw P term only. It smooths what P sends to the motors on yaw without adding delay to roll and pitch. 0 turns it off.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is yaw_lowpass_hz. 0 turns it off. It works in addition to the gyro low-pass filters.</p>
+        <p>This is yaw_lowpass_hz, a first-order filter in pid.c applied to the yaw P term. It works in addition to the gyro filters, which act on every axis.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Works here. The yaw part of the simulated gyro vibration is 0.5 of the imbalance line, a chosen value. If yaw D is noisy, this filter is still the right place to add delay.</p>
+        <p>Works here. The yaw part of the simulated gyro vibration is half the size of the roll and pitch part, a chosen value.</p>
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>A higher cutoff means less yaw filtering. For more smoothing, lower it.</p>
-        <p>A higher cutoff gives less delay on yaw.</p>
+        <p>Less smoothing on yaw P, and yaw follows the stick a little more directly.</p>
+        <p>A higher cutoff gives less delay on the yaw P term.</p>
       </section>
       <section class="wiki-section">
         <h2>If you lower it</h2>
-        <p>Yaw feels later and calmer.</p>
-        <p>More delay on yaw. If you go too low, yaw P starts to feel disconnected from the stick.</p>
+        <p>Yaw feels calmer and later.</p>
+        <p>More delay on the yaw P term. Too low, and yaw P starts to feel disconnected from the stick.</p>
       </section>
     </article>
     <div class="wiki-cta">

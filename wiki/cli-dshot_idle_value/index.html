@@ -101,7 +101,7 @@
       <p class="wiki-lede">CLI setting dshot_idle_value. Works here. Parameter group MOTOR_CONFIG. Firmware type UINT16. Range 0 to 2000.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>The lowest power the mixer will send to a motor, in DShot units: percent times 100, so 550 is 5.5 percent. Too low, and yaw stops working at idle. Too high, and the quad will not come down.</p>
+        <p>The lowest command the mixer sends to a motor, in DShot units: percent times 100, so 550 is 5.5 percent. The motors spin at this idle whenever the quad is armed, so they still have room to slow down for a correction at zero throttle.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
@@ -109,11 +109,11 @@
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Works here. This is the idle that airmode relies on.</p>
+        <p>Works here.</p>
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>The motors spin faster at idle. The quad floats more at low throttle, yaw is stronger at the bottom of the throttle, and the quad is harder to bring down.</p>
+        <p>The motors spin faster at idle. The quad floats more and descends more slowly at low throttle, and yaw is stronger at the bottom of the throttle.</p>
         <p>A higher digital idle raises the lowest power a motor can receive.</p>
       </section>
       <section class="wiki-section">

@@ -101,25 +101,15 @@
       <p class="wiki-lede">Not simulated. Parameter group CURRENT_SENSOR_ADC_CONFIG. Firmware type INT16. Range -16000 to 16000.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>A setting for the flight controller&#039;s battery meter: its scale, warnings and capacity. In this simulator the physics model calculates the battery voltage and current, and the Pack charge setting sets the starting voltage. These meter settings do not.</p>
+        <p>A setting for the flight controller&#039;s battery monitoring: how it measures voltage and current, how it counts cells, and when it warns.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is part of BATTERY_CONFIG and the ADC setting groups. The number of cells and each cell&#039;s resistance are fixed in the physics model.</p>
+        <p>It belongs to BATTERY_CONFIG or to the voltage and current sensor settings.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Not simulated. This part of Betaflight is not compiled into the simulator, so the value is stored and has no effect. The settings catalog&#039;s own note is at the end of this page.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>On a real flight controller this would change the battery warnings. Here, use Pack charge to change the battery.</p>
-        <p>The physics model owns the battery, so the meter settings are not read.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>Lowering it has no effect here either.</p>
-        <p>The physics model owns the battery, so the meter settings are not read.</p>
+        <p>Not simulated. The part of Betaflight that reads it is not compiled into the simulator, so the value is kept in the settings file and changes nothing. The physics model calculates the battery voltage and current, and Pack charge in Settings sets the starting voltage.</p>
       </section>
     </article>
     <div class="wiki-cta">

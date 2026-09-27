@@ -101,7 +101,7 @@
       <section class="wiki-section">
         <h2>The idea</h2>
         <p>The maximum rate is how fast the quad rotates at full stick, in degrees per second. Centre sensitivity is how quickly the rotation rate changes near the centre of the stick, which is not the same as the rate at half stick. Expo bends the curve so that small stick movements give gentle rotation while full stick still gives the same maximum. A pilot can then aim carefully through a gate and still flip quickly afterwards.</p>
-        <p>This simulator uses Betaflight 4.5.1&#039;s ACTUAL rates by default: 670 degrees per second at full stick, 70 degrees per second for each unit of stick movement at the centre, and no expo. ACTUAL is the easiest type to reason about, because its two numbers mean exactly what they say. The BETAFLIGHT, KISS, RACEFLIGHT and QUICK rate types all work too, using Betaflight&#039;s own functions in fc/rc.c.</p>
+        <p>This simulator uses Betaflight 4.5.1&#039;s ACTUAL rates by default: 670 degrees per second at full stick, a centre sensitivity of 70, and no expo. A centre sensitivity of 70 means that near the centre the rate rises as steeply as a straight line that would reach 70 degrees per second at full stick. ACTUAL is the easiest type to reason about, because its two numbers mean exactly what they say. The BETAFLIGHT, KISS, RACEFLIGHT and QUICK rate types all work too, using Betaflight&#039;s own functions in fc/rc.c.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>

@@ -101,11 +101,11 @@
       <p class="wiki-lede">CLI setting dterm_notch_cutoff. Works here. Parameter group PID_PROFILE. Firmware type UINT16. Range 0 to 1000.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>Sets the width of the D term notch.</p>
+        <p>Sets the width of the D term notch: the closer it is to dterm_notch_hz, the narrower the notch.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is dterm_notch_cutoff.</p>
+        <p>This is dterm_notch_cutoff. It must be below dterm_notch_hz. On a real flight controller Betaflight&#039;s configuration check turns the notch off when it is not, and that check is not compiled here.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
@@ -113,13 +113,13 @@
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>Change it together with the centre frequency, dterm_notch_hz.</p>
-        <p>The centre frequency and the cutoff set the notch&#039;s Q, as for the other notches.</p>
+        <p>The cutoff moves towards the centre, so the notch gets narrower.</p>
+        <p>A higher cutoff gives a higher Q.</p>
       </section>
       <section class="wiki-section">
         <h2>If you lower it</h2>
-        <p>The same applies when you lower it: change it together with the centre frequency.</p>
-        <p>The shape works in the same way as the gyro notches.</p>
+        <p>The notch gets wider and removes more of the D term around its centre.</p>
+        <p>A lower cutoff gives a lower Q and more delay on D.</p>
       </section>
     </article>
     <div class="wiki-cta">

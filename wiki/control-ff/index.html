@@ -101,7 +101,7 @@
       <section class="wiki-section">
         <h2>The idea</h2>
         <p>Feedforward measures how fast the stick is moving and starts the motors straight away, on the assumption that you want that rotation, instead of waiting for an error to appear. More feedforward makes the quad respond sooner. Too much makes it overshoot at the start of every movement. A radio link with uneven timing makes this worse, because a calculation based on rate of change sees uneven timing as very fast stick movement.</p>
-        <p>The extra settings around feedforward exist for that reason. Averaging, smoothing, jitter reduction and a maximum rate limit are all there because the rate of change of the stick, measured across packets arriving 250 times a second, jumps around. A perfect link does not test them properly, so tune feedforward on the ELRS 250 Hz preset if that is the radio you fly.</p>
+        <p>Most of the extra settings around feedforward exist for that reason. Averaging, smoothing and jitter reduction are there because the rate of change of the stick, measured across packets arriving 250 times a second, jumps around. The maximum rate limit is there for another reason: near full stick, feedforward would push the quad past the maximum rate. A perfect link does not test them properly, so tune feedforward on the ELRS 250 Hz preset if that is the radio you fly.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>

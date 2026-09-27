@@ -101,25 +101,15 @@
       <p class="wiki-lede">CLI setting dyn_notch_q. Off at 1 kHz. Parameter group DYN_NOTCH_CONFIG. Firmware type UINT16. Range 1 to 1000 Q.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>Sets the Q of each dynamic notch, which decides how wide the notch is. A higher Q gives a narrower notch. A notch filter removes a narrow band of frequencies. On a real flight controller whose loop runs at 8 kHz, the dynamic notch measures the frequencies of the vibration while the quad flies and places its notches on the strongest peaks. It is one of the reasons modern five inch quads can use more D than quads built in 2018 could.</p>
+        <p>Sets the Q of each dynamic notch, which decides how wide it is. A higher Q gives a narrower notch. A notch filter removes a narrow band of frequencies. On a real flight controller the dynamic notch measures the frequencies of the vibration while the quad flies and places its notches on the strongest peaks.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>The code is Betaflight&#039;s dyn_notch_filter.c, and it is compiled into the simulator. It finds the peaks with a sliding discrete Fourier transform (SDFT), a calculation that splits the gyro signal into its separate frequencies. Betaflight will not start it when the loop runs slower than DYN_NOTCH_UPDATE_MIN_HZ (2 kHz), because at 1 kHz the SDFT cannot separate the frequencies finely enough to be useful. This simulator runs at 1 kHz, a rate fixed by the project&#039;s rules.</p>
+        <p>The code is Betaflight&#039;s dyn_notch_filter.c, and it is compiled into the simulator. It finds the peaks with a sliding discrete Fourier transform (SDFT), a calculation that splits the gyro signal into its separate frequencies. dynNotchInit does not start it when the PID loop runs slower than 2 kHz (DYN_NOTCH_UPDATE_MIN_HZ), on any flight controller.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Off at 1 kHz. The setting is written into Betaflight&#039;s real setting group, so a tune keeps the value it sets, and an Export from the firmware bench writes it out unchanged. At 1 kHz the firmware does what it does on a real 1 kHz flight controller, which is nothing. Making the setting work would mean raising the loop rate, and that is a decision for the project&#039;s owner.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>On a real 8 kHz flight controller, the filter would search for and remove noise differently. Here you will feel no change in flight.</p>
-        <p>The stored value changes, but the SDFT never starts, so the flight does not change. The check scripts/fc-trace.js flies the same stick inputs with dyn_notch_count at 0 and at 3 and confirms that the two flights are identical.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>Lowering it does not change how the quad flies here either.</p>
-        <p>The stored value changes and the SDFT still never starts, so the flight stays the same.</p>
+        <p>Off at 1 kHz. This simulator&#039;s loop runs at 1 kHz, a rate fixed by the project&#039;s rules, so the firmware does what it does on a real board with a 1 kHz PID loop: nothing. The value is written into Betaflight&#039;s real setting group, so a tune keeps it and an export writes it out unchanged. The check scripts/fc-trace.js flies the same stick inputs with dyn_notch_count at 0 and at 3 and confirms that the two flights are identical.</p>
       </section>
     </article>
     <div class="wiki-cta">

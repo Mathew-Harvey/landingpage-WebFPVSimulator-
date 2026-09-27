@@ -113,13 +113,13 @@
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>What changes depends on which setting this is, and none of them has any effect while crash_recovery is OFF. Raising crash_dthreshold or crash_gthreshold means a harder hit is needed before Betaflight counts a crash; raising crash_time or crash_delay makes recovery last longer or start later.</p>
-        <p>The code is the crash recovery section of pid.c. The values are in Betaflight&#039;s own units, based on degrees and milliseconds, not SI units.</p>
+        <p>Recovery starts later, which gives the quad more time to sort itself out first.</p>
+        <p>A longer wait before recovery.</p>
       </section>
       <section class="wiki-section">
         <h2>If you lower it</h2>
-        <p>Lowering crash_dthreshold or crash_gthreshold makes smaller disturbances count as crashes. Lowering crash_time or crash_delay makes recovery shorter or start sooner.</p>
-        <p>Setting crash_recovery to OFF, the usual choice for racing, turns the whole feature off.</p>
+        <p>Recovery starts sooner after a crash is detected.</p>
+        <p>A shorter wait before recovery.</p>
       </section>
     </article>
     <div class="wiki-cta">

@@ -105,7 +105,7 @@
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>The D term is the D gain multiplied by the filtered rate of change of the gyro reading, not of the error, so a smooth stick movement does not produce a D response by itself. d_min (called D max in Configurator) keeps D low in a hover and raises it when the stick moves quickly. TPA often reduces D at high throttle. On real five inch quads yaw D is often low.</p>
+        <p>The D term is the D gain multiplied by the filtered rate of change of the gyro reading, not of the error, so a smooth stick movement does not produce a D response by itself. This value is the most D the axis gets: with a lower d_min set, Betaflight holds D down at d_min in calm flight and raises it towards this value when the gyro shows a fast change, such as propwash or the end of a flip, or when the stick moves quickly. TPA can also reduce D at high throttle. Betaflight&#039;s default yaw D is 0.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
@@ -114,7 +114,7 @@
       <section class="wiki-section">
         <h2>If you raise it</h2>
         <p>The quad stops pitching more cleanly. Too much D gives a grinding buzz that you can hear from the motors and see in the picture.</p>
-        <p>More D adds damping to the rate control, and also more gain at high frequencies. Past a certain point the axis oscillates at a few tens of times a second, and the D filter either hides that or makes it worse.</p>
+        <p>More D adds damping to the rate control, and it also magnifies high frequency noise, which reaches the motors as heat and a grinding sound. With too much D and too little filtering the axis can oscillate.</p>
       </section>
       <section class="wiki-section">
         <h2>If you lower it</h2>

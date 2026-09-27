@@ -101,25 +101,25 @@
       <p class="wiki-lede">CLI setting rpm_filter_q. Works here. Parameter group RPM_FILTER_CONFIG. Firmware type UINT16. Range 250 to 3000 Q.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>Sets how narrow the RPM notches are. A high Q gives a narrow notch. A low Q gives a wide notch with more delay.</p>
+        <p>Sets how narrow the RPM notches are. A high Q gives a narrow notch. A low Q gives a wide notch, which removes more of the signal around the motor frequency and adds more delay.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is rpm_filter_q. As for the other biquad filters, Q is the centre frequency divided by the width of the notch.</p>
+        <p>This is rpm_filter_q, stored as the Q multiplied by 100, so 500 means a Q of 5. Q is the centre frequency divided by the width of the notch.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Works here. The simulated imbalance lines are narrow, so a high Q can remove them. A low Q removes more of the signal around them.</p>
+        <p>Works here. The simulated imbalance lines are narrow, so a high Q can remove them.</p>
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>Narrower notches, with less extra delay, but they miss the vibration more easily.</p>
-        <p>A high Q means a narrow band.</p>
+        <p>Narrower notches, with less extra delay. They miss more easily if the motor speed they follow is late or wrong.</p>
+        <p>A higher Q means a narrower band.</p>
       </section>
       <section class="wiki-section">
         <h2>If you lower it</h2>
-        <p>Wider notches: more certain to catch the vibration, with more delay.</p>
-        <p>A low Q also removes frequencies next to the vibration.</p>
+        <p>Wider notches, which catch the vibration more surely and add more delay.</p>
+        <p>A lower Q also removes frequencies next to the motor&#039;s.</p>
       </section>
     </article>
     <div class="wiki-cta">

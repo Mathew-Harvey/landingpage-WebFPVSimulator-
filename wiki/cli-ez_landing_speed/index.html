@@ -25,7 +25,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>EZ landing speed, FPV wiki</title>
-    <meta name="description" content="CLI setting ez_landing_speed. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 0 to 250." />
+    <meta name="description" content="CLI setting ez_landing_speed. Stored, not used. Parameter group PID_PROFILE. Firmware type UINT8. Range 0 to 250." />
     <meta name="robots" content="noindex">
     <meta name="theme-color" content="#141c16" />
     <link rel="canonical" href="https://webfpv.org/wiki/cli-ez_landing_speed/" />
@@ -33,7 +33,7 @@
     <meta property="og:site_name" content="WebFPV" />
     <meta property="og:url" content="https://webfpv.org/wiki/cli-ez_landing_speed/" />
     <meta property="og:title" content="EZ landing speed, FPV wiki" />
-    <meta property="og:description" content="CLI setting ez_landing_speed. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 0 to 250." />
+    <meta property="og:description" content="CLI setting ez_landing_speed. Stored, not used. Parameter group PID_PROFILE. Firmware type UINT8. Range 0 to 250." />
     <meta property="og:image" content="https://webfpv.org/og.jpg?v=47004f98" />
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
@@ -41,7 +41,7 @@
     <meta property="og:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="EZ landing speed, FPV wiki" />
-    <meta name="twitter:description" content="CLI setting ez_landing_speed. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 0 to 250." />
+    <meta name="twitter:description" content="CLI setting ez_landing_speed. Stored, not used. Parameter group PID_PROFILE. Firmware type UINT8. Range 0 to 250." />
     <meta name="twitter:image" content="https://webfpv.org/og.jpg?v=47004f98" />
     <meta name="twitter:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
@@ -52,7 +52,7 @@
   "@context": "https://schema.org",
   "@type": "TechArticle",
   "headline": "EZ landing speed",
-  "description": "CLI setting ez_landing_speed. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 0 to 250.",
+  "description": "CLI setting ez_landing_speed. Stored, not used. Parameter group PID_PROFILE. Firmware type UINT8. Range 0 to 250.",
   "url": "https://webfpv.org/wiki/cli-ez_landing_speed/",
   "mainEntityOfPage": {
     "@type": "WebPage",
@@ -98,28 +98,18 @@
     <article>
       <p class="wiki-kicker">Betaflight 4.5.1 settings reference</p>
       <h1>EZ landing speed</h1>
-      <p class="wiki-lede">CLI setting ez_landing_speed. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 0 to 250.</p>
+      <p class="wiki-lede">CLI setting ez_landing_speed. Stored, not used. Parameter group PID_PROFILE. Firmware type UINT8. Range 0 to 250.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
         <p>Used when mixer_type is EZLANDING. The speed, measured by GPS, at which EZ landing stops limiting the mixer, so that a fast-moving quad keeps its full control authority.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>In mixer.c the limit relaxes in proportion to the GPS speed and is gone at 2 × ez_landing_speed / 10 metres per second, so 50 means 10 m/s. At 0 the speed is not used.</p>
+        <p>In mixer.c the limit relaxes in proportion to the GPS ground speed and is gone at 2 × ez_landing_speed / 10 metres per second, so 50 means 10 m/s. At 0 the speed is not used.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>The settings catalog marks this as working here, but it has no effect. The mixer reads it when mixer_type is EZLANDING, but the speed comes from GPS, which the simulator does not have, so the speed is always zero and this setting does not change the flight. It does not affect the simulator&#039;s own crash count either, which uses the impact speed in metres per second.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>On a real quad with GPS, EZ landing keeps limiting the mixer up to a higher speed. In this simulator nothing changes.</p>
-        <p>A higher value means the quad must move faster before the limit is lifted.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>On a real quad with GPS, the limit is lifted at a lower speed. In this simulator nothing changes.</p>
-        <p>A lower value lifts the limit at a lower speed.</p>
+        <p>Stored, not used. There is no GPS, so the speed the mixer reads is always zero. The simulator&#039;s own crash count uses the impact speed and does not read this either.</p>
       </section>
     </article>
     <div class="wiki-cta">

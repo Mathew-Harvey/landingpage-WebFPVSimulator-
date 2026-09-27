@@ -112,14 +112,9 @@
         <p>Works here. The physics model&#039;s motor spin directions do not change with this setting, so turning it on makes yaw run away. Betaflight and the physics model then disagree about which way the motors spin, and fixing that disagreement on a real quad is what this setting is for.</p>
       </section>
       <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>Turned ON, yaw is reversed compared with the motor directions in the physics model, and yaw runs away. Do not turn it on here.</p>
-        <p>It flips one sign. The comment above the motor spin table in plant.c traces the whole chain of signs.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>Turned OFF, it matches the motor spin directions the physics model uses.</p>
-        <p>OFF is the setting for props-in motors.</p>
+        <h2>The choices</h2>
+        <p>OFF: the propellers spin props in, which is what the physics model has. This is Betaflight&#039;s default.</p>
+        <p>ON: for props out. Here it makes yaw run away, because the physics model&#039;s propellers do not change direction with it.</p>
       </section>
     </article>
     <div class="wiki-cta">

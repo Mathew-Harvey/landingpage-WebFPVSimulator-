@@ -101,25 +101,20 @@
       <p class="wiki-lede">Feature switch. Works here.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>The main switch for anti-gravity. The anti-gravity gains have no effect while it is off.</p>
+        <p>The main switch for anti-gravity, which raises I, and P on roll and pitch, while the throttle is changing quickly, so that the quad does not tip in pitch or roll when you punch.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is the line feature ANTI_GRAVITY in a settings file.</p>
+        <p>This is the line feature ANTI_GRAVITY in a settings file. On a real flight controller, fc/core.c switches anti-gravity on when this feature is set or when the ANTI GRAVITY mode is on a switch.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Works here, as a CLI feature line.</p>
+        <p>Works here, as a CLI feature line. bf_glue.c switches anti-gravity on from this feature in the same way, and there is no mode switch.</p>
       </section>
       <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>On: the anti-gravity gains can keep the quad level when you add throttle suddenly.</p>
-        <p>The feature is switched on.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>Off: the quad tips when you add throttle suddenly, and the anti-gravity gains are ignored.</p>
-        <p>The feature is switched off.</p>
+        <h2>The choices</h2>
+        <p>ON: anti_gravity_gain and anti_gravity_p_gain take effect. Betaflight turns it on by default.</p>
+        <p>OFF: anti-gravity does nothing, whatever its gains are set to.</p>
       </section>
     </article>
     <div class="wiki-cta">

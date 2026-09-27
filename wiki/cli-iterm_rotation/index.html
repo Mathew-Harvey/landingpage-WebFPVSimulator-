@@ -101,25 +101,20 @@
       <p class="wiki-lede">CLI setting iterm_rotation. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Values: OFF, ON.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>Rotates the stored I term with the quad as it yaws, so that a stored roll correction becomes a pitch correction and keeps pointing the same way relative to the ground. Some pilots like it, and some find it strange.</p>
+        <p>Rotates the stored I term with the quad as it yaws, so that a stored roll correction becomes a pitch correction and keeps pointing the same way relative to the ground.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>The setting is OFF or ON. It rotates the stored I values between the axes and does not add a gain of its own.</p>
+        <p>It rotates the stored I values between the axes by the angle the gyro measures on each step, and adds no gain of its own.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
         <p>Works here.</p>
       </section>
       <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>With ON, the I term follows the quad&#039;s attitude, its angle relative to the ground. It helps in slow moves that combine yaw with roll or pitch. Some pilots find it strange in quick racing flicks.</p>
-        <p>ON makes Betaflight rotate the stored I values as the quad rotates.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>With OFF, each stored I value stays on the axis of the quad where it built up.</p>
-        <p>Many race tunes (Betaflight settings files) leave it OFF, which is also Betaflight&#039;s default.</p>
+        <h2>The choices</h2>
+        <p>OFF: each stored I value stays on the axis where it built up. This is Betaflight&#039;s default.</p>
+        <p>ON: the stored I values turn with the quad. It helps in slow moves that mix yaw with roll or pitch.</p>
       </section>
     </article>
     <div class="wiki-cta">

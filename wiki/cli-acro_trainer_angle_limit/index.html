@@ -101,25 +101,15 @@
       <p class="wiki-lede">Not simulated. Parameter group PID_PROFILE. Firmware type UINT8. Range 10 to 80.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>A real Betaflight 4.5.1 setting, kept in this catalog so that a settings file loads and saves again unchanged.</p>
+        <p>A setting for the acro trainer, which lets a learner fly acro while Betaflight stops the quad tilting past a set angle.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>It belongs to the setting group PID_PROFILE.</p>
+        <p>It belongs to the PID profile.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Not simulated. This part of Betaflight is not compiled into the simulator, so the value is stored and has no effect. The settings catalog&#039;s own note is at the end of this page.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>On a flight controller that uses this setting, the quantity it names increases. Here it is kept in the settings file and changes nothing.</p>
-        <p>It is not one of the settings that pidController and mixTable read every millisecond.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>Lowering it has no effect here either.</p>
-        <p>It is not one of the settings that pidController and mixTable read every millisecond.</p>
+        <p>Not simulated. The part of Betaflight that reads it is not compiled into the simulator, so the value is kept in the settings file and changes nothing. Angle mode, switched with M, is the simulator&#039;s way to fly with a tilt limit.</p>
       </section>
     </article>
     <div class="wiki-cta">

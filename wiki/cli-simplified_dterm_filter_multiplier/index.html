@@ -101,11 +101,11 @@
       <p class="wiki-lede">CLI setting simplified_dterm_filter_multiplier. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Range 10 to 200.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>The slider that sets the D term filter frequencies, in Hz. A higher value usually means less filtering, because it gives higher frequencies, which matches how Betaflight Configurator describes its multipliers. Check the frequency settings after applying.</p>
+        <p>The slider that sets the D term filter cutoffs. Each cutoff becomes Betaflight&#039;s default cutoff for that filter multiplied by this value divided by 100, so 100 gives the defaults and a higher value gives higher cutoffs and less filtering.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is simplified_dterm_filter_multiplier, a value in a range of roughly 10 to 200.</p>
+        <p>This is simplified_dterm_filter_multiplier, from 10 to 200. simplified_tuning.c rewrites only the D term filters that are switched on: the dynamic minimum and maximum if the dynamic cutoff is on, the static cutoff of filter 1 if it is not 0, and the cutoff of filter 2 if it is not 0.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
@@ -113,13 +113,13 @@
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>The D term usually gets less filtering, so more noise reaches it. Check the frequency the slider wrote.</p>
-        <p>After applying, read dterm_lpf1_static_hz to see what the slider set. Check the direction each time instead of assuming it.</p>
+        <p>Higher cutoffs: less smoothing and less delay on the D term, and more noise let through.</p>
+        <p>Every D term cutoff the slider writes rises in proportion.</p>
       </section>
       <section class="wiki-section">
         <h2>If you lower it</h2>
-        <p>The D term usually gets more filtering, which removes more noise and adds more delay.</p>
-        <p>After applying, read dterm_lpf1_static_hz again to confirm the change.</p>
+        <p>Lower cutoffs: more smoothing and more delay on the D term.</p>
+        <p>Every D term cutoff the slider writes falls in proportion.</p>
       </section>
     </article>
     <div class="wiki-cta">

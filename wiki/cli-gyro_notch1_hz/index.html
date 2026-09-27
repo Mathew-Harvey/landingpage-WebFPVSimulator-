@@ -101,25 +101,25 @@
       <p class="wiki-lede">CLI setting gyro_notch1_hz. Works here. Parameter group GYRO_CONFIG. Firmware type UINT16. Range 0 to 1000 Hz.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>The centre frequency of a static notch filter on the gyro. A notch filter removes a narrow band of frequencies. Use it on a vibration that does not change with motor speed, such as a vibration of the frame. 0 turns it off.</p>
+        <p>The centre frequency of a static notch filter on the gyro. A notch filter removes a narrow band of frequencies and leaves the rest. A static notch suits a vibration that stays at one frequency whatever the motors do, such as a resonance of the frame. 0 turns it off.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is gyro_soft_notch_hz_1. It needs a matching cutoff to be complete. Vibration that changes with motor speed belongs to the RPM filter, not to a static notch.</p>
+        <p>This is gyro_notch1_hz, stored as gyro_soft_notch_hz_1. Its width is set by gyro_notch1_cutoff, which must be below this frequency. Vibration that moves with motor speed belongs to the RPM filter.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Works here. The imbalance lines added to the gyro change with motor speed, so a static notch can only help with a fixed peak.</p>
+        <p>Works here. The imbalance lines added to the simulated gyro move with motor speed, so a static notch can only catch one of them at one throttle.</p>
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>It moves the notch to a higher frequency.</p>
-        <p>If the notch misses the peak, it adds delay and removes nothing useful.</p>
+        <p>The notch moves to a higher frequency.</p>
+        <p>If the notch misses the peak it was meant for, it adds delay and removes nothing useful.</p>
       </section>
       <section class="wiki-section">
         <h2>If you lower it</h2>
-        <p>It moves the notch to a lower frequency, and 0 turns it off.</p>
-        <p>0 is off. Do not leave a leftover notch at a very low frequency from an experiment.</p>
+        <p>The notch moves to a lower frequency. 0 turns it off.</p>
+        <p>A notch at a low frequency adds delay where the controller is working. Do not leave one from an experiment.</p>
       </section>
     </article>
     <div class="wiki-cta">

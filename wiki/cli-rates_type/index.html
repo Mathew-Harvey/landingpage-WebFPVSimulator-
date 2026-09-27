@@ -112,14 +112,12 @@
         <p>Works here. Check 9, one of the automatic tests, reads the maximum roll rate from its own diff file and checks that full stick reaches it to within 3 percent. The same rc_rate, srate and expo numbers give a different curve under a different type, which is why the Rates type row in Settings loads the new type&#039;s own default numbers when you change it.</p>
       </section>
       <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>This is a choice from a list, so there is no higher or lower value. Choose the type on purpose: rate numbers written for KISS will not give 670 deg/s if you use them with ACTUAL.</p>
-        <p>rates_type is an enumeration, a setting that picks one item from a fixed list.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>There is no lower value either, because the setting is a choice from a list.</p>
-        <p>Each type is its own formula, so changing the type changes the whole curve.</p>
+        <h2>The choices</h2>
+        <p>BETAFLIGHT: RC rate, super rate and RC expo, Betaflight&#039;s original curve.</p>
+        <p>RACEFLIGHT: the curve from RaceFlight. RC rate sets the rotation rate, rate adds more of it towards full stick, and expo bends the middle.</p>
+        <p>KISS: the curve from the KISS flight controller, with an RC rate, a rate and an RC curve.</p>
+        <p>ACTUAL: centre sensitivity, maximum rate and expo, each meaning exactly what it says. The Rates menu in Settings writes this type unless you choose another.</p>
+        <p>QUICK: an RC rate and a maximum rate, with expo applied as quickrates_rc_expo chooses.</p>
       </section>
     </article>
     <div class="wiki-cta">

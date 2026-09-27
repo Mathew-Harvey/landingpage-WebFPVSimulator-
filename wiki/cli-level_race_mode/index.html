@@ -101,25 +101,20 @@
       <p class="wiki-lede">CLI setting level_race_mode. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Values: OFF, ON.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>An on or off setting in Betaflight that changes how angle mode levels the quad, for racing. It switches between two behaviours and is not a second angle gain.</p>
+        <p>Makes angle mode level the roll axis only. Pitch is then flown as in acro, so you can tilt forward as far as you like and the quad stays there, while roll still returns to level when you let go.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>level_race_mode takes OFF or ON and is stored in the PID profile.</p>
+        <p>level_race_mode is in the PID profile. When it is ON, pid.c uses a self-level mode for roll alone (LEVEL_MODE_R), and angle mode&#039;s earth-referenced yaw is not used.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
         <p>Works here. It only makes a difference in angle mode.</p>
       </section>
       <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>With ON, angle mode uses its racing behaviour.</p>
-        <p>ON enables the racing behaviour. It has an effect only while ANGLE_MODE is on.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>With OFF, angle mode handles yaw in the standard way.</p>
-        <p>OFF disables the racing behaviour, and angle mode works as standard.</p>
+        <h2>The choices</h2>
+        <p>OFF: angle mode levels roll and pitch. This is Betaflight&#039;s default.</p>
+        <p>ON: angle mode levels roll only, and pitch is flown in acro.</p>
       </section>
     </article>
     <div class="wiki-cta">

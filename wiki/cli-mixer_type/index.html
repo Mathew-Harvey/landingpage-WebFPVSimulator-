@@ -101,25 +101,22 @@
       <p class="wiki-lede">CLI setting mixer_type. Works here. Parameter group MIXER_CONFIG. Firmware type UINT8. Values: LEGACY, LINEAR, DYNAMIC, EZLANDING.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>LEGACY, LINEAR, DYNAMIC or EZLANDING. It decides how the throttle and the PID corrections share the four motors when one motor is asked for more than 100 percent. EZLANDING is a landing aid and is not meant for racing.</p>
+        <p>Decides how the mixer fits the PID corrections and the throttle into the motor range when they do not fit as they are.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>mixer_type chooses the mixer adjustment in mixer.c, which is compiled: LEGACY uses applyMixerAdjustment, LINEAR and DYNAMIC use applyMixerAdjustmentLinear, and EZLANDING uses applyMixerAdjustmentEzLand.</p>
+        <p>mixer_type chooses the adjustment in mixer.c, which is compiled: LEGACY uses applyMixerAdjustment, LINEAR and DYNAMIC use applyMixerAdjustmentLinear, and EZLANDING uses applyMixerAdjustmentEzLand.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
         <p>Works here.</p>
       </section>
       <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>This is a choice from a list, so there is no higher or lower value. DYNAMIC is a common modern racing choice. EZLANDING changes how the quad descends, so try it over grass first.</p>
-        <p>LINEAR and DYNAMIC change how the sum of the PID output and the throttle is fitted into the motor range.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>LEGACY is the textbook method: it adds the throttle and the corrections together, which easily drives a motor to its limit.</p>
-        <p>LEGACY uses applyMixerAdjustment, the original Betaflight method.</p>
+        <h2>The choices</h2>
+        <p>LEGACY: if the corrections need more than the whole motor range, they are scaled down to fit, and then the throttle is moved up or down so every motor fits. This is Betaflight&#039;s default.</p>
+        <p>LINEAR: the corrections are also shifted with the throttle. At low throttle they are made mostly by speeding motors up, and at high throttle mostly by slowing them down, by the same amount on every motor.</p>
+        <p>DYNAMIC: the same shift, but each motor is shifted by the size of its own correction.</p>
+        <p>EZLANDING: a landing aid. At low throttle with the sticks near centre it limits how far the mixer may raise the throttle to make room for corrections, so a quad touching down is not lifted by them.</p>
       </section>
     </article>
     <div class="wiki-cta">

@@ -25,7 +25,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PID at minimum throttle, FPV wiki</title>
-    <meta name="description" content="CLI setting pid_at_min_throttle. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Values: OFF, ON." />
+    <meta name="description" content="CLI setting pid_at_min_throttle. Stored, not used. Parameter group PID_PROFILE. Firmware type UINT8. Values: OFF, ON." />
     <meta name="robots" content="noindex">
     <meta name="theme-color" content="#141c16" />
     <link rel="canonical" href="https://webfpv.org/wiki/cli-pid_at_min_throttle/" />
@@ -33,7 +33,7 @@
     <meta property="og:site_name" content="WebFPV" />
     <meta property="og:url" content="https://webfpv.org/wiki/cli-pid_at_min_throttle/" />
     <meta property="og:title" content="PID at minimum throttle, FPV wiki" />
-    <meta property="og:description" content="CLI setting pid_at_min_throttle. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Values: OFF, ON." />
+    <meta property="og:description" content="CLI setting pid_at_min_throttle. Stored, not used. Parameter group PID_PROFILE. Firmware type UINT8. Values: OFF, ON." />
     <meta property="og:image" content="https://webfpv.org/og.jpg?v=47004f98" />
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
@@ -41,7 +41,7 @@
     <meta property="og:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="PID at minimum throttle, FPV wiki" />
-    <meta name="twitter:description" content="CLI setting pid_at_min_throttle. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Values: OFF, ON." />
+    <meta name="twitter:description" content="CLI setting pid_at_min_throttle. Stored, not used. Parameter group PID_PROFILE. Firmware type UINT8. Values: OFF, ON." />
     <meta name="twitter:image" content="https://webfpv.org/og.jpg?v=47004f98" />
     <meta name="twitter:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
     <link rel="icon" href="../../icon.svg" type="image/svg+xml" />
@@ -52,7 +52,7 @@
   "@context": "https://schema.org",
   "@type": "TechArticle",
   "headline": "PID at minimum throttle",
-  "description": "CLI setting pid_at_min_throttle. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Values: OFF, ON.",
+  "description": "CLI setting pid_at_min_throttle. Stored, not used. Parameter group PID_PROFILE. Firmware type UINT8. Values: OFF, ON.",
   "url": "https://webfpv.org/wiki/cli-pid_at_min_throttle/",
   "mainEntityOfPage": {
     "@type": "WebPage",
@@ -98,28 +98,18 @@
     <article>
       <p class="wiki-kicker">Betaflight 4.5.1 settings reference</p>
       <h1>PID at minimum throttle</h1>
-      <p class="wiki-lede">CLI setting pid_at_min_throttle. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Values: OFF, ON.</p>
+      <p class="wiki-lede">CLI setting pid_at_min_throttle. Stored, not used. Parameter group PID_PROFILE. Firmware type UINT8. Values: OFF, ON.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>On a real quad, this decides whether the PID controller keeps running when the throttle is at its lowest and airmode is not active. When ON, the PID still changes the motor power at idle. When OFF, the motors stay at idle and nothing corrects the quad&#039;s rotation, so a flip at zero throttle is out of your control.</p>
+        <p>On a real quad, this decides whether the PID controller keeps running while the throttle stick is at the bottom and airmode is not active. In both cases Betaflight resets the I term there.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>In Betaflight&#039;s code this is pidAtMinThrottle, and the code that reads it is in fc/core.c. When the throttle is low and neither airmode nor launch control is active, core.c resets the I term and switches the PID controller on or off according to this setting. When airmode is active, the PID controller runs whatever this setting says.</p>
+        <p>In Betaflight&#039;s code this is pidAtMinThrottle, and the only code that reads it is in fc/core.c. When the throttle is low and neither airmode nor launch control is active, core.c resets the I term and switches the PID controller on or off according to this setting.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>The settings catalog marks this as working here, but it has no effect. The only Betaflight code that reads this setting is in fc/core.c, which is not compiled here. The simulator switches the PID controller on once when Betaflight starts (in bf_glue.c) and never switches it off, so the PID keeps working at zero throttle whatever this setting says.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>ON is the usual race setting. Here it changes nothing, because the PID controller already runs at every throttle position.</p>
-        <p>On a real quad, ON keeps the PID controller running at the lowest throttle. The mixer still keeps every motor at or above idle, or dynamic idle if that is on.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>On a real quad without airmode, OFF means that cutting the throttle removes all control. Here the quad flies the same, because the setting is not read.</p>
-        <p>On a real quad, OFF shows why airmode exists, and it is a poor choice for a race tune. To see the effect of zero throttle without airmode here, turn the AIRMODE feature off instead.</p>
+        <p>Stored, not used. fc/core.c is not compiled. The simulator switches the PID controller on once when Betaflight starts, in bf_glue.c, and never switches it off. To see what zero throttle is like without airmode here, turn the AIRMODE feature off.</p>
       </section>
     </article>
     <div class="wiki-cta">

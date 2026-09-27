@@ -101,7 +101,7 @@
       <p class="wiki-lede">CLI setting throttle_limit_type. Works here. Parameter group CONTROL_RATE_PROFILES. Firmware type UINT8. Values: OFF, SCALE, CLIP.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>OFF, SCALE or CLIP. SCALE spreads the whole stick travel from zero up to the cap, which is how racers move hover higher up the stick on a quad with far more thrust than it needs to hover. CLIP ignores the top of the stick.</p>
+        <p>Chooses how throttle_limit_percent limits the throttle. SCALE spreads the whole stick travel from zero up to the cap, which puts hover higher up the stick on a quad with far more thrust than it needs to hover.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
@@ -112,14 +112,10 @@
         <p>Works here. The Throttle limit row on the Rates menu in Settings writes SCALE when the cap is below 100 and OFF at 100, so CLIP cannot be chosen there.</p>
       </section>
       <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>This is a choice from a list, so there is no higher or lower value. SCALE is the type that gives back fine control of the throttle.</p>
-        <p>SCALE multiplies the throttle by the cap, so the full stick travel covers a smaller throttle range and each part of the stick changes the throttle less.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>OFF gives the five inch its full thrust, about 8 times its weight under Earth&#039;s gravity and about 5 times at the normal Weight setting. CLIP is a poor choice: you lose the top of the stick and keep the touchy bottom part.</p>
-        <p>OFF applies no limit. CLIP cuts the throttle off at the cap and leaves the stick below it unchanged.</p>
+        <h2>The choices</h2>
+        <p>OFF: no limit. The five inch then has its full thrust, about 8 times its weight under Earth&#039;s gravity and about 5 times at the normal Weight setting.</p>
+        <p>SCALE: the throttle is multiplied by the cap, so every part of the stick changes the throttle less.</p>
+        <p>CLIP: the throttle stops at the cap. The stick below the cap is unchanged, and the top of the stick does nothing.</p>
       </section>
     </article>
     <div class="wiki-cta">

@@ -101,25 +101,22 @@
       <p class="wiki-lede">CLI setting iterm_relax. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Values: OFF, RP, RPY, RP_INC, RPY_INC.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>Stops the I term growing during a fast stick movement, so that a flip does not build up a correction that pushes the quad on when you stop. The options are OFF, RP (roll and pitch), RPY (roll, pitch and yaw), and RP_INC and RPY_INC, which hold I back only while it would be growing.</p>
+        <p>Stops the I term growing during a fast stick movement, so that a flip does not build up a correction that keeps pushing the quad on when you stop. A quick stick movement is not a disturbance, so it should not be added to the I term.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>The options are the itermRelax_e values in pid.h. Betaflight passes the setpoint, the target rate, through a high-pass filter, which keeps only its fast changes. The faster the setpoint is changing, the more the I term is held back. iterm_relax_type chooses how the held-back amount is worked out.</p>
+        <p>Betaflight passes the setpoint, the target rate, through a high-pass filter, which keeps only its fast changes. The faster the setpoint is changing, the more the I term is held back. iterm_relax_type chooses how the held-back amount is worked out, and iterm_relax_cutoff sets what counts as fast.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
         <p>Works here, in Betaflight&#039;s compiled pid.c.</p>
       </section>
       <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>This is a list of options, not a number. Moving from RP to RPY adds yaw to the relaxed axes. The I term builds up less during fast movements, so it also corrects less while they last.</p>
-        <p>RPY includes the yaw axis. The _INC options hold I back less, because they still let the I term shrink during a movement.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>With OFF, the I term builds up during a flip and works against it, then pushes the quad on when you stop.</p>
-        <p>OFF was the default in older versions of Betaflight, and it is a common reason for a quad to twitch at the end of a roll.</p>
+        <h2>The choices</h2>
+        <p>OFF: the I term grows during a flip as it does at any other time, and keeps pushing when you stop.</p>
+        <p>RP: relax on roll and pitch. This is Betaflight&#039;s default.</p>
+        <p>RPY: relax on roll, pitch and yaw.</p>
+        <p>RP_INC and RPY_INC: the same axes, but the I term is held back only while it would grow. It can still shrink during a movement.</p>
       </section>
     </article>
     <div class="wiki-cta">

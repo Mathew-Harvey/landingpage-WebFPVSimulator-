@@ -101,25 +101,20 @@
       <p class="wiki-lede">CLI setting use_integrated_yaw. Works here. Parameter group PID_PROFILE. Firmware type UINT8. Values: OFF, ON.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>With integrated yaw on, the yaw output of the PID controller is added up over time before it goes to the mixer, so the PID sets how fast the yaw command changes instead of setting the yaw command itself. Yaw can feel more firmly held, and it can also feel delayed. Most racing Betaflight settings files (diffs) leave it off.</p>
+        <p>With integrated yaw on, the yaw output of the PID controller is added up over time before it goes to the mixer, so the PID sets how fast the yaw command changes instead of setting the yaw command itself. It is off by default.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>use_integrated_yaw is OFF or ON. When it is ON, pid.c adds the yaw PID sum, multiplied by the loop time, to a running total on every step, and integrated_yaw_relax makes that total decay toward zero.</p>
+        <p>use_integrated_yaw is in the PID profile. When it is ON, pid.c adds the yaw PID sum, multiplied by the loop time, to a running total on every step, and integrated_yaw_relax makes that total decay towards zero.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
         <p>Works here. The integrated yaw code in pid.c is compiled into this build.</p>
       </section>
       <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>Switching it ON changes how yaw feels. Try it over open grass before you fly it through a gate.</p>
-        <p>ON sends the yaw PID output through the running total in pid.c before the mixer uses it.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>With it OFF, yaw works in the usual way.</p>
-        <p>OFF sends the yaw PID sum straight to the mixer, as on roll and pitch.</p>
+        <h2>The choices</h2>
+        <p>OFF: the yaw PID sum goes straight to the mixer, as on roll and pitch.</p>
+        <p>ON: the yaw PID sum goes through the running total first. Yaw can feel more firmly held, and later.</p>
       </section>
     </article>
     <div class="wiki-cta">

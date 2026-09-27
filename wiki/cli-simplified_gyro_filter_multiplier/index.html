@@ -101,11 +101,11 @@
       <p class="wiki-lede">CLI setting simplified_gyro_filter_multiplier. Works here. Parameter group GYRO_CONFIG. Firmware type UINT8. Range 10 to 200.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>The slider that sets the gyro low-pass filter frequencies. After applying, read gyro_lpf1_static_hz to see the frequency it set.</p>
+        <p>The slider that sets the gyro filter cutoffs. Each cutoff becomes Betaflight&#039;s default cutoff for that filter multiplied by this value divided by 100, so 100 gives the defaults and a higher value gives higher cutoffs and less filtering.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is simplified_gyro_filter_multiplier, stored in Betaflight&#039;s gyro settings. Betaflight&#039;s simplified_tuning.c turns it into the gyro filter frequencies.</p>
+        <p>This is simplified_gyro_filter_multiplier, from 10 to 200, stored in Betaflight&#039;s gyro settings. simplified_tuning.c rewrites only the gyro filters that are switched on, in the same way as the D term slider.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
@@ -113,13 +113,13 @@
       </section>
       <section class="wiki-section">
         <h2>If you raise it</h2>
-        <p>The gyro signal usually gets less filtering. Check the frequency setting to confirm.</p>
-        <p>Read gyro_lpf1_static_hz after applying to see the frequency the slider set.</p>
+        <p>Higher cutoffs: less smoothing and less delay on the gyro signal, and more noise let through.</p>
+        <p>Every gyro cutoff the slider writes rises in proportion.</p>
       </section>
       <section class="wiki-section">
         <h2>If you lower it</h2>
-        <p>The gyro signal usually gets more filtering, which removes more noise and adds more delay.</p>
-        <p>Read gyro_lpf1_static_hz again after applying to confirm the change.</p>
+        <p>Lower cutoffs: more smoothing and more delay on the gyro signal.</p>
+        <p>Every gyro cutoff the slider writes falls in proportion.</p>
       </section>
     </article>
     <div class="wiki-cta">

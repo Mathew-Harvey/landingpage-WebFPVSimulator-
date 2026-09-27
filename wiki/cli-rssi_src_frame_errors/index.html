@@ -101,25 +101,15 @@
       <p class="wiki-lede">Not simulated. Parameter group RX_CONFIG. Firmware type INT8. Values: OFF, ON.</p>
       <section class="wiki-section">
         <h2>What it does</h2>
-        <p>A setting for the serial ports (UARTs), the receiver protocol, the signal strength reading (RSSI) or telemetry sent back to the radio. In this simulator the sticks come from a joystick, a gamepad or the keyboard, and can pass through the radio link model. There is no receiver wire, such as CRSF.</p>
+        <p>A setting for RSSI, the received signal strength: where Betaflight reads it from and how it scales and smooths it.</p>
       </section>
       <section class="wiki-section">
         <h2>How it works</h2>
-        <p>This is part of the SERIAL, RX and TELEMETRY setting groups. The simulator has no radio receiver code.</p>
+        <p>It belongs to the receiver settings. RSSI is shown on the OSD and can trigger warnings.</p>
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
-        <p>Not simulated. This part of Betaflight is not compiled into the simulator, so the value is stored and has no effect. The settings catalog&#039;s own note is at the end of this page.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you raise it</h2>
-        <p>On a real quad this would change a port or a protocol. To change delay and packet loss here, use the Radio link setting.</p>
-        <p>There are no serial ports in this build.</p>
-      </section>
-      <section class="wiki-section">
-        <h2>If you lower it</h2>
-        <p>Lowering it has no effect here either.</p>
-        <p>There are no serial ports in this build.</p>
+        <p>Not simulated. The part of Betaflight that reads it is not compiled into the simulator, so the value is kept in the settings file and changes nothing. The sticks come from a joystick, a gamepad or the keyboard, and the Radio link setting adds the delay, timing jitter and lost packets of a real link.</p>
       </section>
     </article>
     <div class="wiki-cta">
