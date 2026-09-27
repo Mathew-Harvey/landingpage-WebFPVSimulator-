@@ -50,38 +50,27 @@ const wiki = mountWiki(host);
 wiki.simHref = appendAttribution(`${simOrigin()}/?map=field`);
 
 /*
- * Hash URL redirect: if someone lands on #wiki/<id>, redirect them to the
- * static /wiki/<id>/ page instead. Static pages are canonical; the SPA is
- * for in-app navigation only.
+ * A READER IS NEVER SENT TO THE PLAIN COPY.
+ *
+ * Every article also has a plain copy at /wiki/<id>/, written for crawlers
+ * by scripts/generate-wiki-pages.js: the text, and no figure, rail or search.
+ * This file used to send every #wiki/<id> it saw to that copy with
+ * location.replace, and it saw one far more often than on arrival. Going
+ * Back or Forward between two articles fires hashchange as well as popstate,
+ * because their fragments differ, even though pushState made both entries.
+ * So Back from one article to the one before landed on the plain copy of it,
+ * and every entry the reader went back through after that did the same, and
+ * so did a reload, and so did Back to the wiki from any other page.
+ *
+ * It bought the crawlers nothing either. A crawler never sees a fragment, so
+ * /wiki/#wiki/physics-wash is /wiki/ to it; the copies are canonical by their
+ * own link rel and the sitemap. So #wiki/<id> opens its article here, which
+ * is what the simulator's wikiPageUrl() and every old bookmark ask for, and
+ * each copy links back to its article here.
+ *
+ * Listener first. It used to be registered after the initial openDefault(),
+ * so anything that threw on the way in took deep linking down with it for
+ * the rest of the session, and did it silently.
  */
-function redirectHashToStatic() {
-  const hash = (window.location.hash || '').replace(/^#/, '');
-  let id = '';
-  if (hash.startsWith('wiki/')) {
-    id = hash.slice(5);
-  } else if (hash && hash !== '') {
-    id = hash;
-  }
-  
-  if (id && id !== '') {
-    /* Redirect to static page with location.replace (no history entry) */
-    window.location.replace(`/wiki/${id}/`);
-    return true;
-  }
-  return false;
-}
-
-/* Check for hash redirect on initial load */
-if (!redirectHashToStatic()) {
-  /*
-   * Listener first. It used to be registered after the initial openDefault(),
-   * so anything that threw on the way in took deep linking down with it for
-   * the rest of the session, and did it silently.
-   */
-  window.addEventListener('hashchange', () => {
-    if (!redirectHashToStatic()) {
-      wiki.openDefault();
-    }
-  });
-  wiki.openDefault();
-}
+window.addEventListener('hashchange', () => wiki.openDefault());
+wiki.openDefault();

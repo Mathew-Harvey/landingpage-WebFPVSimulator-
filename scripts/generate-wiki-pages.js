@@ -2,7 +2,10 @@
  * generate-wiki-pages.js: generate static HTML pages for every wiki article,
  * each with its own URL, title, meta description and canonical link.
  *
- * Old hash routes (#wiki/<id>) redirect client-side to the new URLs.
+ * These are the crawlers' copies: the text, and no figure, rail or search.
+ * A reader's address for an article is /wiki/#wiki/<id>, which the
+ * interactive wiki opens in place, and each copy ends with a link to it.
+ * Nothing sends a reader here; see src/wiki/boot.js for why that matters.
  * Indexing is controlled by wiki-index-config.json: default is NOT indexed
  * (noindex), and the sitemap includes only allowed articles.
  *
@@ -196,7 +199,7 @@ ${sectionsHtml}
     </article>
     <div class="wiki-cta">
       <p><strong>This article is part of the interactive FPV wiki.</strong></p>
-      <p><a href="/wiki/">Open the interactive wiki</a> for live figures, related articles, and full navigation.</p>
+      <p><a href="/wiki/#wiki/${slug}">Open this article in the interactive wiki</a> for its live figure, related articles, and full navigation.</p>
     </div>
   </body>
 </html>
@@ -348,7 +351,7 @@ ${sectionsHtml}
     </article>
     <div class="wiki-cta">
       <p><strong>This page is part of the interactive FPV wiki.</strong></p>
-      <p><a href="/wiki/">Open the interactive wiki</a> for full navigation and related articles.</p>
+      <p><a href="/wiki/#wiki/${slug}">Open this page in the interactive wiki</a> for full navigation and related articles.</p>
     </div>
   </body>
 </html>
