@@ -63,11 +63,23 @@ import { fileURLToPath } from 'node:url';
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const OUT = join(root, 'src/sim');
 
-/* Copied whole: directories under the simulator's src/. */
-const WHOLE = ['maps/city/vendored'];
+/* Copied whole: directories under the simulator's src/. None now: the town
+ * was the one, and the film no longer has it. What the yard needs of the
+ * town's shared code arrives through the yard's own imports below. */
+const WHOLE = [];
 
-/* Followed through their imports: modules under the simulator's src/. The
- * town and its bake; then what the yard is built from, the same parts the
+/* Copied as they are, because they travel with code that is copied: the
+ * town's MIT licence, which has to go wherever any of its code goes, and the
+ * patch notes for the three of its files the yard still uses. */
+const LOOSE = [
+  'maps/city/vendored/LICENSE',
+  'maps/city/vendored/PATCH-core-toon.diff',
+  'maps/city/vendored/PATCH-world-props.diff',
+  'maps/city/vendored/PATCH-world-vehicles.diff',
+];
+
+/* Followed through their imports: modules under the simulator's src/. What
+ * the yard is built from, the same parts the
  * built map and the builder's 3D view put together: where each element
  * stands, the kit that draws it, the ground, the roads, the cars and the
  * time of day, and the traffic that says which car drives which lane; the
@@ -80,8 +92,6 @@ const WHOLE = ['maps/city/vendored'];
  * partners' roster, who they are, what they are called and where their
  * marks are, which is the simulator's list and this page's to show. */
 const ENTRIES = [
-  'maps/city/vendored/world/index.js',
-  'maps/city/bake.js',
   'maps/built/place.js',
   'props/kit.js',
   'maps/built/ground.js',
@@ -155,6 +165,9 @@ async function main() {
       want.add(posix.join(dir, f));
     }
   }
+  for (const f of LOOSE) {
+    want.add(f);
+  }
   const queue = [...ENTRIES];
   const seen = new Set();
   while (queue.length) {
@@ -221,6 +234,7 @@ async function main() {
     commit,
     clean,
     whole: WHOLE,
+    loose: LOOSE,
     entries: ENTRIES,
     files,
     assets,

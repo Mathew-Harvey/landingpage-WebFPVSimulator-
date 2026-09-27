@@ -499,8 +499,24 @@ export function createStage(canvas) {
 
   resize();
 
+  /*
+   * Act one's studio is drawn as a manga panel (src/manga.js), which draws
+   * the scene and then its focus lines over it: a drawer set here takes the
+   * frame over. The warm pass never goes through it, because warming is
+   * about programs and buffers, and the lines would ignore the eight pixel
+   * scissor.
+   */
+  let drawer = null;
+  let warming = false;
+  function setDrawer(d) {
+    drawer = d;
+  }
   function render() {
-    renderer.render(scene, camera);
+    if (drawer && !warming) {
+      drawer.render();
+    } else {
+      renderer.render(scene, camera);
+    }
   }
 
   /*
@@ -524,9 +540,11 @@ export function createStage(canvas) {
     renderer.setViewport(0, 0, 8, 8);
     renderer.setScissor(0, 0, 8, 8);
     renderer.setScissorTest(true);
+    warming = true;
     try {
       fn();
     } finally {
+      warming = false;
       renderer.setScissorTest(false);
       renderer.setViewport(0, 0, w, h);
       renderer.setScissor(0, 0, w, h);
@@ -549,6 +567,9 @@ export function createStage(canvas) {
     aimBlob,
     shadowsOn: !LITE,
     render,
+    setDrawer,
+    pool,
+    shadowCatcher,
     warm,
     resize,
     get size() {

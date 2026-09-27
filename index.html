@@ -90,7 +90,7 @@
       parse ends and the boot screen's wordmark is lettered in its first frame
       rather than a round trip or two after it. See the script at the foot.
     -->
-    <link rel="modulepreload" href="src/titles.js" />
+    <link rel="modulepreload" href="src/titles.js?v=20260927m" />
     <link rel="modulepreload" href="src/sim/ui/lettering.js" />
 
     <script type="application/ld+json">
@@ -1077,163 +1077,297 @@
       }
 
       /* ------------------------------------------------------------------
-         THE CHAPTERS: the three kinds of track, as a row of cards on the
-         first screen, under the headline and over the quad being built.
+         THE FIRST SCREEN IS A MANGA PAGE.
 
-         They are a menu, not the headline, so they are small: a picture,
-         what it is, and where the card goes. The quad keeps the middle of
-         the frame and the headline keeps the eye; the cards are the thing
-         to reach for once both have been read, which is why they arrive a
-         beat after the copy and stagger in, see .worlds.on and its entry in
-         the reduced motion block at the foot.
+         The owner's brief is that flying this should feel like flying a
+         manga comic, and that the first thing a visitor sees should say so.
+         So act one opens as a page: paper, ink borders, gutters that lean,
+         the biggest panel first, in the proportions the simulator draws its
+         own results page in (src/ui/mangapage.js there). The big panel is
+         the live studio, drawn as ink on paper by src/manga.js; the three
+         chapters are the tier of panels under it, each a link. Scrolling
+         opens the page: --open, from main.js, zooms the frame past the glass
+         and fades it, and the panel is the screen.
 
-         THE PIN LAYS THEM OUT. Act one's pin is a column: the copy takes
-         the middle of whatever the cards leave, the cards sit on the
-         bottom, and the bottom padding is the scroll cue's, so the two
-         never meet. Below 900 px the copy goes to the top as every act's
-         does, and the cards stay on the bottom with the quad between.
+         EVERYTHING IS IN u, a hundredth of the window's short side. The page
+         this replaced was sized in pixels with laptop caps, and on a 4K
+         monitor it was a little island of type in a dark field. src/page.js
+         writes u and the page's measures in pixels as it lays the page out
+         (--pm margin, --pg gutter, --pb border, --ptop the frame's top,
+         --ptier the tier's top); the default here is the same u from the
+         viewport, so the first paint is already the right size.
+
+         Type grows with u but stops, and keeps a rem term so browser zoom
+         still enlarges it. The art (the lettering, the panels, the lines)
+         grows with u and does not stop.
          ------------------------------------------------------------------ */
 
-      .pin-open {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: clamp(24px, 4vh, 40px);
-        padding: 64px 0 clamp(96px, 12vh, 116px);
+      :root {
+        --u: min(1vw, 1svh);
+        --paper: #f7f0dc;
+        --page-ink: #0b1116;
       }
-      .pin-open .copy { margin: auto 0; }
+      #top.act { padding: 0; }
+      .pin-open { display: block; }
 
-      .worlds {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 14px;
-        width: min(1120px, 100%);
-        flex: 0 0 auto;
+      .page-ink {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
         pointer-events: none;
       }
-      .worlds.on { pointer-events: auto; }
+      .page-paper { fill: var(--paper); }
+      .page-lines {
+        fill: none;
+        stroke: var(--page-ink);
+        stroke-linejoin: miter;
+        stroke-miterlimit: 8;
+      }
+      /* THE OPENING: the frame goes past the glass, from the big panel's
+         middle, and is gone by eight tenths of the way. */
+      .page-ink,
+      .worlds {
+        transform-origin: 50% 38%;
+        transform: scale(calc(1 + var(--open, 0) * 0.16));
+        opacity: calc(1 - var(--open, 0) * 1.25);
+      }
+
+      .pin-open .copy {
+        position: absolute;
+        z-index: 4;
+        left: calc(var(--pm, 3.5vmin) + 2.6 * var(--u));
+        top: calc(var(--ptop, 72px) + 2.4 * var(--u));
+        width: min(calc(100% - 2 * var(--pm, 3.5vmin) - 5.2 * var(--u)), max(calc(76 * var(--u)), 46%));
+        max-width: none;
+        margin: 0;
+        padding: 0;
+      }
+      .pin-open .copy::before { display: none; }
+      .pin-open .hero-partners { margin: 0 0 calc(2.2 * var(--u)); gap: calc(0.9 * var(--u)); }
+      .pin-open .hero-partners-label {
+        font-size: clamp(0.6rem, calc(0.3rem + 0.55 * var(--u)), 1.05rem);
+        color: #4b5763;
+        text-shadow: none;
+      }
+      .pin-open .hero-partners-row { gap: calc(1.2 * var(--u)) calc(3 * var(--u)); }
+      /* The roster's one colour files, inked for paper: one colour and one
+         height still, which is the rule, and ink is the colour on a page. */
+      .pin-open .hpmark img {
+        height: clamp(22px, calc(3.3 * var(--u)), 74px);
+        filter: brightness(0.12);
+      }
+      .pin-open .hpmark img.wide { height: clamp(13px, calc(1.95 * var(--u)), 44px); }
+      /* Betaflight's mark on the paper, the word two fifths of it, and the
+         hairline before it in the page's own ink rather than the film's. */
+      .pin-open .hpmark img.bf { height: clamp(24px, calc(3.4 * var(--u)), 76px); }
+      .pin-open .hero-powered {
+        padding-left: calc(2.4 * var(--u));
+        margin-left: calc(1.2 * var(--u));
+        border-left-color: rgba(11, 17, 22, 0.28);
+      }
+
+      /* The act's number in a narration box, the square balloon a manga
+         page gives a caption: typeset, not lettered, as the simulator's
+         panel labels are. */
+      .pin-open .eyebrow {
+        display: inline-flex;
+        margin: 0 0 calc(2.8 * var(--u));
+        padding: 0.55em 0.85em 0.5em;
+        font-size: clamp(0.66rem, calc(0.3rem + 0.72 * var(--u)), 1.3rem);
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        color: var(--page-ink);
+        background: var(--paper);
+        border: max(1.5px, calc(0.22 * var(--u))) solid var(--page-ink);
+        text-shadow: none;
+      }
+      .pin-open .eyebrow::before { display: none; }
+      .pin-open .wordmark { font-size: max(44px, calc(15 * var(--u))); }
+      .pin-open .hero-h1 {
+        margin-top: calc(1.2 * var(--u));
+        font-size: clamp(1.0625rem, calc(0.5rem + 1.55 * var(--u)), 2.75rem);
+        font-weight: 750;
+        color: var(--page-ink);
+        text-shadow: none;
+      }
+      .pin-open .tagline {
+        margin-top: calc(0.6 * var(--u));
+        font-size: clamp(0.95rem, calc(0.45rem + 1.2 * var(--u)), 2.2rem);
+        color: rgba(11, 17, 22, 0.78);
+        text-shadow: none;
+      }
 
       .world {
-        position: relative;
-        display: grid;
-        grid-template-columns: 40% 1fr;
+        position: absolute;
+        display: block;
+        overflow: hidden;
         text-decoration: none;
         color: var(--cream);
-        background: var(--panel-fill);
-        border: 1px solid var(--line);
-        border-top: 2px solid var(--edge);
-        overflow: hidden;
-        opacity: 0;
-        transform: translateY(18px);
-        transition: opacity 0.6s var(--ease), transform 0.6s var(--ease), border-color 0.3s var(--ease), background 0.3s var(--ease);
-      }
-      /* A beat after the headline, and a beat apart. The delays are on the
-         way in only: leaving, at the end of the act, they go together. */
-      .worlds.on .world { opacity: 1; transform: none; transition-delay: 0.35s, 0.35s, 0s, 0s; }
-      .worlds.on .world:nth-child(2) { transition-delay: 0.45s, 0.45s, 0s, 0s; }
-      .worlds.on .world:nth-child(3) { transition-delay: 0.55s, 0.55s, 0s, 0s; }
-      /* The same underline the closing cards grow, in the chapter's accent. */
-      .world::after {
-        content: "";
-        position: absolute;
-        left: 0; right: 0; bottom: 0;
-        height: 2px;
-        background: var(--accent);
-        transform: scaleX(0);
-        transform-origin: left;
-        transition: transform 0.4s var(--ease);
-      }
-      .worlds.on .world:hover {
-        transform: translateY(-3px);
-        transition-delay: 0s;
-        border-color: rgba(244, 236, 214, 0.24);
-        background: rgba(22, 32, 24, 0.92);
-      }
-      .world:hover::after { transform: scaleX(1); }
-      .world:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-
-      .world-pic {
-        position: relative;
-        display: block;
-        min-height: 100%;
-        overflow: hidden;
         background: #1a2319;
+        pointer-events: auto;
+        opacity: 0;
+        transform: translateY(calc(2 * var(--u)));
+        transition: opacity 0.55s var(--ease), transform 0.55s var(--ease);
       }
-      /* The picture is a crop of a 16 by 9 frame, and the middle of the
-         frame is not always where the subject is. A card whose subject is
-         off centre says where it is with --focus, and the crop keeps it. */
+      .worlds.on .world { opacity: 1; transform: none; transition-delay: 0.3s; }
+      .worlds.on .world:nth-child(2) { transition-delay: 0.4s; }
+      .worlds.on .world:nth-child(3) { transition-delay: 0.5s; }
+      body.page-open .worlds .world { pointer-events: none; visibility: hidden; }
+      .world-pic,
       .world-pic img {
         position: absolute;
         inset: 0;
         display: block;
         width: 100%;
         height: 100%;
+      }
+      .world-pic img {
         object-fit: cover;
         object-position: var(--focus, 50%) 50%;
         transition: transform 1.2s var(--ease);
       }
-      .world:hover .world-pic img { transform: scale(1.06); }
+      .world:hover .world-pic img,
+      .world:focus-visible .world-pic img { transform: scale(1.06); }
+      .world-body {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: space-between;
+        padding: calc(1.6 * var(--u)) calc(2.4 * var(--u)) calc(1.5 * var(--u));
+      }
+      .world:focus-visible { outline: none; }
+      .world:focus-visible .world-body { box-shadow: inset 0 0 0 max(3px, calc(0.55 * var(--u))) var(--accent); }
+      .world-k {
+        margin-left: var(--lean-tl, 0px);
+        padding: 0.5em 0.75em 0.45em;
+        font-size: clamp(0.6rem, calc(0.28rem + 0.62 * var(--u)), 1.15rem);
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--page-ink);
+        background: var(--paper);
+        border: max(1.5px, calc(0.2 * var(--u))) solid var(--page-ink);
+      }
+      /* The chapter's name, lettered by src/titles.js in its own colour. */
+      .world-t {
+        display: block;
+        max-width: calc(100% - var(--lean-bl, 0px));
+        margin-left: var(--lean-bl, 0px);
+        font-size: clamp(15px, calc(3.5 * var(--u)), 84px);
+        font-weight: 800;
+        line-height: 1.02;
+        color: var(--accent);
+      }
+      .world-go {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
       .world-new {
         position: absolute;
-        top: 8px;
-        left: 8px;
+        top: calc(1.6 * var(--u));
+        right: calc(2.4 * var(--u) + var(--lean-tr, 0px));
         z-index: 1;
-        padding: 5px 7px 4px;
-        font: 700 9px/1 var(--mono);
+        padding: 0.55em 0.75em 0.45em;
+        font: 700 clamp(8px, calc(0.2rem + 0.62 * var(--u)), 17px)/1 var(--mono);
         letter-spacing: var(--track-label);
         text-transform: uppercase;
         color: var(--deep);
         background: var(--sakura);
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+        border: max(1.5px, calc(0.2 * var(--u))) solid var(--page-ink);
       }
-
-      .world-body {
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-        padding: 12px 14px 13px;
-      }
-      .world-k {
-        font: 9.5px/1 var(--mono);
-        letter-spacing: var(--track-label);
-        text-transform: uppercase;
-        color: var(--accent);
-        margin-bottom: 8px;
-      }
-      .world-t {
-        font-size: clamp(16px, 1.35vw, 19px);
-        font-weight: 700;
-        letter-spacing: 0.005em;
-        line-height: 1.15;
-        margin-bottom: 5px;
-      }
-      .world-go {
-        margin-top: auto;
-        padding-top: 10px;
-        font-size: 10px;
-        letter-spacing: var(--track-label);
-        text-transform: uppercase;
-        color: var(--accent);
-      }
-      .world-go::after {
-        content: "\2193";
-        display: inline-block;
-        /* A margin, not a space: an inline block drops its own leading
-           white space, and the arrow is one so that it can move. */
-        margin-left: 0.55em;
-        transition: transform 0.3s var(--ease);
-      }
-      .world:hover .world-go::after { transform: translateY(3px); }
-
-      /* The badge's second half, where the picture is wide enough for it. */
       .world-new-x { display: none; }
       @media (min-width: 1400px) { .world-new-x { display: inline; } }
-      /* Narrow desktops: the line under the name will not fit on one line
-         beside the picture, so the name carries the arrow, as a phone's
-         does. */
-      @media (min-width: 901px) and (max-width: 1180px) {
-        .world-go { display: none; }
-        .world-t::after { content: " \2193"; color: var(--accent); }
+
+      /* A short landscape window, a phone on its side: the first screen
+         keeps the partners, the mark and the headline, and gives up the
+         act's number, the tagline and the cue, which do not fit over the
+         tier. */
+      @media (max-height: 560px) and (orientation: landscape) {
+        .pin-open .eyebrow,
+        .pin-open .tagline,
+        body.on-paper:not(.page-open) #cue { display: none; }
+        .pin-open .hero-h1 { font-size: 15px; }
+        .pin-open .hpmark img { height: 18px; }
+        .pin-open .hpmark img.wide { height: 11px; }
+        .pin-open .hpmark img.bf { height: 19px; }
+        .pin-open .wordmark { font-size: max(40px, calc(13 * var(--u))); }
       }
+
+      /* A strip, on a phone: panels a thumb wide, so the name alone. */
+      .pin-open[data-shape="strip"] .world-k { display: none; }
+      .pin-open[data-shape="strip"] .world-body { padding: 8px 9px 9px; justify-content: flex-end; }
+      .pin-open[data-shape="strip"] .world-new { top: 7px; right: 8px; }
+
+      /* THE CHROME ON PAPER. While the studio is paper (main.js sets
+         body.on-paper from manga.js's weight) the top bar, the build order
+         and the cue are inked for it, and the ledger steps aside: the page's
+         own panels are the way to the chapters here. */
+      body.on-paper #veil { opacity: 0; }
+      body.on-paper #topbar .nav a:not(.is-primary):not(.patreon) { color: rgba(11, 17, 22, 0.8); }
+      body.on-paper #topbar a.patreon { background: var(--page-ink); text-shadow: none; }
+      body.on-paper #ledger { opacity: 0; pointer-events: none; }
+      /* Under reduced motion the film is pinned in act three, whose sticker
+         is top left, and the page is still on screen: it waits for the page
+         to go. With the film running it is never on while the page is. */
+      body.on-paper .slap[data-spot="tl"] { visibility: hidden; }
+      body.on-paper #cue { color: rgba(11, 17, 22, 0.7); }
+      body.on-paper:not(.page-open) #cue {
+        left: calc(var(--pm) + 2.6 * var(--u));
+        top: calc(var(--ptier) - var(--pg) - 3.4 * var(--u) - 48px);
+        bottom: auto;
+        transform: none;
+        align-items: flex-start;
+      }
+      /* On the page the build order stands on the big panel's foot, clear of
+         the tier, and never higher than the sticker in the corner above it
+         lets it. Its offsets are
+         divided by the chrome's zoom, because zoom scales them too. */
+      body.on-paper #ticker {
+        right: calc((var(--pm) + var(--pg)) / var(--chrome, 1));
+        top: calc(max(var(--ptop) + 140px, var(--ptier) - 2 * var(--pg) - 320px) / var(--chrome, 1));
+        transform: none;
+        background: var(--paper);
+        color: var(--page-ink);
+        border: max(2px, calc(0.28 * var(--u))) solid var(--page-ink);
+        box-shadow: none;
+      }
+      /* A short window has the sticker over the panel's top and the tier
+         under its foot, so the rows close up to fit between them. */
+      @media (max-height: 820px) {
+        body.on-paper .tick-row { padding: 3px 0; }
+        body.on-paper .tick-head { margin-bottom: 8px; }
+      }
+      body.on-paper .tick-head { color: #4b5763; }
+      body.on-paper .tick-head b { color: var(--page-ink); }
+      body.on-paper .tick-row { color: rgba(11, 17, 22, 0.38); }
+      body.on-paper .tick-row .tick-dot { background: rgba(11, 17, 22, 0.22); }
+      body.on-paper .tick-row.done { color: var(--page-ink); }
+      body.on-paper .tick-row.done .tick-dot { background: var(--page-ink); }
+      body.on-paper .tick-row.live { color: var(--page-ink); font-weight: 700; }
+      body.on-paper .tick-row.live .tick-dot { background: var(--sakura); box-shadow: 0 0 0 4px rgba(232, 168, 184, 0.45); }
+      body.on-paper .tick-rail { background: rgba(11, 17, 22, 0.14); }
+      body.on-paper #ticker .plock span { color: #4b5763; }
+      body.on-paper #ticker .plock img { filter: brightness(0.12); }
+
+      /* BIG SCREENS. The chrome is sized in pixels for a laptop, and at 4K
+         and 100 per cent it was a line of eleven pixel type across a
+         monitor. It is scaled as a whole rather than resized part by part,
+         so what was tuned at 1440 stays tuned. */
+      @media (min-width: 2200px) and (min-height: 1240px) { :root { --chrome: 1.35; } }
+      @media (min-width: 3000px) and (min-height: 1650px) { :root { --chrome: 1.75; } }
+      #topbar,
+      #ticker,
+      #ledger,
+      #cue { zoom: var(--chrome, 1); }
 
       /*
        * WHERE A CHAPTER OPENS, and it is not where its act starts.
@@ -1270,30 +1404,6 @@
       }
       #jump.out { transition: opacity 0.45s var(--ease); }
 
-      /* A phone: three pictures in a row with a name under each, which is
-         a menu a thumb can use and still leaves the quad the middle of the
-         screen between the copy and the cards. */
-      @media (max-width: 900px) {
-        .pin-open { padding: 0 0 calc(76px + env(safe-area-inset-bottom, 0px)); }
-        .pin-open .copy { margin: 0 0 auto; }
-        .worlds { gap: 8px; width: 100%; }
-        .world { grid-template-columns: 1fr; }
-        .world-pic { min-height: 0; aspect-ratio: 16 / 10; }
-        .world-body { padding: 8px 9px 10px; }
-        .world-k, .world-go { display: none; }
-        .world-t { font-size: 13.5px; margin: 0; }
-        .world-t::after { content: " \2193"; color: var(--accent); }
-        .world-new { top: 6px; left: 6px; padding: 4px 5px 3px; font-size: 8px; }
-      }
-      /* A tablet in portrait: the same row, but a third of 768 px is a tall
-         picture at 16 by 10, and the camera drops the quad low on a narrow
-         frame, so the pictures are cut flatter to keep off it. */
-      @media (min-width: 560px) and (max-width: 900px) {
-        .world-pic { aspect-ratio: 2 / 1; }
-        .world-k { display: block; margin-bottom: 6px; }
-        .world-t { font-size: 15px; }
-        .world-new-x { display: inline; }
-      }
 
       /* ------------------------------------------------------------------
          The reason: why the page was built at all.
@@ -2504,7 +2614,12 @@
            veil and sets the cards in at once. */
         .worlds { pointer-events: auto; }
         .world { opacity: 1; transform: none; transition: none; }
-        .world-pic img, .world-go::after { transition: none; }
+        .world-pic img { transition: none; }
+        /* The page does not open and nothing lands on it. The film is pinned
+           to a frame of the lap, so the big panel is left as paper, a title
+           page, rather than a window onto a race half a film away. */
+        .pin-open { height: 100vh; height: 100svh; background: var(--paper); }
+        .page-ink, .worlds { transform: none; opacity: 1; }
         #jump { display: none; }
         #hold { transition: none; }
       }
@@ -2799,16 +2914,17 @@
            means on purpose. The pilot lands on his own a beat after the boot
            screen lifts, so a visitor who has not touched the wheel yet sees
            one arrive and knows the page does this. The banner is the first
-           thing the SCROLL slaps on, a twentieth of an act in, which is the
-           first flick of a wheel. Everything after it is the same: a sticker
-           lands because the film reached it.
+           thing the SCROLL slaps on, once the manga page has opened, a third
+           of an act in: its spot on the left is over the chapter tier while
+           the page is up. Everything after it is the same: a sticker lands
+           because the film reached it.
 
            The pilot is top right, not bottom right, because the chapter
            cards own the foot of the first screen. That spot does not exist
            on a phone, so a phone's first screen is the copy, the quad and
            the cards, and its first sticker is the gate in act two. -->
       <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="tr" data-on="0" data-off="1" data-wait="0.6" data-slap="pilot" style="--r: -7deg; --w: 160px"></a>
-      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="l" data-on="0.05" data-off="2.02" data-slap="brush_banner" style="--r: -4deg; --w: 66px"></a>
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="l" data-on="0.32" data-off="2.02" data-slap="brush_banner" style="--r: -4deg; --w: 66px"></a>
       <!-- Act two, the builder. Its title bar and side panel take the top,
            so the gate goes to the bottom right, which the chapter cards have
            just left. The banner stays. -->
@@ -2816,10 +2932,10 @@
       <!-- Act three, the lap, flown from inside a pair of goggles, which is
            what the sticker is. Top left, under the wordmark and above the
            act's copy, because the OSD owns both bottom corners here. -->
-      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="tl" data-on="2.02" data-off="city" data-slap="goggle_view" style="--r: -6deg; --w: 190px"></a>
-      <!-- Act four, the city. The sticker says leave the track, which is
-           what the act says. -->
-      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="r" data-on="city" data-off="city+1" data-slap="railway_town" style="--r: 5deg; --w: 214px"></a>
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="tl" data-on="2.02" data-off="map" data-slap="goggle_view" style="--r: -6deg; --w: 190px"></a>
+      <!-- The chase. A corner of a manga page, because the film's first
+           screen is one and this is the freestyle half of the product. -->
+      <a class="slap" href="stickers/" aria-label="Get the stickers, the WebFPV slap pack" data-spot="r" data-on="yard+0.2" data-off="yard+1" data-slap="manga_corner" style="--r: 5deg; --w: 214px"></a>
       <!-- Act five, the room. It carries no number the copy could disagree
            with, which is why the chibi whoop is not the one used here: that
            one says 16 g on it and the copy beside it says twenty three. -->
@@ -2879,30 +2995,25 @@
             <p class="tagline">Free browser FPV. Real Betaflight. No install.</p>
           </div>
           <!--
-            THE CHAPTERS, on the first screen, under the headline.
-
-            They were a section of their own once, a heading and a lede over
-            the film paused between the build and the track. That put the
-            one decision a visitor makes on this page a screen and a half
-            down, behind a build they had to sit through, so the menu came up
-            to where the page opens and the heading over it went: the
-            wordmark and the headline are already saying what the three
-            cards are for.
+            THE CHAPTERS, the tier of panels under the studio on the first
+            screen's manga page. src/page.js sets each panel's box and clips
+            it to its quad; the ink line round it is the page's own SVG.
 
             A sibling of the copy and not inside it, because composeLayout()
             in main.js aims the studio camera at the space right of the
-            copy's box, and a row of cards the width of the frame would
-            leave it none. It is toggled with the copy, as data-copy="worlds".
+            copy's box. It is toggled with the copy, as data-copy="worlds",
+            which is how the panels come in, and --open takes them away.
 
-            The cards are plain links to the chapters' anchors, so with the
+            The panels are plain links to the chapters' anchors, so with the
             module graph dead they are still a table of contents. main.js
             makes them a jump: a cut to dark, the film put straight onto the
             chapter's opening frame, and a fade up. See jumpTo.
 
             In the film's order, because the film is what they jump into: a
-            card further right is further down. The accents are the ones the
-            closing cards give the same three things: mint for racing, sakura
-            for the builder, cream for the whoop.
+            panel further right is further down. The names are lettered by
+            src/titles.js in the accents the closing cards give the same
+            three things: mint for racing, sakura for the builder, cream for
+            the whoop.
           -->
           <nav class="worlds" data-copy="worlds" aria-label="Chapters">
             <a class="world" href="#racing" data-chapter="racing" style="--accent: var(--mint)">
@@ -2921,7 +3032,7 @@
                 <span class="world-new">New<span class="world-new-x"> &#183; Map builder</span></span>
               </span>
               <span class="world-body">
-                <span class="world-k">The city</span>
+                <span class="world-k">The map</span>
                 <span class="world-t">Freestyle</span>
                 <span class="world-go">Build it and fly it</span>
               </span>
@@ -2990,45 +3101,20 @@
         </div>
       </section>
 
-      <!-- ACT 4: the freestyle city -->
-      <!-- 760vh. The act used to open with forty metres of transit and needed
-           820 to carry it; the page cuts to the town now, so all of this
-           height is spent on streets. About 180 m of line over 760vh is
-           0.24 m per vh, which is the lap's own gearing: the pace of the film
-           does not change when the place does. The variation inside the act,
-           a slower shopping street and a faster road, lives in CITY_S in
-           main.js. -->
-      <section class="act" data-act="city" style="min-height: 760vh">
-        <span class="chapter-at" id="freestyle" style="--at: 0.09"></span>
-        <div class="pin">
-          <div class="copy copy-tight" data-copy="city">
-            <p class="eyebrow">04 &#183; The city</p>
-            <h2>Leave the track.</h2>
-            <p class="lede">
-              A Japanese town, and a freestyle map. A training park, gaps and
-              open spaces.
-            </p>
-            <p class="lede">
-              <a class="inline-go" href="https://webfpv.org/sim/?map=city" data-dest="city">Fly the city</a>
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <!-- ACT 5: the map -->
-      <!-- The freestyle builder, and it is FLOWN TO rather than cut to: the
-           town's last shot cranes up and carries on west over the roofs, and
-           comes down over an empty plot on the far side of them. See places.js
-           for where the yard stands and why. The builder then loads a yard
+      <!-- ACT 4: the map -->
+      <!-- The freestyle builder, reached through the lap's dissolve: the
+           haze clears on the plan, looking straight down on an empty plot.
+           See places.js for where the yard stands. The builder then loads a yard
            and draws the showpiece on it, road first, and the camera comes
            down onto the pads as the cars start. Like the track act, it is a
            builder at work rather than a flight, so it gets the track act's
            kind of height: about five and a half screens, most of it spent
            watching things arrive. -->
       <section class="act" data-act="map" style="min-height: 560vh">
+        <span class="chapter-at" id="freestyle" style="--at: 0.06"></span>
         <div class="pin">
           <div class="copy copy-beside" data-copy="map">
-            <p class="eyebrow">05 &#183; The map</p>
+            <p class="eyebrow">04 &#183; The map</p>
             <h2>Build a map.</h2>
             <p class="lede">
               Buildings, cranes, containers and named gaps, set out on a plot.
@@ -3042,7 +3128,7 @@
         </div>
       </section>
 
-      <!-- ACT 6: the chase -->
+      <!-- ACT 5: the chase -->
       <!-- 900vh for about thirty seconds of the physics module's clock: off
            the pads, over the yard, down onto the tandem and round most of a
            lap behind it. About thirty screens a minute, a little quicker
@@ -3053,11 +3139,10 @@
       <section class="act" data-act="yard" style="min-height: 900vh">
         <div class="pin">
           <div class="copy copy-tight" data-copy="yard">
-            <p class="eyebrow">06 &#183; The chase</p>
-            <h2>Chase the tandem.</h2>
+            <p class="eyebrow">05 &#183; The chase</p>
+            <h2>Freestyle and <em>car chase.</em></h2>
             <p class="lede">
-              Hibari Yard Tandem, flown from its pads. Two drift cars on one
-              road, in step every lap.
+              Take off from the pads and chase the drift cars round the map.
             </p>
             <p class="lede">
               <a class="inline-go" href="https://webfpv.org/sim/?map=built&amp;mapshare=trk-1b4a7d7a&amp;board=https%3A%2F%2Fwebfpv.org%2Fboard&amp;craft=5inch&amp;fly=1" data-dest="yard">Fly this map</a>
@@ -3066,7 +3151,7 @@
         </div>
       </section>
 
-      <!-- ACT 7: the room -->
+      <!-- ACT 6: the room -->
       <!-- 700vh, and THIS IS THE ONE NUMBER TO TURN IF THE WHOOP FEELS FAST.
 
            An act's height is the gearing between the wheel and the aircraft,
@@ -3094,7 +3179,7 @@
         <span class="chapter-at" id="whoop" style="--at: 0.08"></span>
         <div class="pin">
           <div class="copy copy-tight" data-copy="room">
-            <p class="eyebrow">07 &#183; The room</p>
+            <p class="eyebrow">06 &#183; The room</p>
             <h2>Micro UTT.</h2>
             <p class="lede">
               A 65 mm whoop.
@@ -3131,7 +3216,7 @@
     -->
     <section id="why">
       <div class="why-copy">
-        <p class="eyebrow eyebrow-lit">08 &#183; The reason</p>
+        <p class="eyebrow eyebrow-lit">07 &#183; The reason</p>
         <h2>The hard part of FPV<br /><em>is getting to the first lap.</em></h2>
         <p class="lede">
           A quad, a radio, goggles, batteries, a charger. Hundreds of dollars
@@ -3232,7 +3317,7 @@
     <!-- The close -->
     <section id="close">
       <div class="close-copy">
-        <p class="eyebrow eyebrow-lit" style="justify-content: center">09 &#183; The point</p>
+        <p class="eyebrow eyebrow-lit" style="justify-content: center">08 &#183; The point</p>
         <!-- h2, not h1. The SEO line under the hero wordmark is the h1, and a
              document with two of them has no single heading a crawler or a
              screen reader can name it by. The type is unchanged: .shout is
@@ -3594,10 +3679,10 @@
       screen lifts off it. See src/titles.js.
     -->
     <script type="module">
-      import { letterTitles } from './src/titles.js';
+      import { letterTitles } from './src/titles.js?v=20260927m';
       letterTitles();
     </script>
     <script type="module" src="src/support-boot.js"></script>
-    <script type="module" src="src/main.js"></script>
+    <script type="module" src="src/main.js?v=20260927n"></script>
   </body>
 </html>

@@ -62,7 +62,7 @@
 import { paintTitle } from './sim/ui/lettering.js';
 
 /* Every lettered thing on a page. */
-export const TITLES = '.mark, .boot-mark, .wordmark, h2';
+export const TITLES = '.mark, .boot-mark, .wordmark, h2, .world-t';
 const ART = 'lettered-art';
 const PROBE = 'lettered-probe';
 const SETTLE_MS = 140;
