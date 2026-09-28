@@ -37,10 +37,10 @@
  */
 
 import { stopFigures } from './anim.js';
-import { ARTICLES, ARTICLE_BY_ID, CHAPTERS } from './articles.js?v=20260927w';
+import { ARTICLES, ARTICLE_BY_ID, CHAPTERS } from './articles.js?v=20260928a';
 import {
   STATUS_LABEL, allCliPages, cliIndexPage, cliPageId,
-} from './cli.js?v=20260927w';
+} from './cli.js?v=20260928a';
 import { wikiFigure } from './figures.js?v=20260927w';
 import { FIELDS, TABS } from '../fc/catalog.js?v=20260927w';
 

@@ -1362,6 +1362,16 @@ put('quickrates_rc_expo', copy({
   ],
 }));
 
+/*
+ * Where the rows are, on every rate page rather than on one of them. The
+ * Rates menu shows roll and pitch as one set of rows until Separate pitch
+ * is turned on, and on 28 September 2026 a pilot on that menu reported that
+ * they could not find how to set pitch apart from roll. Only the RC rate
+ * pages named the switch, so a pilot who looked up pitch_srate or
+ * pitch_expo was not told it exists.
+ */
+const RATE_ROWS = 'Roll and pitch share one value there unless you turn on Separate pitch, and yaw has its own.';
+
 function rateAxis(axis) {
   const a = axisNoun(axis);
   put(`${axis}_rc_rate`, copy({
@@ -1369,7 +1379,7 @@ function rateAxis(axis) {
     related: ['control-rates', `cli-${axis}_srate`, `cli-${axis}_expo`],
     air: `On ACTUAL rates this is the ${a.axis} centre sensitivity, in tens of deg/s: how fast the rotation rate rises as the stick leaves the centre. A value of 7 means that near the centre the rate rises as steeply as a straight line that would reach 70 deg/s at full stick. It is the slope of the curve at the middle, not the rate at half stick.`,
     lab: `Stored in rcRates[FD_${a.Axis.toUpperCase()}] as a whole number up to 255. On ACTUAL, centre sensitivity = rc_rate × 10. The other types use the number differently: see applyBetaflightRates and the other rate functions in fc/rc.c.`,
-    sim: 'Works here. It is set on the Rates menu in Settings. Roll and pitch share one value unless you turn on Separate pitch, and yaw has its own.',
+    sim: `Works here. It is set on the Rates menu in Settings. ${RATE_ROWS}`,
     upAir: `The quad's ${a.axis} becomes twitchier near the centre of the stick, and fine aiming gets harder.`,
     upLab: 'On ACTUAL, the straight-line part of the curve near the centre becomes steeper.',
     downAir: `The centre feels softer. Small corrections need larger movements of ${a.stick}.`,
@@ -1380,7 +1390,7 @@ function rateAxis(axis) {
     related: ['control-rates', `cli-${axis}_rc_rate`],
     air: `On ACTUAL rates, the ${a.axis} rate at full stick is srate × 10 deg/s, so 67 means 670 deg/s. On roll, this is the number check 9 tests.`,
     lab: `Stored in rates[FD_${a.Axis.toUpperCase()}]. On ACTUAL, the rate at full stick is exactly srate × 10. Super rate on the BETAFLIGHT type is a different equation, so a value cannot simply be carried across from one type to the other.`,
-    sim: 'Works here. The default is 67 on all three axes. Tune files carry no rate profile, so the Rates menu in Settings sets this value whichever tune you fly.',
+    sim: `Works here, and the default is 67 on all three axes. Tune files carry no rate profile, so the Rates menu in Settings sets this value whichever tune you fly. ${RATE_ROWS}`,
     upAir: `Full stick gives faster ${a.motion}, so flips and turns take less time. Aiming near the end of the stick travel gets harder.`,
     upLab: 'The setpoint at full stick, the target rate, is higher. The physics model has to be able to follow it; if it cannot, motors reach full power and the gyro rate falls behind the target.',
     downAir: `Rotation at full stick is slower. Aiming is easier and quick flips take longer. A five inch quad can still turn hard enough to produce a large g-force.`,
@@ -1391,7 +1401,7 @@ function rateAxis(axis) {
     related: ['control-rates', `cli-${axis}_rc_rate`],
     air: `On ACTUAL rates, expo bends the ${a.axis} curve so that the middle of the stick gives gentler rotation while full stick still reaches the maximum rate. At 0 there is no extra bend, but the rate is still not in direct proportion to the stick unless centre sensitivity and maximum rate match.`,
     lab: `Stored in rcExpo[FD_${a.Axis.toUpperCase()}], from 0 to 100 as a percentage. ACTUAL blends in the fifth power of the stick position, and the BETAFLIGHT type uses the cube, so the same expo number does not mean the same thing on both.`,
-    sim: 'Works here. The default is 0.',
+    sim: `Works here, and the default is 0. It is set on the Rates menu in Settings. ${RATE_ROWS}`,
     upAir: `The middle of ${a.stick} gives less rotation, so precise aiming is easier. With too much, small movements near the centre seem to do almost nothing.`,
     upLab: 'A higher expo gives the fifth-power term (expof) more weight in the ACTUAL formula.',
     downAir: 'At 0 the curve keeps the shape that centre sensitivity and maximum rate give it, with no extra bend.',

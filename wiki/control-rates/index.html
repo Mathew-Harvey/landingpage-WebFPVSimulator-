@@ -110,6 +110,7 @@
       </section>
       <section class="wiki-section">
         <h2>In this simulator</h2>
+        <p>On the Rates screen in Settings, roll and pitch share one set of three numbers until you turn on Separate pitch. Pitch then has its own three, and the graph draws a separate pitch curve once they differ from the roll numbers. Yaw always has its own, and turning Separate pitch off copies the roll numbers onto pitch.</p>
         <p>The rates graph is drawn by src/fc/ratescurve.js, a copy of the same formulas used only for display, and the physics does not use it. Check 9 tests that full roll stick reaches the set maximum rate to within 3 percent. Check 12 tests that two diff files that differ only in srate give maximum rates in the same ratio.</p>
       </section>
     </article>

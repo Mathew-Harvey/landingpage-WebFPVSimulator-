@@ -755,9 +755,10 @@ export const ARTICLES = [
       'Rates are set in Settings, and configs/rates.js is the only place the menus decide them. Tune files carry no rate profile. The rate profile page on the firmware bench points to Settings, and any rate values saved from the bench go into your own rate profile. Your rates are kept when you change aircraft, unless they are still the standard ones.',
     ],
     sim: [
+      'On the Rates screen in Settings, roll and pitch share one set of three numbers until you turn on Separate pitch. Pitch then has its own three, and the graph draws a separate pitch curve once they differ from the roll numbers. Yaw always has its own, and turning Separate pitch off copies the roll numbers onto pitch.',
       'The rates graph is drawn by src/fc/ratescurve.js, a copy of the same formulas used only for display, and the physics does not use it. Check 9 tests that full roll stick reaches the set maximum rate to within 3 percent. Check 12 tests that two diff files that differ only in srate give maximum rates in the same ratio.',
     ],
-    related: ['cli-rates_type', 'cli-roll_srate', 'cli-roll_rc_rate', 'cli-throttle_limit_type'],
+    related: ['cli-rates_type', 'cli-roll_srate', 'cli-pitch_srate', 'cli-roll_rc_rate', 'cli-throttle_limit_type'],
     source: 'configs/rates.js, vendor/betaflight .../fc/rc.c, src/fc/ratescurve.js',
   }),
 
