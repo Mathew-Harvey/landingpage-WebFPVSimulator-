@@ -86,6 +86,16 @@ function synth(days, first = '2026-08-11') {
 const data = JSON.parse(await readFile(join(root, DATA), 'utf8'));
 const page = await readFile(join(root, 'notes/index.html'), 'utf8');
 
+/* What the hover layer should say for day i, worked out here from the JSON and not copied from the page, so a regeneration moves the test with it. */
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const n = data.days;
+const isoOf = (i) => new Date(Date.parse(`${data.first}T00:00:00Z`) + i * 86400000).toISOString().slice(0, 10);
+const label = (i) => `${Number(isoOf(i).slice(8))} ${MONTHS[Number(isoOf(i).slice(5, 7)) - 1]}`;
+const total = (i) => REPOS.reduce((sum, r) => sum + data.lines[r.id][i], 0);
+const made = (i) => REPOS.reduce((sum, r) => sum + data.commits[r.id][i], 0);
+const commas = (v) => v.toLocaleString('en-US');
+const say = (i) => `${label(i)}: ${commas(total(i))} lines of source, ${made(i)} commits.`;
+
 /* ---- the generator ---- */
 
 await test('the real data draws with no NaN, undefined or Infinity in it', () => {
@@ -180,9 +190,11 @@ async function load(edit) {
 await test('focus reads the newest day out from the table', async () => {
   const v = await load();
   v.focus();
-  assertEquals(v.live.textContent, '29 Sep: 281,136 lines of source, 10 commits.');
+  assertEquals(v.live.textContent, say(n - 1));
   assertEquals(v.tip.hidden, false, 'the tooltip did not open');
-  assert(v.tip.textContent.includes('228,838') && v.tip.textContent.includes('23,405') && v.tip.textContent.includes('28,893'), 'the tooltip is missing a series');
+  for (const r of REPOS) {
+    assert(v.tip.textContent.includes(commas(data.lines[r.id][n - 1])), `the tooltip is missing ${r.name}'s lines`);
+  }
   assertEquals(v.errors, [], 'a handler threw');
 });
 
@@ -192,14 +204,14 @@ await test('the arrow keys walk the days and stop at the ends', async () => {
   v.press('ArrowLeft');
   v.press('ArrowLeft');
   v.press('ArrowLeft');
-  assertEquals(v.live.textContent, '26 Sep: 261,356 lines of source, 150 commits.');
+  assertEquals(v.live.textContent, say(n - 4), 'three days back from the newest');
   v.press('Home');
-  assertEquals(v.live.textContent, '11 Aug: 6,307 lines of source, 20 commits.');
+  assertEquals(v.live.textContent, say(0));
   v.press('ArrowLeft');
-  assertEquals(v.live.textContent, '11 Aug: 6,307 lines of source, 20 commits.', 'walked off the start');
+  assertEquals(v.live.textContent, say(0), 'walked off the start');
   v.press('End');
   v.press('ArrowRight');
-  assertEquals(v.live.textContent, '29 Sep: 281,136 lines of source, 10 commits.', 'walked off the end');
+  assertEquals(v.live.textContent, say(n - 1), 'walked off the end');
   v.press('Escape');
   assertEquals(v.tip.hidden, true, 'Escape did not close it');
   assertEquals(v.errors, [], 'a handler threw');
@@ -208,10 +220,9 @@ await test('the arrow keys walk the days and stop at the ends', async () => {
 await test('every day the graph can show is a row the table has, with the same numbers', async () => {
   const v = await load();
   const rows = [...v.dom.window.document.querySelectorAll('.viz-table tbody tr')];
-  assertEquals(rows.length, data.days, 'a row for every day');
+  assertEquals(rows.length, n, 'a row for every day');
   const last = rows[0].querySelectorAll('td');
-  const total = REPOS.reduce((s, r) => s + data.lines[r.id][data.days - 1], 0);
-  assertEquals(Number(last[3].textContent.replace(/,/g, '')), total, 'the first row is not the newest total');
+  assertEquals(Number(last[3].textContent.replace(/,/g, '')), total(n - 1), 'the first row is not the newest total');
 });
 
 await test('names go in as text, never as markup', async () => {
