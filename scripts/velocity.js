@@ -1,6 +1,6 @@
 /*
  * velocity.js: measure how the code has grown from the git history of the
- * three repositories, and draw it at the foot of the patch notes.
+ * three repositories, and draw it at the top of the patch notes.
  *
  * WHY THIS EXISTS. The patch notes say what changed. This says how fast, and
  * it is measured, not remembered: lines of source at the end of every day,
@@ -502,11 +502,14 @@ export function splice(page, data) {
     }
     return page.slice(0, at) + fresh + page.slice(end + END.length);
   }
-  const main = page.lastIndexOf('    </main>');
-  if (main === -1) {
-    throw new Error('no </main> to put the graph before');
+  /* A page with no graph yet gets it directly under the jump list, above the first entry. */
+  const nav = page.indexOf('<nav class="weeks"');
+  const close = nav === -1 ? -1 : page.indexOf('</nav>', nav);
+  if (close === -1) {
+    throw new Error('no jump list (nav.weeks) to put the graph under');
   }
-  return `${page.slice(0, main).replace(/\s*$/, '')}\n\n${fresh}\n${page.slice(main)}`;
+  const after = close + '</nav>'.length;
+  return `${page.slice(0, after)}\n\n${fresh}${page.slice(after)}`;
 }
 
 /* ------------------------------------------------------------------ */

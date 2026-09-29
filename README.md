@@ -456,7 +456,7 @@ global.
 | `wiki/index.html` | The FPV wiki's page, its CSS, and its layout grid |
 | `src/wiki/` | Articles, CLI pages, figures, and the wiki shell |
 | `src/fc/` | Snapshot of the simulator catalog. Recopy when that catalog changes |
-| `notes/index.html` | The patch notes, a section a day, and the velocity graph at its foot |
+| `notes/index.html` | The patch notes: the velocity graph, then a section a day |
 | `notes/velocity.json` | The graph's numbers: lines of source and commits a day, GENERATED. See `scripts/velocity.js` |
 | `notes/velocity.js` | The graph's hover, touch and arrow key layer. The graph reads without it |
 | `scripts/velocity.js` | Measures the three repositories' git history and draws the graph into the notes page |

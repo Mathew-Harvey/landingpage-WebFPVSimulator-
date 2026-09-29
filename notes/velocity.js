@@ -1,6 +1,6 @@
 /*
  * velocity.js: the hover, touch and keyboard layer for the velocity graph at
- * the foot of the patch notes.
+ * the top of the patch notes.
  *
  * The graph is plain SVG, HTML and a table, drawn by scripts/velocity.js, and
  * it reads without this file. This adds a band that snaps to a day, one

@@ -69,6 +69,7 @@ const pack = await readFile(join(root, 'stickers/index.html'), 'utf8');
 const velocityJson = await readFile(join(root, VELOCITY_DATA), 'utf8');
 const velocityShow = await readFile(join(root, 'notes/velocity.js'), 'utf8');
 const velocityMake = await readFile(join(root, 'scripts/velocity.js'), 'utf8');
+const velocityTests = await readFile(join(root, 'tests/velocity.test.js'), 'utf8');
 
 /*
  * 1. ONE h1 A PAGE.
@@ -293,7 +294,7 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
  */
 {
   const bad = [];
-  for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['notes/index.html', notes], ['stickers/index.html', pack], ['src/main.js', mainJs], ['src/wiki/wiki.js', wikiJs], [VELOCITY_DATA, velocityJson], ['notes/velocity.js', velocityShow], ['scripts/velocity.js', velocityMake]]) {
+  for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['notes/index.html', notes], ['stickers/index.html', pack], ['src/main.js', mainJs], ['src/wiki/wiki.js', wikiJs], [VELOCITY_DATA, velocityJson], ['notes/velocity.js', velocityShow], ['scripts/velocity.js', velocityMake], ['tests/velocity.test.js', velocityTests]]) {
     if (/[\u2013\u2014]/.test(src)) {
       bad.push(name);
     }
@@ -624,7 +625,7 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
 }
 
 /*
- * 14. THE VELOCITY GRAPH AT THE FOOT OF THE PATCH NOTES IS CURRENT.
+ * 14. THE VELOCITY GRAPH AT THE TOP OF THE PATCH NOTES IS CURRENT.
  *
  * The graph is a function of the three repositories' git history, written by
  * scripts/velocity.js into notes/velocity.json and into the block between two

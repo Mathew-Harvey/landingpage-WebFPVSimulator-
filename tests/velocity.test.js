@@ -1,5 +1,5 @@
 /*
- * Tests for the velocity graph at the foot of the patch notes
+ * Tests for the velocity graph at the top of the patch notes
  *
  * Run with: node tests/velocity.test.js
  *
@@ -146,13 +146,38 @@ await test('regenerating twice changes nothing', () => {
   assertEquals(once.split(END).length, 2, 'one end marker');
 });
 
+await test('the graph opens the page: under the jump list, the first section, the first link', () => {
+  const sections = [...page.matchAll(/<section id="([a-z0-9]+)"/g)].map((m) => m[1]);
+  assertEquals(sections[0], 'velocity', 'a section comes before the graph');
+  const nav = page.indexOf('<nav class="weeks"');
+  assert(/^<nav class="weeks"[^>]*>\s*<a href="#velocity">/.test(page.slice(nav)), 'the jump list does not open with a link to the graph');
+  assert(/^<\/nav>\s*<!-- velocity:begin/.test(page.slice(page.indexOf('</nav>', nav))), 'something sits between the jump list and the graph');
+  const links = [...page.slice(nav, page.indexOf('</nav>', nav)).matchAll(/href="#([a-z0-9]+)"/g)].map((m) => m[1]);
+  assertEquals(links, sections, 'the jump list is not the page\'s sections, in the page\'s order');
+});
+
+await test('a page with no graph gets one under the jump list, exactly where it is now', () => {
+  const at = page.indexOf(`      ${BEGIN}`);
+  const end = page.indexOf(END, at) + END.length;
+  const bare = page.slice(0, at).replace(/\n\n$/, '') + page.slice(end);
+  assert(!bare.includes(BEGIN), 'the graph is still in the page');
+  assertEquals(splice(bare, data), page, 'a fresh insertion is not where the graph already is');
+  let said = '';
+  try {
+    splice('<main><p>no jump list here</p></main>', data);
+  } catch (e) {
+    said = e.message;
+  }
+  assert(/jump list/.test(said), 'a page with nowhere to put the graph did not say so');
+});
+
 await test('the JSON is written the way it is read back', async () => {
   assertEquals(JSON.parse(stringify(data)), data, 'stringify then parse is not the identity');
   assertEquals(stringify(data), await readFile(join(root, DATA), 'utf8'), 'the file is not what stringify writes');
 });
 
 await test('no en or em dash anywhere in what it draws', () => {
-  assert(!/[–—]/.test(block(data)), 'a dash in the block');
+  assert(!/[\u2013\u2014]/.test(block(data)), 'a dash in the block');
 });
 
 /* ---- the hover layer ---- */
