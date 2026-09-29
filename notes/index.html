@@ -26,7 +26,7 @@
     <title>Patch notes, WebFPV</title>
     <meta
       name="description"
-      content="Patch notes from 22 August to 22 September: whoop rooms, the weight slider, and the faults from that month."
+      content="Patch notes from 22 August to 29 September: freestyle maps you build and publish, cars to chase, a default tune with more feedforward, work on input lag, and the faults from those weeks."
     />
     <meta name="theme-color" content="#141c16" />
     <link rel="canonical" href="https://webfpv.org/notes/" />
@@ -34,7 +34,7 @@
     <meta property="og:site_name" content="WebFPV" />
     <meta property="og:url" content="https://webfpv.org/notes/" />
     <meta property="og:title" content="WebFPV patch notes" />
-    <meta property="og:description" content="Patch notes from 22 August to 22 September: whoop rooms, the weight slider, and the faults from that month." />
+    <meta property="og:description" content="Patch notes from 22 August to 29 September: freestyle maps you build and publish, cars to chase, a default tune with more feedforward, work on input lag, and the faults from those weeks." />
     <meta property="og:image" content="https://webfpv.org/og.jpg?v=47004f98" />
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
@@ -42,7 +42,7 @@
     <meta property="og:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="WebFPV patch notes" />
-    <meta name="twitter:description" content="Patch notes from 22 August to 22 September: whoop rooms, the weight slider, and the faults from that month." />
+    <meta name="twitter:description" content="Patch notes from 22 August to 29 September: freestyle maps you build and publish, cars to chase, a default tune with more feedforward, work on input lag, and the faults from those weeks." />
     <meta name="twitter:image" content="https://webfpv.org/og.jpg?v=47004f98" />
     <meta name="twitter:image:alt" content="The WebFPV front page drawn as a manga page: the official partners' marks over the WEBFPV wordmark and the line Free FPV drone racing simulator in your browser, a five inch quad just built, inked, with its build order at seven of seven, and three panels below for five inch racing, freestyle and whoop racing." />
     <link rel="icon" href="../icon.svg" type="image/svg+xml" />
@@ -205,15 +205,211 @@
     </header>
 
     <main>
-      <p class="kicker">22 August to 22 September 2026</p>
+      <p class="kicker">22 August to 29 September 2026</p>
       <h1>Patch notes</h1>
-      <nav class="weeks" aria-label="Weeks">
+      <nav class="weeks" aria-label="Entries">
+        <a href="#sep29">29 September</a>
+        <a href="#sep28">28 September</a>
+        <a href="#sep27">27 September</a>
+        <a href="#sep26">26 September</a>
+        <a href="#sep25">25 September</a>
+        <a href="#sep24">24 September</a>
         <a href="#sep22">22 September</a>
         <a href="#sep15">15 September</a>
         <a href="#sep8">8 September</a>
         <a href="#sep1">1 September</a>
         <a href="#aug22">22 August</a>
       </nav>
+
+      <section id="sep29">
+        <h2>29 September</h2>
+        <h3>New</h3>
+        <ul>
+          <li>Stick help. A stick that does nothing in flight is caught, and a banner says so. The Stick help screen shows where the signal is lost, in the radio, the browser or the system, and it checks with your hand on the stick before it tells you what to do. It is a row on the pause menu and in Settings, and a bug report carries what it found.</li>
+          <li>Settings, Screen, Manga and scoring turns off the manga look and the score readouts with one switch: the speed lines, the impact frame, the lettered callouts, the score, the Tail meter and the lettered menu titles. Nothing that counts changes. The scorer, the chase, a scored run's clock and your bests run as they did.</li>
+        </ul>
+        <h3>Sticks</h3>
+        <ul>
+          <li>A radio that Firefox calls a game controller flies the right channels. On Firefox for Linux the throttle was reading as yaw, and pitch as a switch channel.</li>
+          <li>Chrome on Android hands a radio four axes and drops the rest, so yaw or throttle goes missing. Stick help says so where you are stuck.</li>
+        </ul>
+        <h3>Fixes</h3>
+        <ul>
+          <li>A track with an absurd yaw, like 1e20, froze the tab in the builder. Big angles are brought back to the circle first.</li>
+          <li>A settings entry saved as null stopped the sim from starting. It reads as no settings now.</li>
+          <li>Every map swap left the town's instanced buffers behind. They are freed.</li>
+          <li>The tune's CLI download let go of its file the moment it was clicked. Safari and older Firefox start a download after the click returns, so it waits four seconds now. That fix comes from the code and has not been run in those browsers.</li>
+        </ul>
+      </section>
+
+      <section id="sep28">
+        <h2>28 September</h2>
+        <h3>New</h3>
+        <ul>
+          <li>Settings has a HUD section. Its first row is Crosshairs: Off, Wings, Cross or Dot. It starts Off.</li>
+        </ul>
+        <h3>Feel</h3>
+        <ul>
+          <li>The default tune has a quarter more feedforward. Stick response is 125, with F at 150, 156 and 150, and three I term settings changed to take the bounce out of a stop: iterm relax cutoff 10, iterm relax RPY_INC and a yaw pidsum limit of 500. Slow to answer the stick was the most ticked box on the feel form, on 23 reports, and bounces back after a stop was ticked on nine.</li>
+          <li>In the sim's own stick test a flick reaches 90 percent of its roll rate 3 to 5 ms sooner. A full stick roll or pitch stop comes back about half a degree, where it came back 1.2 and 1.6, and a yaw stop at three quarter stick comes back 4.6 degrees, where it was 7.8.</li>
+          <li>The Tune row still says Betaflight default, with a note saying what changed. Personal bests on the default tune start again, because the record key follows the tune, and laps flown before stay under their old key. The board ranks on the clock and never sees the tune.</li>
+        </ul>
+        <h3>Screen and lag</h3>
+        <ul>
+          <li>The low latency canvas was never being asked for. three.js built its own context and dropped the option on every browser. The sim makes the context itself now, and Settings, Screen, Low latency view says whether your browser granted it. It is on by default.</li>
+          <li>Auto graphics measures. It lowers resolution a tenth after half a second of late frames and raises it a twentieth after three seconds of headroom, and on the title it can move the preset for a machine that keeps missing or keeps idling. Pick a preset by hand and Auto leaves it alone. The town and built maps follow Render scale and Auto now.</li>
+          <li>Predicted view draws the FPV camera where the quad will be when the frame reaches the screen. A frame is on the glass one display period after it is drawn, which at 60 Hz is 17 ms, or 11 degrees of a 670 degree per second roll. It is on by default, in Settings, Screen. It is a setting because you feel it: turn it off if a flip overshoots at the end or the picture jumps when you land.</li>
+          <li>Frame pacing is a Settings row: Timer with Low, Timer, always or Display, always. The timer runs the loop without waiting for the display. On one laptop at Low, key to screen fell from 80 ms to 64 at the median and from 144 ms to 80 at the 90th, over nine presses each. It draws about twice the frames, which is heat and battery, and Auto holds still while it runs. Low uses the timer by default, and so does any machine Auto puts on Low.</li>
+          <li>Low asks less of the GPU, and the OSD less of the page. Low draws to an 8 bit colour target where nothing reads the extra precision, drops the cloud shading it had kept after losing real shadows, and never draws more than a million pixels. The OSD updates its numbers about 15 times a second and no longer reads the layout every frame.</li>
+          <li>Fly, Restart and Resume go fullscreen, and Escape leaves it and pauses. Fullscreen in flight is a Settings row if you would rather not. Input to screen in Settings reads the time from a key press to the frame that first showed it. It is the browser's number, not photons. A feel report carries the flight's frame timings, and its throttle line quotes your own weight and pack: one whoop report read a hover of 39.9 percent when the pilot flew at Weight 70, where it was 32.3.</li>
+        </ul>
+        <h3>Fixes</h3>
+        <ul>
+          <li>On a map with no start pads you start in the open, never in a pylon. With pads, you start on them.</li>
+        </ul>
+        <h3>Held back</h3>
+        <ul>
+          <li>A radio that reports under about 190 times a second still flicks back a little after a small stop. The fix is in how the sim feeds the controller, and it is not made.</li>
+        </ul>
+      </section>
+
+      <section id="sep27">
+        <h2>27 September</h2>
+        <h3>New</h3>
+        <ul>
+          <li>Three partners back WebFPV. Global Drone Solutions is the official training partner, Mantis FPV the official retail partner, and the West Coast Multirotor Club the official club partner. Their marks are on the front page and on Tracks and Times, and painted into every freestyle map. Find one in a map and you get a callout, a panel and 1000 points into the combo. Tracks and Times has a partners page, and Partner with WebFPV is on it and in the footer of the front page.</li>
+          <li>The menus are lettered in the manga hand: the wordmark and every room's title, with an ink frame on the panels. The quad on the results page is drawn in ink, with its arms, motors, props and a pod, and the combo tier words are drawn as strokes, so a machine with no Japanese font shows them and not empty boxes.</li>
+          <li>Overcast clouds are lit and inked, and tree canopies shade round instead of as a mosaic of triangles.</li>
+          <li>On a phone the flight lines sit in the two top corners with nothing in the middle third, and the flight chips fade after three seconds in the air and come back on a touch, on landing or on pause. The Weight slider works wherever it is shown, and pause has a Weight row.</li>
+        </ul>
+        <h3>This site</h3>
+        <ul>
+          <li>The front page opens as a manga page: the partners over the wordmark, the headline, and three panels for five inch racing, freestyle and whoop racing. Scroll and the page opens into the film. The town is gone from the film, so the lap goes straight to the map builder. The whoop room in the film is the sakura room. The picture that shows when you paste a link to this site is the first screen.</li>
+          <li>The wiki was checked against Betaflight's source. It said that without airmode the motors sit at idle and you have no control, and that the angle limit is about thirty degrees. The mixer fits the throttle either way, and the limit is 60. Five settings that were labelled Works here do nothing in this build, and are Stored, not used. The 103 settings that had no description have one, and Back in the wiki opens the article.</li>
+        </ul>
+        <h3>Sticks</h3>
+        <ul>
+          <li>A game controller flies its own sticks in your stick mode. Mode 1 or Mode 2 now reaches a pad, so a controller that had throttle on the right stick has it on the left in Mode 2.</li>
+          <li>The help row for a radio whose throttle reads as yaw comes about four seconds after you leave the throttle alone. It had come up to five times late.</li>
+        </ul>
+        <h3>The board</h3>
+        <ul>
+          <li>A time goes up at any weight, and says so. The board keeps the weight you flew at and prints "Weight 60%" beside your name on any row that is not 100. Ranking is still on the clock.</li>
+        </ul>
+        <h3>Fixes</h3>
+        <ul>
+          <li>Firefox would not start the sim from the evening of the 25th. The page said "The specifier three was a bare specifier". The loader change of the 25th wrote its import map after Cloudflare's own module script had started, and Firefox refuses a map that late. The map is written before the body now, and Firefox starts the sim again.</li>
+          <li>Crashes are judged on every physics step, not once a frame. A 60 Hz laptop and a 144 Hz monitor call the same hit the same way, and you are set down where you hit.</li>
+          <li>A crash is never set down where the craft cannot take off. One had put a craft under the crane's bottom bar. The crane's foot is solid where it is drawn.</li>
+          <li>Tracks: a card is chosen where you click it, and a double click flies it. The page used to scroll after the first click and leave Fly below the fold.</li>
+          <li>The drift coupe and the compact coupe were redrawn to read as the cars they are.</li>
+          <li>The same opening twice in a row is two passes, not one. On 2022 AU Nationals the lap counts only when 32 to 36 is flown, the loop is flown, and 32 to 36 is flown again.</li>
+        </ul>
+        <h3>Held back</h3>
+        <ul>
+          <li>Finding the SubTwoFifty mark is no longer an achievement, and the pill is gone from the map cards. The mark stays painted on every map.</li>
+        </ul>
+      </section>
+
+      <section id="sep26">
+        <h2>26 September</h2>
+        <h3>New</h3>
+        <ul>
+          <li>Cars drive the roads. The builder has a road tool and vehicles, and Play in the preview drives them. A car is a solid that follows its road at the speed its curves allow, and you can hit it.</li>
+          <li>Chase a car. The Tail meter builds while you hold its bumper and banks when you peel off. Hitting a car loses the tail and pays nothing.</li>
+          <li>Hibari Yard has a 7.5 m loop with a drift coupe and a compact blue coupe chasing it. Every car was redrawn, with a face of its own for each kind. Hibari Yard Tandem is the showpiece map: a drift course with two drift coupes in tandem. It is on the board.</li>
+          <li>Freestyle maps score the line you fly. Named gaps pay when you go through them. Skims along a wall or a roof, threads between two solids, unders and low passes are close calls. All of it goes into one combo, and a crash drops the whole combo. A low pass pays its points and buys no multiplier. Trick names stay behind the Scoring row in the Freestyle room, which starts on Lines only.</li>
+          <li>The freestyle score is lettered in a manga hand, small and out of the middle of the picture. Past 72 km/h ink strokes gather at the edges and lean toward where you are heading, and a crash freezes for a beat in ink. After a scored run the results are a manga page with a share card. Clean FPV and Impact frame are Settings rows.</li>
+          <li>Race tracks have a fourth lap count, Practice. It has no end, and nothing you fly in it goes to the board. Lap times are called out loud, in your browser's own voice, and the call follows Volume in Settings.</li>
+          <li>Support is a row on the title and pause menus and opens Patreon. Its note gives the tiers: Keep the lights on is $3, Hosting + runway is $8 and Build the sim is $20, US dollars a month. The price came down. A click on Support is counted once, with nothing about who clicked, and nothing is sent if your browser sends Global Privacy Control.</li>
+          <li>The Freestyle room lists the board's ten newest maps and pictures the world you are flying. Pause has Back to the track builder on a track or map you built, and Fly this track goes straight to the starting blocks.</li>
+        </ul>
+        <h3>The whoop</h3>
+        <ul>
+          <li>The whoop room is recoloured in the sakura theme, lit like a room and not a sunset, with the slap pack stickers as posters and banners on its walls. The logos painted on the floor show on the mat.</li>
+          <li>The whoop's OSD has no speed readout. The number was a five inch's ground speed printed over a room built 3.4 times life size.</li>
+          <li>The whoop builder lets you delete any side of a gate, one at a time, for a virtual gate that keeps its trigger area, and drag any part of the flight path in 3D to bend it. A pole is drawn as a pole and not a flag, and the square swings on its pole the way it scores.</li>
+        </ul>
+        <h3>The board</h3>
+        <ul>
+          <li>RaceGOW rooms rank on the fastest three consecutive laps, and the best single lap sits in the next column. A run that never put three clean laps together is stored and stays off the sheet. The simulator's standings follow the same rule.</li>
+          <li>The board refuses laps nobody can fly: none under a quarter of a second, and none faster than the track's length at 50 m/s. Three impossible records came off, a 0.20 s lap round Flags and cones and laps of 10 and 15 ms on Orbit.</li>
+        </ul>
+        <h3>This site</h3>
+        <ul>
+          <li>The front page has a freestyle chapter. The map builder puts a yard together, then the film chases a drift tandem round it. A menu after the build jumps to any chapter, and each chapter has a picture of its world as it is now.</li>
+        </ul>
+        <h3>Fixes</h3>
+        <ul>
+          <li>On a plain gate the race OSD read "GATE 1 OF 12, SPLIT-S, LEVEL 1". It reads "GATE 1 OF 12" now. The Air slot is airtime from takeoff, not the lap clock, which ran on the pads.</li>
+          <li>The Weight card retires by itself: on your first landing or crash, after 8 seconds in the air, or on your first stick move in the air. The Weight slider fades while you fly and comes back when you land or pause.</li>
+          <li>The OSD is inked, so PACK, height, THROTTLE, SCORE, AIR and the stick captions read over pale concrete and overcast. Values that were cut off with dots read whole, like Camera angle 30 degrees and Rates as Actual 670/670/670.</li>
+          <li>In the builder the racing line no longer leaves a gate and doubles back through it to reach the next. Labels can be switched off while building, the top bar wraps instead of hiding Undo, Redo and the views, and the lap export works when the builder's scripts are cached.</li>
+          <li>After a station counts, the next one needs a little flying first, half a metre on the field and less in a room, so on Orbit rocking on the flag no longer counts laps. The builder warns when two stations in a row stand closer than that.</li>
+          <li>The results menu no longer covers the run's rows. A plain roll around a rail scores as a Roll or nothing, never a Maverick Loop. A crash on a road puts you on the verge, a little over 4 m from its middle, and never under a car. Drift smoke thins to white near the eye and never blinds the lens.</li>
+        </ul>
+        <h3>Held back</h3>
+        <ul>
+          <li>Screentone, ink dots in the darkest band at High, is built and off, because the dots swim on the glass.</li>
+          <li>The Trick list is still off the title and the Freestyle room.</li>
+        </ul>
+      </section>
+
+      <section id="sep25">
+        <h2>25 September</h2>
+        <h3>New</h3>
+        <ul>
+          <li>You can build a freestyle map. Open the track builder, pick Freestyle, lay a map out from a library of drawn pieces, bandos, cranes and named gaps among them, and press Fly this map. It starts you in the air, not on a menu. Until you build one, Your map is Hibari Yard, a starter yard.</li>
+          <li>The screen where you pick what to fly has a fourth card, Map builder. The builder asks what you are building, five inch, whoop or freestyle, with a picture of each.</li>
+          <li>Freestyle maps go on the board. Publish from the builder and the board has a Freestyle maps tab beside the tracks. Fly a map from there, or remix it in the builder. Site statistics moved next to Admin to make room.</li>
+          <li>Every freestyle map carries the SubTwoFifty mark, painted on a wall you can see from the pads. Finding it is an achievement.</li>
+          <li>A link to a track or a map shows that track or map as its picture when you paste it somewhere that draws a preview.</li>
+          <li>Site statistics count which site or link a visit came from: the name of the site that sent you, or a ref tag in the link, and never the full address of the page. A tag that is not on the fixed list is counted as other. The privacy panel on the board says so.</li>
+        </ul>
+        <h3>This site</h3>
+        <ul>
+          <li>The front page has a short FAQ and a new share picture, and it no longer overlaps itself on a short laptop screen. Every wiki article has its own address and its own preview. Old links with a # still work.</li>
+        </ul>
+        <h3>Fixes</h3>
+        <ul>
+          <li>A finger can scroll the menus on an iPhone, and a vertical swipe on the quad picture scrolls the page.</li>
+          <li>A town that failed to load no longer leaves you in a room with nothing to press.</li>
+          <li>A slow belly first tap on a wall is not a crash. The sim read the wall's direction in the wrong frame, so on some maps a tap counted when it should not have.</li>
+          <li>Tags survive a republish. A track lost its tags whenever it was republished without re-ticking them, and whenever the pilot renamed themselves. Publishing goes up as a copy when the board already has the id.</li>
+          <li>Every page loads the scripts of the deploy it was served from, so a cached script from before an update cannot run against a page from after it. The Publish button had gone missing for one pilot that way.</li>
+        </ul>
+      </section>
+
+      <section id="sep24">
+        <h2>24 September</h2>
+        <h3>New</h3>
+        <ul>
+          <li>The solid world is in the physics. Walls, roofs, gates, trees and the train are solved in the same 1 ms step as the ground, so a roof lands, slides and settles like the street. Props flex and skate along a face instead of levering the frame, and the camera is kept off the glass so it cannot end up inside a wall.</li>
+          <li>A crash is a reset, at once. A hit of 4 m/s or more that does not land on your belly sets you down nearby: "Crashed, set down nearby. R restarts the run." You no longer hang on a wall or wait on your back.</li>
+          <li>A crashed quad falls flat and ends on its belly or its back. It could stand on a corner at whatever angle it hit. A recovery sets you down on the ground or a roof top, never in the air, which had put a whoop on a room's ceiling.</li>
+          <li>The whole wiki is rewritten for a Year 10 reader: all 36 articles, every settings page, the figure text and the glossary. Sections are The idea, How it works and In this simulator, and the chips say Works here, Off at 1 kHz, Stored, not used, Not simulated and Configurator only. Every claim was checked against the simulator's code, which had moved on: two aircraft, a 0.71 kg five inch, contact inside the physics module, and turtle on T. The ground page follows tumble flat.</li>
+        </ul>
+        <h3>The whoop</h3>
+        <ul>
+          <li>The whoop is heavier by default. Weight 100 on a whoop now flies what 125 flew, because a pilot flying the same track in another sim had to take it to 120 to 130. The slider tops out at 120 on the whoop, and whoop bests carry over. The five inch is unchanged.</li>
+          <li>The whoop reads 1S and 4.2 V. It said 25 V at the start of a race. Only the label changed, not the physics, and its screens stop calling it a five inch.</li>
+        </ul>
+        <h3>Sticks</h3>
+        <ul>
+          <li>On the keyboard, letting go of the throttle keys holds height. The throttle springs to the hover for your cap, aircraft, weight and pack, where it had sprung to a fixed low value and dropped the quad. M switches between Angle and Acro.</li>
+          <li>Settings, Sticks, Restart switch, with a radio: choose it, flip any AUX or press any button, and from then on flipping it does what R does. It is kept per radio.</li>
+          <li>When a browser reads your radio's throttle as yaw, the title says so. The joystick picker draws what the page will fly, not a gamepad's axes.</li>
+        </ul>
+        <h3>The board</h3>
+        <ul>
+          <li>The Statistics tab reads plainer, and its sponsor plate is gone. The all time strip drops named pilots and pilots back another day.</li>
+        </ul>
+        <h3>Fixes</h3>
+        <ul>
+          <li>The first flight on the new walls found three faults. The town sat at "still loading" for 47 seconds, so its modules are preloaded now. A quad stuck on a wall face, or on its back, is set down nearby.</li>
+          <li>A feel report carries what the flight measured, not what the pause screen shows.</li>
+        </ul>
+      </section>
 
       <section id="sep22">
         <h2>22 September</h2>
@@ -349,7 +545,7 @@
     </main>
 
     <footer>
-      <span>GPLv3 &#183; 22 August to 22 September 2026</span>
+      <span>GPLv3 &#183; 22 August to 29 September 2026</span>
       <div class="foot-links">
         <a href="../">The film</a>
         <a href="../wiki/">FPV wiki</a>
