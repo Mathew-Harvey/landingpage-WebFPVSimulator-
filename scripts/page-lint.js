@@ -38,6 +38,7 @@ import { dirname, join, posix, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bake, OUT as STICKERS_OUT } from './stickers.js';
 import { relativeImports } from './vendor.js';
+import { BEGIN as VELOCITY_BEGIN, DATA as VELOCITY_DATA, block as velocityBlock, lastDay as velocityLastDay } from './velocity.js';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const rows = [];
@@ -65,6 +66,9 @@ const notes = await readFile(join(root, 'notes/index.html'), 'utf8');
 const wikiJs = await readFile(join(root, 'src/wiki/wiki.js'), 'utf8');
 const mainJs = await readFile(join(root, 'src/main.js'), 'utf8');
 const pack = await readFile(join(root, 'stickers/index.html'), 'utf8');
+const velocityJson = await readFile(join(root, VELOCITY_DATA), 'utf8');
+const velocityShow = await readFile(join(root, 'notes/velocity.js'), 'utf8');
+const velocityMake = await readFile(join(root, 'scripts/velocity.js'), 'utf8');
 
 /*
  * 1. ONE h1 A PAGE.
@@ -289,7 +293,7 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
  */
 {
   const bad = [];
-  for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['notes/index.html', notes], ['stickers/index.html', pack], ['src/main.js', mainJs], ['src/wiki/wiki.js', wikiJs]]) {
+  for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['notes/index.html', notes], ['stickers/index.html', pack], ['src/main.js', mainJs], ['src/wiki/wiki.js', wikiJs], [VELOCITY_DATA, velocityJson], ['notes/velocity.js', velocityShow], ['scripts/velocity.js', velocityMake]]) {
     if (/[\u2013\u2014]/.test(src)) {
       bad.push(name);
     }
@@ -617,6 +621,66 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
     why.length === 0,
     why.join('; ') || `${docId}, ${cars.length} laps at ${every} ms, tandem ${tandem[1]} and ${tandem[2]}`,
   );
+}
+
+/*
+ * 14. THE VELOCITY GRAPH AT THE FOOT OF THE PATCH NOTES IS CURRENT.
+ *
+ * The graph is a function of the three repositories' git history, written by
+ * scripts/velocity.js into notes/velocity.json and into the block between two
+ * comments in notes/index.html. Nothing in this file can read the other two
+ * repositories, so it holds what it can. The page says what the JSON says,
+ * to the byte, so a hand edit to the block or a JSON that was regenerated
+ * without the page fails here. The JSON is whole, one number for every day of
+ * every series. And the graph reaches the newest entry above it, so a patch
+ * notes post that forgot the graph fails the day it is written, which is the
+ * only day it is cheap to fix.
+ */
+{
+  let data = null;
+  try {
+    data = JSON.parse(velocityJson);
+  } catch (e) {
+    check('notes/velocity.json is whole', false, `not JSON: ${e.message}`);
+  }
+  if (data) {
+    const ids = data.repos.map((r) => r.id);
+    const bad = [];
+    for (const id of ids) {
+      for (const key of ['lines', 'commits']) {
+        const a = data[key][id];
+        if (!Array.isArray(a) || a.length !== data.days || a.some((v) => !Number.isInteger(v) || v < 0)) {
+          bad.push(`${key}.${id}`);
+        }
+      }
+      if (!/^[0-9a-f]{8}$/.test(data.heads[id] || '')) {
+        bad.push(`heads.${id}`);
+      }
+    }
+    check('notes/velocity.json is whole', bad.length === 0, bad.length ? `wrong or missing: ${bad.join(', ')}` : `${ids.length} series of ${data.days} days, lines and commits`);
+
+    const same = notes.includes(velocityBlock(data)) && notes.split(VELOCITY_BEGIN).length === 2;
+    check(
+      'notes/index.html shows the graph notes/velocity.json describes',
+      same,
+      same ? 'the block is what scripts/velocity.js writes from it' : 'STALE or edited by hand: run node scripts/velocity.js --check, then regenerate with the two checkouts',
+    );
+
+    const first = /<section id="(?!velocity")[a-z0-9]+">\s*<h2>(\d{1,2}) ([A-Z][a-z]+)/.exec(notes);
+    const year = /<p class="kicker">[^<]*?(\d{4})<\/p>/.exec(notes);
+    const month = first ? ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].indexOf(first[2]) + 1 : 0;
+    const newest = first && year && month ? `${year[1]}-${String(month).padStart(2, '0')}-${first[1].padStart(2, '0')}` : null;
+    const reaches = newest !== null && velocityLastDay(data) >= newest;
+    check(
+      'the velocity graph reaches the newest patch notes entry',
+      reaches,
+      newest === null
+        ? 'could not read the newest entry\'s date from the page'
+        : reaches
+          ? `graph to ${velocityLastDay(data)}, newest entry ${newest}`
+          : `graph ends ${velocityLastDay(data)} and the newest entry is ${newest}: git fetch in each of the three repositories, then node scripts/velocity.js ../WebFPVSimulator ../WebFPVSimulator-LeaderBoard`,
+    );
+  }
 }
 
 const w = Math.max(...rows.map((r) => r[0].length));
