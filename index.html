@@ -87,6 +87,23 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 
     <!--
+      The import map comes before the first modulepreload, always. Firefox
+      takes an import map only until the first module load or preload has
+      started, and refuses a later one with "Import maps are not allowed after
+      a module load or preload has started", after which "three" is a bare
+      specifier and the page stops. Chromium accepts a late map, which is why
+      only Firefox saw it.
+    -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+
+    <!--
       The lettering, fetched while the rest of this long page is still being
       parsed, so that the module at the foot of it can run as soon as the
       parse ends and the boot screen's wordmark is lettered in its first frame
@@ -2592,14 +2609,6 @@
       }
     </style>
 
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-        }
-      }
-    </script>
   </head>
 
   <body>
