@@ -394,8 +394,75 @@
       }
       a.tip svg { width: 14px; height: 14px; display: block; flex: 0 0 auto; }
       a.tip:hover { color: var(--cream); box-shadow: inset 0 0 0 1px var(--amber); background: rgba(16, 22, 17, 0.72); }
+      /*
+       * THE MENU ON A PHONE. Under 720px the bar is the mark, a Menu button
+       * and Fly now, and every other link lives in the sheet the button
+       * opens. It used to hide five links outright (Patch notes, Track
+       * builder, Tracks and Times, Quad Race Lottery, Source) and leave a
+       * phone with no way to reach them. On a wide screen .nav-links is
+       * display: contents, so the bar is laid out exactly as it was and the
+       * button is not there. The sheet is its own dark panel with its own
+       * cream type, so it reads the same over paper and over the film.
+       */
+      .nav-toggle { display: none; }
+      .nav-links { display: contents; }
       @media (max-width: 720px) {
-        .nav a:not(.is-primary):not(.is-wiki):not(.is-story):not(.patreon):not(.tip) { display: none; }
+        .nav { gap: 8px; }
+        .nav-toggle {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          height: 40px;
+          padding: 0 12px;
+          border: 0;
+          border-radius: 3px;
+          background: var(--deep);
+          box-shadow: inset 0 0 0 1px rgba(244, 236, 214, 0.28);
+          color: var(--cream);
+          font: inherit;
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: var(--track-label);
+          text-transform: uppercase;
+          cursor: pointer;
+        }
+        .nav-toggle svg { width: 18px; height: 18px; display: block; }
+        .nav-toggle[aria-expanded="true"] { box-shadow: inset 0 0 0 1px var(--sakura); }
+        .nav a.is-primary { display: inline-flex; align-items: center; height: 40px; padding: 0 14px; white-space: nowrap; }
+        .nav-links {
+          display: none;
+          position: absolute;
+          top: calc(100% - 6px);
+          left: var(--gutter);
+          right: var(--gutter);
+          max-height: calc(100vh - var(--nav-h) - 16px);
+          max-height: calc(100dvh - var(--nav-h) - 16px);
+          overflow-y: auto;
+          overscroll-behavior: contain;
+          flex-direction: column;
+          gap: 2px;
+          padding: 8px;
+          border-radius: 4px;
+          background: rgba(16, 22, 17, 0.97);
+          box-shadow: 0 0 0 2px var(--cream), 0 18px 40px rgba(0, 0, 0, 0.5);
+        }
+        #topbar.menu-open .nav-links { display: flex; }
+        .nav-links a,
+        body.on-paper #topbar .nav .nav-links a:not(.is-primary):not(.patreon):not(.tip) {
+          display: flex;
+          align-items: center;
+          min-height: 48px;
+          padding: 0 14px;
+          font-size: 13px;
+          color: var(--cream);
+          text-shadow: none;
+        }
+        .nav-links a:active { background: rgba(243, 234, 212, 0.12); }
+        .nav-links a.patreon,
+        .nav-links a.tip,
+        body.on-paper #topbar .nav-links a.patreon,
+        body.on-paper #topbar .nav-links a.tip { height: auto; min-height: 48px; padding: 0 14px; background: transparent; box-shadow: none; font-size: 13px; letter-spacing: var(--track-label); text-transform: uppercase; font-weight: 400; gap: 10px; }
+        .nav-links a.patreon svg, .nav-links a.tip svg { width: 16px; height: 16px; }
       }
 
       /* ------------------------------------------------------------------
@@ -2764,21 +2831,27 @@
     <header id="topbar">
       <a class="mark" href="#top" aria-label="WebFPV, back to top">WEB<span class="fpv">FPV</span></a>
       <nav class="nav" id="nav">
-        <a class="is-story" href="https://mathew-harvey.github.io/webFPVPatchNotes/" rel="noreferrer">The Story</a>
-        <a class="is-wiki" href="wiki/">Wiki</a>
-        <a href="notes/">Patch notes</a>
-        <a href="https://webfpv.org/sim/src/trackbuilder/index.html" data-dest="builder">Track builder</a>
-        <a href="https://webfpv.org/board/" data-dest="board">Tracks and Times</a>
-        <a href="https://randomdraw.webfpv.org/" rel="noreferrer">Quad Race Lottery</a>
-        <a href="https://github.com/Mathew-Harvey/WebFPVSimulator" rel="noreferrer">Source</a>
-        <a class="patreon" data-patreon href="https://www.patreon.com/cw/webfpv/membership?ref=landing" target="_blank" rel="noopener noreferrer" aria-label="Support WebFPV on Patreon. Memberships start at $3 USD a month." title="Support WebFPV on Patreon. Memberships start at $3 USD a month.">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#FF424D" d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003"/></svg>
-          <span>Patreon</span>
-        </a>
-        <a class="tip" data-tip href="https://donate.stripe.com/7sY4gzaAC2Eu3aOews8so0g?utm_source=landing" target="_blank" rel="noopener noreferrer" aria-label="Buy Mat a battery. One-time tip, suggested $5 USD." title="Buy Mat a battery. One-time tip, suggested $5 USD.">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="var(--amber)" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z"/></svg>
-          <span>Tip</span>
-        </a>
+        <button type="button" class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-links" aria-label="Menu">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="nav-bars" d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+          <span>Menu</span>
+        </button>
+        <div class="nav-links" id="nav-links">
+          <a class="is-story" href="https://mathew-harvey.github.io/webFPVPatchNotes/" rel="noreferrer">The Story</a>
+          <a class="is-wiki" href="wiki/">Wiki</a>
+          <a href="notes/">Patch notes</a>
+          <a href="https://webfpv.org/sim/src/trackbuilder/index.html" data-dest="builder">Track builder</a>
+          <a href="https://webfpv.org/board/" data-dest="board">Tracks and Times</a>
+          <a href="https://randomdraw.webfpv.org/" rel="noreferrer">Quad Race Lottery</a>
+          <a href="https://github.com/Mathew-Harvey/WebFPVSimulator" rel="noreferrer">Source</a>
+          <a class="patreon" data-patreon href="https://www.patreon.com/cw/webfpv/membership?ref=landing" target="_blank" rel="noopener noreferrer" aria-label="Support WebFPV on Patreon. Memberships start at $3 USD a month." title="Support WebFPV on Patreon. Memberships start at $3 USD a month.">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#FF424D" d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003"/></svg>
+            <span>Patreon</span>
+          </a>
+          <a class="tip" data-tip href="https://donate.stripe.com/7sY4gzaAC2Eu3aOews8so0g?utm_source=landing" target="_blank" rel="noopener noreferrer" aria-label="Buy Mat a battery. One-time tip, suggested $5 USD." title="Buy Mat a battery. One-time tip, suggested $5 USD.">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="var(--amber)" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z"/></svg>
+            <span>Tip</span>
+          </a>
+        </div>
         <a class="is-primary" href="https://webfpv.org/sim/?map=field" data-dest="sim">Fly now</a>
       </nav>
     </header>
@@ -3832,6 +3905,27 @@
 
         /* Show immediately on page load if the parameter is present */
         window.setTimeout(show, 100);
+      })();
+
+      /* The phone menu's switch. It lives in this script rather than a third
+         plain one so it works before the film's modules have fetched, and
+         the lint's count of plain scripts stays the two it names. Escape, a
+         tap outside the sheet or following a link closes it. */
+      (function () {
+        var bar = document.getElementById('topbar');
+        var btn = document.getElementById('nav-toggle');
+        if (!bar || !btn) return;
+        function set(open) {
+          bar.classList.toggle('menu-open', open);
+          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+        btn.addEventListener('click', function () { set(!bar.classList.contains('menu-open')); });
+        document.addEventListener('click', function (e) {
+          if (bar.classList.contains('menu-open') && !e.target.closest('.nav-links, .nav-toggle')) set(false);
+          else if (e.target.closest('.nav-links a')) set(false);
+        });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') set(false); });
+        window.matchMedia('(min-width: 721px)').addEventListener('change', function () { set(false); });
       })();
     </script>
 
