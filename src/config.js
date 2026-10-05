@@ -61,7 +61,7 @@ export const REPOS = {
  */
 export const PATREON_URL = 'https://www.patreon.com/cw/webfpv/membership?ref=landing';
 
-export const PATREON_NOTE = 'Support WebFPV on Patreon. Monthly support starts at $3. USD, plus GST on join.';
+export const PATREON_NOTE = 'Support WebFPV on Patreon. Memberships start at $3 USD a month.';
 
 /*
  * Stripe tip link for one-off contributions. Tagged with utm_source=landing for attribution.
