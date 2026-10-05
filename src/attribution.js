@@ -109,18 +109,24 @@ export function getAttribution() {
 /*
  * Append attribution parameters to a URL. Use this when linking from the
  * landing page to the simulator or board to carry attribution through.
+ * Always appends ref=landing to /sim and /board destinations.
  */
 export function appendAttribution(url) {
   const attr = getAttribution();
-  if (!attr.ref && !attr.referrerDomain) {
-    return url;
-  }
   
   try {
     const u = new URL(url, window.location.origin);
-    if (attr.ref) {
+    
+    /* Always use ref=landing for links from the landing page to /sim or /board */
+    const isSimOrBoard = u.pathname.startsWith('/sim') || u.pathname.startsWith('/board') || 
+                         u.hostname === 'webfpv.org';
+    
+    if (isSimOrBoard) {
+      u.searchParams.set('ref', 'landing');
+    } else if (attr.ref) {
       u.searchParams.set('ref', attr.ref);
     }
+    
     if (attr.referrerDomain) {
       u.searchParams.set('referrer', attr.referrerDomain);
     }

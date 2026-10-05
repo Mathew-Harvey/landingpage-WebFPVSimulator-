@@ -166,7 +166,7 @@ test('reads from sessionStorage on subsequent calls', () => {
   assertEquals(attr2.ref, 'hn', 'second call should read from sessionStorage');
 });
 
-/* Test: appendAttribution adds parameters */
+/* Test: appendAttribution adds ref=landing to /sim and /board destinations */
 test('appendAttribution adds ref and referrer to URL', () => {
   clearStorage();
   Object.defineProperty(dom.window.document, 'referrer', {
@@ -178,11 +178,11 @@ test('appendAttribution adds ref and referrer to URL', () => {
   
   const url = appendAttribution('https://webfpv.io/sim');
   const u = new URL(url);
-  assertEquals(u.searchParams.get('ref'), 'hn');
+  assertEquals(u.searchParams.get('ref'), 'landing');
   assertEquals(u.searchParams.get('referrer'), 'news.ycombinator.com');
 });
 
-/* Test: appendAttribution does nothing when no attribution */
+/* Test: appendAttribution always adds ref=landing to /sim and /board */
 test('appendAttribution returns URL unchanged when no attribution', () => {
   clearStorage();
   Object.defineProperty(dom.window.document, 'referrer', {
@@ -193,7 +193,8 @@ test('appendAttribution returns URL unchanged when no attribution', () => {
   getAttribution();
   
   const url = appendAttribution('https://webfpv.io/sim');
-  assertEquals(url, 'https://webfpv.io/sim', 'should return original URL');
+  const u = new URL(url);
+  assertEquals(u.searchParams.get('ref'), 'landing', 'should add ref=landing to /sim');
 });
 
 /* Test: no localStorage usage */
@@ -217,7 +218,7 @@ test('appendAttribution preserves existing query parameters', () => {
   const url = appendAttribution('https://webfpv.io/sim?map=field');
   const u = new URL(url);
   assertEquals(u.searchParams.get('map'), 'field', 'should preserve map param');
-  assertEquals(u.searchParams.get('ref'), 'hn', 'should add ref param');
+  assertEquals(u.searchParams.get('ref'), 'landing', 'should add ref=landing');
 });
 
 /* Report results */

@@ -57,10 +57,18 @@ export const REPOS = {
 /*
  * The public Patreon page, and the hover line. The same two strings are
  * set in the simulator's src/share/patreon.js and the board's public/app.js.
+ * Points to the membership page with ref=landing to present the $3 tier as the first option.
  */
-export const PATREON_URL = 'https://www.patreon.com/cw/webfpv';
+export const PATREON_URL = 'https://www.patreon.com/cw/webfpv/membership?ref=landing';
 
-export const PATREON_NOTE = 'Support WebFPV on Patreon. Keep the lights on, $5. Hosting + runway, $12. Build the sim, $25. USD, plus GST on join.';
+export const PATREON_NOTE = 'Support WebFPV on Patreon. Monthly support starts at $3. USD, plus GST on join.';
+
+/*
+ * Stripe tip link for one-off contributions. Tagged with utm_source=landing for attribution.
+ */
+export const TIP_URL = 'https://donate.stripe.com/7sY4gzaAC2Eu3aOews8so0g?utm_source=landing';
+
+export const TIP_NOTE = 'Buy Mat a battery. One-time tip, suggested $5 USD.';
 
 export function bindPatreonLinks(root = document) {
   for (const a of root.querySelectorAll('[data-patreon]')) {
@@ -76,6 +84,26 @@ export function bindPatreonLinks(root = document) {
     a.href = '#';
     a.removeAttribute('target');
     a.dataset.patreonPending = '1';
+    a.addEventListener('click', (event) => {
+      event.preventDefault();
+    });
+  }
+}
+
+export function bindTipLinks(root = document) {
+  for (const a of root.querySelectorAll('[data-tip]')) {
+    a.title = TIP_NOTE;
+    a.setAttribute('aria-label', TIP_NOTE);
+    if (TIP_URL) {
+      a.href = TIP_URL;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      delete a.dataset.tipPending;
+      continue;
+    }
+    a.href = '#';
+    a.removeAttribute('target');
+    a.dataset.tipPending = '1';
     a.addEventListener('click', (event) => {
       event.preventDefault();
     });
