@@ -328,7 +328,7 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
   const executableScripts = allScripts - jsonLd - importMaps;
   check(
     'index.html: exactly 3 module scripts (the titles, support-boot and main)',
-    hasCard && hidden && targeted && modules === 3 && executableScripts === 4,
+    hasCard && hidden && targeted && modules === 3 && executableScripts === 5,
     hasCard
       ? `${hidden ? 'hidden' : 'NOT hidden, so it flashes'}, ${targeted ? 'data-dest set' : 'NO data-dest, so local serving points at production'}, ${modules} module (the titles, support-boot.js, main.js), ${executableScripts - modules} plain, ${jsonLd} JSON-LD`
       : 'MISSING, so the only way in is a 12 px label in the corner',
