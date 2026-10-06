@@ -395,28 +395,14 @@
       a.tip svg { width: 14px; height: 14px; display: block; flex: 0 0 auto; }
       a.tip:hover { color: var(--cream); box-shadow: inset 0 0 0 1px var(--amber); background: rgba(16, 22, 17, 0.72); }
       /*
-       * Offer links. Small text links in the same style family as the tip button,
-       * but simpler: no icon, smaller size, understated until hovered.
+       * Offer links. Four of them do not fit in the top bar: at 1440 px they
+       * wrap every label onto two or three lines, and under 1100 px they push
+       * Fly now off the screen. So the bar does not carry them. The phone menu
+       * has the room, a column of rows, and on a wide screen the footer carries
+       * them beside Tip. Every anchor has data-offer, so a click is counted the
+       * same wherever it lands.
        */
-      a.offer-link {
-        display: inline-block;
-        padding: 0 6px;
-        color: rgba(243, 234, 212, 0.62);
-        font-size: 11px;
-        font-weight: 400;
-        letter-spacing: 0.01em;
-        text-decoration: none;
-        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-        transition: color 0.15s ease;
-      }
-      a.offer-link:hover {
-        color: var(--cream);
-      }
-      a.offer-club {
-        padding-left: 2px;
-        font-size: 10px;
-        color: rgba(243, 234, 212, 0.48);
-      }
+      a.offer-link { display: none; }
       /*
        * THE MENU ON A PHONE. Under 720px the bar is the mark, a Menu button
        * and Fly now, and every other link lives in the sheet the button
@@ -3652,6 +3638,10 @@
           <a href="https://www.gnu.org/licenses/gpl-3.0.html" rel="noreferrer">GPLv3</a>
           <a href="https://www.patreon.com/cw/webfpv/membership?ref=landing" target="_blank" rel="noopener noreferrer" id="support-link">Support</a>
           <a href="https://donate.stripe.com/7sY4gzaAC2Eu3aOews8so0g?utm_source=landing" target="_blank" rel="noopener noreferrer" id="tip-link">Tip</a>
+          <a data-offer="sign" href="https://buy.stripe.com/6oUbJ1bEG92S7r4bkg8so0h?utm_source=landing" target="_blank" rel="noopener noreferrer">Your name in the sim, $15</a>
+          <a data-offer="track" href="https://buy.stripe.com/14A5kD38a7YO26KfAw8so0i?utm_source=landing" target="_blank" rel="noopener noreferrer">Your spot as a track, from $29</a>
+          <a data-offer="club" href="https://buy.stripe.com/6oUcN52466UKdPsfAw8so0j?utm_source=landing" target="_blank" rel="noopener noreferrer">(club $79)</a>
+          <a data-offer="clip" href="https://buy.stripe.com/fZu7sLaACcf4h1E4VS8so0k?utm_source=landing" target="_blank" rel="noopener noreferrer">Your lap as a clip, $5</a>
         </div>
       </div>
     </footer>
