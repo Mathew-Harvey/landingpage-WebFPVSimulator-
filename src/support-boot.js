@@ -17,7 +17,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { trackPartner, trackSupportClick, trackOfferClick } from './stats.js';
+import { trackPartner, trackSupportClick, trackOfferClick } from './stats.js?v=20261006a';
 import { loadSupporters } from './supporters.js';
 import { PATREON_NOTE } from './config.js';
 
