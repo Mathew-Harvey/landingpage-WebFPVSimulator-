@@ -17,7 +17,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { trackPartner, trackSupportClick } from './stats.js';
+import { trackPartner, trackSupportClick, trackOfferClick } from './stats.js';
 import { loadSupporters } from './supporters.js';
 import { PATREON_NOTE } from './config.js';
 
@@ -41,6 +41,14 @@ links.forEach((link) => {
     link.title = PATREON_NOTE;
   }
   link.addEventListener('click', trackSupportClick);
+});
+
+/*
+ * Track offer link clicks (sign, track, club, clip).
+ */
+const offerLinks = document.querySelectorAll('[data-offer]');
+offerLinks.forEach((link) => {
+  link.addEventListener('click', () => trackOfferClick(link.dataset.offer));
 });
 
 /*

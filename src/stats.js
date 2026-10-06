@@ -108,3 +108,16 @@ export function trackSupportClick() {
     source: 'landing',
   });
 }
+
+/*
+ * Called when an offer link is clicked. Sends an offer_click event with
+ * the offer name (sign, track, club, clip) and source='landing'.
+ * Does not block the navigation.
+ */
+export function trackOfferClick(offer) {
+  sendEvent({
+    kind: 'offer_click',
+    offer: offer,
+    source: 'landing',
+  });
+}
