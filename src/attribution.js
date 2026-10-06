@@ -25,6 +25,26 @@
 const STORAGE_KEY = 'webfpv.session.attribution';
 
 /*
+ * Validate a ref tag for use on outbound sim/board links. Stricter than
+ * normalizeRef: lowercase alphanumeric, underscore, and hyphen only, 1-24 chars.
+ * Returns the validated ref or null if invalid.
+ */
+function validateOutboundRef(raw) {
+  if (!raw || typeof raw !== 'string') {
+    return null;
+  }
+  
+  const lowercased = raw.toLowerCase().trim();
+  
+  /* Check pattern: lowercase alphanumeric, underscore, hyphen, 1-24 chars */
+  if (/^[a-z0-9_-]{1,24}$/.test(lowercased)) {
+    return lowercased;
+  }
+  
+  return null;
+}
+
+/*
  * Normalize a ref tag to a safe, canonical form. Max 16 chars, alphanumeric
  * and hyphens only. Known aliases (youtube->yt, twitter->x) are canonicalized.
  * Server-side closed list is the source of truth; this mirrors the board's
@@ -88,9 +108,13 @@ export function getAttribution() {
     const ref = normalizeRef(rawRef);
     const referrerDomain = extractDomain(document.referrer);
     
+    /* Capture outbound ref separately: validated for use on sim/board links */
+    const outboundRef = validateOutboundRef(rawRef);
+    
     const attribution = {
       ref,
       referrerDomain,
+      outboundRef,
     };
     
     /* Store in sessionStorage (cleared when tab closes) */
@@ -102,6 +126,7 @@ export function getAttribution() {
     return {
       ref: null,
       referrerDomain: null,
+      outboundRef: null,
     };
   }
 }
@@ -109,7 +134,7 @@ export function getAttribution() {
 /*
  * Append attribution parameters to a URL. Use this when linking from the
  * landing page to the simulator or board to carry attribution through.
- * Always appends ref=landing to /sim and /board destinations.
+ * Uses the incoming ref parameter if valid, otherwise defaults to ref=landing.
  */
 export function appendAttribution(url) {
   const attr = getAttribution();
@@ -117,12 +142,12 @@ export function appendAttribution(url) {
   try {
     const u = new URL(url, window.location.origin);
     
-    /* Always use ref=landing for links from the landing page to /sim or /board */
+    /* Use validated outbound ref for /sim and /board, or fall back to 'landing' */
     const isSimOrBoard = u.pathname.startsWith('/sim') || u.pathname.startsWith('/board') || 
                          u.hostname === 'webfpv.org';
     
     if (isSimOrBoard) {
-      u.searchParams.set('ref', 'landing');
+      u.searchParams.set('ref', attr.outboundRef || 'landing');
     } else if (attr.ref) {
       u.searchParams.set('ref', attr.ref);
     }

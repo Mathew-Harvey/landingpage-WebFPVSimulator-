@@ -166,7 +166,98 @@ test('reads from sessionStorage on subsequent calls', () => {
   assertEquals(attr2.ref, 'hn', 'second call should read from sessionStorage');
 });
 
-/* Test: appendAttribution adds ref=landing to /sim and /board destinations */
+/* Test: appendAttribution passes through valid incoming ref to /sim and /board */
+test('appendAttribution uses incoming ref for /sim when valid', () => {
+  clearStorage();
+  Object.defineProperty(dom.window.document, 'referrer', {
+    value: '',
+    configurable: true,
+  });
+  dom.reconfigure({ url: 'https://webfpv.io/?ref=yt' });
+  getAttribution();
+  
+  const url = appendAttribution('https://webfpv.io/sim');
+  const u = new URL(url);
+  assertEquals(u.searchParams.get('ref'), 'yt', 'should use incoming ref=yt');
+});
+
+/* Test: appendAttribution uses incoming ref for /board when valid */
+test('appendAttribution uses incoming ref for /board when valid', () => {
+  clearStorage();
+  Object.defineProperty(dom.window.document, 'referrer', {
+    value: '',
+    configurable: true,
+  });
+  dom.reconfigure({ url: 'https://webfpv.io/?ref=reddit' });
+  getAttribution();
+  
+  const url = appendAttribution('https://webfpv.io/board/');
+  const u = new URL(url);
+  assertEquals(u.searchParams.get('ref'), 'reddit', 'should use incoming ref=reddit');
+});
+
+/* Test: appendAttribution falls back to ref=landing when no ref */
+test('appendAttribution uses ref=landing when no incoming ref', () => {
+  clearStorage();
+  Object.defineProperty(dom.window.document, 'referrer', {
+    value: '',
+    configurable: true,
+  });
+  dom.reconfigure({ url: 'https://webfpv.io/' });
+  getAttribution();
+  
+  const url = appendAttribution('https://webfpv.io/sim');
+  const u = new URL(url);
+  assertEquals(u.searchParams.get('ref'), 'landing', 'should use ref=landing when no ref');
+});
+
+/* Test: appendAttribution falls back to ref=landing for invalid ref */
+test('appendAttribution uses ref=landing when ref is invalid', () => {
+  clearStorage();
+  Object.defineProperty(dom.window.document, 'referrer', {
+    value: '',
+    configurable: true,
+  });
+  dom.reconfigure({ url: 'https://webfpv.io/?ref=<script>' });
+  getAttribution();
+  
+  const url = appendAttribution('https://webfpv.io/sim');
+  const u = new URL(url);
+  assertEquals(u.searchParams.get('ref'), 'landing', 'should fall back to ref=landing for <script>');
+});
+
+/* Test: appendAttribution validates ref pattern (allows underscores, up to 24 chars) */
+test('appendAttribution accepts valid refs with underscores', () => {
+  clearStorage();
+  Object.defineProperty(dom.window.document, 'referrer', {
+    value: '',
+    configurable: true,
+  });
+  dom.reconfigure({ url: 'https://webfpv.io/?ref=my_source-123' });
+  getAttribution();
+  
+  const url = appendAttribution('https://webfpv.io/sim');
+  const u = new URL(url);
+  assertEquals(u.searchParams.get('ref'), 'my_source-123', 'should accept underscores in ref');
+});
+
+/* Test: appendAttribution rejects refs longer than 24 chars */
+test('appendAttribution rejects refs longer than 24 chars', () => {
+  clearStorage();
+  Object.defineProperty(dom.window.document, 'referrer', {
+    value: '',
+    configurable: true,
+  });
+  dom.reconfigure({ url: 'https://webfpv.io/?ref=this_is_a_very_long_ref_name_that_exceeds_limit' });
+  getAttribution();
+  
+  const url = appendAttribution('https://webfpv.io/sim');
+  const u = new URL(url);
+  assertEquals(u.searchParams.get('ref'), 'landing', 'should fall back to landing for refs >24 chars');
+});
+
+/* Test: appendAttribution adds ref and referrer together */
+/* Test: appendAttribution adds ref and referrer together */
 test('appendAttribution adds ref and referrer to URL', () => {
   clearStorage();
   Object.defineProperty(dom.window.document, 'referrer', {
@@ -178,23 +269,21 @@ test('appendAttribution adds ref and referrer to URL', () => {
   
   const url = appendAttribution('https://webfpv.io/sim');
   const u = new URL(url);
-  assertEquals(u.searchParams.get('ref'), 'landing');
+  assertEquals(u.searchParams.get('ref'), 'hn', 'should use incoming ref=hn');
   assertEquals(u.searchParams.get('referrer'), 'news.ycombinator.com');
 });
 
-/* Test: appendAttribution always adds ref=landing to /sim and /board */
-test('appendAttribution returns URL unchanged when no attribution', () => {
+/* Test: sessionStorage persists outbound ref */
+test('sessionStorage persists outbound ref across navigation', () => {
   clearStorage();
-  Object.defineProperty(dom.window.document, 'referrer', {
-    value: '',
-    configurable: true,
-  });
-  dom.reconfigure({ url: 'https://webfpv.io/' });
+  dom.reconfigure({ url: 'https://webfpv.io/?ref=yt' });
   getAttribution();
   
+  /* Reconfigure URL without ref (simulates navigation) */
+  dom.reconfigure({ url: 'https://webfpv.io/wiki/' });
   const url = appendAttribution('https://webfpv.io/sim');
   const u = new URL(url);
-  assertEquals(u.searchParams.get('ref'), 'landing', 'should add ref=landing to /sim');
+  assertEquals(u.searchParams.get('ref'), 'yt', 'should preserve ref=yt from sessionStorage');
 });
 
 /* Test: no localStorage usage */
@@ -218,7 +307,7 @@ test('appendAttribution preserves existing query parameters', () => {
   const url = appendAttribution('https://webfpv.io/sim?map=field');
   const u = new URL(url);
   assertEquals(u.searchParams.get('map'), 'field', 'should preserve map param');
-  assertEquals(u.searchParams.get('ref'), 'landing', 'should add ref=landing');
+  assertEquals(u.searchParams.get('ref'), 'hn', 'should use incoming ref=hn');
 });
 
 /* Report results */
