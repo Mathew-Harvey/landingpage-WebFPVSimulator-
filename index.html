@@ -3906,7 +3906,10 @@
           }
         };
 
-        if (!thanksType || !messages[thanksType]) {
+        /* An own key only. `?thanks=constructor` or `?thanks=__proto__` finds a
+           property on Object.prototype, throws a few lines down, and ends this
+           script before the phone menu's switch below it is wired. */
+        if (!thanksType || !Object.prototype.hasOwnProperty.call(messages, thanksType)) {
           return;
         }
 
