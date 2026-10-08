@@ -1769,13 +1769,15 @@
          The three numbers are one number: 180 is the footer's own height
          plus its margin at this width, rounded up. The hidden Supporters
          row adds no height today. If the footer grows a line or supporters
-         show, this 180px calc must be re-measured at 1440x900.
+         show, this calc must be re-measured at 1440x900. The YourFPV supporter
+         row made the footer about 100px taller at 1440 (235 to 336), so 180
+         became 280.
       */
       #close {
         position: relative;
         z-index: 10;
-        min-height: calc(100vh - 180px);
-        min-height: calc(100svh - 180px);
+        min-height: calc(100vh - 280px);
+        min-height: calc(100svh - 280px);
         display: flex;
         flex-direction: column;
         justify-content: safe center;
@@ -2185,6 +2187,22 @@
       }
       .supporters[hidden] {
         display: none;
+      }
+
+      /* A paid supporter's mark (YourFPV, October 2026 to April 2027), which
+         is not a partner and so is not in the roster's PARTNERS, the partners
+         row or the board's partners page. The simulator's one colour file,
+         at the partners' height and in their furniture, straight to their
+         site: nothing here is counted, because the board's counters are
+         closed lists of partners. */
+      .supporter-marks .pmark img { height: 44px; }
+      .supporter-marks {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 14px clamp(24px, 4vw, 46px);
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--line-2);
       }
 
       /* ------------------------------------------------------------------
@@ -3618,6 +3636,16 @@
             <span class="also-mark">win<span>marchy</span></span>
           </a>
         </div>
+      </div>
+
+      <!-- A paid supporter's mark, to their own site. Not a partner. See
+           .supporter-marks. -->
+      <div class="supporter-marks">
+        <span class="also-label">Supporters</span>
+        <a class="pmark" href="https://www.yourfpv.co.uk/?utm_source=webfpv&amp;utm_medium=landing" target="_blank" rel="noopener noreferrer">
+          <small>UK FPV shop</small>
+          <img src="assets/partners/yourfpv/mono.png" width="869" height="570" alt="YourFPV" loading="lazy" decoding="async" />
+        </a>
       </div>
 
       <div class="supporters" id="supporters" hidden>
