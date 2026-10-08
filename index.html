@@ -2317,6 +2317,41 @@
       .pjoin span { font-size: 13.5px; line-height: 20px; color: rgba(243, 234, 212, 0.86); }
       .pjoin:hover span { color: var(--sakura); }
 
+      /* SUPPORTED BY: YourFPV only, between Partners and Also by. Same furniture
+         as the partners row but distinct section with its own label. One mark at
+         30 px like the partners, and held back like they are. */
+      .supported {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 14px clamp(24px, 4vw, 46px);
+      }
+      .supported-row {
+        flex: 1 1 auto;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 16px clamp(24px, 3.5vw, 40px);
+      }
+      .smark {
+        display: grid;
+        gap: 7px;
+        opacity: 0.8;
+        transition: opacity 0.3s var(--ease);
+      }
+      .smark:hover { opacity: 1; }
+      .smark small {
+        font-size: 9.5px;
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: rgba(157, 179, 200, 0.72);
+      }
+      .smark img { display: block; height: 30px; width: auto; }
+      @media (max-width: 520px) {
+        .supported-row { display: grid; grid-template-columns: auto; justify-content: start; }
+        .smark small { letter-spacing: 0.14em; }
+      }
+
       /* THE STRIP OVER THE WORDMARK, the first thing on the first screen:
          the label over the three marks, in the eyebrow's type, the marks at
          one height, held back a little and up to full on hover, in the
@@ -3587,6 +3622,19 @@
           <a class="pjoin" href="mailto:mathewharvey@gmail.com?subject=Partnering%20with%20WebFPV">
             <small>Partner with WebFPV</small>
             <span>mathewharvey@gmail.com</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- SUPPORTED BY: YourFPV, a UK shop supporting WebFPV Oct 2026 to Apr 2027.
+           NOT a partner, separate from the official partners above. One supporter
+           only, in its own section between partners and "Also by". See .supported. -->
+      <div class="supported">
+        <span class="also-label">Supported by</span>
+        <div class="supported-row">
+          <a class="smark" href="https://www.yourfpv.co.uk/?utm_source=yourfpv&utm_medium=supporter&utm_campaign=webfpv" rel="noopener noreferrer" target="_blank">
+            <small>UK FPV shop</small>
+            <img src="assets/partners/yourfpv/mono.png" width="869" height="570" alt="YourFPV" loading="lazy" decoding="async" />
           </a>
         </div>
       </div>
