@@ -165,7 +165,7 @@ const BEATS = [
   },
   {
     at: 0.84,
-    k: 'Tracks and times',
+    k: 'Maps and Tracks',
     t: 'Publish the track, post the lap, and let somebody else try to take it off you.',
   },
 ];
@@ -201,7 +201,7 @@ const YARD_BEATS = [
     at: 0.68,
     until: 0.84,
     k: 'The map',
-    t: 'Built in the track builder and published on Tracks and Times.',
+    t: 'Built in the track builder and published on Maps and Tracks.',
   },
 ];
 
