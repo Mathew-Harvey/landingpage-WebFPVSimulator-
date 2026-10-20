@@ -1,7 +1,7 @@
 /*
  * roster.js: the partners, and the one list all three repositories read.
  *
- * WHO. Three businesses and a club back WebFPV, each exclusive in its kind:
+ * WHO. Three businesses and a club back WebFPV, and from 2026-10-20 a fourth business, weBLEEDfpv, the USA micro drone partner, each exclusive in its kind:
  * Global Drone Solutions as the official training partner, Mantis FPV as the
  * official retail partner, and the West Coast Multirotor Club as the official
  * club partner. The owner named them on 2026-09-27 and approved the plan that
@@ -43,6 +43,10 @@
  *           LINK_KINDS, because the board counts each link as a closed word.
  *   logo    the files under assets/partners/, as paths from the repository
  *           root (see LOGO FILES), and the artwork's width over its height.
+ *           `monoAspect`, when the one colour file is not the colour file's
+ *           shape: weBLEEDfpv's colour mark is a stacked sticker with a drone
+ *           under the name, and the one colour file is their flat wordmark,
+ *           because a row of marks at one height needs the long one.
  *   mark    how the simulator paints them into a freestyle map: `field` is
  *           the colour of the painted panel the logo sits on, dark for a logo
  *           drawn for dark grounds and cream for one drawn for light ones.
@@ -90,6 +94,7 @@ export const ROLE_TITLES = Object.freeze({
   training: 'Official training partner',
   retail: 'Official retail partner',
   club: 'Official club partner',
+  micro: 'Official USA micro drone partner',
 });
 
 /* What a link on a partner's card can be. A closed list, because the board
@@ -101,8 +106,8 @@ export const LOGO_DIR = 'assets/partners';
 
 const partner = (p) => Object.freeze({
   ...p,
-  links: Object.freeze(p.links.map((l) => Object.freeze({ ...l }))),
-  logo: Object.freeze({ ...p.logo }),
+  links: p.links ? Object.freeze(p.links.map((l) => Object.freeze({ ...l }))) : undefined,
+  logo: p.logo ? Object.freeze({ ...p.logo }) : undefined,
   mark: Object.freeze({ ...p.mark }),
 });
 
@@ -161,11 +166,93 @@ export const PARTNERS = Object.freeze([
     logo: { colour: 'wcmrc/colour.png', mono: 'wcmrc/mono.png', aspect: 708 / 252 },
     mark: { field: '#f3ead4' },
   }),
+  partner({
+    slug: 'webleedfpv',
+    name: 'weBLEEDfpv',
+    short: 'weBLEEDfpv',
+    role: 'micro',
+    about: 'A community driven FPV drone company based in Syracuse, New York. Whoop kits, parts, LED gates and gear, built for pilots, by pilots.',
+    /* The owner named them on 2026-10-20 as the USA micro drone partner and
+     * gave both marks. The sentence above is a DRAFT in the roster's usual
+     * sense: weBLEEDfpv sign off their own, and it is their own
+     * description from webleedfpv.com, checked 2026-10-20. */
+    links: [
+      { kind: 'site', label: 'Visit weBLEEDfpv', href: 'https://webleedfpv.com/' },
+    ],
+    logo: { colour: 'webleedfpv/colour.png', mono: 'webleedfpv/mono.png', aspect: 1200 / 506, monoAspect: 1200 / 190 },
+    mark: { field: '#f3ead4' },
+  }),
+]);
+
+/*
+ * Maps-only partners: shown on freestyle maps (painted walls and find-the-logo
+ * stamps) but NOT on the front page, leaderboard or partners page. These are
+ * NOT counted as partners in PARTNERS.length or partner roles. They are
+ * listed separately so the other repositories' vendored roster.js consumers
+ * (which copy PARTNERS byte for byte) need no changes. The landing page can
+ * choose to display them separately from PARTNERS (e.g., as "Supporters" or
+ * "Sponsors").
+ */
+export const MAP_ONLY_PARTNERS = Object.freeze([
+  partner({
+    slug: 'mattsflooring',
+    name: "Matt's Flooring Pty Ltd",
+    short: "Matt's Flooring",
+    about: 'Flooring company.',
+    links: [
+      { kind: 'site', label: "Visit Matt's Flooring", href: 'https://www.mattsflooring.com.au/' },
+    ],
+    logo: { colour: 'mattsflooring/colour.png', mono: 'mattsflooring/mono.png', aspect: 499 / 111 },
+    mark: { field: '#f3ead4' },
+  }),
+  partner({
+    slug: 'yourfpv',
+    name: 'YourFPV',
+    short: 'YourFPV',
+    about: 'Sheffield, UK based FPV shop. Curated FPV drone parts and accessories shipped from their UK warehouse.',
+    links: [
+      { kind: 'site', label: 'Visit YourFPV', href: 'https://www.yourfpv.co.uk/' },
+    ],
+    logo: { colour: 'yourfpv/colour.png', mono: 'yourfpv/mono.png', aspect: 869 / 570 },
+    mark: { field: '#f3ead4' },
+  }),
+]);
+
+/*
+ * Patron map brands: Patreon supporter tier. Each patron's logo, or a name
+ * they choose, is painted as a sign into freestyle maps the same way the
+ * map-only partners already are. Every name or logo needs a human OK before
+ * it is added. Patrons do not appear on the front page, leaderboard, or
+ * partners page. They appear only on freestyle maps. Patrons are not
+ * findable: their signs do not stamp, count toward achievements, or show the
+ * found panel when discovered.
+ */
+export const PATRON_MAP_BRANDS = Object.freeze([
+  // Magnus Arge's $25 Patreon 'Your sign in the sim' logo, supplied by the patron on 2026-10-06, OK'd by the owner.
+  partner({
+    slug: 'quadconfig',
+    name: 'Quad Configurator',
+    short: 'Quad Configurator',
+    logo: { colour: 'quadconfig/colour.png', mono: 'quadconfig/mono.png', aspect: 1882 / 400 },
+    mark: { field: '#323f5d' },
+  }),
+  // Konex Drone's logo, supplied by the owner on 2026-10-12. No site link on record, so it is a patron style sign.
+  partner({
+    slug: 'konexdrone',
+    name: 'Konex Drone',
+    short: 'Konex Drone',
+    logo: { colour: 'konexdrone/colour.png', mono: 'konexdrone/mono.png', aspect: 640 / 226 },
+    mark: { field: '#f3ead4' },
+  }),
 ]);
 
 export const PARTNER_SLUGS = Object.freeze(PARTNERS.map((p) => p.slug));
+export const MAP_ONLY_PARTNER_SLUGS = Object.freeze(MAP_ONLY_PARTNERS.map((p) => p.slug));
+export const PATRON_MAP_BRAND_SLUGS = Object.freeze(PATRON_MAP_BRANDS.map((p) => p.slug));
+// Includes patron slugs: any partner count built from ALL_PARTNER_SLUGS must filter patrons out.
+export const ALL_PARTNER_SLUGS = Object.freeze([...PARTNER_SLUGS, ...MAP_ONLY_PARTNER_SLUGS, ...PATRON_MAP_BRAND_SLUGS]);
 
-const BY_SLUG = new Map(PARTNERS.map((p) => [p.slug, p]));
+const BY_SLUG = new Map([...PARTNERS, ...MAP_ONLY_PARTNERS, ...PATRON_MAP_BRANDS].map((p) => [p.slug, p]));
 
 /* A partner by slug, or null for anything that is not one. */
 export function partnerBySlug(slug) {

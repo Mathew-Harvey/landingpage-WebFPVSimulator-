@@ -116,6 +116,8 @@ const ASSETS = [
   'assets/partners/mantisfpv/mono.svg',
   'assets/partners/wcmrc/colour.png',
   'assets/partners/wcmrc/mono.png',
+  'assets/partners/webleedfpv/colour.png',
+  'assets/partners/webleedfpv/mono.png',
 ];
 
 /* Relative specifiers in a module: static imports, re-exports, and dynamic

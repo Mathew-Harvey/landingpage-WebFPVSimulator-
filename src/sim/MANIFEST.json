@@ -52,7 +52,7 @@
     "maps/city/vendored/world/street.js": "003b5f0b14160f9de820c69a94ca8e4e41ec5841fc124506dab7371b8f1f9ba1",
     "maps/city/vendored/world/vehicles.js": "f9ad02658ece5cd82f67f9288ced03029ad9c49035f718ec0451f846a70bda30",
     "maps/city/vendored/world/vending.js": "d710346088342b4f1ff5f20a1fcafbb780fe7c554acd10f1746153f5876d22cb",
-    "partners/roster.js": "99419d28964854ca30ae3a933e6833946139b702866d666d560092655b3c0691",
+    "partners/roster.js": "4393023c72952948b35ff8406a951892f0e70484cdeb35e3661b42bdc03974cb",
     "props/buildings.js": "82ce3a33d04f364a9da1893ca9c1f65a06b861be38cbcb51b3f55e535694a182",
     "props/catalog.js": "05f4ecdcc38409c44045bb62757a1fd88e0579ec5015c3636b62448bab954987",
     "props/course.js": "ccc7e932141f1c1fd8abd6b99d14a96979edcc8d34c4ecd1813cf2cc60b909d0",
@@ -80,6 +80,8 @@
     "assets/partners/mantisfpv/colour.svg": "bf0873101aef1ea94f5c51d842363f422e5967db6cae8075f29fbfe1b04fffc9",
     "assets/partners/mantisfpv/mono.svg": "565209023f712b04cfe08780256b2225b56e32d7c19ebd1bafe5ea9074483a26",
     "assets/partners/wcmrc/colour.png": "6e8712facb42430a4a4691b1a2a413d486f212ddc5cd24c96c420897a0513f9f",
-    "assets/partners/wcmrc/mono.png": "0a277c4d54a8b8bb46f870ae39dc815765fa68833db479ed300ef572b9aec8a1"
+    "assets/partners/wcmrc/mono.png": "0a277c4d54a8b8bb46f870ae39dc815765fa68833db479ed300ef572b9aec8a1",
+    "assets/partners/webleedfpv/colour.png": "e4cc5f5fa605a2b8f3b3706fd47675d49ee8f7b697776b34a62b632a7570c184",
+    "assets/partners/webleedfpv/mono.png": "59250f8843c6a4531060bc8d2015dc8534c8529a44f5a751eae67f5eeb0ac480"
   }
 }
