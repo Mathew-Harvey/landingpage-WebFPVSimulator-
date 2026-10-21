@@ -341,6 +341,69 @@ await test('loadSupporters skips entries without optIn: true', async () => {
   );
 });
 
+/* The checkout links: every tip and offer anchor in the page is a fixed
+   amount buy.stripe.com Payment Link, tagged, same tab, with the amount in
+   its visible text. */
+import { readFileSync } from 'node:fs';
+import { TIP_URL, TIP_URL_PENDING, TIP_NOTE, bindTipLinks } from '../src/config.js';
+
+const pageHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const pageDom = new JSDOM(pageHtml);
+const pageDoc = pageDom.window.document;
+const checkoutLinks = [...pageDoc.querySelectorAll('[data-tip], [data-offer]')];
+
+await test('every [data-tip] and [data-offer] href is a tagged buy.stripe.com link', () => {
+  assertEquals(checkoutLinks.length >= 9, true, 'expected tip x2 and offers x8, found ' + checkoutLinks.length);
+  for (const a of checkoutLinks) {
+    const href = a.getAttribute('href');
+    if (!href.startsWith('https://buy.stripe.com/')) throw new Error('not a Payment Link: ' + href);
+    if (new URL(href).searchParams.get('utm_source') !== 'landing') throw new Error('no utm_source=landing: ' + href);
+    if (href.includes('donate.stripe.com')) throw new Error('old donate link: ' + href);
+  }
+});
+
+await test('checkout links open in the same tab and keep noopener', () => {
+  for (const a of checkoutLinks) {
+    if (a.hasAttribute('target')) throw new Error('target set on ' + a.getAttribute('href'));
+    assertContains(a.getAttribute('rel') || '', 'noopener', 'rel must keep noopener');
+  }
+});
+
+await test('the Tip button says the amount in its visible text and its href is TIP_URL', () => {
+  const tips = [...pageDoc.querySelectorAll('[data-tip]')];
+  assertEquals(tips.length, 2, 'header and footer tip');
+  for (const a of tips) {
+    assertContains(a.textContent, '$5', 'tip text must contain $5');
+    assertEquals(a.getAttribute('href'), TIP_URL, 'hardcoded href must match src/config.js');
+  }
+});
+
+await test('bindTipLinks rewrites tips to TIP_URL in the same tab', () => {
+  const dom = new JSDOM('<a data-tip href="x" target="_blank">Tip</a>');
+  bindTipLinks(dom.window.document);
+  const a = dom.window.document.querySelector('[data-tip]');
+  assertEquals(a.getAttribute('href'), TIP_URL);
+  assertEquals(a.hasAttribute('target'), false, 'no target');
+  assertEquals(a.getAttribute('rel'), 'noopener');
+  assertEquals(a.getAttribute('aria-label'), TIP_NOTE);
+});
+
+await test('footer and phone menu offers match the header offers', () => {
+  const byKey = {};
+  for (const a of pageDoc.querySelectorAll('[data-offer]')) {
+    (byKey[a.dataset.offer] ||= []).push(a.getAttribute('href') + '|' + a.textContent.trim());
+  }
+  for (const [k, v] of Object.entries(byKey)) {
+    assertEquals(v.length, 2, k + ' should appear in the header and the footer');
+    assertEquals(v[0], v[1], k + ' copies differ');
+    if (!/\$\d+/.test(v[0].split('|')[1])) throw new Error(k + ' shows no price');
+  }
+});
+
+if (TIP_URL === TIP_URL_PENDING) {
+  console.log('WARNING: TIP_URL is still TIP_URL_PENDING. Paste the real Payment Link before merging.');
+}
+
 /* Report results */
 console.log('');
 console.log(`${passCount}/${testCount} tests passed`);

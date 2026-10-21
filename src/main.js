@@ -47,7 +47,7 @@ import { createLoader } from './loader.js';
 import { buildRoom, ROOM_INDOOR } from './room.js';
 import { buildWhoop, WHOOP_FOV, WHOOP_MOUNT_FORWARD, WHOOP_MOUNT_UP, WHOOP_CAM_TILT_DEG } from './whoop.js';
 import { buildPetals } from './petals.js';
-import { bindPatreonLinks, bindTipLinks, destinations } from './config.js';
+import { bindPatreonLinks, bindTipLinks, destinations } from './config.js?v=20261021a';
 import { FONTCSS, STICKERS } from './stickers-data.js?v=20260927n';
 import { captureAttribution, appendAttribution } from './attribution.js';
 import { createManga } from './manga.js';

@@ -393,6 +393,8 @@
         text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
       }
       a.tip svg { width: 14px; height: 14px; display: block; flex: 0 0 auto; }
+      a.tip { white-space: nowrap; }
+      a.tip .tip-note { display: none; }
       a.tip:hover { color: var(--cream); box-shadow: inset 0 0 0 1px var(--amber); background: rgba(16, 22, 17, 0.72); }
       /*
        * Offer links. Four of them do not fit in the top bar: at 1440 px they
@@ -472,6 +474,9 @@
         body.on-paper #topbar .nav-links a.patreon,
         body.on-paper #topbar .nav-links a.tip { height: auto; min-height: 48px; padding: 0 14px; background: transparent; box-shadow: none; font-size: 13px; letter-spacing: var(--track-label); text-transform: uppercase; font-weight: 400; gap: 10px; }
         .nav-links a.patreon svg, .nav-links a.tip svg { width: 16px; height: 16px; }
+        /* The amount in plain text for a phone, where a title never shows. */
+        .nav-links a.tip { flex-wrap: wrap; row-gap: 0; }
+        .nav-links a.tip .tip-note { display: block; flex: 0 0 100%; padding-left: 23px; margin-top: -8px; padding-bottom: 8px; font-size: 12px; font-weight: 400; letter-spacing: 0; text-transform: none; color: rgba(243, 234, 212, 0.72); }
         .nav-links a.offer-link,
         body.on-paper #topbar .nav-links a.offer-link { min-height: 48px; padding: 0 14px; font-size: 13px; color: rgba(243, 234, 212, 0.72); }
       }
@@ -710,6 +715,20 @@
         cursor: pointer;
         transition: background 0.18s var(--ease), border-color 0.18s var(--ease);
       }
+      .thanks-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+      .thanks-fly {
+        display: inline-block;
+        padding: 9px 18px;
+        background: var(--deep);
+        border: 1px solid var(--mint);
+        border-radius: 3px;
+        color: var(--mint);
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-decoration: none;
+      }
+      .thanks-fly:hover { background: rgba(243, 234, 212, 0.08); }
       .thanks-close:hover {
         background: rgba(243, 234, 212, 0.14);
         border-color: var(--amber);
@@ -2877,14 +2896,15 @@
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#FF424D" d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003"/></svg>
             <span>Patreon</span>
           </a>
-          <a class="tip" data-tip href="https://donate.stripe.com/7sY4gzaAC2Eu3aOews8so0g?utm_source=landing" target="_blank" rel="noopener noreferrer" aria-label="Buy Mat a battery. One-time tip, suggested $5 USD." title="Buy Mat a battery. One-time tip, suggested $5 USD.">
+          <a class="tip" data-tip href="https://buy.stripe.com/TIP_URL_PENDING?utm_source=landing" rel="noopener" aria-label="Buy Mat a battery. One-time $5 USD tip." title="Buy Mat a battery. One-time $5 USD tip.">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="var(--amber)" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z"/></svg>
-            <span>Tip</span>
+            <span>Tip $5</span>
+            <span class="tip-note">One-time $5 USD tip</span>
           </a>
-          <a class="offer-link" data-offer="sign" href="https://buy.stripe.com/6oUbJ1bEG92S7r4bkg8so0h?utm_source=landing" target="_blank" rel="noopener noreferrer">Your name in the sim, $15</a>
-          <a class="offer-link" data-offer="track" href="https://buy.stripe.com/14A5kD38a7YO26KfAw8so0i?utm_source=landing" target="_blank" rel="noopener noreferrer">Your spot as a track, from $29</a>
-          <a class="offer-link offer-club" data-offer="club" href="https://buy.stripe.com/6oUcN52466UKdPsfAw8so0j?utm_source=landing" target="_blank" rel="noopener noreferrer">(club $79)</a>
-          <a class="offer-link" data-offer="clip" href="https://buy.stripe.com/fZu7sLaACcf4h1E4VS8so0k?utm_source=landing" target="_blank" rel="noopener noreferrer">Your lap as a clip, $5</a>
+          <a class="offer-link" data-offer="sign" href="https://buy.stripe.com/6oUbJ1bEG92S7r4bkg8so0h?utm_source=landing" rel="noopener">Your name in the sim, $15</a>
+          <a class="offer-link" data-offer="track" href="https://buy.stripe.com/14A5kD38a7YO26KfAw8so0i?utm_source=landing" rel="noopener">Your spot as a track, from $29</a>
+          <a class="offer-link offer-club" data-offer="club" href="https://buy.stripe.com/6oUcN52466UKdPsfAw8so0j?utm_source=landing" rel="noopener">(club $79)</a>
+          <a class="offer-link" data-offer="clip" href="https://buy.stripe.com/fZu7sLaACcf4h1E4VS8so0k?utm_source=landing" rel="noopener">Your lap as a clip, $5</a>
         </div>
         <a class="is-primary" href="https://webfpv.org/sim/?map=field" data-dest="sim">Fly now</a>
       </nav>
@@ -2949,7 +2969,10 @@
           Your tip helps keep WebFPV running. The simulator stays free, and
           every contribution keeps the lights on.
         </p>
-        <button class="thanks-close" type="button" data-thanks-close>Close</button>
+        <div class="thanks-actions">
+          <a class="thanks-fly" href="https://webfpv.org/sim/?map=field" data-dest="sim" rel="noopener">Back to flying</a>
+          <button class="thanks-close" type="button" data-thanks-close>Close</button>
+        </div>
       </div>
     </div>
 
@@ -3698,16 +3721,16 @@
           <a href="https://betaflight.com" rel="noreferrer">Betaflight</a>
           <a href="https://www.gnu.org/licenses/gpl-3.0.html" rel="noreferrer">GPLv3</a>
           <a href="https://www.patreon.com/cw/webfpv/membership?ref=landing" target="_blank" rel="noopener noreferrer" id="support-link">Support</a>
-          <a href="https://donate.stripe.com/7sY4gzaAC2Eu3aOews8so0g?utm_source=landing" target="_blank" rel="noopener noreferrer" id="tip-link">Tip</a>
+          <a data-tip href="https://buy.stripe.com/TIP_URL_PENDING?utm_source=landing" rel="noopener" id="tip-link">Tip $5</a>
           <a href="https://www.instagram.com/webfpv_org/" target="_blank" rel="noopener noreferrer" id="instagram-link">Instagram</a>
         </div>
         <!-- The offers, on a line of their own so a narrow footer never leaves
              one of them alone at the end of the links above. -->
         <div class="foot-links foot-offers">
-          <a data-offer="sign" href="https://buy.stripe.com/6oUbJ1bEG92S7r4bkg8so0h?utm_source=landing" target="_blank" rel="noopener noreferrer">Your name in the sim, $15</a>
-          <a data-offer="track" href="https://buy.stripe.com/14A5kD38a7YO26KfAw8so0i?utm_source=landing" target="_blank" rel="noopener noreferrer">Your spot as a track, from $29</a>
-          <a data-offer="club" href="https://buy.stripe.com/6oUcN52466UKdPsfAw8so0j?utm_source=landing" target="_blank" rel="noopener noreferrer">(club $79)</a>
-          <a data-offer="clip" href="https://buy.stripe.com/fZu7sLaACcf4h1E4VS8so0k?utm_source=landing" target="_blank" rel="noopener noreferrer">Your lap as a clip, $5</a>
+          <a data-offer="sign" href="https://buy.stripe.com/6oUbJ1bEG92S7r4bkg8so0h?utm_source=landing" rel="noopener">Your name in the sim, $15</a>
+          <a data-offer="track" href="https://buy.stripe.com/14A5kD38a7YO26KfAw8so0i?utm_source=landing" rel="noopener">Your spot as a track, from $29</a>
+          <a data-offer="club" href="https://buy.stripe.com/6oUcN52466UKdPsfAw8so0j?utm_source=landing" rel="noopener">(club $79)</a>
+          <a data-offer="clip" href="https://buy.stripe.com/fZu7sLaACcf4h1E4VS8so0k?utm_source=landing" rel="noopener">Your lap as a clip, $5</a>
         </div>
       </div>
     </footer>
@@ -3922,7 +3945,7 @@
       Thank-you note script. Shows a thank-you message when ?thanks= is
       in the URL with one of the supported values (tip, sign, track, club, clip),
       indicating a completed payment. Similar to the invitation but simpler:
-      just shows, then dismisses on scroll or click.
+      just shows, then dismisses on Close, Escape or the scrim.
     -->
     <script>
       (function () {
@@ -3972,6 +3995,15 @@
         var message = messages[thanksType];
         var open = false;
 
+        /* Strip ?thanks= as soon as the card is going to show, not when it is
+           dismissed, so a reload (or a shared address) never shows it again.
+           Other parameters and the hash are kept. */
+        if (window.history && window.history.replaceState) {
+          params.delete('thanks');
+          var rest = params.toString();
+          window.history.replaceState({}, '', window.location.pathname + (rest ? '?' + rest : '') + window.location.hash);
+        }
+
         /* Set the heading and paragraph content */
         heading.textContent = message.heading;
         
@@ -4006,9 +4038,9 @@
             });
           });
           window.addEventListener('keydown', onKey, true);
-          window.addEventListener('wheel', dismiss, { passive: true });
-          window.addEventListener('touchmove', dismiss, { passive: true });
-          window.addEventListener('scroll', dismiss, { passive: true });
+          /* No dismiss on wheel, touch or scroll: the track and club cards hold
+             the buyer's instructions, and a stray scroll used to wipe them.
+             Close, Escape and the scrim still dismiss. */
         }
 
         function dismiss() {
@@ -4018,17 +4050,9 @@
           open = false;
           root.classList.remove('on');
           window.removeEventListener('keydown', onKey, true);
-          window.removeEventListener('wheel', dismiss);
-          window.removeEventListener('touchmove', dismiss);
-          window.removeEventListener('scroll', dismiss);
           window.setTimeout(function () {
             root.hidden = true;
           }, 520);
-          /* Clean up the URL to remove ?thanks= parameter */
-          if (window.history && window.history.replaceState) {
-            var newUrl = window.location.pathname + window.location.hash;
-            window.history.replaceState({}, '', newUrl);
-          }
         }
 
         function onKey(e) {
@@ -4082,6 +4106,6 @@
       letterTitles();
     </script>
     <script type="module" src="src/support-boot.js?v=20261006a"></script>
-    <script type="module" src="src/main.js?v=20261019a"></script>
+    <script type="module" src="src/main.js?v=20261021a"></script>
   </body>
 </html>
