@@ -64,11 +64,23 @@ export const PATREON_URL = 'https://www.patreon.com/cw/webfpv/membership?ref=lan
 export const PATREON_NOTE = 'Support WebFPV on Patreon. Memberships start at $3 USD a month.';
 
 /*
- * Stripe tip link for one-off contributions. Tagged with utm_source=landing for attribution.
+ * Stripe tip link for one-off contributions: a buy.stripe.com Payment Link
+ * with the amount fixed at US$5, so the visitor lands on a page that says
+ * what they are paying rather than an empty amount box (the old Stripe
+ * donate link let the customer choose, and about 30 checkouts
+ * opened from it in a week were not paid). Tagged with utm_source=landing
+ * for attribution.
+ *
+ * TIP_URL_PENDING is a placeholder until the owner creates the Payment Link
+ * and pastes its address here and into the two hardcoded hrefs in
+ * index.html (the header's data-tip and the footer's), which tests/support.test.js
+ * holds equal to this constant. Do not merge while it is still the
+ * placeholder: the test prints a warning for as long as it is.
  */
-export const TIP_URL = 'https://donate.stripe.com/7sY4gzaAC2Eu3aOews8so0g?utm_source=landing';
+export const TIP_URL_PENDING = 'https://buy.stripe.com/TIP_URL_PENDING?utm_source=landing';
+export const TIP_URL = TIP_URL_PENDING;
 
-export const TIP_NOTE = 'Buy Mat a battery. One-time tip, suggested $5 USD.';
+export const TIP_NOTE = 'Buy Mat a battery. One-time $5 USD tip.';
 
 export function bindPatreonLinks(root = document) {
   for (const a of root.querySelectorAll('[data-patreon]')) {
@@ -96,8 +108,10 @@ export function bindTipLinks(root = document) {
     a.setAttribute('aria-label', TIP_NOTE);
     if (TIP_URL) {
       a.href = TIP_URL;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
+      /* Same tab: a new tab from an in-app browser (Instagram, YouTube) often
+         opens blank or blocked, and a payer who cannot get back never pays. */
+      a.removeAttribute('target');
+      a.rel = 'noopener';
       delete a.dataset.tipPending;
       continue;
     }
