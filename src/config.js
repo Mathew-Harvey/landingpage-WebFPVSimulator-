@@ -71,14 +71,11 @@ export const PATREON_NOTE = 'Support WebFPV on Patreon. Memberships start at $3 
  * opened from it in a week were not paid). Tagged with utm_source=landing
  * for attribution.
  *
- * TIP_URL_PENDING is a placeholder until the owner creates the Payment Link
- * and pastes its address here and into the two hardcoded hrefs in
- * index.html (the header's data-tip and the footer's), which tests/support.test.js
- * holds equal to this constant. Do not merge while it is still the
- * placeholder: the test prints a warning for as long as it is.
+ * The two hardcoded hrefs in index.html (the header's data-tip and the
+ * footer's) carry the same address, and tests/support.test.js holds them
+ * equal to this constant, so a page whose film never loads still tips.
  */
-export const TIP_URL_PENDING = 'https://buy.stripe.com/TIP_URL_PENDING?utm_source=landing';
-export const TIP_URL = TIP_URL_PENDING;
+export const TIP_URL = 'https://buy.stripe.com/5kQ5kDfUWench1Eagc8so0o?utm_source=landing';
 
 export const TIP_NOTE = 'Buy Mat a battery. One-time $5 USD tip.';
 
