@@ -345,7 +345,7 @@ await test('loadSupporters skips entries without optIn: true', async () => {
    amount buy.stripe.com Payment Link, tagged, same tab, with the amount in
    its visible text. */
 import { readFileSync } from 'node:fs';
-import { TIP_URL, TIP_URL_PENDING, TIP_NOTE, bindTipLinks } from '../src/config.js';
+import { TIP_URL, TIP_NOTE, bindTipLinks } from '../src/config.js';
 
 const pageHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const pageDom = new JSDOM(pageHtml);
@@ -400,9 +400,6 @@ await test('footer and phone menu offers match the header offers', () => {
   }
 });
 
-if (TIP_URL === TIP_URL_PENDING) {
-  console.log('WARNING: TIP_URL is still TIP_URL_PENDING. Paste the real Payment Link before merging.');
-}
 
 /* Report results */
 console.log('');
