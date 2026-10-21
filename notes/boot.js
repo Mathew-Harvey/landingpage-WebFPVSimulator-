@@ -22,7 +22,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { bindPatreonLinks, destinations } from '../src/config.js';
+import { bindPatreonLinks, destinations } from '../src/config.js?v=20261021b';
 
 {
   const byDest = new Map(destinations().map((d) => [d.id, d]));

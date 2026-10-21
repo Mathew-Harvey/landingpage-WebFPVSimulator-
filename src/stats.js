@@ -22,7 +22,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { boardOrigin } from './config.js';
+import { boardOrigin } from './config.js?v=20261021b';
 
 /*
  * Respects Global Privacy Control the same way the simulator does.

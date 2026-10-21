@@ -20,7 +20,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { bindPatreonLinks, destinations, simOrigin } from '../config.js';
+import { bindPatreonLinks, destinations, simOrigin } from '../config.js?v=20261021b';
 import { appendAttribution } from '../attribution.js';
 import { mountWiki } from './wiki.js?v=20260927w';
 /* At the film's address, stamp and all. The edge keeps a script for four

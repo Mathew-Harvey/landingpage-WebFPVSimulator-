@@ -185,7 +185,7 @@ const YARD_BEATS = [
   {
     at: 0.13,
     k: 'The yard',
-    t: 'Hibari Yard, the map every pilot starts on, with a drift course added.',
+    t: 'Hibari Yard, the map every pilot starts on, with a drift track added.',
   },
   {
     at: 0.31,
