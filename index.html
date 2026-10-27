@@ -2215,6 +2215,7 @@
          site: nothing here is counted, because the board's counters are
          closed lists of partners. */
       .supporter-marks .pmark img { height: 44px; }
+      .supporter-marks .pmark img[src*="helloradiosky"] { height: 34px; }
       .supporter-marks {
         display: flex;
         flex-wrap: wrap;
@@ -2354,6 +2355,51 @@
       .pjoin span { font-size: 13.5px; line-height: 20px; color: rgba(243, 234, 212, 0.86); }
       .pjoin:hover span { color: var(--sakura); }
 
+
+      /* MOCK-UP: THE RADIO SPONSOR'S PANEL, under the closing cards. One
+         panel in the cards' own furniture: the picture of the radio, who
+         sponsors, one button. It is on the page to be read, not in the
+         way: nothing floats, nothing opens by itself, the button opens a
+         new tab on a press. */
+      #radio-sponsor {
+        position: relative;
+        z-index: 10;
+        padding: 0 var(--gutter) 56px;
+      }
+      .radio-panel {
+        display: grid;
+        grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+        gap: 22px 28px;
+        align-items: center;
+        width: min(1080px, 100%);
+        margin: 0 auto;
+        padding: 20px;
+        background: var(--panel-fill);
+        border: 1px solid var(--line);
+        border-top: 2px solid var(--edge);
+      }
+      .radio-panel img { display: block; width: 100%; height: auto; border: 1px solid var(--line); }
+      .radio-kicker { font: 10px/1 var(--mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--sakura); margin: 0 0 12px; }
+      .radio-panel h2 { margin: 0 0 8px; font-size: 24px; font-weight: 700; letter-spacing: 0.01em; color: var(--cream); }
+      .radio-panel p { margin: 0 0 16px; font-size: 14px; line-height: 1.55; color: rgba(243, 234, 212, 0.78); max-width: 38em; }
+      .radio-buy {
+        display: inline-block;
+        padding: 11px 18px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: var(--track-label);
+        text-transform: uppercase;
+        text-decoration: none;
+        color: #12181e;
+        background: var(--cream);
+        border: 1px solid var(--cream);
+        transition: background 0.3s var(--ease), color 0.3s var(--ease);
+      }
+      .radio-buy::after { content: " \2192"; }
+      .radio-buy:hover { background: transparent; color: var(--cream); }
+      .radio-buy:focus-visible { outline: 2px solid var(--sakura); outline-offset: 2px; }
+      @media (max-width: 620px) { .radio-panel { grid-template-columns: 1fr; } .radio-panel img { max-width: 260px; } }
+
       /* THE STRIP OVER THE WORDMARK, the first thing on the first screen:
          the label over the three marks, in the eyebrow's type, the marks at
          one height, held back a little and up to full on hover, in the
@@ -2389,6 +2435,27 @@
         filter: drop-shadow(0 1px 8px rgba(8, 12, 9, 0.7));
       }
       .hpmark img.wide { height: clamp(15px, 1.4vw, 20px); }
+      /* MOCK-UP: the radio sponsor's mark in the strip, on a line of its own
+         under the partners and set off by its own label, so it reads as
+         beside weBLEEDfpv without ever sitting in the partners' row. */
+      .hpmark-sponsor {
+        flex-basis: 100%;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        line-height: 1;
+        text-decoration: none;
+      }
+      .hpmark-sponsor small {
+        font-size: clamp(9.5px, 0.9vw, 10.5px);
+        letter-spacing: var(--track-eyebrow);
+        text-transform: uppercase;
+        color: rgba(157, 179, 200, 0.8);
+        text-shadow: 0 1px 8px rgba(8, 12, 9, 0.8);
+      }
+      .hpmark-sponsor img { height: clamp(22px, 2.1vw, 28px); }
+      .pin-open .hpmark-sponsor small { color: #4b5763; text-shadow: none; font-size: clamp(0.6rem, calc(0.3rem + 0.55 * var(--u)), 1.05rem); }
+      .pin-open .hpmark-sponsor img { height: clamp(18px, calc(2.6 * var(--u)), 56px); }
 
       /* THE MOMENTS. Each partner has one place in the film tied to what
          they do, and it is never in a beat (see #beats) and never two at
@@ -3215,6 +3282,12 @@
                      shop, as the owner asked, where the others go to their
                      card on the board. Still counted as the partner's click. -->
                 <a class="hpmark" href="https://webleedfpv.com/?utm_source=webfpv&amp;utm_medium=partner&amp;utm_content=landing_hero" target="_blank" rel="noopener" data-partner="webleedfpv" data-place="landing_hero"><img class="wide" src="assets/partners/webleedfpv/mono.png" width="1200" height="190" alt="weBLEEDfpv, official USA micro drone partner" decoding="async" /></a>
+                <!-- MOCK-UP (mockup/helloradiosky): the radio sponsor, beside
+                     weBLEEDfpv and never in place of it. A sponsor, not a
+                     partner, so it carries its own small label and goes
+                     straight to the retailer (placeholder address). Not
+                     counted: the board has no word for it yet. -->
+                <a class="hpmark hpmark-sponsor" href="https://example.com/buy-v12?utm_source=webfpv&amp;utm_medium=sponsor&amp;utm_content=landing_hero" target="_blank" rel="sponsored noopener noreferrer"><small>Radio sponsor</small><img src="assets/partners/helloradiosky/mono.png" width="640" height="160" alt="HelloRadioSky, radio sponsor (logo placeholder)" decoding="async" /></a>
               </div>
             </div>
             <p class="eyebrow">01 &#183; The machine</p>
@@ -3639,6 +3712,24 @@
       </div>
     </section>
 
+
+    <!-- MOCK-UP (mockup/helloradiosky): the radio sponsor's panel. Says only
+         what is true: HelloRadioSky sponsors WebFPV and makes this radio.
+         No performance claim and no latency claim. The picture is a grey
+         placeholder until their photo arrives; the button goes to the
+         placeholder retailer address. -->
+    <section id="radio-sponsor" aria-labelledby="radio-sponsor-h">
+      <div class="radio-panel">
+        <img src="assets/partners/helloradiosky/v12-placeholder.svg" width="400" height="300" alt="Hello Radio V12 (photo placeholder)" loading="lazy" decoding="async" />
+        <div>
+          <p class="radio-kicker">Radio sponsor</p>
+          <h2 id="radio-sponsor-h">Our radio sponsor</h2>
+          <p>HelloRadioSky makes the Hello Radio V12 and sponsors WebFPV.</p>
+          <a class="radio-buy" href="https://example.com/buy-v12?utm_source=webfpv&amp;utm_medium=sponsor&amp;utm_content=landing_panel" target="_blank" rel="sponsored noopener noreferrer">Buy the V12</a>
+        </div>
+      </div>
+    </section>
+
     <footer>
       <!-- THE PARTNERS, above the other sites, in the same furniture: one
            colour, one height, the role over each mark, every mark to the
@@ -3707,6 +3798,12 @@
         <a class="pmark" href="https://www.yourfpv.co.uk/?utm_source=webfpv&amp;utm_medium=landing" target="_blank" rel="noopener noreferrer">
           <small>UK FPV shop</small>
           <img src="assets/partners/yourfpv/mono.png" width="869" height="570" alt="YourFPV" loading="lazy" decoding="async" />
+        </a>
+        <!-- MOCK-UP: the radio sponsor, in the supporters' row so the footer
+             grows no taller, to the retailer (placeholder address). -->
+        <a class="pmark" href="https://example.com/buy-v12?utm_source=webfpv&amp;utm_medium=sponsor&amp;utm_content=landing_footer" target="_blank" rel="sponsored noopener noreferrer">
+          <small>Radio sponsor</small>
+          <img src="assets/partners/helloradiosky/mono.png" width="640" height="160" alt="HelloRadioSky" loading="lazy" decoding="async" />
         </a>
       </div>
 
