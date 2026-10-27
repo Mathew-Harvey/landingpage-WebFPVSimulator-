@@ -2708,6 +2708,13 @@
         .card { min-height: auto; padding: 17px; }
         .card-t { font-size: 19px; }
         footer { margin-top: 8vh; padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px)); }
+        footer {
+          /* The footer is tall on a phone, so the film's last frame (the
+             room's bright ceiling) sat behind the partners' marks and
+             their captions, which went unreadable. A scrim that is already
+             dark at the top edge, not one that fades in over the footer. */
+          background: linear-gradient(180deg, rgba(12, 18, 14, 0.62), rgba(12, 18, 14, 0.86) 14%, rgba(12, 18, 14, 0.9));
+        }
         #cue { bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
       }
 
