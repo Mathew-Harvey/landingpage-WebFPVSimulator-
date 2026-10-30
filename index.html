@@ -397,6 +397,88 @@
       a.tip .tip-note { display: none; }
       a.tip:hover { color: var(--cream); box-shadow: inset 0 0 0 1px var(--amber); background: rgba(16, 22, 17, 0.72); }
       /*
+       * WISHLIST ON STEAM, the owner's ask of 2026-10-30, "the landing page
+       * needs the steam branding also", after the simulator got the same
+       * sticker (its src/share/patreon.js, wishlistAnchor). One sticker
+       * wherever it goes: Steam's navy in two hard cel tones, Steam's logo
+       * in white and never leaned (it is counter skewed, because a logo is
+       * shown unaltered), the words in this page's heavy italic capitals,
+       * an ink rule and a hard ink shadow, leaning like the simulator's
+       * gate buttons. Steam's light blue, #66c0f4, is the edge a pointer
+       * or focus gives it. The logo is the one in #steam-mark at the top of
+       * the body: Valve's mark as Simple Icons trace it (CC0 for the path),
+       * which Valve allow beside words saying a game is on Steam.
+       */
+      a.steam-wishlist {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-sizing: border-box;
+        height: 34px;
+        padding: 0 13px 0 10px;
+        background: linear-gradient(180deg, #2a475e 0 48%, #1b2838 48% 100%);
+        border: 2.5px solid var(--page-ink, #0b1116);
+        border-radius: 0;
+        box-shadow: 3px 3px 0 var(--page-ink, #0b1116);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 900;
+        font-style: italic;
+        letter-spacing: 0.06em;
+        line-height: 1;
+        text-transform: uppercase;
+        text-decoration: none;
+        text-shadow: 1px 1px 0 var(--page-ink, #0b1116);
+        white-space: nowrap;
+        transform: skewX(-8deg);
+        transition: transform 0.12s var(--ease), box-shadow 0.12s var(--ease);
+      }
+      a.steam-wishlist svg { width: 18px; height: 18px; display: block; flex: 0 0 auto; fill: #fff; transform: skewX(8deg); }
+      a.steam-wishlist:hover,
+      a.steam-wishlist:focus-visible {
+        color: #fff;
+        background: linear-gradient(180deg, #2a475e 0 48%, #1b2838 48% 100%);
+        transform: skewX(-8deg) translate(-2px, -2px);
+        box-shadow: 0 0 0 2px #66c0f4, 5px 5px 0 2px var(--page-ink, #0b1116);
+        outline: none;
+      }
+      /* In the top bar it waits for room: the bar is full from 1440 down,
+         where its labels already wrap at 1280 and wrap at 1600 with it in, so it shows from 1700 up and
+         in the phone menu, and nowhere between. */
+      #topbar a.steam-wishlist { display: none; height: 30px; font-size: 11.5px; padding: 0 11px 0 9px; margin: 0 4px; }
+      #topbar a.steam-wishlist svg { width: 16px; height: 16px; }
+      @media (min-width: 1700px) { #topbar a.steam-wishlist { display: inline-flex; } }
+      /* The first screen's, under the tagline, in the page's units so it
+         is the same size against the wordmark on a phone and at 4K. */
+      .steam-hero-row { margin-top: calc(1.6 * var(--u, 8px)); }
+      .pin-open a.steam-wishlist.steam-hero {
+        height: clamp(34px, calc(4.2 * var(--u)), 72px);
+        padding: 0 clamp(13px, calc(1.5 * var(--u)), 28px) 0 clamp(10px, calc(1.1 * var(--u)), 20px);
+        gap: clamp(8px, calc(0.9 * var(--u)), 16px);
+        font-size: clamp(12px, calc(0.35rem + 0.9 * var(--u)), 1.6rem);
+        border-width: max(2.5px, calc(0.3 * var(--u)));
+        box-shadow: max(3px, calc(0.45 * var(--u))) max(3px, calc(0.45 * var(--u))) 0 var(--page-ink);
+        pointer-events: auto;
+      }
+      .pin-open a.steam-wishlist.steam-hero svg { width: clamp(18px, calc(2.2 * var(--u)), 38px); height: clamp(18px, calc(2.2 * var(--u)), 38px); }
+      .pin-open a.steam-wishlist.steam-hero:hover,
+      .pin-open a.steam-wishlist.steam-hero:focus-visible {
+        box-shadow: 0 0 0 2px #66c0f4, max(5px, calc(0.7 * var(--u))) max(5px, calc(0.7 * var(--u))) 0 2px var(--page-ink);
+      }
+      /* The closing cards' sixth: the same card, in Steam's navy, the logo
+         over its corner and Steam's light blue as its accent. */
+      .card.card-steam {
+        --accent: #66c0f4;
+        background: linear-gradient(180deg, rgba(42, 71, 94, 0.94) 0 46%, rgba(27, 40, 56, 0.94) 46% 100%);
+        border-top-color: #66c0f4;
+      }
+      .card.card-steam:hover { background: linear-gradient(180deg, #2a475e 0 46%, #1b2838 46% 100%); }
+      .card-steam .card-logo { position: absolute; top: 16px; right: 16px; width: 38px; height: 38px; fill: #fff; opacity: 0.95; }
+      .card-steam .card-d { color: rgba(255, 255, 255, 0.74); }
+      /* The footer's, a link like its neighbours with the mark before it. */
+      .foot-links a.foot-steam { display: inline-flex; align-items: center; gap: 6px; }
+      .foot-links a.foot-steam svg { width: 13px; height: 13px; fill: currentColor; flex: 0 0 auto; }
+      /*
        * Offer links. Four of them do not fit in the top bar: at 1440 px they
        * wrap every label onto two or three lines, and under 1100 px they push
        * Fly now off the screen. So the bar does not carry them. The phone menu
@@ -459,7 +541,7 @@
         }
         #topbar.menu-open .nav-links { display: flex; }
         .nav-links a,
-        body.on-paper #topbar .nav .nav-links a:not(.is-primary):not(.patreon):not(.tip) {
+        body.on-paper #topbar .nav .nav-links a:not(.is-primary):not(.patreon):not(.tip):not(.steam-wishlist) {
           display: flex;
           align-items: center;
           min-height: 48px;
@@ -474,6 +556,8 @@
         body.on-paper #topbar .nav-links a.patreon,
         body.on-paper #topbar .nav-links a.tip { height: auto; min-height: 48px; padding: 0 14px; background: transparent; box-shadow: none; font-size: 13px; letter-spacing: var(--track-label); text-transform: uppercase; font-weight: 400; gap: 10px; }
         .nav-links a.patreon svg, .nav-links a.tip svg { width: 16px; height: 16px; }
+        /* Wishlist on Steam is a row of the sheet too, still the sticker. */
+        #topbar .nav-links a.steam-wishlist { display: inline-flex; align-self: flex-start; min-height: 0; height: 40px; margin: 8px 10px 10px; padding: 0 14px 0 11px; font-size: 12.5px; color: #fff; text-shadow: 1px 1px 0 var(--page-ink, #0b1116); }
         /* The amount in plain text for a phone, where a title never shows. */
         .nav-links a.tip { flex-wrap: wrap; row-gap: 0; }
         .nav-links a.tip .tip-note { display: block; flex: 0 0 100%; padding-left: 23px; margin-top: -8px; padding-bottom: 8px; font-size: 12px; font-weight: 400; letter-spacing: 0; text-transform: none; color: rgba(243, 234, 212, 0.72); }
@@ -1517,7 +1601,7 @@
          and the cue are inked for it, and the ledger steps aside: the page's
          own panels are the way to the chapters here. */
       body.on-paper #veil { opacity: 0; }
-      body.on-paper #topbar .nav a:not(.is-primary):not(.patreon):not(.tip) { color: rgba(11, 17, 22, 0.8); }
+      body.on-paper #topbar .nav a:not(.is-primary):not(.patreon):not(.tip):not(.steam-wishlist) { color: rgba(11, 17, 22, 0.8); }
       body.on-paper #topbar a.patreon { background: var(--page-ink); text-shadow: none; }
       body.on-paper #topbar a.tip { background: var(--page-ink); text-shadow: none; }
       body.on-paper #ledger { opacity: 0; pointer-events: none; }
@@ -2834,6 +2918,11 @@
   </head>
 
   <body>
+    <!-- Steam's logo, once, for every Wishlist on Steam sticker below to
+         <use>. See a.steam-wishlist. Do not restyle the path. -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+      <symbol id="steam-mark" viewBox="0 0 24 24"><path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.5 1.009 2.455-.397.957-1.497 1.41-2.454 1.012H7.54zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.253 0-2.265-1.014-2.265-2.265z"/></symbol>
+    </svg>
     <div class="chequer" aria-hidden="true"></div>
     <div id="progress" aria-hidden="true"><i></i></div>
     <canvas id="stage"></canvas>
@@ -2908,6 +2997,7 @@
             <span>Tip $5</span>
             <span class="tip-note">One-time $5 USD tip</span>
           </a>
+          <a class="steam-wishlist" href="https://store.steampowered.com/app/4944190/webFPV/?utm_source=landing&amp;utm_campaign=nav" target="_blank" rel="noopener" title="WebFPV is coming to Steam. Wishlist it to hear the day it launches. Opens the Steam store."><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#steam-mark"/></svg><span>Wishlist on Steam</span></a>
           <a class="offer-link" data-offer="sign" href="https://buy.stripe.com/6oUbJ1bEG92S7r4bkg8so0h?utm_source=landing" rel="noopener">Your name in the sim, $15</a>
           <a class="offer-link" data-offer="track" href="https://buy.stripe.com/14A5kD38a7YO26KfAw8so0i?utm_source=landing" rel="noopener">Your spot as a track, from $29</a>
           <a class="offer-link offer-club" data-offer="club" href="https://buy.stripe.com/6oUcN52466UKdPsfAw8so0j?utm_source=landing" rel="noopener">(club $79)</a>
@@ -3221,6 +3311,10 @@
             <div class="wordmark" aria-hidden="true">WEB<span class="fpv">FPV</span></div>
             <h1 class="hero-h1">Free FPV drone racing simulator in your browser</h1>
             <p class="tagline">Free browser FPV. Real Betaflight. No install.</p>
+            <!-- Wishlist on Steam, the owner's ask of 2026-10-30. The one thing
+                 on the first screen past the partners, the mark, the headline,
+                 the tagline and the chapters. It leaves with the copy. -->
+            <div class="steam-hero-row"><a class="steam-wishlist steam-hero" href="https://store.steampowered.com/app/4944190/webFPV/?utm_source=landing&amp;utm_campaign=hero" target="_blank" rel="noopener" title="WebFPV is coming to Steam. Wishlist it to hear the day it launches. Opens the Steam store."><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#steam-mark"/></svg><span>Wishlist on Steam</span></a></div>
           </div>
           <!--
             THE CHAPTERS, the tier of panels under the studio on the first
@@ -3636,6 +3730,15 @@
           <span class="card-d">A random draw for race day. Run the lottery and see who flies where.</span>
           <span class="card-go">Run the draw</span>
         </a>
+        <!-- The sixth card, beside the lottery, so the second row is not one
+             card and a gap: WebFPV on Steam, in Steam's colours. -->
+        <a class="card card-steam" href="https://store.steampowered.com/app/4944190/webFPV/?utm_source=landing&amp;utm_campaign=card" target="_blank" rel="noopener" title="WebFPV is coming to Steam. Wishlist it to hear the day it launches. Opens the Steam store.">
+          <svg class="card-logo" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#steam-mark"/></svg>
+          <span class="card-n">06</span>
+          <span class="card-t">WebFPV on Steam</span>
+          <span class="card-d">The desktop game, coming to Steam. Wishlist it and Steam tells you the day it launches.</span>
+          <span class="card-go">Wishlist on Steam</span>
+        </a>
       </div>
     </section>
 
@@ -3727,6 +3830,7 @@
           <a href="https://github.com/Mathew-Harvey/WebFPVSimulator-LeaderBoard" rel="noreferrer">Leaderboard repo</a>
           <a href="https://betaflight.com" rel="noreferrer">Betaflight</a>
           <a href="https://www.gnu.org/licenses/gpl-3.0.html" rel="noreferrer">GPLv3</a>
+          <a class="foot-steam" href="https://store.steampowered.com/app/4944190/webFPV/?utm_source=landing&amp;utm_campaign=footer" target="_blank" rel="noopener" title="WebFPV is coming to Steam. Wishlist it to hear the day it launches. Opens the Steam store."><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#steam-mark"/></svg><span>Wishlist on Steam</span></a>
           <a href="https://www.patreon.com/cw/webfpv/membership?ref=landing" target="_blank" rel="noopener noreferrer" id="support-link">Support</a>
           <a data-tip href="https://buy.stripe.com/5kQ5kDfUWench1Eagc8so0o?utm_source=landing" rel="noopener" id="tip-link">Tip $5</a>
           <a href="https://www.instagram.com/webfpv_org/" target="_blank" rel="noopener noreferrer" id="instagram-link">Instagram</a>
