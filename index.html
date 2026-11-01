@@ -2419,6 +2419,15 @@
       }
       .pmark img { display: block; height: 30px; width: auto; }
       .pmark img.wide { height: 17px; margin: 6px 0 7px; }
+      /* The one-line description under KoneX Drone's mark: the row's
+         cream, small, held to the width of a few marks so it wraps to two
+         lines and never widens the footer. */
+      .pdesc {
+        max-width: 190px;
+        font-size: 11.5px;
+        line-height: 15px;
+        color: rgba(243, 234, 212, 0.72);
+      }
 
       /* Partner with WebFPV, at the end of the row, in the row's own
          furniture: the words where a role is, the owner's address where a
@@ -3764,6 +3773,16 @@
           <a class="pmark" href="https://webleedfpv.com/?utm_source=webfpv&amp;utm_medium=partner&amp;utm_content=landing_row" target="_blank" rel="noopener" data-partner="webleedfpv" data-place="landing_row">
             <small>USA micro drone partner</small>
             <img class="wide" src="assets/partners/webleedfpv/mono.png" width="1200" height="190" alt="weBLEEDfpv" loading="lazy" decoding="async" />
+          </a>
+          <!-- KoneX Drone, the Spanish partner (the owner's approval of
+               2026-11-01; Barcelona, no payment). A plain direct link, no
+               redirect and no tracking parameters, and no data-partner on
+               purpose: the board's counters take only the roster's
+               partners, and this one is not in the roster. -->
+          <a class="pmark pmark-konex" href="https://konexdrone.com" target="_blank" rel="noopener">
+            <small>Spanish partner</small>
+            <img src="assets/partners/konexdrone/mono.png" width="640" height="226" alt="KoneX Drone" loading="lazy" decoding="async" />
+            <span class="pdesc">Spanish FPV shop, courses and aerial filming, Barcelona</span>
           </a>
           <!-- Partner with WebFPV: the owner's own address, which they asked
                for, as it is on the board's partners page. -->
