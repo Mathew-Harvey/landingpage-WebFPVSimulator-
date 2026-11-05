@@ -118,6 +118,8 @@ const ASSETS = [
   'assets/partners/wcmrc/mono.png',
   'assets/partners/webleedfpv/colour.png',
   'assets/partners/webleedfpv/mono.png',
+  'assets/partners/369drone/colour.png',
+  'assets/partners/369drone/mono.png',
 ];
 
 /* Relative specifiers in a module: static imports, re-exports, and dynamic
