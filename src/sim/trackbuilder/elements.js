@@ -36,7 +36,7 @@
 /* FT and IN come from src/units.js, shared with src/game/track.js. The
  * builder must not import the game, so the constants they both need live in
  * a leaf module rather than being typed out twice. */
-import { FT, IN, FRAME_TUBE_OD } from '../units.js';
+import { FT, IN, FRAME_TUBE_OD, GATE_SCALE, LETTER_TUBE_OD } from '../units.js';
 import {
   GATE_OPENING_DEFAULT, GATE_OPENING_MAX, GATE_SPACING_NOMINAL,
   ELEVATED_SILL_MIN, PIPE_OD, POLE_FROM_GATE_MIN, ROOM_WIDTH, ROOM_DEPTH, GRID as MICRO_GRID,
@@ -46,9 +46,20 @@ import {
 import {
   PROP_TYPES, PROP_GROUPS, FURNITURE_PALETTE, approxHeight, styleOf as propStyleOf, CAR_STYLES,
 } from '../props/types.js';
+/* What a table, a chair and a banner are worth by default, in the one place their
+ * shape is written down: src/props/room.js. */
+import { ROOM_SIZES } from '../props/room.js';
+/* What an opening is when it is not a square, and the height a regular hexagon has over its
+ * width, again in the one place the shape is written down. */
+import { shapeOf, HEX_HEIGHT_RATIO } from '../props/aperture.js';
+/* The capital letters as pipe, with the holes in them: what a letter piece is made of, in the one place it is
+ * written down. Pure, and imports only the aperture arithmetic above. */
+import {
+  LETTER_DEFAULT, dimsForLetterSize, letterDefaults, letterOf, letterSizeOf, openingCount,
+} from '../props/letters.js';
 
 /* Re-exported because this module's consumers already read it from here. */
-export { FRAME_TUBE_OD };
+export { FRAME_TUBE_OD, LETTER_TUBE_OD };
 
 /*
  * THE TWO TRACK CLASSES.
@@ -189,6 +200,35 @@ export function docModeOf(doc) {
 }
 
 /*
+ * HOW FAR A FREESTYLE ASSET MAY BE SUNK INTO THE GROUND, in metres. A map
+ * builder asked on 1 October 2026 for "the possibility to move objects below
+ * ground level to hide some part" (bug-e605ff6a): bury a container's lower
+ * half, a pylon's foot, a building's ground floor so its first floor is at
+ * street level. The document already held a negative base and every module
+ * handled one; the inspector, the height drag in the 3D view and nothing
+ * else clamped it at zero, so this is only what those two are told.
+ *
+ * WHAT A SUNK PART IS. Nothing. The ground is flat at zero on a map and is
+ * drawn over everything under it, and the physics holds the part as it
+ * holds any other (it bounds no height), but a craft cannot be under the
+ * ground, and a box whose top is under the paving is never a surface
+ * (indexTops in src/maps/built/place.js). So a part under the ground is
+ * neither seen nor met, and the part over it is solid as drawn.
+ *
+ * Thirty metres is more than any asset needs sunk and a long way short of a
+ * hand edited -9999 that would put a building out of reach of its own
+ * inspector. Only an ASSET: a gate sunk into the ground is a shorter gate,
+ * and a gate's height is what Sill height says, not its base.
+ */
+export const SINK_MAX = 30;
+
+/* The lowest base an element may have in this document: under the ground
+ * for an asset on a map, the ground for everything else. */
+export function lowestBase(doc, el) {
+  return docModeOf(doc) === 'freestyle' && ELEMENTS[el?.type]?.kind === KIND.STRUCTURE ? -SINK_MAX : 0;
+}
+
+/*
  * Frame tube diameter. MultiGP does not publish it. Their gates are built
  * from schedule 40 PVC and 1 inch nominal schedule 40 PVC has an outside
  * diameter of 1.315 in, which is what is used here. It sets how thick a gate
@@ -272,10 +312,55 @@ export function flagLeanSign(sign) {
 
 export function flagSideOf(el) {
   const def = ELEMENTS[el?.type];
-  if (!def?.flagSide) {
+  if (!def) {
     return null;
   }
-  return normalizeFlagSide(el.flagSide, def.flagSide);
+  if (def.flagSide) {
+    return normalizeFlagSide(el.flagSide, def.flagSide);
+  }
+  /* A piece that MAY carry flags, a hurdle being the one: it has them when it says so and is
+   * the piece it always was when it does not, so no existing document changes. */
+  if (def.flagsOptional && FLAG_SIDES.includes(el.flagSide)) {
+    return el.flagSide;
+  }
+  return null;
+}
+
+/*
+ * THE DRESS A GATE WEARS BESIDE THE MULTIGP ONE.
+ *
+ * A MultiGP gate in the world is a printed sleeve round each upright and a
+ * header board a good deal wider than the frame, which is what a sponsor's
+ * mark goes on. That is right for a gate standing on its own and wrong for a
+ * wall of them: the sleeves of neighbours land in each other's openings and the
+ * boards overlap by most of a metre. `plain` is the other dress: no sleeves, a
+ * header board exactly as wide as the frame, so a pennant on the header stands
+ * on the upright it belongs over and bays sit end to end. It is an optional
+ * field written only when set, so every gate that exists is the MultiGP one and
+ * serialises to the bytes it did. Only a vertical, square gate has a dress at
+ * all: a tilted one is carried on a mast and a ring or a hexagon has no
+ * uprights to sleeve.
+ */
+export const GATE_STYLES = ['plain'];
+
+export function isPlain(el) {
+  return Boolean(el) && el.style === 'plain' && ELEMENTS[el.type]?.kind === KIND.APERTURE
+    && apertureShapeOf(el) === 'square';
+}
+
+/*
+ * WHERE A ROW OF GATES HAS TO STAND FOR ITS UPRIGHTS TO MEET IN THE WORLD.
+ *
+ * The document holds the published sizes and the field builds every gate GATE_SCALE
+ * times larger, while positions are never scaled (src/game/trackdoc.js builtDims). Two
+ * gates that share an upright therefore have to be that much further apart than one
+ * opening plus one tube says, or the one's built upright stands inside the other's
+ * opening. The builder draws document sizes, so in it the bays of a wall show a gap of
+ * about a quarter of a metre that the world does not have, and the Wall tool says so.
+ */
+export function wallPitchFor(dims, cls = TRACK_CLASS_DEFAULT) {
+  const scale = cls === 'micro' ? 1 : GATE_SCALE;
+  return scale * ((dims?.clearW ?? 0) + FRAME_TUBE_OD);
 }
 
 /*
@@ -321,7 +406,7 @@ export function isUnbuilt(el) {
  * builds one (src/render/scene.js obstacle): two uprights from the ground to
  * the top rail, a member over the top opening, and a member under the
  * lowest opening when it is off the ground. 'left' and 'right' are those
- * two uprights, the whole height of a stack; 'top' is the member over the
+ * two uprights, the whole height of a stack unless a stretch is taken alone (unbuiltPolesOf below); 'top' is the member over the
  * top opening and 'bottom' the one under the lowest. A member BETWEEN two
  * openings of a stack holds both of them up and is not one of the four.
  *
@@ -358,6 +443,11 @@ export function unbuiltSidesOf(el) {
   if (isUnbuilt(el)) {
     return [...FRAME_SIDES];
   }
+  /* A ring and a hexagon have no four sides to take away one at a time, so a list left on a
+   * piece that was a gate before it was replaced is inert, and is there if it goes back. */
+  if (apertureShapeOf(el) !== 'square') {
+    return [];
+  }
   return normalizeUnbuiltSides(el.unbuiltSides);
 }
 
@@ -372,10 +462,85 @@ export function frameSidesOf(el) {
   };
 }
 
-/* True when some side has been taken away one at a time. A gap in the
- * lattice answers false: it has its own flag and its own code path. */
+/*
+ * A LENGTH OF FRAME PIPE, NOT A RACE PIECE.
+ *
+ * A pole is red because it is flown round, and a horizontal pole stands on two legs of its
+ * own because it is a hurdle. A track drawn in TinyLaps (src/trackbuilder/importtinylaps.js)
+ * is a frame of PVC whose uprights and bars hold the openings up, so its pipe is neither: an
+ * upright there is white and is not passed on a side, and a bar there rests on the uprights
+ * already under it, where legs of its own would stand in the middle of the arches. So a pole
+ * or a horizontal pole can say `pvc: true`, and is then drawn in the frame's white and built
+ * with no legs, by every renderer through this one function. Written only when true, so
+ * every pole and hurdle that exists is the JSON it was.
+ */
+export const PVC_TYPES = ['pole', 'horizontalPole'];
+
+export function isPvcPipe(el) {
+  return Boolean(el) && el.pvc === true && PVC_TYPES.includes(el.type);
+}
+
+/* True when some side has been taken away one at a time, or one opening's stretch of an upright
+ * has. A gap in the lattice answers false: it has its own flag and its own code path. */
 export function hasMissingSides(el) {
-  return !isUnbuilt(el) && unbuiltSidesOf(el).length > 0;
+  return !isUnbuilt(el) && (unbuiltSidesOf(el).length > 0 || unbuiltPolesOf(el).length > 0);
+}
+
+/*
+ * ONE OPENING'S STRETCH OF AN UPRIGHT, in a stack.
+ *
+ * The owner's words, 2026-10-04: with a double or triple stacked gate, deleting a vertical side "should only
+ * remove that gates pole not the entire vertical pole for the entire 2 or 3 gates". So on a stack the
+ * uprights are not one pipe each but one stretch per opening, and a stretch can go on its own.
+ *
+ * `unbuiltPoles` is a list of "side:index" strings, side being left or right as everywhere here and index
+ * the opening from the bottom, 0 first. It is the finer spelling of `unbuiltSides`, which still takes the
+ * whole upright away and wins over it: a stretch whose whole upright is already gone is not written. When
+ * every stretch of one upright has gone the upright is gone, and that is written the old way, so a document
+ * says one thing one way. Only a stack of square openings has it; the key is written only when it is not
+ * empty, so every gate that exists is the JSON it was.
+ */
+export const POLE_SIDES = ['left', 'right'];
+
+export function poleKey(side, index) {
+  return `${side}:${index}`;
+}
+
+/* The stretches taken away, cleaned against this piece: a stack, a known side, an opening it has, each once, and
+ * nothing the whole upright already covers. Ordered by side then opening. */
+export function unbuiltPolesOf(el) {
+  if (!el || ELEMENTS[el.type]?.kind !== KIND.APERTURE || isUnbuilt(el) || isLetterPiece(el)
+    || apertureShapeOf(el) !== 'square' || !Array.isArray(el.unbuiltPoles)) {
+    return [];
+  }
+  const count = apertureLevels(el.dims).length;
+  if (count < 2) {
+    return [];
+  }
+  const whole = normalizeUnbuiltSides(el.unbuiltSides);
+  const out = [];
+  for (const side of POLE_SIDES) {
+    if (whole.includes(side)) {
+      continue;
+    }
+    for (let i = 0; i < count; i += 1) {
+      if (el.unbuiltPoles.includes(poleKey(side, i))) {
+        out.push(poleKey(side, i));
+      }
+    }
+  }
+  return out;
+}
+
+/* Whether a whole upright is there, every stretch of it. The printed sleeve hangs on this and not on a stretch: it is
+ * one board the height of the stack, so an upright with a stretch gone has no sleeve. */
+export function uprightIntact(el, side) {
+  return frameSidesOf(el)[side] && !unbuiltPolesOf(el).some((k) => k.startsWith(`${side}:`));
+}
+
+/* Whether one opening's stretch of one upright is built. A whole upright that is gone takes every stretch with it. */
+export function poleBuilt(el, side, index) {
+  return frameSidesOf(el)[side] && !unbuiltPolesOf(el).includes(poleKey(side, index));
 }
 
 /*
@@ -622,7 +787,7 @@ export const ELEMENTS = {
   },
   diveGate: {
     id: 'diveGate',
-    label: 'Dive Gate',
+    label: 'Dive gate',
     key: 'D',
     group: 'track',
     kind: KIND.APERTURE,
@@ -647,13 +812,95 @@ export const ELEMENTS = {
       levelPitch: GATE_SPACING_NOMINAL,
     },
   },
+  hoop: {
+    id: 'hoop',
+    label: 'Hoop',
+    group: 'track',
+    kind: KIND.APERTURE,
+    shape: 'circle',
+    note: 'A round gate. The opening is the circle inside the box a square gate would have, so the corners of the box do not score.',
+    /* Not a MultiGP element and not on the five inch palette: it is here for a whoop room, where
+     * people do stand a ring on a stand. The five inch default only has to exist, so that a
+     * document that names a hoop on a field is drawn and not thrown away. */
+    pitch: 0,
+    dims: { levels: 1, sillH: 0, clearW: 5 * FT, clearH: 5 * FT, levelPitch: 5 * FT + FRAME_TUBE_OD },
+    /* The same opening as the RaceGOW gate it stands in for, so the series' rules about how big
+     * an opening may be, and how far apart two are, read a hoop exactly as they read a gate. A
+     * ring the width of the opening is a ring the pilot flies through at the gate's own size. */
+    microDims: {
+      levels: 1, sillH: 0,
+      clearW: GATE_OPENING_DEFAULT, clearH: GATE_OPENING_DEFAULT,
+      levelPitch: GATE_SPACING_NOMINAL,
+    },
+  },
+  hexGate: {
+    id: 'hexGate',
+    label: 'Hex gate',
+    group: 'track',
+    kind: KIND.APERTURE,
+    shape: 'hex',
+    note: 'A six sided gate, a point at each end of its width and a flat above and below. The opening is the hexagon inside its box.',
+    pitch: 0,
+    dims: {
+      levels: 1, sillH: 0, clearW: 5 * FT, clearH: 5 * FT * HEX_HEIGHT_RATIO,
+      levelPitch: 5 * FT * HEX_HEIGHT_RATIO + FRAME_TUBE_OD,
+    },
+    /* Six pipes of one length make a regular hexagon: across the points it is twice a pipe and
+     * flat to flat it is a pipe times the square root of three, so the width is the gate's own
+     * opening and the height is that times 0.866. */
+    microDims: {
+      levels: 1, sillH: 0,
+      clearW: GATE_OPENING_DEFAULT, clearH: GATE_OPENING_DEFAULT * HEX_HEIGHT_RATIO,
+      levelPitch: GATE_SPACING_NOMINAL,
+    },
+  },
+  /*
+   * A CAPITAL LETTER OF PIPE, WITH THE GAPS IN IT TO FLY THROUGH. The WA State Champs have a W on the course
+   * and its gate is the gap between the two Vs; a letter is that in general, every capital from A to Z
+   * (src/props/letters.js draws them), each with one to three holes that score. Which letter it is is the
+   * element's own `letter`, a word of one capital, and the shape of the holes is the letter's, so the document
+   * holds no polygon to get wrong.
+   *
+   * IT KEEPS THE FIVE NUMBERS OF EVERY OPENING. clearW and clearH are the size of its PRIMARY hole measured
+   * axis to axis, and the whole letter is drawn round that hole in the proportions of the design, so the
+   * envelope, the rules, the cards and the board's plan, which read those two numbers and nothing else, read a
+   * letter as they read a gate. `levels` is how many holes the letter has (the reader sets it from the letter),
+   * `sillH` is zero because a letter stands on the ground, and `levelPitch` means nothing and is kept so that
+   * what reads it finds a number. The defaults here are the default letter's.
+   *
+   * A FIVE INCH RACE PIECE: not on the whoop palette and not on a map. Upright (its pitch is zero), and its pipe
+   * is the gate's pipe.
+   */
+  letter: {
+    id: 'letter',
+    label: 'Letter',
+    /* No key of its own: the free ones on the five inch palette are an asset's on a map (the self test pins that the
+     * race palettes' keys are what they were), so the chip is empty and the tool is a click. */
+    key: '',
+    group: 'track',
+    kind: KIND.APERTURE,
+    shape: 'letter',
+    note: 'A capital letter built of pipe, with the gaps in it to fly through: every letter from A to Z. Pick the letter under the tool. A W is the gap between its two Vs; an A has its counter and the space under the bar. Each gap is a gate of its own in the flying order.',
+    pitch: 0,
+    dims: {
+      levels: openingCount(LETTER_DEFAULT),
+      sillH: 0,
+      clearW: letterDefaults(LETTER_DEFAULT).clearW,
+      clearH: letterDefaults(LETTER_DEFAULT).clearH,
+      levelPitch: levelPitchFor(letterDefaults(LETTER_DEFAULT).clearH),
+    },
+  },
   barrier: {
     id: 'barrier',
     label: 'Barrier',
     key: 'B',
     group: 'track',
     kind: KIND.OBSTACLE,
-    note: 'Solid obstacle. Not flown through. Collision geometry only.',
+    note: 'Solid obstacle. Not flown through. Collision geometry only. The Hurdle on the palette is a low one with flags at its ends.',
+    /* A barrier MAY carry the pennants a gate carries, at the ends of its top: `flagSide` on
+     * the piece and the mast height as `dims.flagH`, both written only when it has them. That
+     * is the whole of what a hurdle is. See flagSideOf. */
+    flagsOptional: true,
     /* Not a MultiGP obstacle. A barrier is the tool's way of saying "the
      * racing line must not go here": a shipping container, a fence, a stand.
      * The default is a 4 m by 1 m panel 2 m tall, which is a plausible crowd
@@ -662,6 +909,47 @@ export const ELEMENTS = {
     /* A living room's furniture. A sofa is about this, and a sofa is the
      * commonest obstacle on a RaceGOW track by a wide margin. */
     microDims: { width: 1.8, depth: 0.85, height: 0.75 },
+  },
+  /*
+   * THE FURNITURE OF A ROOM, which a RaceGOW track is flown round and under and
+   * until now had a barrier to stand in for. Each is a solid obstacle like the
+   * barrier, holds a width, a depth and a height like the barrier, and is made
+   * of the boxes src/props/room.js writes down, so what is drawn, what is
+   * solid and what the warnings test are one list. They stand on the floor, are
+   * never in the flying order, and turn in quarter turns because the physics
+   * holds boxes square to the room. There is no hotkey: the letters ran out.
+   * The sizes are what a living room has in it and are RaceGOW's own only in
+   * that the rules leave the room to the builder.
+   */
+  table: {
+    id: 'table',
+    label: 'Table',
+    group: 'track',
+    kind: KIND.OBSTACLE,
+    turns: 'quarter',
+    note: 'A table: a top on four legs. Solid, and there is room to fly under it between the legs. It stands on the floor.',
+    dims: { ...ROOM_SIZES.table },
+    microDims: { ...ROOM_SIZES.table },
+  },
+  chair: {
+    id: 'chair',
+    label: 'Chair',
+    group: 'track',
+    kind: KIND.OBSTACLE,
+    turns: 'quarter',
+    note: 'A chair: a seat on four legs and a solid back, which is behind it as it faces. It stands on the floor.',
+    dims: { ...ROOM_SIZES.chair },
+    microDims: { ...ROOM_SIZES.chair },
+  },
+  banner: {
+    id: 'banner',
+    label: 'Banner',
+    group: 'track',
+    kind: KIND.OBSTACLE,
+    turns: 'quarter',
+    note: 'A standing banner: a thin solid panel on two feet, down to the floor. It stands on the floor.',
+    dims: { ...ROOM_SIZES.banner },
+    microDims: { ...ROOM_SIZES.banner },
   },
   flag: {
     id: 'flag',
@@ -717,6 +1005,9 @@ export const ELEMENTS = {
     group: 'track',
     kind: KIND.MARKER,
     note: 'Nothing is standing here. The line is required to pass through this point, at this height. Not drawn on the track.',
+    /* Nothing is built, so nothing can float: its height is where the line
+     * passes, and it may be anywhere. See needsSeat in ./seat.js. */
+    standsFree: true,
     /*
      * NOT AN OBSTACLE, AND THAT IS THE WHOLE POINT.
      *
@@ -810,6 +1101,10 @@ export const ELEMENTS = {
     kind: KIND.OBSTACLE,
     note: 'A single bar across the track on two legs. Solid: fly over it or under it.',
     dims: { width: 3.0, depth: 0.08, height: 0.08 },
+    /* Its legs reach down to the ground from the bar (hpoleLayout in
+     * src/props/course.js), so position.z is the bar's height and not a base
+     * with nothing under it. See needsSeat in ./seat.js. */
+    standsFree: true,
     defaultZ: 1.60,
     /* One pipe section wide and one pipe thick, raised to where a RaceGOW
      * build puts one: a shade under the second gate of a stack, so the two
@@ -821,7 +1116,7 @@ export const ELEMENTS = {
   },
   startPads: {
     id: 'startPads',
-    label: 'Start Pads',
+    label: 'Start pads',
     key: 'S',
     group: 'extra',
     kind: KIND.START,
@@ -903,6 +1198,7 @@ for (const [id, t] of Object.entries(PROP_TYPES)) {
     propGroup: t.group,
     kind: t.zone ? KIND.ZONE : KIND.STRUCTURE,
     turns: t.turns,
+    tilt: t.tilt ?? null,
     styles: t.styles ?? null,
     note: t.note,
     dims: { ...t.dims },
@@ -1046,6 +1342,15 @@ export const GATE_PRESETS = [
     clearH: 19 * IN,
   },
   {
+    id: 'wide',
+    label: 'Wide',
+    size: '2 m bay',
+    published: false,
+    hint: 'Not a MultiGP size. About 2 m between uprights once the world builds it 15 percent larger, which is the bay the Drone Nationals plan draws, so a wall of these stands 2 m a bay.',
+    clearW: 2 / GATE_SCALE - FRAME_TUBE_OD,
+    clearH: 2 / GATE_SCALE - FRAME_TUBE_OD,
+  },
+  {
     id: 'trainer',
     label: 'Trainer',
     size: '10 x 8 ft',
@@ -1102,16 +1407,26 @@ const PRESET_TOL = 0.001;
 /* Which preset a set of dimensions IS, or null for a size somebody typed.
  * The inspector shows the answer, so "custom" is a state an author can see
  * rather than a silent one. */
-export function matchingGatePreset(dims) {
+export function matchingGatePreset(dims, shape = 'square') {
   if (!dims) {
     return null;
   }
   /* Both lists, because the answer to "which preset IS this" cannot depend
    * on which class is open: a 19 inch whoop gate on a full sized track is
-   * still the Whoop preset. */
+   * still the Whoop preset. A hoop is a preset's width and as high as it is wide; a hex gate is a
+   * preset's width and as high as a hexagon that wide is. */
   return [...GATE_PRESETS, ...MICRO_GATE_PRESETS]
     .find((p) => Math.abs(dims.clearW - p.clearW) < PRESET_TOL
-      && Math.abs(dims.clearH - p.clearH) < PRESET_TOL) || null;
+      && Math.abs(dims.clearH - presetHeight(p, shape)) < PRESET_TOL) || null;
+}
+
+/* The height a preset's opening has in a shape: the preset's own for a square, its width for a hoop, and
+ * a regular hexagon's for a hex gate. */
+export function presetHeight(preset, shape = 'square') {
+  if (shape === 'hex') {
+    return preset.clearW * HEX_HEIGHT_RATIO;
+  }
+  return shape === 'circle' ? preset.clearW : preset.clearH;
 }
 
 /*
@@ -1121,12 +1436,16 @@ export function matchingGatePreset(dims) {
  * ALONE: a preset is an opening size, not a new element. A three level
  * ladder resized to championship is still a three level ladder.
  */
-export function applyGatePreset(dims, preset) {
-  if (!dims || !preset) {
+export function applyGatePreset(dims, preset, shape = 'square') {
+  /* A letter is not sized by a gate's preset: its two numbers are its primary hole's, and a standard gate's would make
+   * a W the size of a gate. Its own size is set by width and height (letterDimsForSize). */
+  if (!dims || !preset || shape === 'letter') {
     return dims;
   }
   dims.clearW = preset.clearW;
-  dims.clearH = preset.clearH;
+  dims.clearH = presetHeight(preset, shape);
+  /* A standard size is every opening of the stack at that size, so an opening that was set apart goes back with it. */
+  delete dims.openings;
   /*
    * A RACEGOW STACK'S PITCH IS A RULE, NOT A CONSEQUENCE.
    *
@@ -1153,7 +1472,7 @@ export function applyGatePreset(dims, preset) {
  * draws. It is written out rather than derived from Object.keys so a future
  * reorder is one obvious edit. */
 export const PALETTE_ORDER = [
-  'gate', 'flaggedGate', 'doubleStack', 'flaggedDoubleStack', 'ladder', 'tower', 'diveGate', 'barrier', 'flag', 'cone', 'waypoint',
+  'gate', 'flaggedGate', 'doubleStack', 'flaggedDoubleStack', 'ladder', 'tower', 'diveGate', 'letter', 'barrier', 'flag', 'cone', 'waypoint',
 ];
 
 /*
@@ -1164,11 +1483,13 @@ export const PALETTE_ORDER = [
  * dive gate, and offering them would be the tool inventing a class rule.
  *
  * Barrier is on it because a living room has furniture in it, which is a
- * real and constant feature of these tracks.
+ * real and constant feature of these tracks, and so are a table, a chair and a
+ * banner, which follow it. A hoop and a hex gate are openings, so they stand
+ * with the gates, after the horizontal one and before the poles.
  */
 export const MICRO_PALETTE_ORDER = [
-  'gate', 'doubleStack', 'ladder', 'tower', 'diveGate',
-  'pole', 'horizontalPole', 'cone', 'barrier', 'waypoint',
+  'gate', 'doubleStack', 'ladder', 'tower', 'diveGate', 'hoop', 'hexGate',
+  'pole', 'horizontalPole', 'cone', 'barrier', 'table', 'chair', 'banner', 'waypoint',
 ];
 
 /* The palette for a track class. A map's is its assets, then its roads and
@@ -1208,9 +1529,11 @@ export function paletteGroupOf(def) {
 export const PALETTE_EXTRA = ['startPads', 'label', 'groundLogo'];
 
 /*
- * The path toggle. It is in the palette because the task puts it there, and
- * it is not an element: pressing P shows or hides the derived racing line.
- * It carries a key so the hotkey table has one source.
+ * The path toggle: pressing P shows or hides the derived racing line, which is
+ * the bar's Show line. It is not an element, and it is not on the palette any
+ * more, where it was the bar's switch a second time and stayed lit like an
+ * armed tool (MENUS-PLAN.md 1.23). It carries a key so the hotkey table has
+ * one source, and P is never a piece's letter on any canvas.
  */
 export const PATH_TOGGLE = { id: 'path', label: 'Path', key: 'P', note: 'Toggles display of the derived racing line.' };
 
@@ -1357,6 +1680,202 @@ export function tuningFor(cls, mode = 'race') {
   return { ...TUNING, ...TUNING.micro };
 }
 
+/*
+ * THE NAME OF A PIECE ON A CLASS'S CANVAS. RaceGOW calls what the five inch
+ * calls a dive gate a Horizontal Gate (racegow.js), and a pilot building a
+ * whoop track knows it by that name, so the whoop canvas says so; every other
+ * piece, and every other canvas, keeps the name it has.
+ */
+const WHOOP_LABELS = { diveGate: 'Horizontal gate' };
+
+export function labelOf(type, cls = TRACK_CLASS_DEFAULT) {
+  return (cls === 'micro' && WHOOP_LABELS[type]) || ELEMENTS[type]?.label || type;
+}
+
+/*
+ * WHAT A PIECE IS CALLED WHEN ITS AUTHOR HAS NOT NAMED IT: its type's label, and an opening with no frame says so,
+ * because a gate in the strip that is not a gate to look at is the one a pilot asks about.
+ */
+export function pieceLabel(el, cls = TRACK_CLASS_DEFAULT) {
+  const base = labelOf(el.type, cls);
+  return isUnbuilt(el) ? `Invisible ${base.toLowerCase()}` : base;
+}
+
+/*
+ * THE WHOOP CANVAS'S TOOLS THAT ARE NOT PIECES. A row of gates is RaceGOW's Side
+ * by Side Gates, dragged out along the floor, the ruler measures between two
+ * points, and Fly order adds a pass through the piece that is clicked. None is an
+ * element, so they are not in ELEMENTS and not in a document; they are on the
+ * palette under their own heading, with keys.
+ */
+export const WHOOP_TOOLS = [
+  {
+    id: 'row',
+    label: 'Side by side',
+    key: 'H',
+    note: 'Drag along the floor to lay two or three gates in a row, 30 in apart, sharing their verticals. One click lays a pair.',
+  },
+  {
+    id: 'cube',
+    label: 'Cube',
+    key: 'K',
+    note: 'Click to put a cube down: five gates that share their pipe, in one piece. It is flown straight through, along the way it faces; change the two faces with the Fly order tool. Move it, turn it, copy it and remove it as one.',
+  },
+  {
+    id: 'ruler',
+    label: 'Ruler',
+    key: 'M',
+    note: 'Click two points to measure between them, in inches and millimetres. A click near a gate or a pole takes its middle. Nothing is saved with the track.',
+  },
+  /*
+   * N, NOT O. Fly order had O, and so did Ground logo, which is on all three
+   * canvases' palettes with O: the whoop palette showed one letter on two tools
+   * and the key only ever reached Fly order (MENUS-PLAN.md 1.20). A piece on
+   * more than one canvas keeps its letter (4.2a), so Ground logo keeps O and
+   * this moved, to N for the numbers it hands out, which no race canvas uses.
+   * The map has a rail on N, and every one of its 36 keys is taken, so there is
+   * no letter a whoop tool could have that means nothing there.
+   */
+  {
+    id: 'route',
+    label: 'Fly order',
+    key: 'N',
+    note: 'Click the pieces in the order you fly them. A click on a piece again is another pass through it, which is how a gate is flown twice. Backspace takes the last pass off.',
+  },
+];
+
+/*
+ * THE 5 INCH CANVAS'S PIECES THAT ARE MADE OF PIECES, and its tools that are not pieces.
+ *
+ * None is an element, so none is in ELEMENTS and none is in a document: each writes
+ * ordinary elements and the document holds only those (a wall is gates in a group, a
+ * hurdle is a barrier with flags and a waypoint over it, an up gate is a dive gate with
+ * the numbers the rule gives). They stand on the palette among the pieces, in the place
+ * `after` names, because to a person laying a track they are pieces. See
+ * src/trackbuilder/parts.js for what each writes.
+ */
+export const FIVE_INCH_PIECES = [
+  {
+    id: 'invisibleGate',
+    label: 'Invisible gate',
+    /* I for invisible, which is free: E and Q turn, X reverses, V is the view and P the line. */
+    key: 'I',
+    after: 'gate',
+    note: 'A target with nothing built round it: an opening you fly through and score like a gate, lit when it is the next one, with no pipe, no flag and nothing to hit. It is an ordinary gate with its frame taken away, so it is sized, turned, copied and flown in order like one, and any gate or letter can be made invisible the same way, or have its frame put back. Use it to put a target where a structure has a gap that no gate of its own frames.',
+  },
+  {
+    id: 'wall',
+    label: 'Wall',
+    key: 'K',
+    after: 'flaggedGate',
+    note: 'Drag along the ground to lay a row of gates that share their uprights, two to six. Each bay is a gate of its own in the flying order, so a wall can be flown straight through or as a weave. The wall is one piece: it moves, turns, copies and goes as one.',
+  },
+  {
+    id: 'upGate',
+    label: 'Up gate',
+    key: '',
+    after: 'diveGate',
+    note: 'A gate leaning at 45 degrees with its lower edge 1.5 m up, flown up through. It is a dive gate with those numbers, which are the rule the Drone Nationals plan gives its up gate.',
+  },
+  {
+    id: 'launchGate',
+    label: 'Launch gate',
+    key: '',
+    after: 'diveGate',
+    note: 'A horizontal gate 15 ft up, flown UP through from below: the dive gate the other way round. It comes with the line to fly it, a pull up from level to vertical on the way in and a push over on the way out, as waypoints you can drag or take out.',
+  },
+  {
+    id: 'hurdle',
+    label: 'Hurdle',
+    key: 'U',
+    after: 'barrier',
+    note: 'A board 4 m long and 1 m high with a flag at each end, flown over. One piece, and not a gate: nothing scores on it, and the lap is pinned over the middle of it.',
+  },
+  {
+    id: 'barHurdle',
+    label: 'Bar hurdle',
+    key: '',
+    after: 'barrier',
+    note: 'A bar 10 ft wide, 5 ft up, on two legs: flown over it, skimming it, or under it between the legs. One piece, and not a gate: the lap is pinned over (or under) the middle of it, and the card says which.',
+  },
+  {
+    id: 'run',
+    label: 'Section',
+    key: 'J',
+    /* After the flagged gate, where the wall is, and below it: a piece stands after an element, and the wall is not one. */
+    after: 'flaggedGate',
+    note: 'A section laid in one click: a straight, a sweeper, a hairpin, a chicane, esses, a step sequence, a flag slalom or a Dutch 8, as many pieces as you ask for, flown in order. Pick the shape under the tool, then click where it starts. They are ordinary pieces afterwards.',
+  },
+];
+
+/*
+ * THE WHOOP CANVAS'S PIECES THAT ARE MADE OF PIECES: the invisible gate, which is the same piece as the five inch
+ * canvas's (an ordinary gate with `unbuilt` set, so the document holds nothing new and a track written on either
+ * canvas reads on the other). It stands on the palette after the gate, as it does on the five inch one, and takes
+ * the whoop room's gate: a RaceGOW 28 inch opening, 19 in the Whoop preset, whichever the canvas defaults to.
+ */
+export const WHOOP_PIECES = [
+  {
+    id: 'invisibleGate',
+    label: 'Invisible gate',
+    key: 'I',
+    after: 'gate',
+    note: 'A target with nothing built round it: an opening you fly through and score like a gate, lit when it is the next one, with no pipe and nothing to hit. It is an ordinary gate with its frame taken away, so it is sized, turned, copied and flown in order like one, and any gate can be made invisible the same way, or have its frame put back. Use it to put a target where the room has a gap that no gate of its own frames.',
+  },
+];
+
+/* The pieces made of pieces a class's palette carries, which is where the invisible gate is on both. */
+export function partPiecesFor(cls) {
+  return cls === 'micro' ? WHOOP_PIECES : FIVE_INCH_PIECES;
+}
+
+export const FIVE_INCH_TOOLS = [
+  {
+    id: 'route',
+    label: 'Fly order',
+    /* Not O: on a field O is the ground logo, and a key that has meant something for months is not taken from it. */
+    key: 'N',
+    note: 'Click the pieces in the order you fly them. A click on a gate again is another pass through it, which is how a gate is flown twice. Click a hurdle to fly over it. Backspace takes the last pass off.',
+  },
+  {
+    id: 'ruler',
+    label: 'Ruler',
+    key: 'M',
+    note: 'Click two points to measure between them, in metres. A click near a piece takes its middle. Nothing is saved with the track.',
+  },
+];
+
+/*
+ * THE MAP'S TOOLS THAT ARE NOT PIECES: the ruler, and nothing else, because a map has no flying order to put
+ * in order and its pieces are the palette's own. It has no key: M is the ledge on a map and the digits and
+ * the free letters ran out before the assets did.
+ */
+export const MAP_TOOLS = [
+  {
+    id: 'ruler',
+    label: 'Ruler',
+    key: '',
+    note: 'Click two points to measure between them, in metres. A click near a piece takes its middle. Nothing is saved with the map.',
+  },
+];
+
+/* The tool or the piece-of-pieces a key arms on a class's palette, or undefined. A whoop
+ * canvas has the tools above in WHOOP_TOOLS; a 5 inch race canvas has these two lists. A map's
+ * keys are its assets' (elementByKey), and its one tool has none. */
+export function toolByKey(letter, cls = 'micro', mode = 'race') {
+  const up = String(letter || '').toUpperCase();
+  if (!up || mode === 'freestyle') {
+    return undefined;
+  }
+  const list = cls === 'micro' ? [...WHOOP_PIECES, ...WHOOP_TOOLS] : [...FIVE_INCH_PIECES, ...FIVE_INCH_TOOLS];
+  return list.find((t) => t.key === up);
+}
+
+/* Whether an id is one of the pieces made of pieces, on either canvas. */
+export function isFiveInchPiece(id) {
+  return FIVE_INCH_PIECES.some((p) => p.id === id) || WHOOP_PIECES.some((p) => p.id === id);
+}
+
 /* Convenience: every element definition in palette order, extras last. */
 export function paletteItems(cls = TRACK_CLASS_DEFAULT, mode = 'race') {
   return [
@@ -1379,7 +1898,7 @@ const EXTRA_TYPES = new Set(PALETTE_EXTRA);
  * but the palette tool is distinct, and collapsing it into Gate would hide
  * that.
  */
-export function countElementsByType(elements) {
+export function countElementsByType(elements, cls = TRACK_CLASS_DEFAULT) {
   const tally = new Map();
   for (const el of elements || []) {
     const type = el && el.type;
@@ -1400,7 +1919,9 @@ export function countElementsByType(elements) {
   for (const id of order) {
     const count = tally.get(id) || 0;
     if (count > 0) {
-      rows.push({ type: id, label: ELEMENTS[id].label, count });
+      /* In the class's own words: a whoop track's dive gate is a horizontal
+       * gate in Load and in its results, as it is on its palette. */
+      rows.push({ type: id, label: labelOf(id, cls), count });
     }
   }
   return rows;
@@ -1453,25 +1974,137 @@ export function gateFlagHeight(dims) {
   return Number.isFinite(h) && h > 0 ? h : GATE_FLAG_H;
 }
 
+/*
+ * The SHAPE of an element's openings, for a type or for a piece of that type: 'square' for every
+ * gate there ever was, 'circle' for a hoop and 'hex' for a hex gate. It is a property of the
+ * type, not stored on the piece, so no document has a word to get wrong and a piece cannot be
+ * a hoop with a hex's name.
+ */
+export function apertureShapeOf(what) {
+  const type = typeof what === 'string' ? what : what?.type;
+  return shapeOf(ELEMENTS[type]?.shape);
+}
+
+/* Whether a piece, or the name of a type, is a letter. */
+export function isLetterPiece(what) {
+  return (typeof what === 'string' ? what : what?.type) === 'letter';
+}
+
+/* The letter a piece is: its own, or the default when it has none or has one this build does not draw. */
+export function letterOfPiece(el) {
+  return letterOf(el?.letter);
+}
+
+/*
+ * THE DIMS OF A LETTER. For a letter that is new they are its defaults; for one that is being changed into another
+ * (`from` is the piece as it is) they keep the author's scale: a W stretched to half as wide again as it is drawn is
+ * an A stretched the same way, which is what turning a letter into another one should leave you with. `levels` is
+ * the new letter's hole count, and the pitch is the one a stack of the new size would have.
+ */
+export function letterDimsFor(letter, from = null) {
+  const next = letterOf(letter);
+  const base = letterDefaults(next);
+  let kx = 1;
+  let ky = 1;
+  if (from && from.dims && Number.isFinite(from.dims.clearW) && Number.isFinite(from.dims.clearH)) {
+    const was = letterDefaults(letterOf(from.letter));
+    kx = from.dims.clearW / was.clearW;
+    ky = from.dims.clearH / was.clearH;
+  }
+  const clearW = base.clearW * kx;
+  const clearH = base.clearH * ky;
+  return {
+    levels: openingCount(next), sillH: 0, clearW, clearH, levelPitch: levelPitchFor(clearH),
+  };
+}
+
+/* How big the letter stands, pipe and all: { width, height } in metres, for the card and the height limits. */
+export function letterExtent(el) {
+  return letterSizeOf(letterOfPiece(el), el.dims.clearW, el.dims.clearH, LETTER_TUBE_OD);
+}
+
+/* The primary hole's size that makes a letter this wide and this tall, which is what an author asking for a
+ * letter's size is asking for. */
+export function letterDimsForSize(el, width, height) {
+  return dimsForLetterSize(letterOfPiece(el), width, height, LETTER_TUBE_OD);
+}
+
+/*
+ * EACH OPENING OF A STACK CAN BE ITS OWN SIZE. `dims.openings` is an optional list, one entry per opening from the
+ * bottom, each `{ clearW?, clearH? }`: the key that is there is that opening's own size, the key that is not is the
+ * stack's (`dims.clearW`, `dims.clearH`), so a piece with no list, which is every piece that has ever been saved,
+ * is read exactly as it always was. Only a stack of square openings has one: a hoop, a hex gate and a letter have
+ * one size each.
+ *
+ * What a size that is not a length is, is no size: it is dropped and the opening takes the stack's, so no reader is
+ * ever handed a NaN for a height (a piece whose height was not a number once left the 3D camera framing nothing).
+ * Returns null when no opening differs from the stack, so one state has one spelling.
+ */
+export function openingSizesOf(dims, count = null) {
+  const raw = dims?.openings;
+  if (!Array.isArray(raw)) {
+    return null;
+  }
+  const n = count ?? Math.max(1, Math.round(dims.levels));
+  /* One opening is the stack's own size: there is nothing to set apart. */
+  if (n < 2) {
+    return null;
+  }
+  const out = [];
+  let any = false;
+  for (let i = 0; i < n; i += 1) {
+    const o = raw[i] && typeof raw[i] === 'object' ? raw[i] : {};
+    const one = {};
+    for (const key of ['clearW', 'clearH']) {
+      const v = typeof o[key] === 'number' ? o[key] : Number.NaN;
+      if (Number.isFinite(v) && v > 0 && Math.abs(v - dims[key]) > 1e-9) {
+        one[key] = v;
+        any = true;
+      }
+    }
+    out.push(one);
+  }
+  return any ? out : null;
+}
+
 export function apertureLevels(dims) {
   const out = [];
   const n = Math.max(1, Math.round(dims.levels));
+  const sizes = openingSizesOf(dims, n);
+  /* The old arithmetic, untouched, for every piece whose openings are all the stack's size. */
+  if (!sizes) {
+    for (let i = 0; i < n; i += 1) {
+      const sill = dims.sillH + i * dims.levelPitch;
+      out.push({
+        index: i,
+        sillH: sill,
+        centerH: sill + dims.clearH / 2,
+        clearW: dims.clearW,
+        clearH: dims.clearH,
+      });
+    }
+    return out;
+  }
+  /* The openings are different heights, so the pitch can no longer be one number: each sill sits one member above
+   * the opening below it, which is the gap the stack was authored with (its pitch less its clear height). */
+  const gap = Number.isFinite(dims.levelPitch - dims.clearH) ? dims.levelPitch - dims.clearH : FRAME_TUBE_OD;
+  let sill = dims.sillH;
   for (let i = 0; i < n; i += 1) {
-    const sill = dims.sillH + i * dims.levelPitch;
-    out.push({
-      index: i,
-      sillH: sill,
-      centerH: sill + dims.clearH / 2,
-      clearW: dims.clearW,
-      clearH: dims.clearH,
-    });
+    const clearW = sizes[i].clearW ?? dims.clearW;
+    const clearH = sizes[i].clearH ?? dims.clearH;
+    out.push({ index: i, sillH: sill, centerH: sill + clearH / 2, clearW, clearH });
+    sill += clearH + gap;
   }
   return out;
 }
 
 /* Overall height of an element, for the 3D view and for the height drag
  * limits. Aperture elements are as tall as their top opening plus a tube. */
-export function elementHeight(def, dims, style = null) {
+export function elementHeight(def, dims, style = null, tilt = 0) {
+  if (def.kind === KIND.APERTURE && def.id === 'letter') {
+    /* A letter is as tall as it is drawn, which is the letter's doing and not its top hole's: `style` is the letter. */
+    return letterSizeOf(letterOf(style), dims.clearW, dims.clearH, LETTER_TUBE_OD).height;
+  }
   if (def.kind === KIND.APERTURE) {
     const levels = apertureLevels(dims);
     const top = levels[levels.length - 1];
@@ -1491,10 +2124,15 @@ export function elementHeight(def, dims, style = null) {
     return Math.max(0.08, dims.padSize * 0.40);
   }
   if (def.kind === KIND.STRUCTURE || def.kind === KIND.ZONE) {
-    return approxHeight(def.id, dims, style ?? propStyleOf({ type: def.id }));
+    /* `tilt` is tiltOf(el): stood on end, an asset is as tall as it was long. */
+    return approxHeight(def.id, dims, style ?? propStyleOf({ type: def.id }), tilt);
   }
-  if (def.kind === KIND.ROAD) {
-    /* Paint. */
+  if (def.kind === KIND.ROAD || def.kind === KIND.DECAL) {
+    /* Paint. A ground logo has a footprint and no height: it used to fall to
+     * the last line, which reads `textHeight`, a label's size and not a
+     * decal's, so topOf was NaN and a track carrying one framed its 3D camera
+     * on NaN: an empty sky and every tag piled in the corner, with nothing in
+     * the console because NaN is not an error. */
     return 0;
   }
   if (def.kind === KIND.VEHICLE) {

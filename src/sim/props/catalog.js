@@ -31,27 +31,53 @@
  * along with WebFPVSimulator. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { PROP_TYPES, styleOf } from './types.js';
+import { PROP_TYPES, styleOf, tiltOf } from './types.js';
+import { tiltParts } from './solids.js';
 import * as BUILDINGS from './buildings.js';
 import * as INDUSTRIAL from './industrial.js';
 import * as STREET from './street.js';
 import * as SKATE from './skate.js';
 import * as COURSE from './course.js';
+import * as WINDMILL from './windmill.js';
+import * as HOMES from './homes.js';
+import * as SUNNY from './sunny.js';
+import * as PARK from './park.js';
+import * as ARCTIC from './arctic.js';
+import * as DOCK from './dock.js';
+import * as FACTORY from './factory.js';
+import * as ALPINE from './alpine.js';
+import * as TOWERS from './towers.js';
+import * as SHIOKAZE from './shiokaze.js';
+import * as CEDAR from './cedar.js';
+import * as TOUGE from './touge.js';
+import * as OFFICE from './office.js';
+import * as KAZA from './kaza.js';
+import * as SANATORIUM from './sanatorium.js';
+import * as RALLY from './rally.js';
+import * as AIRFIELD from './airfield.js';
+import * as HOTARU from './hotaru.js';
+import * as FEST from './fest.js';
+import * as CONCERT from './concert.js';
+import * as HAIKYO from './haikyo.js';
+import * as YUME from './yume.js';
 import { buildingLayout, buildingDraw, bandoLayout, bandoDraw } from './buildings.js';
 import {
   craneLayout, craneDraw, waterLayout, waterDraw, mastLayout, mastDraw, chimneyLayout, chimneyDraw,
-  pylonLayout, pylonDraw, containerLayout, containerDraw, scaffoldLayout, scaffoldDraw,
+  hollowChimneyLayout, hollowChimneyDraw, pylonLayout, pylonDraw, turbineLayout, turbineDraw,
+  containerLayout, containerDraw, scaffoldLayout, scaffoldDraw,
 } from './industrial.js';
 import {
   bridgeLayout, bridgeDraw, billboardLayout, billboardDraw, poleLayout, poleDraw, lampLayout, lampDraw,
   vendingLayout, vendingDraw, carLayout, carDraw, treeLayout, treeDraw,
 } from './street.js';
+import { windmillLayout, windmillDraw } from './windmill.js';
 import {
   railLayout, railDraw, ledgeLayout, ledgeDraw, stairsLayout, stairsDraw, pipeLayout, pipeDraw,
 } from './skate.js';
 import {
   gateLayout, gateDraw, flagLayout, flagDraw, coneLayout, coneDraw, poleMarkerLayout,
   barrierLayout, barrierDraw, hpoleLayout, padsLayout, padsDraw, gapLayout, decalLayout,
+  balloonChaseLayout,
 } from './course.js';
 
 const CODE = {
@@ -61,7 +87,9 @@ const CODE = {
   waterTower: [waterLayout, waterDraw],
   mast: [mastLayout, mastDraw],
   chimney: [chimneyLayout, chimneyDraw],
+  hollowChimney: [hollowChimneyLayout, hollowChimneyDraw],
   pylon: [pylonLayout, pylonDraw],
+  turbine: [turbineLayout, turbineDraw],
   containers: [containerLayout, containerDraw],
   scaffold: [scaffoldLayout, scaffoldDraw],
   bridge: [bridgeLayout, bridgeDraw],
@@ -75,7 +103,9 @@ const CODE = {
   stairs: [stairsLayout, stairsDraw],
   quarterPipe: [pipeLayout, pipeDraw],
   tree: [treeLayout, treeDraw],
+  windmill: [windmillLayout, windmillDraw],
   gap: [gapLayout, null],
+  balloonChase: [balloonChaseLayout, null],
 };
 
 /* Every prop, its data and its code, keyed by type. */
@@ -129,7 +159,19 @@ export const FURNITURE = {
  * at once without touching the same line. A name two families both claim is
  * a mistake, and it throws here rather than one silently winning.
  */
-const FAMILIES = { buildings: BUILDINGS, industrial: INDUSTRIAL, street: STREET, skate: SKATE, course: COURSE };
+const FAMILIES = {
+  buildings: BUILDINGS, industrial: INDUSTRIAL, street: STREET, skate: SKATE, course: COURSE, windmill: WINDMILL, homes: HOMES, sunny: SUNNY, factory: FACTORY, cedar: CEDAR, dock: DOCK, towers: TOWERS, alpine: ALPINE, office: OFFICE, kaza: KAZA,
+  sanatorium: SANATORIUM,
+  shiokaze: SHIOKAZE, rally: RALLY,
+  airfield: AIRFIELD, hotaru: HOTARU,
+  fest: FEST, touge: TOUGE,
+  arctic: ARCTIC,
+  fest: FEST,
+  haikyo: HAIKYO,
+  yume: YUME,
+  park: PARK,
+  concert: CONCERT,
+};
 export const FAMILY_MATERIALS = {};
 export const FAMILY_PAINTERS = {};
 for (const [fname, mod] of Object.entries(FAMILIES)) {
@@ -163,6 +205,21 @@ export function partsOf(el) {
   const style = styleOf(el);
   const view = style && style !== el.style ? { ...el, style } : el;
   return a.layout(view);
+}
+
+/*
+ * An element's parts AS IT STANDS: partsOf, stood on end if it is (tiltOf
+ * and tiltParts in ./solids.js). Everything that asks where the solids are,
+ * how much ground the element covers or how tall it stands reads this, so a
+ * container stood on its end is a tall thin footprint to the plan, the
+ * warnings and the physics alike. The DRAWING reads partsOf and turns the
+ * whole of what it paints with the kit's matrix instead (PropKit.element),
+ * because an asset's draw() puts its paint on in the upright frame.
+ */
+export function placedPartsOf(el) {
+  const parts = partsOf(el);
+  const q = tiltOf(el);
+  return q ? tiltParts(parts, q) : parts;
 }
 
 /* An element's plan rectangle in its own frame, { x0, x1, z0, z1 }: the

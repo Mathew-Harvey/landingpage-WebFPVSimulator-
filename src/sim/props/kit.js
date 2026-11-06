@@ -45,9 +45,11 @@ import * as TownTex from '../maps/city/vendored/core/textures.js';
 import { buildCar, CAR } from '../art/cars.js';
 import { makeVendingMachine } from '../maps/city/vendored/world/vending.js';
 import { paintGateHeader, paintGateSleeve, bannerCanvas, BANNER_SIZE } from '../art/banners.js';
-import { styleOf } from './types.js';
+import { styleOf, tiltOf } from './types.js';
+import { tiltMeasure, tiltParts } from './solids.js';
 import { assetOf, partsOf, FAMILY_MATERIALS, FAMILY_PAINTERS } from './catalog.js';
 import * as PT from './textures.js';
+import { clumpBlob, CLUMP_SHAPES, CLUMP_SQUASH } from '../render/clump.js';
 
 /* The town's standard shadow tints. */
 const T = 0x6f6790;
@@ -114,11 +116,11 @@ const SPEC = {
   /* the town's canopy tones: the cherry's blossom on the high key ramp,
    * and two leaf greens for the flower boxes. The street tree and the pine
    * carry their own greens in src/props/street.js. */
-  blossom0: { c: PAL.blossomLight, bands: 'soft', tint: 0xe2c3d2, noReceive: true },
-  blossom1: { c: PAL.blossom, bands: 'soft', tint: 0xd8b2c6, noReceive: true },
-  blossom2: { c: PAL.blossomDeep, bands: 'soft', tint: 0xc99cba, noReceive: true },
-  leaf0: { c: 0x8cb884, tint: 0x5f7390, noReceive: true },
-  leaf1: { c: 0x5f9470, tint: 0x4f6488, noReceive: true },
+  blossom0: { c: PAL.blossomLight, bands: 'soft', tint: 0xe2c3d2, noReceive: true, foliage: true },
+  blossom1: { c: PAL.blossom, bands: 'soft', tint: 0xd8b2c6, noReceive: true, foliage: true },
+  blossom2: { c: PAL.blossomDeep, bands: 'soft', tint: 0xc99cba, noReceive: true, foliage: true },
+  leaf0: { c: 0x8cb884, tint: 0x5f7390, noReceive: true, foliage: true },
+  leaf1: { c: 0x5f9470, tint: 0x4f6488, noReceive: true, foliage: true },
   /* course furniture: the pennant's mast and the printed panels' edge,
    * which K.pennant and K.panel name; the rest is src/props/course.js's */
   flagMast: { c: 0x9aa0a8, tint: TD }, panelEdge: { c: 0x3d4461, tint: 0x3f3a50 },
@@ -304,6 +306,16 @@ export function propMaterial(name, look = null) {
   } else if (s.net) {
     m = flat({ color: dim ? dimmed(0xffffff, look.flats) : 0xffffff, map: netTexture(), transparent: true, depthWrite: false, side: THREE.DoubleSide, cache: false });
     OWNED.add(m);
+  } else if (s.foliage) {
+    /*
+     * A canopy tone takes the comic pass's leaf clumps, which is a mark in
+     * its userData (src/render/comic.js, FOLIAGE). So it is the kit's own
+     * material, not the shared cache's: the town's canopies are built from
+     * the same arguments and cel() would hand both the same object.
+     */
+    m = cel({ color: s.c, bands: s.bands ?? 3, tint: s.tint ?? T, cache: false });
+    m.userData.comicFoliage = true;
+    OWNED.add(m);
   } else {
     m = cel({ color: s.c, bands: s.bands ?? 3, tint: s.tint ?? T });
   }
@@ -485,6 +497,45 @@ export function lookedTownMaterial(m, look) {
   return d;
 }
 
+/*
+ * A unit box with no bottom face, for a box that stands on the floor
+ * (pass 4 of 2026-11-01): its bottom is pressed to the ground, which no
+ * camera goes under, so its two triangles were drawn every frame into a
+ * depth that was already the ground's. A sixth fewer triangles a box.
+ * BoxGeometry writes its faces +x, -x, +y, -y, +z, -z, six indices each,
+ * and the bottom is -y. Its shadow is the same where it shows: the shadow
+ * pass draws back faces, and with the bottom gone a ray from the sun that
+ * would have left through it falls on the ground under the box, which the
+ * box itself covers.
+ */
+function floorBox() {
+  const g = new THREE.BoxGeometry(1, 1, 1);
+  const idx = Array.from(g.index.array);
+  const keep = [...idx.slice(0, 18), ...idx.slice(24)];
+  g.setIndex(keep);
+  g.clearGroups();
+  return g;
+}
+
+/*
+ * A unit box with only its two faces across `axis` (0 x, 1 y, 2 z), for
+ * paint (pass 4 of 2026-11-01): a layer of colour a centimetre or two
+ * thick on a wall or a floor, a window, a line, a stain. Its four edges
+ * are slivers no wider than the layer is thick, seen only edge on, and
+ * were eight of its twelve triangles. BoxGeometry's faces are +x, -x, +y,
+ * -y, +z, -z, six indices each.
+ */
+function sheetBox(axis) {
+  const g = new THREE.BoxGeometry(1, 1, 1);
+  const idx = Array.from(g.index.array);
+  g.setIndex(idx.slice(axis * 12, axis * 12 + 12));
+  g.clearGroups();
+  return g;
+}
+
+/* How thin paint is, at most, to be drawn as a sheet. */
+const SHEET = 0.03;
+
 /* ------------------------------------------------------------------ *
  * Shared geometry: unit shapes scaled by a matrix, so the batches clone
  * one small buffer each time rather than building a new one.
@@ -492,26 +543,51 @@ export function lookedTownMaterial(m, look) {
 
 const UNIT = {
   box: new THREE.BoxGeometry(1, 1, 1),
-  ball: new THREE.IcosahedronGeometry(1, 1),
+  floorBox: floorBox(),
+  sheet: [sheetBox(0), sheetBox(1), sheetBox(2)],
+  ball: roundSphere(new THREE.IcosahedronGeometry(1, 1)),
   blob: new THREE.IcosahedronGeometry(1, 0),
   leaf: roundBlob(),
 };
 
 /*
- * A canopy blob: the same icosahedron, with its normals taken from the
- * sphere it stands for rather than from its faces. At detail 0 three.js
- * gives every vertex its face's normal, so the cel ramp quantised each of
- * the twenty facets on its own and a tree's canopy was a mosaic of lit and
- * shaded triangles. Every vertex of the unit icosahedron is on the unit
- * sphere, so its normal is its own direction, as the town's planet has it
+ * A canopy blob: an icosahedron with its normals taken from the sphere it
+ * stands for rather than from its faces. At detail 0 three.js gives every
+ * vertex its face's normal, so the cel ramp quantised each of the twenty
+ * facets on its own and a tree's canopy was a mosaic of lit and shaded
+ * triangles. Every vertex is on the sphere, so its normal is its own
+ * direction, as the town's planet has it
  * (src/maps/city/vendored/world/planet.js) and the town's own canopies now
  * do (buildSakura and buildGrove, PATCH-world-trees.diff). The ramp gives
- * each blob two or three clean bands; the outline keeps its facets, and
- * bake() carries the normals through the blob's squash with the inverse
- * transpose. Rubble and a sandbag keep the faceted blob.
+ * each blob two or three clean bands, and bake() carries the normals
+ * through the blob's squash with the inverse transpose. Rubble and a
+ * sandbag keep the faceted blob.
+ *
+ * EIGHTY FACES, NOT TWENTY (graphics pass 15). With round shading the
+ * outline still kept the facets: the ink pass finds creases in depth, and
+ * the twenty faced blob's 42 degree turn at every edge is a crease, so a
+ * cherry close up was a bunch of inked pink gems. Detail 1 turns about 20
+ * degrees at an edge and its silhouette is a near circle. It is drawn at
+ * 0.92 of the sphere, which gives it the twenty faced blob's average
+ * silhouette (0.906 by projected area, 0.938 by mean width), so a tree is
+ * as full as it was. Its inradius is then 0.86, outside the 0.78 the
+ * canopy's solid is cut to in street.js, so the solid stays inside what is
+ * drawn. A tree in the yard is eighteen or so blobs, so this is about a
+ * thousand more triangles a tree: 5,670 to 22,680 in the default yard.
  */
 function roundBlob() {
-  const g = new THREE.IcosahedronGeometry(1, 0);
+  return roundSphere(new THREE.IcosahedronGeometry(0.92, 1));
+}
+
+/*
+ * A ball's normals taken from the sphere, the canopy blob's fix above put
+ * on kit.ball too (the manga pass of 2026-11-01). Three.js gives the
+ * eighty faced icosahedron every vertex its face's normal, so a ginkgo's
+ * crown, a lantern, a buoy or a pear was a cut gem in eighty flat tones
+ * close up, which is the blocky look the owner asked to lose. The same
+ * triangles and the same vertices, so the frame costs what it did.
+ */
+function roundSphere(g) {
   const p = g.attributes.position;
   const n = g.attributes.normal;
   const v = new THREE.Vector3();
@@ -521,12 +597,257 @@ function roundBlob() {
   }
   return g;
 }
+
+/*
+ * CLUMPS (graphics pass 23): on Medium and High each blob is drawn as a
+ * clump of lumps, clumpBlob in src/render/clump.js, which says why and how
+ * the solid stays inside it. The town draws its near canopies with the
+ * same shapes since pass 24, which is why they live there and not here.
+ */
+
+/*
+ * EACH BLOB ITS OWN CODE (graphics pass 23). The ink pass finds creases in
+ * depth, so an eighty faced blob still inked a line at every turn between
+ * faces and a dot at every vertex, worst toward the rim, and a cherry in
+ * the yard was a bunch of geodesic balloons. The town's canopies stopped
+ * that in pass 19 by writing a code per blob for the ink to read
+ * (src/render/comic.js, A CANOPY BLOB'S CODE), hashed from where each
+ * instance stands. The kit bakes a tone's blobs into one mesh, so here the
+ * code rides in the geometry: one float on every vertex of a blob. A
+ * convex crease inside one blob is then not inked, and its outline and the
+ * line where it meets the next blob are.
+ *
+ * Codes are handed out in the order the blobs are drawn, 53 apart round
+ * 128 values, so any 128 blobs in a row have 128 different codes, a whole
+ * tree's blobs among them, and two touching blobs never read as one. The
+ * order is the build's, so the same map draws the same codes. A copy of
+ * the blob per code, made once: each shares its shape's buffers and adds
+ * one float a vertex.
+ */
+const BLOB_CODES = 128;
+const CODED = { round: [], clump: [] };
+
+function codedLeaf(seq, clumps) {
+  const k = (seq * 53) % BLOB_CODES;
+  const set = clumps ? CODED.clump : CODED.round;
+  let g = set[k];
+  if (!g) {
+    const u = clumps ? clumpBlob(k % CLUMP_SHAPES) : UNIT.leaf;
+    g = new THREE.BufferGeometry();
+    if (u.index) {
+      g.setIndex(u.index);
+    }
+    for (const name of Object.keys(u.attributes)) {
+      g.setAttribute(name, u.attributes[name]);
+    }
+    const code = new Float32Array(u.attributes.position.count).fill((k + 0.5) / BLOB_CODES);
+    g.setAttribute('comicBlob', new THREE.BufferAttribute(code, 1));
+    set[k] = g;
+  }
+  return g;
+}
+
+/*
+ * A canopy tone's twin for the leaf blobs alone, marked to write those
+ * codes. Only leaf() draws with it, so every geometry in its batches has
+ * the attribute: bake() keeps only the attributes every part shares, and a
+ * flower box's ball in the same tone would have dropped it for the batch.
+ * A tone that is not a canopy's is handed back as it is.
+ */
+function leafMaterial(name, look) {
+  const s = SPEC[name];
+  if (!s || !s.foliage) {
+    return propMaterial(name, look);
+  }
+  const key = `${name}:leaf`;
+  let m = MATS.get(key);
+  if (!m) {
+    m = cel({ color: s.c, bands: s.bands ?? 3, tint: s.tint ?? T, cache: false });
+    m.userData.comicFoliage = true;
+    m.userData.comicBlob = true;
+    m.userData.comicBlobBaked = true;
+    m.userData.propCast = !s.noCast;
+    m.userData.propReceive = !s.noReceive;
+    OWNED.add(m);
+    MATS.set(key, m);
+  }
+  return m;
+}
+
+/*
+ * A geometry turned inside out: every triangle wound the other way and every
+ * normal reversed, so the face the eye in the middle of a tube sees is lit
+ * and shaded as a front face is. Done on the geometry itself, because a
+ * negative scale in a batch's matrix is a determinant three.js turns the
+ * winding back for and the bake does not.
+ */
+function turnedInside(g) {
+  const index = g.index;
+  for (let i = 0; i < index.count; i += 3) {
+    const b = index.getX(i + 1);
+    index.setX(i + 1, index.getX(i + 2));
+    index.setX(i + 2, b);
+  }
+  const n = g.attributes.normal;
+  for (let i = 0; i < n.count; i += 1) {
+    n.setXYZ(i, -n.getX(i), -n.getY(i), -n.getZ(i));
+  }
+  return g;
+}
+
+/*
+ * A CONIFER'S WHORL AS A MANGAKA DRAWS IT (2026-11-01, the owner's "it
+ * should feel like a manga comic, not minecraft all blocky").
+ *
+ * The maps stacked plain cones for their cedars and pines: a smooth sided
+ * six or seven faced cone, and the ink pass drew its facet edges, so a
+ * forest was a field of cut gems. A comic draws a cedar's tier as a skirt of
+ * points, each point a line from the top, with the notches between them
+ * tucked up and in. This is that shape: `points` tips at radius 1 on the
+ * base, a notch between each pair at NOTCH_R, lifted NOTCH_Y, every side
+ * vertex given the round cone's normal for its angle so the cel ramp shades
+ * the tier round and not in facets, and a shallow underside, which a pilot
+ * flying under a crown sees, faced down.
+ *
+ * Unit size, standing on the origin: radius 1, height 1. Indexed, with uv,
+ * so it bakes beside three's own shapes without un-indexing a batch.
+ *
+ * TRIANGLES: 4 x points, 2 x points open, against a cone's 2 x segments
+ * (one x segments open). coniferPoints picks the points so no tier gains
+ * one: a seven segment cone's 14 becomes three points' 12.
+ */
+/* The notch's radius as a share of the tip's, and its lift, of the
+ * tier's height. */
+const NOTCH_K = 0.78;
+const NOTCH_Y = 0.17;
+const UNDER_Y = 0.24;
+/*
+ * WHAT IS SOLID DOES NOT MOVE. Every map's tier solid was sized inside the
+ * cone it drew (the town's coneSolid and its copies), which is inside the
+ * cone's inscribed circle. A star's inscribed circle is its edges' nearest
+ * approach, between a tip and a notch, so the tips are pushed out until that
+ * is HOLD of the old radius: the solid stays inside what is drawn, and the
+ * points stand past it, as a cedar's branch tips do, brushed and not hit.
+ * 0.92 is over the 0.9 of a cone's inscribed sphere that the widest of
+ * them (Kazahana's fir, kaza/market.js) stands in a tier, and over
+ * cos(pi / 7), the seven sided cone's own inscribed share. The tips come
+ * out at about 1.2 of the old radius.
+ */
+const HOLD = 0.92;
+function tipRadius(points) {
+  const a = Math.PI / points;
+  const k = NOTCH_K;
+  const f = (k * Math.sin(a)) / Math.hypot(1 - k * Math.cos(a), k * Math.sin(a));
+  return HOLD / f;
+}
+const WHORLS = new Map();
+export function whorlGeometry(points, open = false) {
+  const key = open ? `${points}o` : `${points}`;
+  let g = WHORLS.get(key);
+  if (g) {
+    return g;
+  }
+  const n = points * 2;
+  const tip = tipRadius(points);
+  const pos = [];
+  const nor = [];
+  const uv = [];
+  const idx = [];
+  const rimR = (i) => (i % 2 ? tip * NOTCH_K : tip);
+  const rimY = (i) => (i % 2 ? NOTCH_Y : 0);
+  /* The round cone's normal at angle a: out, and up by the slope. */
+  const coneN = (a) => {
+    const l = Math.SQRT2;
+    return [Math.cos(a) / l, 1 / l, Math.sin(a) / l];
+  };
+  /* Side: a rim ring, then an apex per face carrying the normal of the
+   * face's middle angle, as three's cone does, so the top is not a seam. */
+  for (let i = 0; i < n; i += 1) {
+    const a = (i / n) * Math.PI * 2;
+    pos.push(Math.cos(a) * rimR(i), rimY(i), Math.sin(a) * rimR(i));
+    nor.push(...coneN(a));
+    uv.push(i / n, 0);
+  }
+  for (let i = 0; i < n; i += 1) {
+    const a = ((i + 0.5) / n) * Math.PI * 2;
+    pos.push(0, 1, 0);
+    nor.push(...coneN(a));
+    uv.push((i + 0.5) / n, 1);
+    /* Wound so the face looks out: three's front faces are counter
+     * clockwise seen from outside. */
+    idx.push(n + i, (i + 1) % n, i);
+  }
+  /* Underside: the same rim faced down, to a centre lifted inside. An open
+   * whorl has none, for a map that drew an open cone where a tier is only
+   * ever seen from above (Hotaru Valley's Low). */
+  const base = n * 2;
+  for (let i = 0; i < (open ? 0 : n); i += 1) {
+    const a = (i / n) * Math.PI * 2;
+    pos.push(Math.cos(a) * rimR(i), rimY(i), Math.sin(a) * rimR(i));
+    nor.push(0, -1, 0);
+    uv.push(i / n, 0);
+  }
+  if (!open) {
+    pos.push(0, UNDER_Y, 0);
+    nor.push(0, -1, 0);
+    uv.push(0.5, 0.5);
+    const c = base + n;
+    for (let i = 0; i < n; i += 1) {
+      idx.push(c, base + i, base + ((i + 1) % n));
+    }
+  }
+  g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  WHORLS.set(key, g);
+  return g;
+}
+
+/* The points a whorl gets for a tier a map drew as a `seg` sided cone, so
+ * the tier's triangles do not rise: 4 x points is at most 2 x seg, and
+ * never fewer than three points. */
+export function coniferPoints(seg) {
+  return Math.max(3, Math.floor(seg / 2));
+}
+
+/* The tones that are a conifer's needles, on the maps of 2026-10-31: a
+ * map draws its tiers through crownCone, which draws these as whorls and
+ * anything else as the cone it was. The town and the builder's own pine
+ * (stCedar through ./street.js treeDraw) keep their cones: only a map that
+ * calls crownCone opts in. */
+export const CONIFER_TONES = new Set([
+  'stCedar0', 'stCedar1', 'stCedar2', 'tgCedar0', 'tgCedar1', 'tgCedar2',
+  'afCedar', 'afCedarDeep', 'kiCedar', 'kiCedarDeep', 'kzFir',
+  'alPine0', 'alPine1', 'alPine2', 'rxCedar', 'arFir', 'arFirDark',
+]);
+
 const CYL = new Map();
 function unitCyl(seg) {
   let g = CYL.get(seg);
   if (!g) {
     g = new THREE.CylinderGeometry(1, 1, 1, seg, 1);
     CYL.set(seg, g);
+  }
+  return g;
+}
+
+/* A unit cylinder without its cap at the a end (its -y end, which
+ * alongMatrix puts at a), for a post standing on the floor: the floorBox
+ * argument, for a round part. CylinderGeometry's groups are the side, the
+ * +y cap and the -y cap, in that order. */
+const CYL_FOOT = new Map();
+function footCyl(seg) {
+  let g = CYL_FOOT.get(seg);
+  if (!g) {
+    const full = new THREE.CylinderGeometry(1, 1, 1, seg, 1);
+    const foot = full.groups[2];
+    const idx = Array.from(full.index.array);
+    g = full;
+    g.setIndex([...idx.slice(0, foot.start), ...idx.slice(foot.start + foot.count)]);
+    g.clearGroups();
+    CYL_FOOT.set(seg, g);
   }
   return g;
 }
@@ -571,8 +892,10 @@ const FACE_ROT = {
  */
 export class PropKit {
   /* `look` is a time of day's say over the materials, from
-   * src/maps/built/looks.js, or nothing for the town's own golden hour. */
-  constructor(look = null) {
+   * src/maps/built/looks.js, or nothing for the town's own golden hour.
+   * `clumps` false draws a canopy's blobs round rather than lumpy (see
+   * clumpBlob), as a built map does on Low. */
+  constructor(look = null, { clumps = true } = {}) {
     /* Handed to a family's draw() so it can build a geometry the kit has no
      * word for, without importing a renderer into a file Node must load. */
     this.THREE = THREE;
@@ -584,6 +907,11 @@ export class PropKit {
     /* At night, every lamp drawn, in world metres: see add(). */
     this.lamps = [];
     this.lampMat = propMaterial('lampGlow');
+    /* Canopy blobs drawn so far, which hands out their codes: codedLeaf. */
+    this.leaves = 0;
+    this.clumps = clumps !== false;
+    /* The parts that turn, when the caller turns them: see turning(). */
+    this.turners = null;
   }
 
   /* Where the next element goes: world position and heading. */
@@ -675,7 +1003,7 @@ export class PropKit {
 
   /* ---- the vocabulary a draw() speaks ---- */
 
-  box(mat, x0, y0, z0, x1, y1, z1) {
+  box(mat, x0, y0, z0, x1, y1, z1, unit = UNIT.box) {
     const w = Math.abs(x1 - x0);
     const h = Math.abs(y1 - y0);
     const d = Math.abs(z1 - z0);
@@ -685,7 +1013,7 @@ export class PropKit {
     _v.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
     _s.set(w, h, d);
     _q.identity();
-    this.add(mat, UNIT.box, new THREE.Matrix4().compose(_v, _q, _s));
+    this.add(mat, unit, new THREE.Matrix4().compose(_v, _q, _s));
   }
 
   cyl(mat, a, b, r, seg = 8, rTop = null) {
@@ -739,18 +1067,55 @@ export class PropKit {
     this.add(mat, UNIT.blob, new THREE.Matrix4().compose(_v, _q, _s));
   }
 
-  /* A blob of a tree's canopy, shaded round: see roundBlob. */
+  /* A blob of a tree's canopy, shaded round (roundBlob) or drawn as a
+   * clump (clumpBlob), and coded so it inks as one shape (codedLeaf). */
   leaf(mat, c, r, ry, spin) {
     _v.set(c[0], c[1], c[2]);
     _s.set(r, ry, r);
     _q.setFromEuler(new THREE.Euler(spin[0], spin[1], spin[2]));
-    this.add(mat, UNIT.leaf, new THREE.Matrix4().compose(_v, _q, _s));
+    const m = new THREE.Matrix4().compose(_v, _q, _s);
+    if (typeof mat !== 'string') {
+      this.add(mat, UNIT.leaf, m);
+      return;
+    }
+    const clump = this.clumps && ry <= r * CLUMP_SQUASH;
+    this.add(leafMaterial(mat, this.look), codedLeaf(this.leaves, clump), m);
+    this.leaves += 1;
   }
 
   cone(mat, base, r, h, seg = 10) {
     const g = new THREE.ConeGeometry(r, h, seg, 1);
     g.translate(base[0], base[1] + h / 2, base[2]);
     this.add(mat, g);
+  }
+
+  /* A conifer's tier where a map drew `cone(mat, base, r, h, seg)`: the
+   * same footprint and height, drawn as a whorl of points (whorlGeometry),
+   * turned by `spin` about its axis so stacked tiers do not line up. */
+  whorl(mat, base, r, h, seg = 7, spin = 0) {
+    _v.set(base[0], base[1], base[2]);
+    _s.set(r, h, r);
+    _q.setFromAxisAngle(_up, spin);
+    this.add(mat, whorlGeometry(coniferPoints(seg)), new THREE.Matrix4().compose(_v, _q, _s));
+  }
+
+  /* The whorl shape for a tier a map drew as a `seg` sided cone, for a
+   * family's draw() that bakes its own matrices (Hotaru Valley's cedars)
+   * and must not import this file, being loaded in Node. */
+  whorlOf(seg, open = false) {
+    return whorlGeometry(coniferPoints(seg), open);
+  }
+
+  /* A cone, or a conifer's tier where `mat` is one of CONIFER_TONES: the
+   * whorl, turned by a hash of where it stands so a stack does not line
+   * its points up. Same footprint, same height, no more triangles. */
+  crownCone(mat, base, r, h, seg = 10) {
+    if (typeof mat === 'string' && CONIFER_TONES.has(mat) && r > 0 && h > 0) {
+      const k = mix32(Math.round(base[0] * 16), Math.round(base[1] * 16), Math.round(base[2] * 16));
+      this.whorl(mat, base, r, h, seg, (k / 4294967296) * Math.PI * 2);
+      return;
+    }
+    this.cone(mat, base, r, h, seg);
   }
 
   torus(mat, c, R, t) {
@@ -772,6 +1137,55 @@ export class PropKit {
     const edge = new THREE.CylinderGeometry(r1, r1, thick, 32, 1, true);
     edge.translate(c[0], c[1] - thick / 2, c[2]);
     this.add(mat, edge);
+  }
+
+  /*
+   * A TAPERED TUBE, OPEN AT BOTH ENDS, on the element's vertical axis: from
+   * height y0, where it is r0 round, to y1, where it is r1, over the arc
+   * [a0, a1] (radians, counted from +x toward +z, which is how ./parts.js's
+   * `around` counts, so a layout and its drawing name an angle the same
+   * way) or all the way round. `inward` turns it inside out, so that what
+   * the eye in the middle sees is its face: the bore of a chimney.
+   *
+   * Open, so nothing is lidded by accident: the cylinder `cyl` draws has a
+   * cap at each end, which across a chimney is a ceiling.
+   */
+  shell(mat, y0, y1, r0, r1, arc = null, inward = false, seg = 48) {
+    if (!(y1 - y0 > 1e-4) || !(r0 > 0) || !(r1 > 0)) {
+      return;
+    }
+    const a0 = arc ? arc[0] : 0;
+    const len = arc ? arc[1] - arc[0] : Math.PI * 2;
+    if (!(len > 1e-4)) {
+      return;
+    }
+    const n = Math.max(2, Math.ceil((seg * len) / (Math.PI * 2)));
+    /* three's cylinder runs its angle from +z toward +x, ours from +x toward
+     * +z, so the arc is mirrored: its start is the far end of ours. */
+    const g = new THREE.CylinderGeometry(r1, r0, y1 - y0, n, 1, true, Math.PI / 2 - a0 - len, len);
+    g.translate(0, (y0 + y1) / 2, 0);
+    this.add(mat, inward ? turnedInside(g) : g);
+  }
+
+  /* A round bar bent into a level ring, or into part of one over the arc
+   * [a0, a1] (as `shell` counts angles): a hoop round a stack, a rolled
+   * rim, the rounded underside of a lintel. `R` is the radius of the ring,
+   * `t` the radius of the bar. */
+  rim(mat, y, R, t, seg = 48, arc = null) {
+    const a0 = arc ? arc[0] : 0;
+    const len = arc ? arc[1] - arc[0] : Math.PI * 2;
+    if (!(len > 1e-4)) {
+      return;
+    }
+    const g = new THREE.TorusGeometry(R, t, 8, Math.max(2, Math.ceil((seg * len) / (Math.PI * 2))), len);
+    /* The torus lies in the XY plane from angle 0; laid flat it runs from +x
+     * toward +z, and turned by -a0 about up it starts at a0. */
+    g.rotateX(Math.PI / 2);
+    if (a0) {
+      g.rotateY(-a0);
+    }
+    g.translate(0, y, 0);
+    this.add(mat, g);
   }
 
   /* A dish: a shallow cone facing `dir`. */
@@ -996,6 +1410,40 @@ export class PropKit {
 
   /* ---- drawing an element ---- */
 
+  /*
+   * A PART THAT TURNS about an axis along the element's +x through `at` (in
+   * the element's frame), drawn by `draw(K)` in a frame of its own: `at` its
+   * origin, +x its axis, and `angle` where it stands now, radians, turned
+   * the way Object3D.rotation.x turns. A windmill's sails (./windmill.js).
+   *
+   * With nobody collecting (`turners` null: the builder's preview, the
+   * gallery) it is drawn where it stands into the element's own batches,
+   * like any paint. A map that turns it sets `turners` to a list first, and
+   * the part is then drawn about its axis by a kit of its own, into a group
+   * of its own, and listed as { group, place, chunk, tag }: `place` the
+   * element's frame moved to `at`, which the map hangs the group from, and
+   * `tag` whatever the asset handed over, so the map can ask the asset how
+   * far it has turned (mountTurning in src/maps/built/index.js).
+   */
+  turning(at, angle, draw, tag = null) {
+    const local = new THREE.Matrix4().makeTranslation(at[0], at[1], at[2]);
+    if (!this.turners) {
+      const saved = this.place.clone();
+      this.place.multiply(local).multiply(new THREE.Matrix4().makeRotationX(angle));
+      try {
+        draw(this);
+      } finally {
+        this.place.copy(saved);
+      }
+      return;
+    }
+    const sub = new PropKit(this.look, { clumps: this.clumps });
+    sub.begin(0, 0, 0, 0);
+    draw(sub);
+    this.counts.decor += sub.counts.decor;
+    this.turners.push({ group: sub.finish(), place: this.place.clone().multiply(local), chunk: this.chunk, tag });
+  }
+
   /* Draw one part the layout marked as drawn. */
   part(p) {
     if (!p.draw) {
@@ -1003,9 +1451,28 @@ export class PropKit {
     }
     this.counts.parts += 1;
     if (p.t === 'box') {
+      if (p.cast === false) {
+        const d = [p.hi[0] - p.lo[0], p.hi[1] - p.lo[1], p.hi[2] - p.lo[2]].map(Math.abs);
+        const axis = d.indexOf(Math.min(...d));
+        if (d[axis] < SHEET && d[(axis + 1) % 3] > SHEET * 4 && d[(axis + 2) % 3] > SHEET * 4) {
+          this.box(p.m, p.lo[0], p.lo[1], p.lo[2], p.hi[0], p.hi[1], p.hi[2], UNIT.sheet[axis]);
+          return;
+        }
+      }
+      if (this.onFloor && this.onFloor(p)) {
+        this.box(p.m, p.lo[0], p.lo[1], p.lo[2], p.hi[0], p.hi[1], p.hi[2], UNIT.floorBox);
+        return;
+      }
       this.box(p.m, p.lo[0], p.lo[1], p.lo[2], p.hi[0], p.hi[1], p.hi[2]);
     } else if (p.look === 'capsule') {
       this.capsule(p.m, p.a, p.b, p.r, p.seg);
+    } else if (this.onFloor && (p.rTop == null || Math.abs(p.rTop - p.r) < 1e-6) && this.onFloor(p)) {
+      /* Drawn from its foot up, so the cap left off is the one on the floor. */
+      const foot = p.a[1] <= p.b[1] ? [p.a, p.b] : [p.b, p.a];
+      const m = alongMatrix(foot[0], foot[1], p.r, p.r, new THREE.Matrix4());
+      if (m) {
+        this.add(p.m, footCyl(p.seg ?? 8), m);
+      }
     } else {
       this.cyl(p.m, p.a, p.b, p.r, p.seg, p.rTop);
     }
@@ -1013,7 +1480,9 @@ export class PropKit {
 
   /*
    * Draw an element in the current frame: its parts, then its paint.
-   * Returns its parts, which the caller may want for its solids.
+   * Returns its parts AS IT STANDS, which the caller may want for its solids
+   * or its pick boxes: the layout's own, or stood on end if it is, so what
+   * comes back is where the drawn thing is.
    */
   element(el) {
     const a = assetOf(el);
@@ -1023,13 +1492,40 @@ export class PropKit {
     const style = styleOf(el);
     const view = style && style !== el.style ? { ...el, style } : el;
     const parts = partsOf(view);
-    for (const p of parts) {
-      this.part(p);
+    /*
+     * STOOD ON END (tiltMeasure in ./solids.js): the whole element turns, the
+     * parts and everything an asset's draw() paints over them, because both
+     * are written in the upright frame. The matrix is the turn itself, with
+     * cosine 0 and sine q, written out so no engine's cosine of a quarter pi
+     * leaves a sliver of skew in it, and the two offsets the solids use.
+     * Restored afterwards, so the next element is placed from the frame it
+     * was begun in.
+     */
+    const q = tiltOf(view);
+    let saved = null;
+    if (q) {
+      const m = tiltMeasure(parts, q);
+      saved = this.place.clone();
+      this.place.multiply(new THREE.Matrix4().set(
+        0, -q, 0, m.dx,
+        q, 0, 0, m.dy,
+        0, 0, 1, 0,
+        0, 0, 0, 1,
+      ));
     }
-    if (a.draw) {
-      a.draw(view, parts, this);
+    try {
+      for (const p of parts) {
+        this.part(p);
+      }
+      if (a.draw) {
+        a.draw(view, parts, this);
+      }
+    } finally {
+      if (saved) {
+        this.place.copy(saved);
+      }
     }
-    return parts;
+    return q ? tiltParts(parts, q) : parts;
   }
 
   /*

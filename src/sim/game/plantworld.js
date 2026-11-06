@@ -74,7 +74,7 @@
  * along with WebFPVSimulator. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { threePosToSim, threeDirToSim, simPosToThree, simQuatToThree, simLenToWorld } from '../render/frame.js';
+import { threePosToSim, simPosToThree, simQuatToThree, simLenToWorld } from '../render/frame.js';
 import { contactMaterial } from './collide.js';
 
 const A = { x: 0, y: 0, z: 0 };
@@ -176,13 +176,33 @@ export function setMover(sim, m, cx, cy, cz, hx, hy, hz, vx, vy, vz, kind, visib
   }
   threePosToSim(cx - hx, cy - hy, cz - hz, A);
   threePosToSim(cx + hx, cy + hy, cz + hz, B);
-  threeDirToSim(vx, vy, vz, V);
+  /* A velocity is a length a second, so it takes the world scale the way a
+   * position does: threePosToSim, which is linear and carries no offset,
+   * not threeDirToSim, which is for unit directions. The same at a world
+   * scale of 1 to the bit. */
+  threePosToSim(vx, vy, vz, V);
   sim.e.sim_world_mover(
     m,
     Math.min(A.x, B.x), Math.min(A.y, B.y), Math.min(A.z, B.z),
     Math.max(A.x, B.x), Math.max(A.y, B.y), Math.max(A.z, B.z),
     V.x, V.y, V.z, mat.e, mat.mu,
   );
+}
+
+/*
+ * A mover's velocity as setMover takes it, Three.js metres a second, in the
+ * PLANT frame: the one permutation, then the plant frame's yaw taken out
+ * with (c, s), the cosine and sine src/props/trig.js gave the shell's
+ * frameTurn, so no engine's cosine reaches the physics. For the shell's
+ * crash bounce off a face that moves (dullBounce's surf in collide.js).
+ * out is three doubles and is returned. Allocates nothing.
+ */
+export function moverVelocityInPlant(vx, vy, vz, c, s, out) {
+  threePosToSim(vx, vy, vz, V);
+  out[0] = c * V.x + s * V.y;
+  out[1] = c * V.y - s * V.x;
+  out[2] = V.z;
+  return out;
 }
 
 /* A box's vertical extent, in Three.js metres: the plant's z is Three.js y. */
@@ -273,7 +293,10 @@ export function addVehicle(sim, m, road, car) {
   const mat = contactMaterial(car.kind || 'train');
   const code = sim.e.sim_world_vehicle(
     m, road, simLen(car.offset || 0),
-    car.topSpeed, car.lateral, car.drift || 0,
+    /* A speed and an acceleration have a length in them and take the world
+     * scale; the drift gain is per unit of acceleration and takes it the
+     * other way. All three are the numbers they were at a scale of 1. */
+    simLen(car.topSpeed), simLen(car.lateral), (car.drift || 0) / simLen(1),
     simLen(car.length), simLen(car.width), simLen(car.height), simLen(car.clearance || 0),
     mat.e, mat.mu,
   );
@@ -408,8 +431,85 @@ export function readVehicles(sim, out) {
     /* A turn about the plant's +z is a turn about Three.js +y, the same way:
      * frame.js's change of basis is a proper rotation. */
     o.yawRate = f[b + 11];
-    o.curvature = f[b + 14];
+    /* One over a length, so the other way through the scale. */
+    o.curvature = f[b + 14] / simLenToWorld(1);
     o.slip = f[b + 15];
   }
+  return out;
+}
+
+/* src/native/sim_abi.h SIM_VEHICLE_CONTACT_DOUBLES, and src/native/world.c
+ * WORLD_MAX_CONTACTS, the most contacts one step can keep. */
+const VEHICLE_CONTACT_DOUBLES = 12;
+const VEHICLE_CONTACTS_MAX = 96;
+
+/* Per module instance, the scratch the contacts are read into, as POSES. */
+const CONTACTS = new WeakMap();
+
+/*
+ * A ROAD CAR'S FACE, MOVING, for the shell's crash bounce (dullBounce's surf
+ * in src/game/collide.js), bug-3e12c7a9.
+ *
+ * Car m's surface velocity where the craft touched it in the step just
+ * taken, in the PLANT frame, into `out` (three doubles), which is returned;
+ * null when the craft touched nothing of car m in that step. It is the mean
+ * of the module's own surface velocity over every contact on that car
+ * (sim_world_vehicle_contacts, its [8..10]: the car's velocity and the rate
+ * its box turns, at the point), so a drift car's swinging tail is met at the
+ * speed the tail moves and not the speed the car does. The contacts are in
+ * the module's world frame, SI, which is the plant's own units, so only the
+ * plant frame's yaw is taken out, with (c, s), the cosine and sine the
+ * shell's frameTurn has from src/props/trig.js, as moverVelocityInPlant
+ * does. Read only, and allocates nothing after the first call on a module.
+ *
+ * Without it a car was a still wall to the bounce: the craft was sent off
+ * its bonnet at a walking pace and the car drove into it again on the next
+ * step, every step, each one a crash that took the spin off, so the craft
+ * rode the car's front at the car's speed and could not be flown off it.
+ * scripts/cartrap-check.js flies that.
+ */
+export function vehicleSurfaceInPlant(sim, m, c, s, out) {
+  need(sim, 'sim_world_vehicle_contacts');
+  let slot = CONTACTS.get(sim.e);
+  if (!slot) {
+    const ptr = sim.e.malloc(VEHICLE_CONTACTS_MAX * VEHICLE_CONTACT_DOUBLES * 8);
+    if (!ptr) {
+      throw new Error('sim_world_vehicle_contacts: malloc failed');
+    }
+    slot = { ptr, view: null };
+    CONTACTS.set(sim.e, slot);
+  }
+  const all = sim.e.sim_world_vehicle_contacts(slot.ptr, VEHICLE_CONTACTS_MAX);
+  if (!(all > 0)) {
+    return null;
+  }
+  if (!slot.view || slot.view.buffer !== sim.e.memory.buffer) {
+    slot.view = new Float64Array(sim.e.memory.buffer, slot.ptr, VEHICLE_CONTACTS_MAX * VEHICLE_CONTACT_DOUBLES);
+  }
+  const f = slot.view;
+  const n = all < VEHICLE_CONTACTS_MAX ? all : VEHICLE_CONTACTS_MAX;
+  let vx = 0;
+  let vy = 0;
+  let vz = 0;
+  let k = 0;
+  for (let i = 0; i < n; i += 1) {
+    const b = i * VEHICLE_CONTACT_DOUBLES;
+    if (f[b] !== m) {
+      continue;
+    }
+    vx += f[b + 8];
+    vy += f[b + 9];
+    vz += f[b + 10];
+    k += 1;
+  }
+  if (k === 0) {
+    return null;
+  }
+  vx /= k;
+  vy /= k;
+  vz /= k;
+  out[0] = c * vx + s * vy;
+  out[1] = c * vy - s * vx;
+  out[2] = vz;
   return out;
 }

@@ -39,15 +39,19 @@
  */
 
 import {
-  ELEMENTS, KIND, TUNING, TRACK_CLASSES, TRACK_CLASS_DEFAULT, FRAME_SIDES, apertureLevels,
+  ELEMENTS, KIND, TUNING, TRACK_CLASSES, TRACK_CLASS_DEFAULT, FRAME_SIDES, apertureLevels, apertureShapeOf, openingSizesOf,
   defaultDims, defaultPitch, defaultZ, elementHeight, normalizeFlagSide, normalizeUnbuiltSides,
-  trackClassOf, tuningFor, docModeOf, isTrafficType, clampByLimits,
-  ROAD_NODES_MAX, ROAD_NODE_REACH,
+  trackClassOf, tuningFor, docModeOf, POLE_SIDES, PVC_TYPES, isPvcPipe, poleKey, unbuiltPolesOf, isTrafficType, clampByLimits, FLAG_SIDES, GATE_FLAG_H, GATE_STYLES,
+  ROAD_NODES_MAX, ROAD_NODE_REACH, SINK_MAX, LETTER_TUBE_OD, isLetterPiece, letterDimsFor, letterOfPiece,
 } from './elements.js';
 import { apertureFrame, wrapAngle } from './geometry.js';
 import {
-  styleOf as propStyleOf, clampDim, gapPointsOf, styleDims, GAP_POINTS, CAR_STYLES,
+  LETTER_DEFAULT, layoutLetter, letterOf, nearestOpening, openingCount, primaryOpening,
+} from '../props/letters.js';
+import {
+  styleOf as propStyleOf, clampDim, fitDims, gapPointsOf, styleDims, GAP_POINTS, CAR_STYLES, tiltOf,
 } from '../props/types.js';
+import { isRoomType, ROOM_SIZE_MIN, ROOM_SIZE_MAX } from '../props/room.js';
 
 /*
  * The schema version. Bump it when a change to the document cannot be read
@@ -77,6 +81,18 @@ import {
  * smuggled in at 2.
  */
 export const SCHEMA_VERSION = 3;
+
+/* How a pass of a stacked gate is reached from the one before it on the same stack: round the left of it as flown, round
+ * the right, or over the front in a loop (figures.js). The default, when none is said, is left for neighbouring
+ * levels and over the front for a leap. */
+export const WRAPS = ['left', 'right', 'over'];
+
+/* The whoop room before it grew to 10 by 12 m, the only other size it has
+ * ever had: see the migration at the foot of normalize(). */
+const OLD_ROOM = Object.freeze({ width: 5, depth: 6 });
+
+/* The sizes a gate cannot do without: see the repair in normalize(). */
+const GATE_SIZES = ['clearW', 'clearH', 'levelPitch'];
 
 /*
  * ONE MARK, as a data URL, and the cap on it. The list they live in, and the
@@ -161,6 +177,49 @@ export function logoForDecal(doc, el) {
     return logos[0];
   }
   return logos.find((l) => l.id === id) ?? null;
+}
+
+/*
+ * A STICKER: a decal that wears one piece of its logo rather than the whole
+ * of it. `crop` is that piece, { x, y, w, h }, as shares of the logo
+ * picture's width and height with y counted down from its top edge, the way
+ * a picture is read. It exists because a map carries at most LOGO_SLOTS
+ * logos and the board holds each to a size, so a sticker bomb of a hundred
+ * stickers is one sheet in one slot and a hundred decals that each say which
+ * piece of it they are. src/maps/built/ground.js draws every sticker cut
+ * from one sheet as one mesh on one texture.
+ *
+ * Returns the piece, or null for a decal that wears its whole logo: no
+ * crop, or one that is not a rectangle inside the picture. A piece narrower
+ * than CROP_MIN of the sheet is not one, because it would be a pixel.
+ */
+export const CROP_MIN = 0.001;
+export function cropOf(el) {
+  const c = el?.crop;
+  if (!c || typeof c !== 'object') {
+    return null;
+  }
+  const x = Number(c.x);
+  const y = Number(c.y);
+  const w = Number(c.w);
+  const h = Number(c.h);
+  if (![x, y, w, h].every(Number.isFinite) || x < 0 || y < 0 || w < CROP_MIN || h < CROP_MIN
+    || x + w > 1 + 1e-9 || y + h > 1 + 1e-9) {
+    return null;
+  }
+  return { x, y, w, h };
+}
+
+/*
+ * WHAT FINDING A DECAL IS CALLED, or '' for one that is only paint. A decal
+ * with an achievement is found the way a partner's mark is (seesMark in
+ * src/game/egg.js): fly up to it and look at it, and the callout says this
+ * word. Short, because it is lettered across the screen.
+ */
+export const ACHIEVEMENT_MAX = 24;
+export function achievementOf(el) {
+  const a = typeof el?.achievement === 'string' ? el.achievement.trim() : '';
+  return a.length <= ACHIEVEMENT_MAX ? a : a.slice(0, ACHIEVEMENT_MAX);
 }
 
 /* Every number in the file is written to this many decimal places. Six is a
@@ -266,6 +325,11 @@ export function sceneOf(doc) {
     time: SCENE_TIMES.includes(s.time) ? s.time : SCENE_DEFAULT.time,
     ground: SCENE_GROUNDS.includes(s.ground) ? s.ground : SCENE_DEFAULT.ground,
   };
+}
+
+/* Whether a track is a night race, which only a full sized race track can be. */
+export function isNightRace(doc) {
+  return Boolean(doc && doc.night === true && docModeOf(doc) !== 'freestyle' && trackClassOf(doc) === 'full');
 }
 
 /* Whether a scene is the default one, which is the one toPlain leaves out. */
@@ -452,6 +516,12 @@ export function createElement(doc, type, position, yaw = 0) {
   if (def.kind === KIND.ANNOTATION) {
     el.text = 'Label';
   }
+  if (isLetterPiece(type)) {
+    /* A letter is named for its letter, which is how the card, the warnings and the strip call it; the name is
+     * the author's to change, and changing the letter keeps it in step only while it is still this one. */
+    el.letter = LETTER_DEFAULT;
+    el.name = letterName(LETTER_DEFAULT);
+  }
   if (def.flagSide) {
     el.flagSide = def.flagSide;
   }
@@ -559,6 +629,54 @@ export function createSequenceEntry(doc, elementId, apertureIndex = 0) {
   return entry;
 }
 
+/* What a letter piece is called until its author calls it something else. */
+export function letterName(letter) {
+  return `Letter ${letter}`;
+}
+
+/* A letter piece that has just been made, made the letter asked for: its own size, and its name. */
+export function initLetter(el, letter) {
+  const next = letterOf(letter);
+  el.letter = next;
+  Object.assign(el.dims, letterDimsFor(next));
+  el.name = letterName(next);
+  return el;
+}
+
+/*
+ * TURN A LETTER INTO ANOTHER LETTER, in place: the same piece, standing where it stood and facing the way it faced,
+ * as another letter. It keeps the author's scale (a letter stretched half as wide again again is another letter
+ * stretched the same, see letterDimsFor), keeps its name if the name was the one it was given, and keeps its
+ * place in the flying order: a pass through the old letter's primary hole is a pass through the new letter's
+ * primary hole, and a pass through any other is the nearest hole the new letter has. Returns true when the
+ * document changed.
+ */
+export function setLetter(doc, elementId, letter) {
+  const el = elementById(doc, elementId);
+  if (!el || !isLetterPiece(el)) {
+    return false;
+  }
+  const next = letterOf(letter);
+  const was = letterOfPiece(el);
+  if (next === was && el.letter === next) {
+    return false;
+  }
+  const wasPrimary = primaryOpening(was);
+  Object.assign(el.dims, letterDimsFor(next, el));
+  if (!el.name || el.name === letterName(was)) {
+    el.name = letterName(next);
+  }
+  el.letter = next;
+  const count = openingCount(next);
+  for (const s of doc.sequence) {
+    if (s.elementId === elementId) {
+      const index = s.apertureIndex ?? 0;
+      s.apertureIndex = index === wasPrimary ? primaryOpening(next) : Math.min(index, count - 1);
+    }
+  }
+  return true;
+}
+
 /*
  * Build or take away one side of an aperture's frame. See FRAME_SIDES in
  * elements.js. Returns true when the document changed.
@@ -592,7 +710,117 @@ export function setSideBuilt(doc, elementId, side, built) {
   } else {
     delete el.unbuiltSides;
   }
+  /* Taking a whole side away covers every stretch of it, so none is written beside it. */
+  if (Array.isArray(el.unbuiltPoles) && !built) {
+    const rest = el.unbuiltPoles.filter((k) => !k.startsWith(`${side}:`));
+    if (rest.length) {
+      el.unbuiltPoles = rest;
+    } else {
+      delete el.unbuiltPoles;
+    }
+  }
   return true;
+}
+
+/*
+ * Build or take away one opening's stretch of one upright of a stack. See unbuiltPolesOf in elements.js.
+ * Returns true when the document changed. A stretch of a whole upright that is already gone is nothing to
+ * take away, so it answers false; putting one back on a whole upright that is gone gives back the other stretches
+ * and leaves just the ones that were not asked for missing, which is the same thing said the finer way. When every
+ * stretch of an upright is gone the upright is, and is written as that.
+ */
+export function setPoleBuilt(doc, elementId, side, index, built) {
+  const el = elementById(doc, elementId);
+  if (!el || kindOf(el) !== KIND.APERTURE || !POLE_SIDES.includes(side) || isLetterPiece(el)
+    || el.unbuilt === true || apertureShapeOf(el) !== 'square') {
+    return false;
+  }
+  const count = apertureLevels(el.dims).length;
+  if (count < 2 || !Number.isInteger(index) || index < 0 || index >= count) {
+    return false;
+  }
+  const whole = normalizeUnbuiltSides(el.unbuiltSides);
+  const wasWhole = whole.includes(side);
+  const wasGone = wasWhole || unbuiltPolesOf(el).includes(poleKey(side, index));
+  if (wasGone === !built) {
+    return false;
+  }
+  /* The stretches of this upright that are gone after the change, by opening. */
+  const gone = new Set();
+  for (let i = 0; i < count; i += 1) {
+    if (wasWhole || unbuiltPolesOf(el).includes(poleKey(side, i))) {
+      gone.add(i);
+    }
+  }
+  if (built) {
+    gone.delete(index);
+  } else {
+    gone.add(index);
+  }
+  const keep = unbuiltPolesOf(el).filter((k) => !k.startsWith(`${side}:`));
+  let sides = whole.filter((s) => s !== side);
+  if (gone.size === count) {
+    sides = normalizeUnbuiltSides([...sides, side]);
+  } else {
+    for (const i of gone) {
+      keep.push(poleKey(side, i));
+    }
+  }
+  if (sides.length) {
+    el.unbuiltSides = sides;
+  } else {
+    delete el.unbuiltSides;
+  }
+  el.unbuiltPoles = keep;
+  const cleaned = unbuiltPolesOf(el);
+  if (cleaned.length) {
+    el.unbuiltPoles = cleaned;
+  } else {
+    delete el.unbuiltPoles;
+  }
+  return true;
+}
+
+/*
+ * Set one opening of a stack to a size of its own, or give it back the stack's. `patch` is `{ clearW?, clearH? }`: a
+ * length sets that side of the opening, `null` takes the override away. A size that is no length (not a number, or
+ * not above zero) is refused and the document is not touched, so nothing downstream is ever handed a NaN. Returns
+ * true when the document changed. The list is kept only while some opening differs (openingSizesOf in elements.js).
+ */
+export function setOpeningSize(doc, elementId, index, patch) {
+  const el = elementById(doc, elementId);
+  if (!el || kindOf(el) !== KIND.APERTURE || isLetterPiece(el) || apertureShapeOf(el) !== 'square') {
+    return false;
+  }
+  const count = Math.max(1, Math.round(el.dims.levels));
+  if (count < 2 || !Number.isInteger(index) || index < 0 || index >= count) {
+    return false;
+  }
+  for (const key of ['clearW', 'clearH']) {
+    if (patch[key] !== undefined && patch[key] !== null
+      && !(typeof patch[key] === 'number' && Number.isFinite(patch[key]) && patch[key] > 0)) {
+      return false;
+    }
+  }
+  const before = JSON.stringify(el.dims.openings ?? null);
+  const list = [];
+  for (let i = 0; i < count; i += 1) {
+    list.push({ ...(Array.isArray(el.dims.openings) && el.dims.openings[i] ? el.dims.openings[i] : {}) });
+  }
+  for (const key of ['clearW', 'clearH']) {
+    if (patch[key] === null) {
+      delete list[index][key];
+    } else if (patch[key] !== undefined) {
+      list[index][key] = patch[key];
+    }
+  }
+  const kept = openingSizesOf({ ...el.dims, openings: list });
+  if (kept) {
+    el.dims.openings = kept;
+  } else {
+    delete el.dims.openings;
+  }
+  return JSON.stringify(el.dims.openings ?? null) !== before;
 }
 
 /* ------------------------------------------------------------------ */
@@ -647,17 +875,128 @@ export function dressOrder(doc) {
   return slots;
 }
 
+/* The longest a group's name is kept. It is an id the builder makes ("grp-3"), and this is only a bound. */
+const GROUP_NAME_MAX = 40;
+
+/*
+ * PIECES THAT ARE ONE PIECE. A cube is five or six gates, one for each face, that share their pipe, and
+ * moving one face of it is not a thing anybody means, so the faces carry a `group` and a selection of one
+ * is a selection of all. Nothing else in the document knows: every face is an ordinary gate to the path,
+ * the course, the race and the views, which is the reason a cube can be made of them.
+ *
+ * The members of the group an element is in, itself among them, or just itself when it is in none. An id
+ * that is not in the document has no members.
+ */
+export function groupMembers(doc, id) {
+  const el = elementById(doc, id);
+  if (!el) {
+    return [];
+  }
+  return el.group ? doc.elements.filter((e) => e.group === el.group) : [el];
+}
+
+/* A selection, grown to every piece of every group it touches. An id that is not in the document is kept as
+ * it came, and nothing is added for it. */
+export function expandGroups(doc, ids) {
+  const out = new Set();
+  for (const id of ids) {
+    out.add(id);
+    const el = elementById(doc, id);
+    if (el && el.group) {
+      for (const e of doc.elements) {
+        if (e.group === el.group) {
+          out.add(e.id);
+        }
+      }
+    }
+  }
+  return out;
+}
+
+/* A name for a new group that no piece in the document has. */
+export function newGroupId(doc) {
+  const taken = new Set(doc.elements.map((e) => e.group).filter(Boolean));
+  let n = taken.size + 1;
+  while (taken.has(`grp-${n}`)) {
+    n += 1;
+  }
+  return `grp-${n}`;
+}
+
 export function startPadsOf(doc) {
   return doc.elements.find((e) => kindOf(e) === KIND.START);
 }
 
 /* The openings of one element, bottom to top. Empty for anything that is not
- * an aperture element. */
+ * an aperture element.
+ *
+ * An opening says what SHAPE it is only when it is not a square (a hoop's is
+ * 'circle', a hex gate's is 'hex'), so a gate's opening has the keys it has
+ * always had and nothing that reads one is handed a word it does not know. */
 export function aperturesOf(el) {
   if (kindOf(el) !== KIND.APERTURE) {
     return [];
   }
-  return apertureLevels(el.dims);
+  if (isLetterPiece(el)) {
+    return letterLayoutOf(el).apertures;
+  }
+  const levels = apertureLevels(el.dims);
+  const shape = apertureShapeOf(el);
+  return shape === 'square' ? levels : levels.map((ap) => ({ ...ap, shape }));
+}
+
+/*
+ * THE LETTER'S LAYOUT, in the document's frame: where each tube, joint and hole is for this piece's letter and
+ * its size, with x along the piece's widthAxis and y up from its base. One layout for every reader, which is
+ * what keeps the room, the plan, the card and the game from each drawing a W of their own. It is cached by
+ * letter and size, because the views ask for it on every frame and it is the same until the piece is edited.
+ * READ ONLY: what comes back is shared.
+ *
+ * A letter reads the right way round from the side a pilot approaches it, flying along its normal, and
+ * widthAxis is the pilot's LEFT from there, so the layout is the mirror of the one the pilot sees.
+ *
+ * `apertures` is the same holes in the shape aperturesOf gives every opening: each hole's polygon is relative
+ * to its own point (centerX across, centerH up), which is where the racing line goes through it.
+ */
+const LETTER_LAYOUTS = new Map();
+
+export function letterLayoutOf(el) {
+  const letter = letterOfPiece(el);
+  const key = `${letter}|${el.dims.clearW}|${el.dims.clearH}`;
+  let laid = LETTER_LAYOUTS.get(key);
+  if (!laid) {
+    laid = layoutLetter(letter, el.dims.clearW, el.dims.clearH, LETTER_TUBE_OD / 2, { mirror: true });
+    laid.apertures = Object.freeze(laid.openings.map((o) => Object.freeze({
+      index: o.index,
+      sillH: o.sillH,
+      centerH: o.cy,
+      centerX: o.cx,
+      clearW: o.clearW,
+      clearH: o.clearH,
+      shape: 'poly',
+      /* A hole too small for its pipe has no area, and is a hole with no corners: nothing scores. */
+      poly: o.ok ? o.poly.map(([x, y]) => [x - o.cx, y - o.cy]) : [],
+    })));
+    if (LETTER_LAYOUTS.size > 256) {
+      LETTER_LAYOUTS.clear();
+    }
+    LETTER_LAYOUTS.set(key, laid);
+  }
+  return laid;
+}
+
+/* The point of an opening the racing line goes through: the piece's position, across by centerX and up by
+ * centerH. Only a letter's openings have an across, so for everything else this is what it always was. */
+function openingPoint(el, ap) {
+  if (!ap.centerX) {
+    return { x: el.position.x, y: el.position.y, z: el.position.z + ap.centerH };
+  }
+  const f = apertureFrame(el.yaw, el.pitch);
+  return {
+    x: el.position.x + f.widthAxis.x * ap.centerX,
+    y: el.position.y + f.widthAxis.y * ap.centerX,
+    z: el.position.z + ap.centerH + f.widthAxis.z * ap.centerX,
+  };
 }
 
 /*
@@ -676,9 +1015,19 @@ export function entryAnchor(doc, seq) {
     if (!ap) {
       return null;
     }
-    return { x: el.position.x, y: el.position.y, z: el.position.z + ap.centerH };
+    return openingPoint(el, ap);
   }
   return { x: el.position.x, y: el.position.y, z: el.position.z };
+}
+
+/* How wide a piece stands across, for the readers that want one width of a stack whose openings may differ: the
+ * widest opening, or, with `top`, the top one, which is what the header board and the pennants sit on. */
+export function gateWidthOf(el, top = false) {
+  const aps = aperturesOf(el);
+  if (!aps.length) {
+    return el.dims?.clearW ?? 0;
+  }
+  return top ? aps[aps.length - 1].clearW : Math.max(...aps.map((ap) => ap.clearW));
 }
 
 /* The world centre of one opening, by index. Used by both views. */
@@ -688,7 +1037,35 @@ export function apertureCenter(el, index) {
   if (!ap) {
     return { ...el.position };
   }
-  return { x: el.position.x, y: el.position.y, z: el.position.z + ap.centerH };
+  return openingPoint(el, ap);
+}
+
+/*
+ * WHICH HOLE A POINT IS NEAREST, for the Fly order tool and a click on a letter: the hole the point is in,
+ * else the one whose racing line point is nearest. `point` is a world point (x, y, z). For a gate that is
+ * decided by height alone (apertureAt in passes.js); a letter's holes can stand side by side at one height,
+ * so this looks across as well.
+ */
+export function openingNearest(el, point) {
+  const aps = aperturesOf(el);
+  if (aps.length < 2) {
+    return 0;
+  }
+  if (!isLetterPiece(el)) {
+    let best = 0;
+    let gap = Infinity;
+    aps.forEach((ap, i) => {
+      const d = Math.abs(el.position.z + ap.centerH - (point?.z ?? 0));
+      if (d < gap) {
+        gap = d;
+        best = i;
+      }
+    });
+    return best;
+  }
+  const f = apertureFrame(el.yaw, el.pitch);
+  const across = (point.x - el.position.x) * f.widthAxis.x + (point.y - el.position.y) * f.widthAxis.y;
+  return nearestOpening(letterLayoutOf(el), across, (point.z ?? 0) - el.position.z);
 }
 
 /* The unsigned normal of an element's aperture plane. Every opening on one
@@ -698,7 +1075,9 @@ export function elementNormal(el) {
 }
 
 export function topOf(el) {
-  return el.position.z + elementHeight(defOf(el), el.dims);
+  /* Style and tilt, for the assets: a container stood on end is as tall as it
+   * is long, and which length depends on its style. */
+  return el.position.z + elementHeight(defOf(el), el.dims, isLetterPiece(el) ? el.letter : propStyleOf(el), tiltOf(el));
 }
 
 /* How many sequence entries point at an element. Multi referenced elements
@@ -730,6 +1109,19 @@ export function normalize(raw) {
    * of its own because normalize already reads every field with a default,
    * and that is most of what a migration is. */
 
+  /* The class is settled first because it decides what a size that is not
+   * there means. `base` is a five inch track, so a whoop document with no
+   * field, or one whose field was damaged, would come back as a room sixty
+   * metres across with its gates in one corner of it. It is the room. (Until
+   * the room migration below was narrowed to the old 5 by 6 alone, every
+   * whoop document whose field was not 10 by 12 was forced to the room, and
+   * this case was covered by accident. It is covered on purpose now, and
+   * without the shift that used to come with it.) Every other class keeps
+   * the defaults it always had. */
+  const cls = src.mode === 'freestyle' ? 'full'
+    : (TRACK_CLASSES.includes(src.trackClass) ? src.trackClass : TRACK_CLASS_DEFAULT);
+  const room = cls === 'micro' ? tuningFor('micro') : null;
+
   const doc = {
     schemaVersion: SCHEMA_VERSION,
     id: str(src.id, base.id),
@@ -742,11 +1134,11 @@ export function normalize(raw) {
      * in the repository. */
     trackClass: TRACK_CLASSES.includes(src.trackClass) ? src.trackClass : TRACK_CLASS_DEFAULT,
     field: {
-      width: Math.max(5, num(src.field?.width, base.field.width)),
-      depth: Math.max(5, num(src.field?.depth, base.field.depth)),
+      width: Math.max(5, num(src.field?.width, room ? room.fieldWidth : base.field.width)),
+      depth: Math.max(5, num(src.field?.depth, room ? room.fieldDepth : base.field.depth)),
       /* 0.005 rather than 0.1: a RaceGOW grid is one inch, 0.0254, and a
        * floor of a tenth of a metre is a MultiGP field's assumption. */
-      gridSize: Math.max(0.005, num(src.field?.gridSize, base.field.gridSize)),
+      gridSize: Math.max(0.005, num(src.field?.gridSize, room ? room.gridSize : base.field.gridSize)),
     },
     settings: {
       tangentScale: Math.max(0.01, num(src.settings?.tangentScale, base.settings.tangentScale)),
@@ -782,6 +1174,14 @@ export function normalize(raw) {
         }
       }
     }
+  }
+
+  /* A night race (NIGHT in src/render/scene.js), and only on a full sized
+   * race track: a room has its lights on and a map has its own time of day.
+   * Anything but true is no night race, silently, because absent is every
+   * track written before it existed. */
+  if (src.night === true && doc.mode !== 'freestyle' && doc.trackClass === 'full') {
+    doc.night = true;
   }
 
   /*
@@ -852,7 +1252,10 @@ export function normalize(raw) {
   let startSeen = false;
   for (const rawEl of Array.isArray(src.elements) ? src.elements : []) {
     const type = str(rawEl?.type);
-    const def = ELEMENTS[type];
+    /* Own keys only: a type of "constructor" or "__proto__" in a shared link
+     * or a published file read Object's own members as a piece, and the
+     * dims loop below threw, so the file would not open at all. */
+    const def = Object.hasOwn(ELEMENTS, type) ? ELEMENTS[type] : null;
     if (!def) {
       repairs.push(`dropped an element of unknown type "${type}".`);
       continue;
@@ -872,6 +1275,12 @@ export function normalize(raw) {
       repairs.push(`dropped a ${def.label.toLowerCase()}: roads and vehicles are a map's only.`);
       continue;
     }
+    /* A letter is a five inch race piece: the whoop palette and a map's do not have one, and nothing on either
+     * would build it. */
+    if (isLetterPiece(type) && (doc.mode === 'freestyle' || doc.trackClass === 'micro')) {
+      repairs.push(`dropped a letter: letters are a five inch track's, and this is ${doc.mode === 'freestyle' ? 'a map' : 'a whoop track'}.`);
+      continue;
+    }
     let id = str(rawEl.id);
     if (!id || seenIds.has(id)) {
       id = nextId([...seenIds, ...rawIds], 'el');
@@ -881,6 +1290,12 @@ export function normalize(raw) {
 
     const dims = {};
     const isProp = def.kind === KIND.STRUCTURE || def.kind === KIND.ZONE;
+    /* The letter a letter piece is, read before its sizes because a size that is missing or is no size is the one
+     * THAT letter starts at. A word that is not one of the twenty six is the default, and says so. */
+    const letter = isLetterPiece(type) ? letterOf(rawEl.letter) : null;
+    if (letter && rawEl.letter !== undefined && String(rawEl.letter).trim().toUpperCase() !== letter) {
+      repairs.push(`${id}: letter "${String(rawEl.letter).slice(0, 20)}" is not one of A to Z, so it is ${letter}.`);
+    }
     for (const key of Object.keys(def.dims)) {
       const wanted = num(rawEl.dims?.[key], def.dims[key]);
       /* Levels is a count and everything else is a length. Both have to be
@@ -891,6 +1306,69 @@ export function normalize(raw) {
         ? num(clampDim(type, key, wanted))
         : (traffic ? num(clampByLimits(def, key, wanted))
           : (key === 'levels' ? int(wanted, def.dims[key], 1, 24) : Math.max(0, wanted)));
+      /*
+       * A GATE OF NO SIZE HAS NO OPENING. The clamp above stops a length going
+       * negative and lets it stay zero, so a document with a gate 0 m wide was
+       * read back as exactly that: nothing could be flown through it and
+       * nothing in the builder could say why. These three are the sizes a gate
+       * cannot do without; a sill height of zero is a gate on the floor and a
+       * flag's clearance of zero is a waypoint, so they are left alone. What a
+       * new gate of this class starts at is the size it is repaired to, and the
+       * note names the gate and the size so the author can put it right.
+       */
+      if (def.kind === KIND.APERTURE && GATE_SIZES.includes(key) && !(dims[key] > 0)) {
+        const fallback = letter ? letterDimsFor(letter)[key] : defaultDims(type, doc.trackClass)[key];
+        repairs.push(`${id}: ${key} was ${wanted}, which is not a size a gate can have, so it is ${fallback} m, what a new ${def.label.toLowerCase()} starts at.`);
+        dims[key] = fallback;
+      }
+      /*
+       * A TABLE NOTHING WIDE HAS NO TOP, and one 400 m long is not in a room. The
+       * three sizes of a piece of furniture are held to what a room can have
+       * (src/props/room.js), so the drawing, the solids and the warnings never
+       * meet a box that is not one. A size that is not a length is what a new
+       * piece starts at; one that is too large is the most a room takes.
+       */
+      if (isRoomType(type) && !(dims[key] >= ROOM_SIZE_MIN && dims[key] <= ROOM_SIZE_MAX)) {
+        const fallback = dims[key] > ROOM_SIZE_MAX ? ROOM_SIZE_MAX : defaultDims(type, doc.trackClass)[key];
+        repairs.push(`${id}: ${key} was ${wanted}, which is not a size a ${def.label.toLowerCase()} can have, so it is ${fallback} m.`);
+        dims[key] = fallback;
+      }
+    }
+    /* Dimensions that hold one another to a limit, now each is in its own. */
+    if (isProp) {
+      fitDims(type, dims);
+    }
+
+    /*
+     * A HOOP AND A HEX GATE HAVE ONE OPENING. There is no such thing as a stack of hoops, and
+     * the builder and the game draw one frame each, so a document that says otherwise is read
+     * as the one it can draw, and says so.
+     */
+    if (def.kind === KIND.APERTURE && apertureShapeOf(type) !== 'square' && !letter && dims.levels !== 1) {
+      repairs.push(`${id}: a ${def.label.toLowerCase()} has one opening, so its levels was ${dims.levels} and is 1.`);
+      dims.levels = 1;
+    }
+    /* Each opening of a stack its own size: see openingSizesOf in elements.js. Only a stack of square openings has the
+     * list, and it is kept only when some opening differs, so every gate that has ever been saved reads as it was. */
+    if (def.kind === KIND.APERTURE && rawEl.dims?.openings !== undefined) {
+      const kept = apertureShapeOf(type) === 'square' && !letter && dims.levels > 1 ? openingSizesOf({ ...dims, openings: rawEl.dims.openings }) : null;
+      if (kept) {
+        dims.openings = kept;
+      } else if (rawEl.dims.openings !== null && (!Array.isArray(rawEl.dims.openings) || rawEl.dims.openings.some((o) => o && typeof o === 'object' && Object.keys(o).length))) {
+        repairs.push(`${id}: its openings list named no size that differs from the stack's, so every opening is the stack's size.`);
+      }
+    }
+    /*
+     * A LETTER HAS AS MANY HOLES AS ITS LETTER DOES, and stands on the ground. Its `levels` is that count and is
+     * not the author's to set, so it is read from the letter without a word (a document this builder wrote has it
+     * right), and a sill height is the one thing a letter has no use for: the pipe is on the floor.
+     */
+    if (letter) {
+      dims.levels = openingCount(letter);
+      if (dims.sillH !== 0) {
+        repairs.push(`${id}: a letter stands on the ground, so its sill height was ${dims.sillH} and is 0.`);
+        dims.sillH = 0;
+      }
     }
 
     const el = {
@@ -914,6 +1392,28 @@ export function normalize(raw) {
     if (def.kind === KIND.ANNOTATION) {
       el.text = str(rawEl.text, 'Label');
     }
+    if (letter) {
+      /* Upright: the pipe of a letter is a plane that stands on the ground. */
+      if (el.pitch !== 0) {
+        repairs.push(`${id}: a letter stands upright, so its tilt was ${Math.round((el.pitch * 180) / Math.PI)} degrees and is 0.`);
+        el.pitch = 0;
+      }
+      el.letter = letter;
+    }
+    /* An asset that stands on end holds the pitch it is built at: upright or a
+     * quarter turn either way, so the inspector never shows 50 degrees for a
+     * container that is flat, the way the heading of a building is read to the
+     * compass. (tiltOf reads the pitch to the nearest quarter.) */
+    if (def.kind === KIND.STRUCTURE && ELEMENTS[type]?.tilt) {
+      el.pitch = tiltOf({ type, pitch: el.pitch }) * (Math.PI / 2) + 0;
+    }
+    /* An asset may be sunk, to hide some of it, but not out of reach of its
+     * own inspector: see SINK_MAX in elements.js. Nothing else is held to a
+     * floor here, as it never was. */
+    if (def.kind === KIND.STRUCTURE && el.position.z < -SINK_MAX) {
+      repairs.push(`${id}: its base was ${el.position.z} m, further under the ground than the ${SINK_MAX} m an asset may be sunk, so it is -${SINK_MAX} m.`);
+      el.position.z = -SINK_MAX;
+    }
     if (isProp && def.styles) {
       el.style = propStyleOf({ type, style: rawEl.style });
     }
@@ -926,6 +1426,16 @@ export function normalize(raw) {
        * so in the builder rather than silently repaint itself with the
        * first sponsor's logo. logoForDecal returns null for it. */
       el.logoId = str(rawEl.logoId, '');
+      /* A sticker's piece of its sheet and what finding it is called (see
+       * cropOf and achievementOf), kept only when they are one. */
+      const crop = cropOf(rawEl);
+      if (crop) {
+        el.crop = crop;
+      }
+      const achievement = achievementOf(rawEl);
+      if (achievement) {
+        el.achievement = achievement;
+      }
     }
     if (def.kind === KIND.ROAD) {
       /* Paint: on the ground, and turned by its nodes. Written 0. */
@@ -962,6 +1472,17 @@ export function normalize(raw) {
     if (def.flagSide) {
       el.flagSide = normalizeFlagSide(rawEl.flagSide, def.flagSide);
     }
+    /* A piece that may carry flags and does not by default, a hurdle: only when it says so, and
+     * then with the mast height beside it, so a barrier with none is the bytes it was. */
+    if (def.flagsOptional && rawEl.flagSide !== undefined) {
+      if (FLAG_SIDES.includes(rawEl.flagSide)) {
+        el.flagSide = rawEl.flagSide;
+        const mast = num(rawEl.dims?.flagH, GATE_FLAG_H);
+        el.dims.flagH = mast > 0 ? mast : GATE_FLAG_H;
+      } else {
+        repairs.push(`${id}: flagSide was not left, right, both or top, so it has no flags.`);
+      }
+    }
     /* An opening with no frame of its own: see isUnbuilt in elements.js.
      * Carried only on apertures, because nothing else has a frame to
      * leave off, and only when true, so an ordinary gate's JSON is the
@@ -969,11 +1490,15 @@ export function normalize(raw) {
     if (def.kind === KIND.APERTURE && rawEl.unbuilt === true) {
       el.unbuilt = true;
     }
+    /* A length of frame pipe rather than a race piece: see isPvcPipe in elements.js. */
+    if (PVC_TYPES.includes(el.type) && rawEl.pvc === true) {
+      el.pvc = true;
+    }
     /* The sides taken away one at a time: see FRAME_SIDES in elements.js.
      * Kept only on apertures and only when something is missing, so an
      * ordinary gate reads back the same shape it was written. A name that
      * is not a side is dropped and said, because it is somebody's edit. */
-    if (def.kind === KIND.APERTURE && rawEl.unbuiltSides !== undefined) {
+    if (def.kind === KIND.APERTURE && rawEl.unbuiltSides !== undefined && !letter) {
       const sides = normalizeUnbuiltSides(rawEl.unbuiltSides);
       const raw = Array.isArray(rawEl.unbuiltSides) ? rawEl.unbuiltSides : [rawEl.unbuiltSides];
       if (raw.some((side) => !FRAME_SIDES.includes(side))) {
@@ -981,6 +1506,41 @@ export function normalize(raw) {
       }
       if (sides.length) {
         el.unbuiltSides = sides;
+      }
+    }
+    /* One opening's stretch of an upright, on a stack: see unbuiltPolesOf in elements.js. Cleaned against the piece
+     * as it stands, so a stretch of an opening it does not have, or of an upright that is already gone, is dropped. */
+    if (def.kind === KIND.APERTURE && rawEl.unbuiltPoles !== undefined && !letter) {
+      const poles = unbuiltPolesOf({ ...el, unbuiltPoles: Array.isArray(rawEl.unbuiltPoles) ? rawEl.unbuiltPoles : [] });
+      const named = Array.isArray(rawEl.unbuiltPoles) ? rawEl.unbuiltPoles.length : 1;
+      if (poles.length !== named) {
+        repairs.push(`${id} named an upright stretch it does not have, and it was dropped.`);
+      }
+      if (poles.length) {
+        el.unbuiltPoles = poles;
+      }
+    }
+    /* A group: elements that are one piece and are edited together, which is what a cube is (five or six
+     * gates, each a face). Kept on apertures, and only when it is a name, so an ordinary gate's JSON is
+     * the shape it was and nothing can put a number or an object there. What a group means lives in
+     * groupMembers, above. */
+    if (def.kind === KIND.APERTURE && rawEl.group !== undefined) {
+      if (typeof rawEl.group === 'string') {
+        if (rawEl.group.trim() !== '') {
+          el.group = rawEl.group.slice(0, GROUP_NAME_MAX);
+        }
+      } else {
+        repairs.push(`${id}: group was not a name, so it is on its own.`);
+      }
+    }
+    /* The dress a gate wears besides the MultiGP one: see GATE_STYLES in elements.js. Only on an
+     * aperture and only when it is one this build knows. A style this build has never heard of is
+     * the usual dress and is said, because it is somebody's edit or a newer build's. */
+    if (def.kind === KIND.APERTURE && rawEl.style !== undefined && !letter) {
+      if (GATE_STYLES.includes(rawEl.style)) {
+        el.style = rawEl.style;
+      } else {
+        repairs.push(`${id}: style "${String(rawEl.style).slice(0, 40)}" is not a dress this build knows, so it wears the usual one.`);
       }
     }
     doc.elements.push(el);
@@ -1008,7 +1568,7 @@ export function normalize(raw) {
 
     let apertureIndex = null;
     if (def.kind === KIND.APERTURE) {
-      const count = apertureLevels(el.dims).length;
+      const count = aperturesOf(el).length;
       const wanted = int(rawSeq.apertureIndex, 0, 0);
       apertureIndex = Math.min(wanted, count - 1);
       if (apertureIndex !== wanted) {
@@ -1033,6 +1593,11 @@ export function normalize(raw) {
       clearance = Math.max(0, num(rawSeq.clearance, owner?.dims?.clearance ?? def.dims.clearance));
     }
 
+    /* HOW THE LINE GETS HERE FROM THE PASS BEFORE, when that was another opening of the same stack: round its left,
+     * round its right, or looping out over the front. Written only when it was said, so a document that never
+     * said keeps the bytes it had, and a reader that does not know the word flies the default wrap. */
+    const wrap = def.kind === KIND.APERTURE && WRAPS.includes(rawSeq.wrap) ? rawSeq.wrap : null;
+
     doc.sequence.push({
       id,
       elementId,
@@ -1041,6 +1606,7 @@ export function normalize(raw) {
       passSide,
       clearance,
       overridden: bool(rawSeq.overridden),
+      ...(wrap ? { wrap } : {}),
     });
   }
 
@@ -1064,8 +1630,17 @@ export function normalize(raw) {
    *
    * Silent, with no repair note. The author did nothing wrong and their
    * track has not been damaged; the room grew underneath it.
+   *
+   * ONCE, ON THE OLD ROOM AND NOTHING ELSE. This used to run for any micro
+   * document whose field was not 10 by 12, which is every document an author
+   * had resized in the inspector, so the size they typed was thrown away on
+   * the next read and their track shifted by half the difference. Only 5 by 6
+   * was ever the room (racegow.js has had no other), so only 5 by 6 is
+   * brought up. A room resized to exactly 5 by 6 is brought up as well, which
+   * is harmless: the shift keeps the track where it stood about the middle,
+   * and the game centres on the field either way.
    */
-  if (doc.trackClass === 'micro') {
+  if (doc.trackClass === 'micro' && doc.field.width === OLD_ROOM.width && doc.field.depth === OLD_ROOM.depth) {
     const T = tuningFor('micro');
     const dx = (T.fieldWidth - doc.field.width) * 0.5;
     const dy = (T.fieldDepth - doc.field.depth) * 0.5;
@@ -1111,6 +1686,8 @@ export function toPlain(doc) {
     ...(freestyle ? { mode: 'freestyle' } : {}),
     /* A map's scene, and only once it is not the default: see SCENE_TIMES. */
     ...(freestyle && !isDefaultScene(scene) ? { scene } : {}),
+    /* Written only when it is on, so no track saved before it changes a byte. */
+    ...(isNightRace(doc) ? { night: true } : {}),
     field: {
       width: num(doc.field.width),
       depth: num(doc.field.depth),
@@ -1175,6 +1752,23 @@ export function toPlain(doc) {
           : (road || vehicle ? num(clampByLimits(def, key, el.dims[key]))
             : (key === 'levels' ? int(el.dims[key], def.dims[key], 1, 24) : num(el.dims[key], def.dims[key])));
       }
+      if (isProp) {
+        fitDims(el.type, out.dims);
+      }
+      if (def.kind === KIND.APERTURE && Array.isArray(el.dims.openings)) {
+        const kept = apertureShapeOf(el.type) === 'square' && !isLetterPiece(el) ? openingSizesOf({ ...el.dims, ...out.dims, openings: el.dims.openings }) : null;
+        if (kept) {
+          out.dims.openings = kept;
+        }
+      }
+      /* A letter says which one it is, has the holes that letter has, stands on the ground and upright. */
+      const letter = isLetterPiece(el) ? letterOfPiece(el) : null;
+      if (letter) {
+        out.letter = letter;
+        out.dims.levels = openingCount(letter);
+        out.dims.sillH = 0;
+        out.pitch = 0;
+      }
       if (road) {
         out.nodes = roadNodesRead(el.nodes).nodes;
         out.closed = el.closed === true;
@@ -1196,17 +1790,44 @@ export function toPlain(doc) {
       }
       if (def.kind === KIND.DECAL) {
         out.logoId = str(el.logoId, '');
+        /* Written only on a sticker, so every other decal is the JSON it
+         * was. */
+        const crop = cropOf(el);
+        if (crop) {
+          out.crop = { x: num(crop.x), y: num(crop.y), w: num(crop.w), h: num(crop.h) };
+        }
+        const achievement = achievementOf(el);
+        if (achievement) {
+          out.achievement = achievement;
+        }
       }
       if (def.flagSide) {
         out.flagSide = normalizeFlagSide(el.flagSide, def.flagSide);
       }
+      if (def.flagsOptional && FLAG_SIDES.includes(el.flagSide)) {
+        out.flagSide = el.flagSide;
+        out.dims.flagH = num(el.dims?.flagH > 0 ? el.dims.flagH : GATE_FLAG_H);
+      }
       if (el.unbuilt === true && def.kind === KIND.APERTURE) {
         out.unbuilt = true;
       }
+      if (isPvcPipe(el)) {
+        out.pvc = true;
+      }
       if (def.kind === KIND.APERTURE) {
         const sides = normalizeUnbuiltSides(el.unbuiltSides);
-        if (sides.length) {
+        if (sides.length && !letter) {
           out.unbuiltSides = sides;
+        }
+        const poles = unbuiltPolesOf(el);
+        if (poles.length && !letter) {
+          out.unbuiltPoles = poles;
+        }
+        if (typeof el.group === 'string' && el.group.trim() !== '') {
+          out.group = el.group.slice(0, GROUP_NAME_MAX);
+        }
+        if (GATE_STYLES.includes(el.style) && !letter) {
+          out.style = el.style;
         }
       }
       return out;
@@ -1219,6 +1840,7 @@ export function toPlain(doc) {
       passSide: s.passSide ?? null,
       clearance: s.clearance == null ? null : num(s.clearance),
       overridden: Boolean(s.overridden),
+      ...(WRAPS.includes(s.wrap) ? { wrap: s.wrap } : {}),
     })),
   };
 }

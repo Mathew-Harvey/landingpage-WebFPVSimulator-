@@ -162,6 +162,12 @@ function unitGeo(K, key) {
       /* The cedar's whorl: seven sides, base on the origin, as the town's. */
       GEO[key] = new T.ConeGeometry(1, 1, 7, 1);
       GEO[key].translate(0, 0.5, 0);
+    } else if (key === 'tuft') {
+      /* Flat shaded, but indexed (the identity index) so the town's shadow
+       * proxies, which cannot merge indexed with non indexed, keep it in the
+       * bucket the cedar's cones are in: no extra draw call. */
+      GEO[key] = new T.IcosahedronGeometry(1, 0);
+      GEO[key].setIndex(Array.from({ length: GEO[key].attributes.position.count }, (_, i) => i));
     }
   }
   return GEO[key];
@@ -303,13 +309,13 @@ export const MATERIALS = {
    * receives shadow, for the reason trees.js gives at length: a ramp only
    * shapes direct light, and a shadowed deep green blob goes to ink. */
   stGroveWood: { c: PAL.trunkDark, tint: 0x6f5a80 },
-  stGrove0: { c: 0x8cb884, tint: 0x5b6f8c, noReceive: true },
-  stGrove1: { c: 0x5f9470, tint: 0x5b6f8c, noReceive: true },
-  stGrove2: { c: PAL.cedar, tint: 0x5b6f8c, noReceive: true },
+  stGrove0: { c: 0x8cb884, tint: 0x5b6f8c, noReceive: true, foliage: true },
+  stGrove1: { c: 0x5f9470, tint: 0x5b6f8c, noReceive: true, foliage: true },
+  stGrove2: { c: PAL.cedar, tint: 0x5b6f8c, noReceive: true, foliage: true },
   stCedarWood: { c: PAL.cedarBark, tint: 0x6f5a80 },
-  stCedar0: { c: PAL.cedarLit, tint: 0x59657f, noReceive: true },
-  stCedar1: { c: PAL.cedar, tint: 0x59657f, noReceive: true },
-  stCedar2: { c: PAL.cedarDeep, tint: 0x59657f, noReceive: true },
+  stCedar0: { c: PAL.cedarLit, tint: 0x59657f, noReceive: true, foliage: true },
+  stCedar1: { c: PAL.cedar, tint: 0x59657f, noReceive: true, foliage: true },
+  stCedar2: { c: PAL.cedarDeep, tint: 0x59657f, noReceive: true, foliage: true },
   /* The utility pole: the town's concrete, and its near black hardware. */
   stPole: { c: 0xd6d2d8, tint: 0x6a6288 },
   stPoleDark: { c: PAL.black, bands: 2, tint: 0x4b4560 },
@@ -1248,6 +1254,18 @@ function billboardSpec(el) {
   return { W, H, lift, legR, legs, legX, legTop, rails, ups, lamps };
 }
 
+/*
+ * The face of a billboard: where the advert is hung, in the board's own
+ * frame (the face looks along +x, its width runs along z), and how big it
+ * is. billboardDraw hangs the advert here and src/maps/built/logosurface.js
+ * frames a sponsor's mark over it, so both read the same numbers.
+ */
+export function billboardFace(el) {
+  const s = billboardSpec(el);
+  const fw = 0.13;
+  return { x: BB_T + 0.004, y: s.lift + s.H / 2, z: 0, w: s.W - 2 * fw, h: s.H - 2 * fw };
+}
+
 export function billboardLayout(el) {
   const s = billboardSpec(el);
   const P = new Parts();
@@ -1633,16 +1651,42 @@ export function vendingDraw(el, parts, K) {
  * do and a solid at W - 0.14 would stand out of it; and `bonnet`, where
  * the low bonnet begins in x and how high it is, so the body's solid steps
  * down to it rather than filling the air over the nose to the waist.
+ *
+ * R, axle and dam are for carOpenLayout below, on the seven kinds drawn on
+ * one profile: the tyre's radius and the two axles' x from the SPEC table,
+ * and each end's dam, the foot of its bumper, nose then tail, from the
+ * STYLE table in src/art/cars.js.
  * ------------------------------------------------------------------ */
 
 export const CAR_KINDS = {
-  kei: { L: 3.40, W: 1.475, H: 1.70, sill: 0.38, waist: 1.00, roof: 1.70, cab: [-1.60, 1.15], rakeF: 0.42, rakeR: 0.14 },
-  keivan: { L: 3.40, W: 1.475, H: 1.88, sill: 0.38, waist: 1.02, roof: 1.88, cab: [-1.66, 1.55], rakeF: 0.28, rakeR: 0.06 },
-  hatch: { L: 4.05, W: 1.695, H: 1.52, sill: 0.36, waist: 0.98, roof: 1.52, cab: [-1.72, 0.88], rakeF: 0.62, rakeR: 0.52 },
-  sedan: { L: 4.42, W: 1.695, H: 1.44, sill: 0.36, waist: 0.97, roof: 1.44, cab: [-1.55, 0.95], rakeF: 0.68, rakeR: 0.62 },
-  wagon: { L: 4.25, W: 1.690, H: 1.54, sill: 0.36, waist: 0.97, roof: 1.54, cab: [-1.92, 0.93], rakeF: 0.60, rakeR: 0.16 },
-  minivan: { L: 4.34, W: 1.695, H: 1.80, sill: 0.38, waist: 1.06, roof: 1.80, cab: [-2.00, 1.32], rakeF: 0.58, rakeR: 0.14 },
-  van: { L: 4.44, W: 1.695, H: 1.98, sill: 0.40, waist: 1.12, roof: 1.98, cab: [-2.14, 2.02], rakeF: 0.32, rakeR: 0.06 },
+  kei: {
+    L: 3.40, W: 1.475, H: 1.70, sill: 0.38, waist: 1.00, roof: 1.70, cab: [-1.60, 1.15], rakeF: 0.42, rakeR: 0.14,
+    R: 0.275, axle: [1.16, -1.19], dam: [0.30, 0.36],
+  },
+  keivan: {
+    L: 3.40, W: 1.475, H: 1.88, sill: 0.38, waist: 1.02, roof: 1.88, cab: [-1.66, 1.55], rakeF: 0.28, rakeR: 0.06,
+    R: 0.275, axle: [1.18, -1.16], dam: [0.32, 0.36],
+  },
+  hatch: {
+    L: 4.05, W: 1.695, H: 1.52, sill: 0.36, waist: 0.98, roof: 1.52, cab: [-1.72, 0.88], rakeF: 0.62, rakeR: 0.52,
+    R: 0.30, axle: [1.32, -1.22], dam: [0.27, 0.32],
+  },
+  sedan: {
+    L: 4.42, W: 1.695, H: 1.44, sill: 0.36, waist: 0.97, roof: 1.44, cab: [-1.55, 0.95], rakeF: 0.68, rakeR: 0.62,
+    R: 0.31, axle: [1.36, -1.28], dam: [0.28, 0.32],
+  },
+  wagon: {
+    L: 4.25, W: 1.690, H: 1.54, sill: 0.36, waist: 0.97, roof: 1.54, cab: [-1.92, 0.93], rakeF: 0.60, rakeR: 0.16,
+    R: 0.30, axle: [1.32, -1.20], dam: [0.28, 0.34],
+  },
+  minivan: {
+    L: 4.34, W: 1.695, H: 1.80, sill: 0.38, waist: 1.06, roof: 1.80, cab: [-2.00, 1.32], rakeF: 0.58, rakeR: 0.14,
+    R: 0.30, axle: [1.42, -1.20], dam: [0.28, 0.36],
+  },
+  van: {
+    L: 4.44, W: 1.695, H: 1.98, sill: 0.40, waist: 1.12, roof: 1.98, cab: [-2.14, 2.02], rakeF: 0.32, rakeR: 0.06,
+    R: 0.31, axle: [1.48, -1.28], dam: [0.34, 0.38],
+  },
   boxtruck: {
     L: 4.80, W: 1.755, H: 2.46, sill: 0.46, waist: 1.20, roof: 1.98, cab: [0.42, 2.16], rakeF: 0.28, rakeR: 0.10,
     box: { x0: -2.40, x1: 0.28, y0: 1.06, y1: 2.46 },
@@ -1692,6 +1736,69 @@ export function carLayout(el) {
   return P.list;
 }
 
+/* ------------------------------------------------------------------ *
+ * THE PARKED CAR OPEN UNDERNEATH, for a map flown small. At the town's
+ * own scale the 0.13 m under a car's floor is the slot `under` closes, but
+ * Heads' house is drawn 3.5 times life size round a 75 mm whoop, and there
+ * it is 0.455 m of air over a hull 0.071 m tall: a line, and the owner's
+ * (2026-10-22, "you need to be able to fly under the parked cars in Heads'
+ * yard"). So `under` gives way to what src/art/cars.js draws below the
+ * sill:
+ *
+ *   floor    the dark underside between the wheels, CAR_FLOOR up to the
+ *            sill, as long as the drawn one (0.6 R short of each axle) and
+ *            at least as wide (CAR_FLOOR_IN in from the widest flank).
+ *   nose,    past each arch to the bumper's foot, from that end's dam to
+ *   tail     the sill.
+ *   tyre     each of the four as three boxes standing in its circle up to
+ *            the sill, a plus with its corners filled, so a craft that
+ *            touches the rubber stops within a few centimetres of it. The
+ *            middle one stands on the ground, where a tyre is flat.
+ *
+ * From the sill up it is carLayout's, so the car is the same solid there. A
+ * kind with no `dam` (the box lorry and the minibus, on profiles of their
+ * own, and the two coupes, whose floors are lofted) is carLayout's, closed.
+ * ------------------------------------------------------------------ */
+const CAR_FLOOR = 0.13;
+const CAR_FLOOR_IN = 0.092;
+/* The arch's radius over the tyre's, the seven kinds' `arch.gap`. */
+const CAR_ARCH_GAP = 0.05;
+/* Each tyre box as shares of R: its half length in x and its foot over the
+ * ground, its two lower corners on the circle (0.4 and 0.917, 0.7 and
+ * 0.714, 0.917 and 0.4 from the hub). */
+const TYRE_BOXES = [[0.4, 0], [0.7, 0.3], [0.917, 0.6]];
+
+export function carOpenLayout(el) {
+  const kind = CAR_KINDS[el.style] ? el.style : 'kei';
+  const k = CAR_KINDS[kind];
+  const above = carLayout(el);
+  if (!k.dam) {
+    return above;
+  }
+  const P = new Parts();
+  const o = { draw: false, kind: 'obstacle' };
+  const R = k.R;
+  const [xf, xr] = k.axle;
+  const fw = k.W / 2 - CAR_FLOOR_IN;
+  P.box('carBody', xr + 0.6 * R, CAR_FLOOR, -fw, xf - 0.6 * R, k.sill, fw, { ...o, name: 'floor' });
+  const end = (k.L - 0.16) / 2;
+  const uw = (k.W - 0.07) / 2;
+  P.box('carBody', xf + R + CAR_ARCH_GAP, k.dam[0], -uw, end, k.sill, uw, { ...o, name: 'nose' });
+  P.box('carBody', -end, k.dam[1], -uw, xr - R - CAR_ARCH_GAP, k.sill, uw, { ...o, name: 'tail' });
+  /* The tyre's width and where its middle stands across the car, as
+   * tyreWidth and wheelZ in src/art/cars.js put them. */
+  const tw = R < 0.3 ? 0.165 : 0.195;
+  const wz = k.W / 2 - tw / 2 - 0.015;
+  for (const ax of k.axle) {
+    for (const side of [1, -1]) {
+      for (const [hx, foot] of TYRE_BOXES) {
+        P.box('carBody', ax - hx * R, foot * R, side * wz - tw / 2, ax + hx * R, k.sill, side * wz + tw / 2, { ...o, name: 'tyre' });
+      }
+    }
+  }
+  return [...P.list, ...above.filter((p) => p.name !== 'under')];
+}
+
 /* The colour a car is painted, as the name of one of the town's CAR
  * colours: the first pick of its seed's stream (seedOf, its id and its
  * variant). A moving car (src/maps/built/cars.js) asks the same, so a
@@ -1715,13 +1822,15 @@ export function carDraw(el, parts, K) {
  * (K.leaf), and seven sided whorls; laid out with this module's own sine
  * and square root, so the solids are the same bits in every engine.
  *
- * Every blob holds a solid sphere of the drawn icosahedron's inradius
- * (0.7947 of its smaller radius, taken as 0.78), and every whorl the
- * largest sphere it holds and a capsule up its axis inside the slant. A
- * pilot who clips a canopy is where the picture says they are, and never
- * meets leaves that are not drawn; the outermost tips of a blob or a
- * whorl's skirt are drawn and not solid, which is the side to be wrong on
- * for leaves.
+ * Every blob holds a solid sphere of the twenty faced icosahedron's
+ * inradius (0.7947 of its smaller radius, taken as 0.78); the blob is drawn
+ * at eighty faces now (see roundBlob in kit.js), whose inradius is 0.86 of
+ * the same radius, so the solid is still inside it. Every whorl holds the
+ * largest sphere that fits in it and a capsule up its axis inside the
+ * slant. A pilot who clips a canopy is where the picture says they are,
+ * and never meets leaves that are not drawn; the outermost tips of a blob
+ * or a whorl's skirt are drawn and not solid, which is the side to be
+ * wrong on for leaves.
  * ------------------------------------------------------------------ */
 
 /* (1 - k / n) ^ 0.82 for n = 5 and 6: the cedar's taper, as literals,
@@ -2000,6 +2109,106 @@ export function treeDraw(el, parts, K) {
   /* Fallen petals under a cherry. */
   if (t.style === 'sakura') {
     K.patch('petals', 0, 0.02, 0, 2.4 * t.S, 7);
+  }
+}
+
+/*
+ * THE LOBLOLLY, a tall southern pine as the stills show them (Joshua
+ * Bardwell's yard, src/maps/bardwell): a long bare stem, a lean to it, and
+ * a small ragged crown only in the top third, a few flat pads of needles on
+ * bare limbs and a leader above. Not a style of the builder's list: the
+ * Bardwell map calls these two functions directly, in the cedar's own
+ * materials and tones, so the draw adds no material and no draw call.
+ * `el.dims.size` scales it as the cedar's does (10.6 m a size).
+ */
+function loblollySpec(el) {
+  const S = dim(el, 'size', 1, 0.5, 3);
+  const rng = seededRandom(seedOf(el));
+  /* `el.style` 'broad' is the same build as a rounder, shorter leafy tree, in
+   * the groves' own materials: the stills' broadleaves among the pines. */
+  const broad = el.style === 'broad';
+  const H = 10.6 * S * (broad ? 0.72 : 1) * rng.range(0.92, 1.12);
+  const axis = unit3(leanTip(1, rng.range(0.015, broad ? 0.04 : 0.075), rng.range(0, TAU)));
+  const at = (h) => [axis[0] * h, axis[1] * h, axis[2] * h];
+  const trunkR = (broad ? 0.2 : 0.15) * S * rng.range(0.9, 1.2);
+  const base = H * (broad ? rng.range(0.34, 0.42) : rng.range(0.52, 0.6));
+  const crown = H - base;
+  const crownR = H * (broad ? 0.17 : 0.06) * rng.range(0.85, 1.2);
+  const out = {
+    S, H, base, broad,
+    trunk: { a: [0, 0, 0], b: at(H), r: trunkR, rTop: trunkR * (broad ? 0.4 : 0.28), seg: 6 },
+    flare: { h: 0.5 * S, r: trunkR * 1.7, rTop: trunkR * 0.7, seg: 6 },
+    limbs: [], blobs: [],
+  };
+  /* Five whorls of three pads, each pad on its own limb, the whorls
+   * turned against each other so no side is bare. */
+  /* A far tree (dims.detail 0) is three whorls: from the field it is the
+   * same outline, for half the triangles. */
+  const detail = dim(el, 'detail', 1, 0, 1);
+  const detailNear = detail > 0.5;
+  const layers = broad ? (detailNear ? 3 : 2) : detailNear ? 5 : detail > 0.2 ? 3 : 2;
+  let turn = rng.range(0, TAU);
+  for (let k = 0; k < layers; k += 1) {
+    const u = (k + 0.3) / (layers + 0.4);
+    const pads = detailNear ? 3 : detail > 0.2 ? 2 + rng.int(0, 1) : 2;
+    turn += rng.range(0.5, 1.4);
+    for (let q = 0; q < pads; q += 1) {
+      const h = base + crown * u * 0.92 + rng.range(-0.04, 0.04) * crown;
+      const rb = crownR * (0.95 - 0.45 * u) * rng.range(0.7, 1.15);
+      const reach = crownR * rng.range(0.4, 1.25) * (1 - 0.3 * u);
+      sincos(turn + (q * TAU) / pads + rng.range(-0.4, 0.4), SC);
+      const a = at(h);
+      const c = [a[0] + SC.c * reach, a[1] + rb * 0.3 + rng.range(0, 0.5) * S, a[2] + SC.s * reach];
+      /* Only a pad out of reach of the stem needs its limb. */
+      if (reach > crownR * 0.8) {
+        out.limbs.push({ a, b: [c[0], c[1] - rb * 0.15, c[2]], r: trunkR * 0.3, rTop: trunkR * 0.15, seg: 4 });
+      }
+      let tone = u > 0.6 ? 0 : u < 0.25 ? 2 : 1;
+      if (rng.chance(0.2)) {
+        tone = (tone + 1) % 3;
+      }
+      out.blobs.push({ c, r: rb, ry: rb * (broad ? rng.range(0.7, 0.9) : rng.range(0.5, 0.7)), tone, spin: [rng.range(-0.15, 0.15), rng.range(0, 3), rng.range(-0.15, 0.15)] });
+    }
+  }
+  /* The leader's tuft. */
+  const t = at(H - 0.45 * S);
+  out.blobs.push({ c: t, r: crownR * 0.5, ry: crownR * 0.5, tone: 0, spin: [0, rng.range(0, 3), 0] });
+  return out;
+}
+
+export function loblollyLayout(el) {
+  const t = loblollySpec(el);
+  const P = new Parts();
+  const tr = t.trunk;
+  const f = t.base / t.H;
+  const neck = [tr.b[0] * f, tr.b[1] * f, tr.b[2] * f];
+  capIn(P, 'stCedarWood', tr.a, neck, tr.r, tr.r + (tr.rTop - tr.r) * f, tr.seg, { name: 'trunk', kind: 'tree' });
+  for (const l of t.limbs) {
+    capIn(P, 'stCedarWood', l.a, l.b, l.r, l.rTop, l.seg, { name: 'limb', kind: 'tree' });
+  }
+  for (const b of t.blobs) {
+    P.cap('stCedar1', b.c, b.c, 0.78 * Math.min(b.r, b.ry), { draw: false, name: 'canopy', kind: 'canopy' });
+  }
+  return P.list;
+}
+
+export function loblollyDraw(el, K) {
+  const t = loblollySpec(el);
+  const tones = t.broad ? ['stGrove0', 'stGrove1', 'stGrove2'] : ['stCedar0', 'stCedar1', 'stCedar2'];
+  const wood = t.broad ? 'stGroveWood' : 'stCedarWood';
+  const tr = t.trunk;
+  K.cyl(wood, tr.a, tr.b, tr.r, tr.seg, tr.rTop);
+  K.cyl(wood, [0, 0, 0], [0, t.flare.h, 0], t.flare.r, t.flare.seg, t.flare.rTop);
+  for (const l of t.limbs) {
+    K.cyl(wood, l.a, l.b, l.r, l.seg, l.rTop);
+  }
+  /* A pad is the twenty faced solid, flat: no ink crease logic to carry, and
+   * a fifth of the triangles of the town's eighty faced canopy blob. */
+  const T = K.THREE;
+  for (const b of t.blobs) {
+    const q = new T.Quaternion().setFromEuler(new T.Euler(b.spin[0], b.spin[1], b.spin[2]));
+    const m = new T.Matrix4().compose(new T.Vector3(b.c[0], b.c[1], b.c[2]), q, new T.Vector3(b.r, b.ry, b.r));
+    K.add(tones[b.tone], unitGeo(K, 'tuft'), m);
   }
 }
 

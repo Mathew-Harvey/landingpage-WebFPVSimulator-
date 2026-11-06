@@ -55,7 +55,13 @@
  *     look      lookOf(doc) from ./looks.js: its time decides the dimming,
  *               the lamps and the smoke's colours
  *     traffic   trafficOf(doc) from ./traffic.js: `vehicles` is read
- *     opts      nothing yet
+ *     opts      optional: { colour(v), ride(x, z, hx, speed, out) }. colour
+ *               paints a vehicle's body a hex of the map's own in place of
+ *               its seed's pick (Tanada RX's liveries); ride lifts and
+ *               pitches a drawn car from its pose, writing out.lift (m)
+ *               and out.pitch (rad, nose up), render only, for a map whose
+ *               ground is not flat under its cars (src/maps/rally/ride.js).
+ *               Without either, every car is drawn as before.
  *   returns a car set:
  *     group               a THREE.Group named 'cars': one Object3D a car
  *                         (named 'car:' and its element id) and the smoke;
@@ -109,6 +115,7 @@ import { bake, trs } from '../city/vendored/core/util.js';
 import { lookedTownMaterial } from '../../props/kit.js';
 import { carColourOf } from '../../props/street.js';
 import { kitLook } from './looks.js';
+import { mergeCar } from '../sunny/palette.js';
 
 /* How the meter names a car nobody named, by its body. */
 const STYLE_LABEL = {
@@ -325,9 +332,14 @@ function glowGeometry(THREE, L, lamps) {
  * The drift smoke: a pool of puffs and the one batch that draws them. See
  * the header.
  */
-class Smoke {
-  constructor(THREE, look) {
-    const N = SMOKE_MAX;
+export class Smoke {
+  /* opts: max puffs, life in s, fill and shade paint, and the material's
+   * name: Ridgeline MX's bikes throw dirt with the same cloud (src/maps/
+   * moto/bikes.js). */
+  constructor(THREE, look, opts = {}) {
+    const N = opts.max ?? SMOKE_MAX;
+    this.max = N;
+    this.life = opts.life ?? SMOKE_LIFE;
     this.t0 = new Float64Array(N).fill(-1);
     this.x = new Float32Array(N);
     this.y = new Float32Array(N);
@@ -382,17 +394,17 @@ class Smoke {
       uniforms: {
         ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog),
         uMap: { value: this.texture },
-        uFill: { value: dim(SMOKE_FILL) },
-        uShade: { value: dim(SMOKE_SHADE) },
+        uFill: { value: dim(opts.fill ?? SMOKE_FILL) },
+        uShade: { value: dim(opts.shade ?? SMOKE_SHADE) },
         uInk: { value: new THREE.Color(T && T.ink != null ? T.ink : PAL.ink) },
       },
       vertexShader: SMOKE_VERTEX,
       fragmentShader: SMOKE_FRAGMENT,
       fog: true,
     });
-    this.material.name = 'driftSmoke';
+    this.material.name = opts.name ?? 'driftSmoke';
     this.mesh = new THREE.Mesh(geo, this.material);
-    this.mesh.name = 'driftSmoke';
+    this.mesh.name = opts.name ?? 'driftSmoke';
     this.mesh.frustumCulled = false;
     this.mesh.castShadow = false;
     this.mesh.receiveShadow = false;
@@ -441,7 +453,7 @@ class Smoke {
       const back = car.axleRear;
       const across = side * car.track * 0.5;
       const i = this.next;
-      this.next = (i + 1) % SMOKE_MAX;
+      this.next = (i + 1) % this.max;
       this.t0[i] = step;
       this.x[i] = p.x + p.hx * back - p.hz * across;
       this.y[i] = p.y + 0.2;
@@ -458,17 +470,34 @@ class Smoke {
     }
   }
 
+  /* One puff put down by hand, for a caller with its own reasons: at
+   * (x, y, z) with the velocity it carries (vx, vz), size a half width in
+   * metres, and h1..h3 in [0, 1) for its spread. */
+  put(step, x, y, z, vx, vz, size, h1, h2, h3) {
+    const i = this.next;
+    this.next = (i + 1) % this.max;
+    this.t0[i] = step;
+    this.x[i] = x;
+    this.y[i] = y;
+    this.z[i] = z;
+    this.vx[i] = vx * PUFF_CARRY + (h1 - 0.5) * 1.4;
+    this.vz[i] = vz * PUFF_CARRY + (h2 - 0.5) * 1.4;
+    this.size[i] = size * (0.85 + 0.3 * h3);
+    this.turn[i] = (h1 - 0.5) * 0.9;
+    this.spin[i] = (h2 - 0.5) * 0.8;
+  }
+
   /* Every puff at clock `now`, ms, into the batch's buffers. */
   draw(now) {
     const C = this.centre.array;
     const P = this.puff.array;
     let live = 0;
-    for (let i = 0; i < SMOKE_MAX; i += 1) {
+    for (let i = 0; i < this.max; i += 1) {
       const t0 = this.t0[i];
       const age = (now - t0) * 0.001;
       const b3 = i * 12;
       const b4 = i * 16;
-      if (t0 < 0 || !(age >= 0) || age >= SMOKE_LIFE) {
+      if (t0 < 0 || !(age >= 0) || age >= this.life) {
         if (P[b4] !== 0) {
           for (let v = 0; v < 4; v += 1) {
             P[b4 + v * 4] = 0;
@@ -477,11 +506,11 @@ class Smoke {
         continue;
       }
       live += 1;
-      const u = age / SMOKE_LIFE;
+      const u = age / this.life;
       const grow = 1 - (1 - u) * (1 - u);
       const half = this.size[i] * (1 + PUFF_GROW * grow);
       /* It leaves with its share of the car's speed and slows to a stop. */
-      const carried = SMOKE_LIFE * (u - 0.5 * u * u);
+      const carried = this.life * (u - 0.5 * u * u);
       const x = this.x[i] + this.vx[i] * carried;
       const y = this.y[i] + PUFF_RISE * grow + half * 0.35;
       const z = this.z[i] + this.vz[i] * carried;
@@ -517,7 +546,9 @@ class Smoke {
  * The cars. See the header.
  */
 export function buildCars(THREE, look, traffic, opts = {}) {
-  void opts;
+  const colourOf = typeof opts.colour === 'function' ? opts.colour : null;
+  const ride = typeof opts.ride === 'function' ? opts.ride : null;
+  const RIDE = { lift: 0, pitch: 0 };
   const group = new THREE.Group();
   group.name = 'cars';
   const klook = kitLook(look && look.timeId);
@@ -556,15 +587,18 @@ export function buildCars(THREE, look, traffic, opts = {}) {
   /* The wheel sets: one InstancedMesh for every wheel of one kind in one
    * wheel colour, filled in below once every car has said how many it has. */
   const wheelSets = new Map();
+  /* The merged looks every car's parts share (mergeCar). */
+  const carLooks = new Map();
   for (const v of vehicles) {
     const style = MODEL[v.style] ? v.style : 'kei';
-    const colour = CAR[carColourOf(v.seed)] ?? CAR.white;
+    const colour = (colourOf && colourOf(v)) ?? CAR[carColourOf(v.seed)] ?? CAR.white;
     const livery = carLivery(style, v.variant);
     const root = new THREE.Object3D();
     root.name = `car:${v.element}`;
     root.visible = false;
     const body = buildCar({ kind: style, color: colour, variant: v.variant, wheels: false, detail: 'full' });
     let tailMat = null;
+    let tailMesh = null;
     body.traverse((o) => {
       if (!o.isMesh) {
         return;
@@ -580,6 +614,7 @@ export function buildCars(THREE, look, traffic, opts = {}) {
         tailMat.userData = { ...m.userData };
         owned.materials.push(tailMat);
         o.material = tailMat;
+        tailMesh = o;
       } else if (night && m.isMeshBasicMaterial && m.color.getHex() === LAMP_FRONT) {
         o.material = lampLit;
       } else if (klook && klook.flats) {
@@ -587,6 +622,19 @@ export function buildCars(THREE, look, traffic, opts = {}) {
       }
     });
     root.add(body);
+    /* ONE BATCH A LOOK A CAR (the AAA pass of 2026-11-01): the body's
+     * thirteen parts were thirteen draw calls, which on Kumoi Towers and
+     * Ekimae was a third of the frame's. They merge as a cell's batches
+     * do (../sunny/palette.js mergeCar), colour and tint on the vertices,
+     * the same pixels; the tail lamp stays its own, because it brakes, and
+     * a part with a picture (the plate) is left as it was. */
+    const merged = mergeCar(body, carLooks, tailMesh ? new Set([tailMesh]) : null);
+    meshes -= merged.from - merged.to;
+    for (const o of body.children) {
+      if (o.isMesh && o.name === 'propBatch') {
+        owned.geometries.push(o.geometry);
+      }
+    }
 
     /* The wheels: where each stands on the car, and which set draws it. */
     const base = carWheelBase(style);
@@ -649,6 +697,8 @@ export function buildCars(THREE, look, traffic, opts = {}) {
       hz: 0,
     });
   }
+
+  owned.materials.push(...carLooks.values());
 
   /* Each wheel set's one batch: the kind's wheel, a matrix a wheel, written
    * by place() every frame. Never culled as a whole: its bounds would be
@@ -728,6 +778,11 @@ export function buildCars(THREE, look, traffic, opts = {}) {
       /* The model's nose is +x: a turn about y by t takes it to (cos t,
        * -sin t) on the ground. Render only, so atan2 is fine. */
       root.rotation.y = Math.atan2(-hz, hx);
+      if (ride) {
+        ride(x, z, hx, p.speed * b + q.speed * a, RIDE);
+        root.position.y = y + RIDE.lift;
+        root.rotation.z = RIDE.pitch;
+      }
       /* Rolled as far as it drove, the lap's worth taken off first so the
        * angle keeps its precision on a long run. */
       const dist = p.distance * b + q.distance * a;

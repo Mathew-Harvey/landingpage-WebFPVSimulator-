@@ -187,7 +187,7 @@ export let CRAFT_WORLD_HULL = simLenToWorld(CRAFT_HULL_R);
  * with the craft and goes to nothing in the vertical at knife edge on its
  * own, which is right, a quad on its side is symmetric about its centre.
  */
-export let CRAFT_V_DOWN = 0.045;
+export let CRAFT_V_DOWN = 0.033;
 export let CRAFT_V_UP = 0.038;
 export let CRAFT_V_HALF = (CRAFT_V_DOWN + CRAFT_V_UP) * 0.5;
 /* Body frame, along the craft's own up axis: where the hull's geometric
@@ -239,6 +239,45 @@ export function setCraftAirframe(dims) {
   CRAFT_WORLD_HULL = simLenToWorld(CRAFT_HULL_R);
   CRAFT_WORLD_V_HALF = simLenToWorld(CRAFT_V_HALF);
   CRAFT_WORLD_V_OFF = simLenToWorld(CRAFT_V_OFF);
+  seatWorldLengths();
+}
+
+/*
+ * THE CONTACT LENGTHS FOLLOW THE WORLD SCALE. Every length below that is a
+ * fixed number (a clip depth, a travel gate, a set down ring) was tuned with
+ * the world at the aircraft's own scale, which until the quad picker
+ * (2026-10-28) was true of every pairing: a five inch on a life size map and
+ * a whoop on a map built 3.5 times life size both fly at a world scale of 1.
+ * The picker adds pairings where it is not, a five inch in a house and a
+ * whoop in the town, and there each of these has to mean the same thing
+ * about the AIRCRAFT that it meant before, so each is written in sim metres
+ * and taken through the seam here. At a world scale of 1 simLenToWorld is
+ * the identity, so every pairing that flew before reads the same numbers.
+ * Called from setCraftAirframe, which the shell calls after every change of
+ * world scale, between runs only.
+ */
+const SIM_BOUNCE_SEPARATION = 0.008;
+const SIM_BURIED_MARGIN = 0.10;
+const SIM_CLIP_CENTER_EPS = 0.010;
+const SIM_CLIP_DEEP = 0.08;
+const SIM_STUCK_TRAVEL_MAX = 0.40;
+const SIM_BURIED_DEPTH = 0.22;
+const SIM_THRASH_TRAVEL = 0.60;
+const SIM_RECOVER_OUT = [0, 0.25, 0.5, 1.0, 1.5, 2.0, 2.75, 3.5];
+const SIM_REST_MARGIN_DRAG = 1.0;
+function seatWorldLengths() {
+  BOUNCE_SEPARATION = simLenToWorld(SIM_BOUNCE_SEPARATION);
+  BURIED_MARGIN = simLenToWorld(SIM_BURIED_MARGIN);
+  CLIP_CENTER_EPS = simLenToWorld(SIM_CLIP_CENTER_EPS);
+  CLIP_DEEP = simLenToWorld(SIM_CLIP_DEEP);
+  STUCK_TRAVEL_MAX = simLenToWorld(SIM_STUCK_TRAVEL_MAX);
+  BURIED_DEPTH = simLenToWorld(SIM_BURIED_DEPTH);
+  THRASH_TRAVEL = simLenToWorld(SIM_THRASH_TRAVEL);
+  for (let i = 0; i < SIM_RECOVER_OUT.length; i += 1) {
+    RECOVER_OUT[i] = simLenToWorld(SIM_RECOVER_OUT[i]);
+  }
+  REST_MARGIN = simLenToWorld(SIM_REST_MARGIN);
+  REST_MARGIN_DRAG = simLenToWorld(SIM_REST_MARGIN_DRAG);
 }
 
 /* The vertical semi-axis at a given tilt of the prop plane from level, in
@@ -2310,7 +2349,7 @@ export const PROP_PLANE_MAX_UP_DOT = 0.5;
  * now tumble, and the number is only an OSD / audio threshold. */
 export const BOUNCE_SPEED_MAX = 18.0;
 export const BOUNCE_COOLDOWN_MS = 180;
-export const BOUNCE_SEPARATION = 0.008;
+export let BOUNCE_SEPARATION = 0.008;
 
 /*
  * A CRASH IS A RESET, and the two lines it draws beside GRAZE_SPEED_MAX.
@@ -2326,6 +2365,21 @@ export const BOUNCE_SEPARATION = 0.008;
  */
 export const CRASH_BELLY_UP = 0.7;
 export const CRASH_UNDERSIDE_NZ = -0.5;
+
+/*
+ * IN 3D MODE BOTH SIDES ARE THE BASE. The owner, 2026-10-26: "In 3d mode
+ * we should not differentiate between a quad base strike and a prop strike,
+ * both sides of the quad around behave like a base strike". A 3D pilot
+ * flies on its back as much as the right way up, so a touch on the top
+ * plate within the same cone is a landing, a slide or a wall tap exactly as
+ * a belly touch is, and not a crash. up is how far the contact normal (or
+ * the ground's, for upZ) lies along the craft's own up, and both is whether
+ * the run is in 3D. With both false this is the belly test it always was,
+ * so normal mode reads the same number it did, bit for bit.
+ */
+export function onBase(up, both) {
+  return up >= CRASH_BELLY_UP || (both === true && up <= -CRASH_BELLY_UP);
+}
 
 /*
  * How far a solid's contact normal lies along the craft's own up: 1 for the
@@ -2361,11 +2415,12 @@ export function bodyUpDotWorld(qw, qx, qy, qz, nx, ny, nz, c, s) {
  * GRAZE_SPEED_MAX or more; and the normal the report carries (its strongest
  * contact, in the step that changed the craft's velocity most) is neither an
  * underside nor on the belly. rep is the report's eleven doubles, and the
- * attitude and (c, s) are bodyUpDotWorld's.
+ * attitude and (c, s) are bodyUpDotWorld's. both is onBase's: in 3D the top
+ * plate is the belly too.
  */
-export function solidContactCrash(rep, qw, qx, qy, qz, c, s) {
+export function solidContactCrash(rep, qw, qx, qy, qz, c, s, both) {
   return rep[8] > 0 && rep[1] >= GRAZE_SPEED_MAX && rep[6] > CRASH_UNDERSIDE_NZ
-    && bodyUpDotWorld(qw, qx, qy, qz, rep[4], rep[5], rep[6], c, s) < CRASH_BELLY_UP;
+    && !onBase(bodyUpDotWorld(qw, qx, qy, qz, rep[4], rep[5], rep[6], c, s), both);
 }
 
 /*
@@ -2457,7 +2512,9 @@ export function stateUpZ(st) {
  *              hit for the site's count that the ground did not count
  *
  * seat(c, s) is the plant frame's turn (see bodyUpDotWorld), from
- * seatWorldFrame; forget() is a set down or a restart.
+ * seatWorldFrame; threeD(on) is whether the run is in 3D, where the top
+ * plate counts as the belly in every rule (onBase); forget() is a set down
+ * or a restart.
  *
  * EVERY STEP, ON THE SIM CLOCK. Until 2026-09-26 the rules were read once a
  * frame: the ground on the frame's peaks behind a cooldown on the WALL
@@ -2489,8 +2546,10 @@ export class CrashJudge {
   constructor() {
     this.c = 1;
     this.s = 0;
+    this.both = false;
     this.groundAtMs = -Infinity;
     this.hardAtMs = -Infinity;
+    this.groundLastMs = -Infinity;
     this.beginFrame();
   }
 
@@ -2499,9 +2558,21 @@ export class CrashJudge {
     this.s = s;
   }
 
+  /* 3D mode, on or off: whether the top plate counts as the belly (onBase). */
+  threeD(on) {
+    this.both = on === true;
+  }
+
   forget() {
     this.groundAtMs = -Infinity;
     this.hardAtMs = -Infinity;
+    this.groundLastMs = -Infinity;
+  }
+
+  /* A knock (solidContactKnock) in the step's report rep, with the state
+   * after the step, in the frame seat() was given. */
+  knock(rep, after) {
+    return rep[0] > 0 && solidContactKnock(rep, after[7], after[8], after[9], after[10], this.c, this.s, this.both);
   }
 
   beginFrame() {
@@ -2514,6 +2585,7 @@ export class CrashJudge {
     this.crash = '';
     this.crashAtMs = 0;
     this.stopHard = false;
+    this.stepKind = '';
   }
 
   step(before, after, ground, rep, atMs, mayPerch) {
@@ -2527,17 +2599,37 @@ export class CrashJudge {
       Math.sqrt(after[4] * after[4] + after[5] * after[5] + after[6] * after[6]),
       Math.sqrt(after[11] * after[11] + after[12] * after[12] + after[13] * after[13]),
     );
+    /* A SLIDE IS NOT A SMACK, since 2026-10-18 (PERCH_SPEED has the owner's
+     * words). A step whose step before, one millisecond of sim clock back,
+     * was on the ground too is the same contact going on, and while it is on
+     * the belly its speed going in is a slide's and not an arrival's: only a
+     * fresh closing speed can make it a hit. Judged on either, a belly slide
+     * at 12 m/s was a hit every BOUNCE_COOLDOWN_MS until it slowed under
+     * GRAZE_SPEED_MAX: a thump and a combo bump five times along one slide,
+     * and from BOUNCE_SPEED_MAX a crash for the site's count each time. An
+     * arrival, the first step of a contact, is judged as it always was, and
+     * so is a slide that has gone over off the belly, which is a crash and
+     * gets the dull bounce. A slide's steps are not judged at all, so they
+     * neither start nor use up the cooldown: the step it goes over off the
+     * belly is judged on the step it happens, BOUNCE_COOLDOWN_MS after the
+     * arrival, and not on whichever step a cooldown happened to end at. */
+    const closing = -before[6];
+    const base = onBase(upZ, this.both);
+    const sliding = ground > 0 && this.groundLastMs === atMs - 1 && base
+      && closing < GRAZE_SPEED_MAX;
+    if (ground > 0) {
+      this.groundLastMs = atMs;
+    }
     /* The ground. A clock that went backwards (a restart the shell did not
      * tell forget() about) ends the cooldown rather than stretching it. */
-    if (ground > 0 && !lands && (atMs - this.groundAtMs > BOUNCE_COOLDOWN_MS || atMs < this.groundAtMs)) {
+    if (ground > 0 && !lands && !sliding && (atMs - this.groundAtMs > BOUNCE_COOLDOWN_MS || atMs < this.groundAtMs)) {
       this.groundAtMs = atMs;
-      const closing = -before[6];
       if (closing >= GRAZE_SPEED_MAX || spdBefore >= GRAZE_SPEED_MAX) {
         const hard = closing >= BOUNCE_SPEED_MAX || spdBefore >= BOUNCE_SPEED_MAX;
         if (hard) {
           this.hardAtMs = atMs;
         }
-        if (upZ < CRASH_BELLY_UP) {
+        if (!base) {
           kind = 'ground';
         }
         /* The cooldown outlasts the longest frame (dt is capped at 100 ms),
@@ -2553,10 +2645,10 @@ export class CrashJudge {
       }
     }
     const solidTouched = rep[0] > 0;
-    if (!kind && solidTouched && solidContactCrash(rep, after[7], after[8], after[9], after[10], this.c, this.s)) {
+    if (!kind && solidTouched && solidContactCrash(rep, after[7], after[8], after[9], after[10], this.c, this.s, this.both)) {
       kind = 'solid';
     }
-    if (!kind && !solidTouched && upZ < CRASH_BELLY_UP) {
+    if (!kind && !solidTouched && !base) {
       const dvx = after[4] - before[4];
       const dvy = after[5] - before[5];
       const dvz = after[6] - before[6];
@@ -2568,6 +2660,7 @@ export class CrashJudge {
         }
       }
     }
+    this.stepKind = kind;
     if (!kind) {
       return false;
     }
@@ -2577,6 +2670,218 @@ export class CrashJudge {
     }
     return true;
   }
+}
+
+/*
+ * A CRASH IS A DULL BOUNCE. The owner, 2026-10-16: "fix crashing to not be
+ * annoying no reset, just dull bounce always". src/main.js, under the same
+ * heading, has where it is applied; this is what it is, pure, so a check in
+ * Node asks the same question with the same numbers.
+ *
+ * On a step the judge calls a crash, the contact solver has already done
+ * its rigid body hit, and for a nose or a top plate first arrival that hit
+ * is a corner strike: up to 46 rad/s of tumble off a 20 m/s wall, nearly
+ * 5 m/s thrown upward, and a craft that slides down the face onto its nose
+ * and waits there for stuckTick. That tumble is the annoying part. So the
+ * step's outcome is replaced by a dead one: the spin goes, the speed along
+ * the face is kept in part, and the craft leaves the face at a walking pace
+ * whatever it arrived at. Its attitude is left exactly where it was, so the
+ * picture never jumps and Betaflight holds it from there.
+ *
+ *   DULL_E           of the speed INTO the face, how much comes back out
+ *   DULL_OUT_MIN     but never less than this, so a craft always leaves the
+ *                    face and is never left resting on it to be crashed again
+ *   DULL_OUT_MAX     and never more: a 20 m/s hit comes back at 1.2 m/s, a
+ *                    thud and not a pinball
+ *   DULL_TANGENT_KEEP of the speed ALONG the face: a glancing hit carries on
+ *                    the way it was going, slower, which is the owner's
+ *                    "keeps 60 to 80 percent" target in crash-check.js
+ *
+ * before is the state block going into the step (the arrival, before the
+ * solver touched it), n the contact's outward normal in the PLANT frame,
+ * unit. out gets the velocity to leave the step with, plant frame, and is
+ * returned. Allocation free: it is called from the step loop.
+ *
+ * A FACE THAT MOVES is met at its own speed: surf, when given, is the
+ * face's velocity in the plant frame, and the bounce is worked out on the
+ * craft's velocity relative to it and handed back with the face's added.
+ * Read against still air instead, a windmill's sail coming round at
+ * 7.6 m/s into a craft hovering still sent it off at 0.3 m/s, and the sail
+ * caught it again the next step, and the next: 96 bounces in 100 ms
+ * (scripts/windmill-check.js fails on it), the craft shoved round in front
+ * of the sail with a velocity of 0.3 m/s, and at 30 rpm carried 48 degrees
+ * round and then thrown off at 34 m/s. Against the sail it is a craft hit
+ * at 7.6 m/s, which leaves at the sail's speed and a thud more, once. No
+ * surf (every fixed solid and the ground) is the arithmetic above
+ * unchanged.
+ */
+export const DULL_E = 0.15;
+export const DULL_OUT_MIN = 0.3;
+export const DULL_OUT_MAX = 1.2;
+export const DULL_TANGENT_KEEP = 0.75;
+
+export function dullBounce(before, nx, ny, nz, out, surf = null) {
+  let vx = before[4];
+  let vy = before[5];
+  let vz = before[6];
+  if (surf) {
+    vx -= surf[0];
+    vy -= surf[1];
+    vz -= surf[2];
+  }
+  const vn = vx * nx + vy * ny + vz * nz;
+  let back = vn < 0 ? -vn * DULL_E : 0;
+  if (back < DULL_OUT_MIN) {
+    back = DULL_OUT_MIN;
+  } else if (back > DULL_OUT_MAX) {
+    back = DULL_OUT_MAX;
+  }
+  out[0] = (vx - vn * nx) * DULL_TANGENT_KEEP + back * nx;
+  out[1] = (vy - vn * ny) * DULL_TANGENT_KEEP + back * ny;
+  out[2] = (vz - vn * nz) * DULL_TANGENT_KEEP + back * nz;
+  if (surf) {
+    out[0] += surf[0];
+    out[1] += surf[1];
+    out[2] += surf[2];
+  }
+  return out;
+}
+
+/*
+ * The bounce put on the module, for the shell's step loop and for
+ * scripts/bounce-check.js alike, so the two cannot drift. kind is the
+ * judge's rule ('solid' for a knock), before and after the state blocks
+ * either side of the step, rep the step's world report, (gx, gy, gz) the
+ * ground plane's normal the plant was handed for the step, plant frame,
+ * and (c, s) the plant frame's turn (see bodyUpDotWorld). out is scratch
+ * for three doubles.
+ *
+ * The solid's normal is the world's and is turned into the plant's by the
+ * yaw, as bodyUpDotWorld does; the ground's, a roof's included, is the
+ * plane's. The spin goes with sim_rest, and the velocity is written with
+ * sim_contact_at: no arm, no restitution and no friction, against a
+ * surface moving at the wanted velocity, which is a pure linear impulse
+ * that leaves the craft moving at that velocity and turns nothing. The
+ * position handed back is the one the step left. Returns false and touches
+ * nothing for a report with no normal in it.
+ *
+ * surf is dullBounce's: a moving solid's velocity in the plant frame, or
+ * null for one that stands still. Only a 'solid' bounce reads it.
+ *
+ * A KNOCK KEEPS A SPIN THAT TURNS THE CRAFT OFF THE FACE. A craft held
+ * against a face buzzes on it every few milliseconds, and taking the spin
+ * off at every buzz takes off the pilot's own pull away with it, a few
+ * milliseconds of it at a time, while the craft is still touching the face
+ * it is being pulled off. So for a knock (knock true) the spin is kept
+ * when it is turning the thrust axis away from the face (turnsOffFace), and
+ * only the velocity is written: the same impulse from the velocity the step
+ * left, with no sim_rest before it. A spin winding the thrust axis INTO the
+ * face is the solver's ratchet, and goes. A crash always loses its spin.
+ */
+export function putDullBounce(sim, kind, before, after, rep, gx, gy, gz, c, s, out, knock = false, surf = null) {
+  let nx = gx;
+  let ny = gy;
+  let nz = gz;
+  if (kind === 'solid') {
+    nx = c * rep[4] + s * rep[5];
+    ny = c * rep[5] - s * rep[4];
+    nz = rep[6];
+    const n2 = nx * nx + ny * ny + nz * nz;
+    if (!(n2 > 1e-12)) {
+      return false;
+    }
+    const inv = 1 / Math.sqrt(n2);
+    nx *= inv;
+    ny *= inv;
+    nz *= inv;
+  }
+  dullBounce(before, nx, ny, nz, out, kind === 'solid' ? surf : null);
+  /* From rest, or from the velocity the step left with its spin kept. */
+  let vx = 0;
+  let vy = 0;
+  let vz = 0;
+  if (knock && turnsOffFace(after, nx, ny, nz)) {
+    vx = after[4];
+    vy = after[5];
+    vz = after[6];
+  } else {
+    sim.e.sim_rest();
+  }
+  const dx = out[0] - vx;
+  const dy = out[1] - vy;
+  const dz = out[2] - vz;
+  const u = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  if (u > 1e-9) {
+    const k = 1 / u;
+    sim.e.sim_contact_at(
+      dx * k, dy * k, dz * k, 0, 0,
+      after[1], after[2], after[3],
+      vx + dx, vy + dy, vz + dz,
+      0, 0, 0,
+    );
+  }
+  return true;
+}
+
+/*
+ * Whether the state's spin is turning its thrust axis away from a face with
+ * outward normal n (plant frame, unit): the rate of change of up . n, with
+ * up the body z axis in the world and the body rates turned into the world
+ * by the attitude.
+ */
+export function turnsOffFace(st, nx, ny, nz) {
+  const w = st[7];
+  const x = st[8];
+  const y = st[9];
+  const z = st[10];
+  const p = st[11];
+  const q = st[12];
+  const r = st[13];
+  /* Body to world, the attitude's rotation matrix. */
+  const r00 = 1 - 2 * (y * y + z * z);
+  const r01 = 2 * (x * y - w * z);
+  const r02 = 2 * (x * z + w * y);
+  const r10 = 2 * (x * y + w * z);
+  const r11 = 1 - 2 * (x * x + z * z);
+  const r12 = 2 * (y * z - w * x);
+  const r20 = 2 * (x * z - w * y);
+  const r21 = 2 * (y * z + w * x);
+  const r22 = 1 - 2 * (x * x + y * y);
+  const ox = r00 * p + r01 * q + r02 * r;
+  const oy = r10 * p + r11 * q + r12 * r;
+  const oz = r20 * p + r21 * q + r22 * r;
+  /* up is the third column; d(up)/dt = omega x up. */
+  const dux = oy * r22 - oz * r12;
+  const duy = oz * r02 - ox * r22;
+  const duz = ox * r12 - oy * r02;
+  return dux * nx + duy * ny + duz * nz > 0;
+}
+
+/*
+ * AND A SLOW KNOCK IS ONE TOO, on a solid. Under GRAZE_SPEED_MAX the judge
+ * calls nothing, and a craft that comes back to the face after the bounce
+ * (a pilot still pitched at it) touches at a walking pace, which the solver
+ * answers as a corner strike again: the ratchet PRESS_UP_DOT's note below
+ * measures, winding the nose onto the face until the craft stands on it and
+ * stuckTick has to set it down. So the frame or the lens on a solid, off the
+ * belly and not on an underside, is the same dull bounce at any speed. The
+ * belly is left alone, so a wall ride, a wall tap and a landing on a roof
+ * stay physics, and so is a prop alone under a smack's speed, so a clipped
+ * gate still only costs rotor speed. A prop alone at GRAZE_SPEED_MAX or more
+ * is a head on hit that met the front discs first, which the judge does not
+ * call a crash (it wants the frame) and the solver winds onto the nose all
+ * the same: measured at 12 m/s, 5.4 rad/s of pitch in 12 ms, so it bounces.
+ * The ground is not in this: a craft at rest on its side would hop on the
+ * spot for ever, where today it lies still and turtles.
+ *
+ * KNOCK_CLOSING_MIN is the closing speed it takes: a step that still
+ * reports the face the bounce has just left closes at nothing, and a hull
+ * resting against a face by a millimetre is the solver's to hold.
+ */
+export const KNOCK_CLOSING_MIN = 0.05;
+export function solidContactKnock(rep, qw, qx, qy, qz, c, s, both) {
+  return (rep[8] > 0 ? rep[1] >= KNOCK_CLOSING_MIN : rep[1] >= GRAZE_SPEED_MAX) && rep[6] > CRASH_UNDERSIDE_NZ
+    && !onBase(bodyUpDotWorld(qw, qx, qy, qz, rep[4], rep[5], rep[6], c, s), both);
 }
 
 /*
@@ -2706,16 +3011,37 @@ export function thrustIntoFace(nx, ny, nz, ux, uy, uz) {
 export const SURFACE_SPEED_MAX = 60.0;
 
 /* Perch: freeze only when the hull is settled enough that a takeoff from
- * leftover bounce would be a lie. */
-export const PERCH_SPEED = 2.0;   /* m/s, linear */
+ * leftover bounce would be a lie.
+ *
+ * A SLIDE RUNS TO ITS OWN STOP, since 2026-10-18. The owner: "i want to be
+ * able to slide the quad along the ground a bit, like a trick when you hit
+ * the ground, there is some friction, but i can slide to a stop...at the
+ * moment i grab the ground with a smack and stop jaringly". At 2 m/s the
+ * perch was the jar: a belly slide on the grass was frozen dead from a
+ * running pace the frame it dropped under it. At 0.5 the grass has already
+ * done nearly all of the stopping (GROUND_MU below takes 0.5 m/s off in
+ * about 85 ms), so what the perch freezes is a craft that has all but
+ * stopped. A landing straight down still perches within a frame or two,
+ * because the grass has no bounce and takes the descent out on the touch. */
+export const PERCH_SPEED = 0.5;   /* m/s, linear */
 export const PERCH_RATE = 2.5;    /* rad/s */
 
 /* Grass / dirt. Restitution is zero: a real 5 inch on turf is a dead
- * thump, not a bounce. Mu is high enough that a belly landing dumps
- * the slide in a few tens of centimetres; the plant also damps leftover
- * tangent speed once the hull is seated. A props-down arrival is a
- * full stop, not a slide. */
-export const GROUND_MU = 1.40;
+ * thump, not a bounce. A props-down arrival is a full stop, not a slide.
+ *
+ * Mu was 1.40 until 2026-10-18, rubber on a dry road, and the owner's report
+ * (PERCH_SPEED above has his words) was that touching down grabbed the
+ * ground. It did twice over: the touch itself, where the friction cone is
+ * mu times the normal impulse, took 1.4 m/s of run off for every 1 m/s of
+ * descent in a millisecond, and the seated slide behind it stopped at 13.7
+ * m/s^2, so a 12 m/s belly arrival was down to a walk in a fifth of a
+ * second. 0.6 is a plastic and carbon belly on short turf: the touch keeps
+ * most of its run, and the slide stops at 5.9 m/s^2, so 10 m/s runs about
+ * 8.5 m over 1.7 s. It is the one number to move if the slide reads as ice
+ * (higher) or still as glue (lower). The plant reads it for the touch, the
+ * seated slide and the spin on the belly alike (src/native/sim.c), and it
+ * still holds a parked craft on a 30 degree slope. */
+export const GROUND_MU = 0.6;
 export const GROUND_E = 0.0;
 
 /*
@@ -2833,7 +3159,7 @@ export const DIRT_UPZ = 0.50;
  * attitude. 91 percent of a RaceGOW opening now scores where 69 did.
  */
 const DIRT_SPAN = 0.22 / FIVE_INCH_WORLD_R;
-export const BURIED_MARGIN = 0.10;
+export let BURIED_MARGIN = 0.10;
 
 /* The band for the airframe currently seated, in WORLD metres, because the
  * clearance every caller measures is a world height above a world surface. */
@@ -2924,6 +3250,59 @@ export const TURTLE_INVERT_UPZ = -0.95;
 export const TURTLE_STICK_MIN = 0.08;
 export const TURTLE_WAIT_RATE = 1.0;
 export const TURTLE_FLIP_MS = 380;
+
+/*
+ * HELD STILL BY SOMETHING, the pose half of stuckTick in src/main.js, which
+ * sets a craft down nearby once this has been true for STUCK_MS of sim time.
+ * Still is under STUCK_SPEED and STUCK_RATE, as it always was there.
+ *
+ * Past 60 degrees from level (TURTLE_EXIT_UPZ) still is the whole test,
+ * because a craft that far over cannot hold still in the air: if it is
+ * still, something is holding it. In 3D, within 60 degrees of flat on its
+ * back is its other base and is left alone, as one on its belly is.
+ *
+ * LEANING ON A SOLID, since 2026-10-29, bug-6c405527: "Whenever I hit a wall,
+ * i sometimes glitch in and get stuck, forcing me to start over". Its report
+ * had the craft 0.1 m up at the foot of a wall, 52 degrees over (upZ 0.62),
+ * at 0 m/s, not landed, the sticks centred and the keyboard holding hover.
+ * The 60 degree test never saw it, so nothing set it down, and nothing the
+ * pilot could do got it out: flown through the real plant into a wall from
+ * a low hover, the craft wedges in the corner of the wall and the ground,
+ * where pitching either way drives a blade into one of the two faces and the
+ * thrust presses it into the wall. Full pitch back with full throttle for a
+ * second moves it under 5 mm (scripts/wallpin-check.js). Past the perch's own
+ * tilt a craft cannot hold still in the air either, so the same argument
+ * holds from LAND_TILT_MAX_DEG, but only beside a solid: that is what is
+ * holding it. It keeps an upright craft pressed to a ceiling or a wall out of
+ * this, which a pilot flies away from, and a craft resting on a steep
+ * hillside, which the ground plane tilts under and which takes off again.
+ *
+ * BESIDE, NOT TOUCHING. onSolid is a solid within the craft's own swept
+ * radius of its centre, the same reach the shell's set down spot has to be
+ * clear by, and not the plant's contact report. A wedged craft rests on the
+ * ground's two contacts and meets the wall only now and then: measured on
+ * that crash, 336 of 2000 steps, and once nothing for 544 ms while it sat
+ * still against it. Asked by contact, the clock broke on every gap.
+ *
+ * STUCK_LEAN_UPZ is cos(LAND_TILT_MAX_DEG) written as a number, so the test
+ * is the same comparison on every engine; wallpin-check holds the two
+ * together.
+ */
+export const STUCK_SPEED = 0.3;   /* m/s */
+export const STUCK_RATE = 1.5;    /* rad/s */
+export const STUCK_LEAN_UPZ = 0.9063;
+
+export function heldStill(upz, speed, rateMag, onSolid, threeD) {
+  if (!(speed < STUCK_SPEED) || !(rateMag < STUCK_RATE)) {
+    return false;
+  }
+  /* How upright it is on a base it can fly from: in 3D either face is one. */
+  const base = threeD ? Math.abs(upz) : upz;
+  if (base < TURTLE_EXIT_UPZ) {
+    return true;
+  }
+  return Boolean(onSolid) && base < STUCK_LEAN_UPZ;
+}
 
 /*
  * THE HALO AND THE HOP ARE LENGTHS ABOUT THE AIRCRAFT, the same argument
@@ -3245,12 +3624,12 @@ export function groundOutcome(descentRate, horizontal, tiltDeg) {
  * nudges that far, so a centre more than that inside is not leftover
  * slop, it is through the face.
  */
-export const CLIP_CENTER_EPS = 0.010;
-export const CLIP_DEEP = 0.08;
+export let CLIP_CENTER_EPS = 0.010;
+export let CLIP_DEEP = 0.08;
 export const CLIP_CONFIRM_MS = 180;
 export const STUCK_UNRESOLVED_MS = 350;
-export const STUCK_TRAVEL_MAX = 0.40;
-export const BURIED_DEPTH = 0.22;
+export let STUCK_TRAVEL_MAX = 0.40;
+export let BURIED_DEPTH = 0.22;
 export const BURIED_CONFIRM_MS = 180;
 export const CLIP_CRASH_HOLD_MS = 800;
 export const CLIP_SPAWN_GRACE_MS = 500;
@@ -3293,7 +3672,7 @@ export const THRASH_RATE = 12.0;      /* rad/s, about 690 deg/s */
  */
 export const THRASH_THROTTLE = 0.55;
 export const THRASH_MS = 700;
-export const THRASH_TRAVEL = 0.60;
+export let THRASH_TRAVEL = 0.60;
 
 /*
  * WHERE A CRASHED CRAFT IS PUT BACK: SET DOWN ON A FLAT SURFACE, the ground
@@ -3361,7 +3740,7 @@ export const THRASH_TRAVEL = 0.60;
  * and went back to the start line; the plain answer, the same pavement a
  * quarter metre out from the wall, was never asked. Measured 2026-09-24.
  */
-const RECOVER_OUT = [0, 0.25, 0.5, 1.0, 1.5, 2.0, 2.75, 3.5];
+const RECOVER_OUT = SIM_RECOVER_OUT.slice();
 const RECOVER_DIR = [[1, 0], [-1, 0], [0, 1], [0, -1], [0.7, 0.7], [-0.7, 0.7], [0.7, -0.7], [-0.7, -0.7]];
 const FOOTPRINT = [[1, 0], [-1, 0], [0, 1], [0, -1],
   [Math.SQRT1_2, Math.SQRT1_2], [-Math.SQRT1_2, Math.SQRT1_2], [Math.SQRT1_2, -Math.SQRT1_2], [-Math.SQRT1_2, -Math.SQRT1_2]];
@@ -3378,6 +3757,51 @@ const SEAT_CLEAR = 0.001;
  * either. Under a bench, a car or a lattice's bottom bar is refused; under a
  * table, a deck or a room's ceiling is not. */
 const TAKEOFF_ROOM_SPAN = 2;
+
+/*
+ * HOW MUCH ROOM A SET DOWN PREFERS ROUND THE PARKED HULL, sideways, in
+ * metres: the same swept diameter the takeoff room above is, 0.347 m.
+ * bug-fe9215c0, on a built map (measured here on Hibari Yard): "partially
+ * clipping on to walls when crashing on them and stutters until it can
+ * finally get away from the wall", expecting "respawn further from objects
+ * and walls after a crash".
+ *
+ * The rule before this took the NEAREST spot whose parked hull, prop discs
+ * included, was clear, and "touching is not overlap". Measured on 1434
+ * crashes at the foot of the yard's 104 wall boxes, 0.12 m off each face at
+ * three heights, through the shell's own search: every one was set down, the
+ * least room round the parked hull was 1 cm, 5 percent had under 5 cm and 16
+ * percent under 10, the median 15 cm. A craft parked a centimetre off a wall
+ * leans a centimetre into it on the first touch of the sticks, and what a
+ * pilot sees is a quad kissing the brick and being pushed off it again.
+ *
+ * So a spot with REST_MARGIN of open room on every side (eight directions,
+ * see restRoomAt) is preferred to a nearer one without it, and when there is
+ * none in reach the nearest clear spot is taken as before, so nothing that
+ * was set down is now sent to the line. Measured on the same crashes: 1420
+ * of 1434 had a spot with it, none was left with under 5 cm (70 were), the
+ * median set down moved from 0.25 m to 0.50 m from the crash, the 90th
+ * percentile did not move, and the room round the parked hull rose from 15
+ * cm at the median to 47 cm. It is a preference, not a rule: the owner's "as
+ * near as possible to where the accident happened" (24 September) still
+ * picks among the spots that have room, and still wins when none has.
+ *
+ * AND THE PREFERENCE IS BOUNDED. A spot with room is taken only if it is
+ * within REST_MARGIN_DRAG of the nearest clear spot, so that the wish for
+ * room can never drag a craft far from where it crashed: in a narrow gap or a
+ * tunnel the nearest clear spot is in the crash's own cell and a roomy one may
+ * be at the far end of the search. With the bound at 0.75 m and above the
+ * outcome on the 1434 crashes is the same as with none; at 0.5 m, 14 were
+ * still left under 5 cm. One metre leaves the rings' widest step of 0.75 m
+ * room to be crossed.
+ */
+/* REST_MARGIN was CRAFT_WORLD_R times the span, read once at module load,
+ * when the five inch is seated: 0.347 m, and both airframes are that size
+ * at a world scale of 1. It stays that number, in sim metres, and follows
+ * the world scale through seatWorldLengths like the lengths above. */
+const SIM_REST_MARGIN = CRAFT_WORLD_R * TAKEOFF_ROOM_SPAN;
+let REST_MARGIN = SIM_REST_MARGIN;
+let REST_MARGIN_DRAG = SIM_REST_MARGIN_DRAG;
 
 /* Can a craft be set down on the surface under (px, pz), seen from fromY?
  * Writes the parked centre and the surface to `out` when it can. */
@@ -3419,10 +3843,36 @@ export function restSpotAt(colliders, surfaceAt, restHeight, px, pz, fromY, out)
   return true;
 }
 
+/*
+ * Is there `margin` of open room on every side of a craft parked with its
+ * centre at (x, y, z)? The parked hull, prop discs included, moved that far
+ * in each of eight directions, meets nothing. Sideways only: the room over
+ * it is restSpotAt's own rule. With no colliders there is nothing to be near.
+ */
+export function restRoomAt(colliders, x, y, z, margin = REST_MARGIN) {
+  if (!colliders) {
+    return true;
+  }
+  for (let i = 0; i < FOOTPRINT.length; i += 1) {
+    const px = x + FOOTPRINT[i][0] * margin;
+    const pz = z + FOOTPRINT[i][1] * margin;
+    if (colliders.hit(px, y, pz, px, y, pz, craftVerticalHalf(0), 0, 0, 0, 1, craftVerticalOffset()) >= 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
 const restProbe = { x: 0, y: 0, z: 0, surface: 0 };
+const restNear = { x: 0, y: 0, z: 0, surface: 0 };
 
 export function findRestSpot(colliders, surfaceAt, restHeight, x, y, z, from, out, keepOut = null) {
+  /* The nearest spot that is clear, and the nearest that is clear AND has
+   * REST_MARGIN of room: see REST_MARGIN. `out` takes the second as it is
+   * found, and the first when there is no second or the second is more than
+   * REST_MARGIN_DRAG farther from the crash. */
   let best = Infinity;
+  let roomy = Infinity;
   const consider = (px, pz) => {
     if (!restSpotAt(colliders, surfaceAt, restHeight, px, pz, y, restProbe)) {
       return;
@@ -3440,6 +3890,13 @@ export function findRestSpot(colliders, surfaceAt, restHeight, x, y, z, from, ou
     const d = dx * dx + dy * dy + dz * dz;
     if (d < best) {
       best = d;
+      restNear.x = restProbe.x;
+      restNear.y = restProbe.y;
+      restNear.z = restProbe.z;
+      restNear.surface = restProbe.surface;
+    }
+    if (d < roomy && restRoomAt(colliders, restProbe.x, restProbe.y, restProbe.z)) {
+      roomy = d;
       out.x = restProbe.x;
       out.y = restProbe.y;
       out.z = restProbe.z;
@@ -3459,7 +3916,17 @@ export function findRestSpot(colliders, surfaceAt, restHeight, x, y, z, from, ou
   if (keepOut) {
     keepOut.verges(x, z, CRAFT_WORLD_R, consider);
   }
-  return best < Infinity;
+  if (roomy < Infinity && Math.sqrt(roomy) <= Math.sqrt(best) + REST_MARGIN_DRAG) {
+    return true;
+  }
+  if (best < Infinity) {
+    out.x = restNear.x;
+    out.y = restNear.y;
+    out.z = restNear.z;
+    out.surface = restNear.surface;
+    return true;
+  }
+  return false;
 }
 
 export function makeClipWatch() {

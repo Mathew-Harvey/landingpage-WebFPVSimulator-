@@ -16,7 +16,7 @@
  *
  * THE API.
  *
- *   buildGround(placed, doc, look, cover)
+ *   buildGround(placed, doc, look, cover, drawn, tone)
  *     placed   placeDocument(doc) from ./place.js
  *     doc      the normalized document, for its id (the repairs' seed) and
  *              its logos
@@ -24,9 +24,15 @@
  *     cover    ./roadmesh.js roadCover for the map's roads: no paint of the
  *              yard's goes on a road, and a bridge with a road under it
  *              paints no lane of its own
- *   returns { group, painted, cancelLogos }: the group to add to a scene,
- *   what was painted (for stats), and a way to stop a logo still decoding
- *   from painting into a map that has gone.
+ *     drawn    the grass's drawn tufts (the maps that drop facet ink)
+ *     tone     optional (x, z) => factor, or [r, g, b] factors, on the plot's colour at a vertex,
+ *              in the world frame: a map's own slow pattern on its ground
+ *   returns { group, painted, cancelLogos, stickers }: the group to add to
+ *   a scene, what was painted (for stats), a way to stop a logo still
+ *   decoding from painting into a map that has gone, and the stickers that
+ *   can be found (stickerSheet), each { id, name, achievement, p, n, up, w,
+ *   h, sheet, crop } in world metres, Three.js frame, `sheet` the decoded
+ *   picture's holder ({ image }, image null until it decodes).
  *
  * This file is part of WebFPVSimulator.
  *
@@ -48,11 +54,13 @@ import * as THREE from 'three';
 import { PAL } from '../city/vendored/core/palette.js';
 import { cel } from '../city/vendored/core/toon.js';
 import { bake } from '../city/vendored/core/util.js';
-import { logoForDecal } from '../../trackbuilder/model.js';
+import { logoForDecal, cropOf, achievementOf } from '../../trackbuilder/model.js';
 import { planBounds } from '../../props/catalog.js';
 import { sincos } from '../../props/trig.js';
 import { seededRandom, hashString } from '../../props/parts.js';
 import { paintGroundLogo } from '../../art/banners.js';
+import { paintSponsor } from '../../art/sponsorpaint.js';
+import { surfaceFor } from './logosurface.js';
 
 /* The concrete paving's slab, and how many slabs one texture tile holds.
  * Six metres is a sawn joint spacing a yard slab of this kind really has;
@@ -279,9 +287,9 @@ function tarmacTexture() {
  * and yellow flowers. No mowing stripes: from the air they are a second
  * grid.
  */
-function grassTexture() {
+function grassTexture(drawn = false) {
   const S = 512;
-  const { c, g, blob } = groundCanvas(S, '#86ab84');
+  const { c, g, blob, wrapped } = groundCanvas(S, '#86ab84');
   const rng = seededRandom(0x3b8d21);
   for (let n = 0; n < 46; n += 1) {
     const light = rng.chance(0.55);
@@ -309,7 +317,58 @@ function grassTexture() {
     g.fillStyle = rng.chance(0.6) ? 'rgba(250, 248, 238, 0.85)' : 'rgba(246, 212, 96, 0.85)';
     g.fillRect(Math.floor(rng.range(1, S - 2)), Math.floor(rng.range(1, S - 2)), 2, 2);
   }
+  if (drawn) {
+    drawnTufts(g, wrapped, S, seededRandom(0x6d2a91));
+  }
   return c;
+}
+
+/*
+ * DRAWN TUFTS (2026-11-01, the owner's "it should feel like a manga comic,
+ * not minecraft"). A mangaka does not paint a field: they lay a flat tone
+ * and put a scatter of little inked tufts over it, three to five strokes
+ * fanned from one root, thicker in clumps and gone in between, and the eye
+ * fills in the rest. Painted into the lawn's own tile, in the ink's violet
+ * green, so the same one texture fetch the ground always made now reads as
+ * a drawn field. A flat field was the emptiest thing on the maps of 31
+ * October, and this is what it costs to fill it: nothing per frame.
+ *
+ * Only on a map that asks to be drawn (buildGround's `drawn`, the maps that
+ * pass inkFacets false), so a pilot's own lawn is the builder's.
+ */
+function drawnTufts(g, wrapped, S, rng) {
+  g.lineCap = 'round';
+  const clumps = 20;
+  for (let n = 0; n < clumps; n += 1) {
+    const cx = rng.range(0, S);
+    const cy = rng.range(0, S);
+    const count = 2 + Math.floor(rng.range(0, 5));
+    for (let k = 0; k < count; k += 1) {
+      const x = cx + rng.range(-26, 26);
+      const y = cy + rng.range(-20, 20);
+      const strokes = 3 + Math.floor(rng.range(0, 3));
+      const len = rng.range(13, 22);
+      const lean = rng.range(-0.25, 0.25);
+      const tone = rng.chance(0.75) ? 'rgba(44, 66, 66, 0.72)' : 'rgba(58, 88, 76, 0.6)';
+      const width = rng.range(1.7, 2.5);
+      const fan = [];
+      for (let j = 0; j < strokes; j += 1) {
+        const a = -Math.PI / 2 + lean + (j - (strokes - 1) / 2) * rng.range(0.32, 0.48);
+        fan.push([a, len * rng.range(0.7, 1.1)]);
+      }
+      wrapped((ox, oy) => {
+        g.strokeStyle = tone;
+        g.lineWidth = width;
+        g.beginPath();
+        for (const [a, l] of fan) {
+          g.moveTo(x + ox, y + oy);
+          g.quadraticCurveTo(x + ox + Math.cos(a) * l * 0.4, y + oy + Math.sin(a) * l * 0.6,
+            x + ox + Math.cos(a) * l, y + oy + Math.sin(a) * l);
+        }
+        g.stroke();
+      });
+    }
+  }
 }
 
 /*
@@ -364,7 +423,51 @@ function dirtTexture() {
 const LATTICE = 30;
 const PLOT_VARY = { tarmac: [0.07, 0, 0], grass: [0.08, 0.05, 0.06], dirt: [0.09, 0.03, 0] };
 
-function plotGeometry(W, D, groundId, seed) {
+/* Smoothed value noise in [-1, 1] on a lattice of `cell` metres, the
+ * octave `k`, the same for a seed on every machine. */
+function valueNoise(x, z, cell, k, seed) {
+  const lattice = (i, j) => seededRandom((Math.imul(i, 73856093) ^ Math.imul(j, 19349663) ^ Math.imul(k, 83492791) ^ seed) >>> 0).next() * 2 - 1;
+  const smooth = (t) => t * t * (3 - 2 * t);
+  const fx = x / cell;
+  const fz = z / cell;
+  const i = Math.floor(fx);
+  const j = Math.floor(fz);
+  const u = smooth(fx - i);
+  const v = smooth(fz - j);
+  const a = lattice(i, j) + (lattice(i + 1, j) - lattice(i, j)) * u;
+  const b = lattice(i, j + 1) + (lattice(i + 1, j + 1) - lattice(i, j + 1)) * u;
+  return a + (b - a) * v;
+}
+
+/*
+ * A LAWN GONE TO MEADOW, as a plot tone (buildGround's `tone`): patches
+ * of sun dried grass, paler and yellower, and of long lush grass, darker
+ * and bluer, a few tens of metres across, the texture kept under both.
+ * `keep(x, z)`, if given, says where the grass is still kept and gets
+ * none of it. Returns [r, g, b] factors, none over 1: written when the
+ * look pass (src/render/look.js toneGeometry) clamped every vertex colour
+ * to 1, so dry is yellower by losing blue, not by gaining red. A toned
+ * plot may now go to 1.6.
+ */
+export function meadowTone(seed, keep = null, cell = 26) {
+  return (x, z) => {
+    if (keep && keep(x, z)) {
+      return 1;
+    }
+    const n = 0.75 * valueNoise(x, z, cell, 11, seed) + 0.25 * valueNoise(x, z, cell / 3, 12, seed);
+    if (n > 0.18) {
+      const t = Math.min(1, (n - 0.18) / 0.3);
+      return [1, 1 - 0.09 * t, 1 - 0.4 * t];
+    }
+    if (n < -0.22) {
+      const t = Math.min(1, (-0.22 - n) / 0.3);
+      return [1 - 0.32 * t, 1 - 0.18 * t, 1 - 0.14 * t];
+    }
+    return 1;
+  };
+}
+
+function plotGeometry(W, D, groundId, seed, tone = null) {
   const vary = PLOT_VARY[groundId];
   /* Four metre cells, well inside the noise's lattice, and no more than a
    * hundred a side, so a plot of a kilometre is 20,000 triangles and not
@@ -375,19 +478,7 @@ function plotGeometry(W, D, groundId, seed) {
   if (!vary) {
     return geo;
   }
-  const lattice = (i, j, k) => seededRandom((Math.imul(i, 73856093) ^ Math.imul(j, 19349663) ^ Math.imul(k, 83492791) ^ seed) >>> 0).next() * 2 - 1;
-  const smooth = (t) => t * t * (3 - 2 * t);
-  const noise = (x, z, cell, k) => {
-    const fx = x / cell;
-    const fz = z / cell;
-    const i = Math.floor(fx);
-    const j = Math.floor(fz);
-    const u = smooth(fx - i);
-    const v = smooth(fz - j);
-    const a = lattice(i, j, k) + (lattice(i + 1, j, k) - lattice(i, j, k)) * u;
-    const b = lattice(i, j + 1, k) + (lattice(i + 1, j + 1, k) - lattice(i, j + 1, k)) * u;
-    return a + (b - a) * v;
-  };
+  const noise = (x, z, cell, k) => valueNoise(x, z, cell, k, seed);
   const pos = geo.attributes.position;
   const col = new Float32Array(pos.count * 3);
   for (let n = 0; n < pos.count; n += 1) {
@@ -395,13 +486,44 @@ function plotGeometry(W, D, groundId, seed) {
     const z = pos.getZ(n);
     const value = 0.7 * noise(x, z, LATTICE, 1) + 0.3 * noise(x, z, LATTICE / 3, 2);
     const hue = noise(x, z, LATTICE * 1.4, 3);
+    /* A map may lay its own slow tone over the noise, a mown field's
+     * bands, say: a factor at the vertex, so the texture stays under it.
+     * Over 1 is kept: a toned plot is flagged brightTone, below. */
     const k = 1 + vary[0] * value;
-    col[n * 3] = k * (1 + vary[1] * hue);
-    col[n * 3 + 1] = k;
-    col[n * 3 + 2] = k * (1 - vary[2] * hue);
+    const t = tone ? tone(x, z) : 1;
+    const [tr, tg, tb] = typeof t === 'number' ? [t, t, t] : t;
+    col[n * 3] = k * (1 + vary[1] * hue) * tr;
+    col[n * 3 + 1] = k * tg;
+    col[n * 3 + 2] = k * (1 - vary[2] * hue) * tb;
   }
   geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  /* A plot with a tone may go over 1 (the look pass's ceiling is lifted
+   * for it, src/render/look.js); without one it keeps the old ceiling. */
+  if (tone) {
+    geo.userData.brightTone = true;
+  }
   return geo;
+}
+
+/* How far a bridge's lane runs out past the deck on each side, in metres.
+ * It is the paving under the bridge, with a little beyond so the deck does
+ * not hang over a bare edge. It is NOT a road across the plot: it used to
+ * run kerb to kerb, so a pilot who dropped seven bridges in a big map got
+ * seven roads they never made (the board's "infinite world", 2026-10-23).
+ * A road is the road tool's. */
+const LANE_RUNOUT = 2;
+
+/* The lane under a bridge, in the world: the middle, its width and its
+ * length, the lane running along the bridge's local z (a bridge only ever
+ * stands at a quarter turn). `alongX` says it lies along world x. */
+function laneOf(it) {
+  const S = { s: 0, c: 1 };
+  sincos(it.yaw, S);
+  const alongX = Math.abs(S.s) > 0.5;
+  const b = planBounds(it.parts);
+  const deck = Math.max(b.z1 - b.z0, it.el.dims.width || 0);
+  const len = deck + 2 * LANE_RUNOUT;
+  return { alongX, len };
 }
 
 /* The lanes buildGround paints under bridges, as world rectangles at their
@@ -409,16 +531,14 @@ function plotGeometry(W, D, groundId, seed) {
  * map's roads under it paints no lane (see roadUnder), so it has none here
  * either: the road's own cover keeps the paint off. */
 function lanesOf(placed, cover) {
-  const { W, D } = placed;
   const out = [];
-  const S = { s: 0, c: 1 };
   for (const it of placed.items) {
     if (it.el.type === 'bridge' && !roadUnder(it, cover)) {
-      sincos(it.yaw, S);
       const hw = 4;
-      out.push(Math.abs(S.s) > 0.5
-        ? { x0: -W / 2, x1: W / 2, z0: it.z - hw, z1: it.z + hw }
-        : { x0: it.x - hw, x1: it.x + hw, z0: -D / 2, z1: D / 2 });
+      const { alongX, len } = laneOf(it);
+      out.push(alongX
+        ? { x0: it.x - len / 2, x1: it.x + len / 2, z0: it.z - hw, z1: it.z + hw }
+        : { x0: it.x - hw, x1: it.x + hw, z0: it.z - len / 2, z1: it.z + len / 2 });
     }
   }
   return out;
@@ -613,7 +733,7 @@ const ARROW_EVERY = 24;
 function tarmacMarks(paint, mat, placed, painted, cover) {
   const ex = placed.W / 2 - EDGE_LINE_INSET;
   const ez = placed.D / 2 - EDGE_LINE_INSET;
-  /* A bridge's road runs the plot's whole depth under it, and a bay or an
+  /* A bridge's lane runs under it, and a bay or an
    * arrow painted across it is a car park laid over a road. The map's own
    * roads are the same, through `cover`. */
   const lanes = [
@@ -788,7 +908,7 @@ function dirtRuts(placed, doc, cover) {
  * of its own. Returns the group, what it painted for stats(), and a way to
  * stop a logo still decoding from painting into a map that has gone.
  */
-export function buildGround(placed, doc, look, cover) {
+export function buildGround(placed, doc, look, cover, drawn = false, tone = null) {
   const { W, D } = placed;
   const G = look.ground;
   const groundId = look.groundId;
@@ -800,9 +920,9 @@ export function buildGround(placed, doc, look, cover) {
    * it is painted as, it is the same flat plane: a ground is paint. */
   const painter = { tarmac: tarmacTexture, grass: grassTexture, dirt: dirtTexture }[groundId];
   const tile = painter ? GROUND_TILE[groundId] : SLAB * TILE_SLABS;
-  const yard = canvasTexture(painter ? painter() : yardTexture(), W / tile, D / tile);
+  const yard = canvasTexture(painter ? painter(drawn) : yardTexture(), W / tile, D / tile);
   const plot = new THREE.Mesh(
-    painter ? plotGeometry(W, D, groundId, hashString(doc.id)) : new THREE.PlaneGeometry(W, D).rotateX(-Math.PI / 2),
+    painter ? plotGeometry(W, D, groundId, hashString(doc.id), tone) : new THREE.PlaneGeometry(W, D).rotateX(-Math.PI / 2),
     cel({ color: 0xffffff, map: yard, bands: 3, tint: G.tint, vertexColors: Boolean(painter), cache: false }),
   );
   plot.receiveShadow = true;
@@ -896,7 +1016,7 @@ export function buildGround(placed, doc, look, cover) {
     const type = it.el.type;
     /*
      * A BRIDGE MEANS A ROAD UNDER IT. The lane is painted square to the
-     * span, through the middle of it, from kerb to kerb, so a footbridge is
+     * span, through the middle of it and a little past the deck, so a footbridge is
      * a footbridge over something. A bridge only ever stands at a quarter
      * turn (it has boxes), so the lane is always along a world axis. Where
      * one of the map's own roads runs under it, that road is the something,
@@ -909,13 +1029,11 @@ export function buildGround(placed, doc, look, cover) {
       const foot = it.el.style === 'footbridge';
       const col = foot ? 0.18 : 0.6;
       const laneW = Math.max(3, Math.min(7, span - 2 * (0.8 + col + 0.6)));
-      const S = { s: 0, c: 1 };
-      sincos(it.yaw, S);
-      /* The lane runs along the bridge's local z. */
-      const alongX = Math.abs(S.s) > 0.5;
-      const len = alongX ? W : D;
-      const cx = alongX ? 0 : it.x;
-      const cz = alongX ? it.z : 0;
+      const { alongX, len } = laneOf(it);
+      /* The lane runs along the bridge's local z, under the deck and a
+       * little past it, centred on the bridge (see LANE_RUNOUT). */
+      const cx = it.x;
+      const cz = it.z;
       const lw = alongX ? len : laneW;
       const ld = alongX ? laneW : len;
       paint.rect(asphalt, cx, cz, lw, ld, 0, 0.004);
@@ -923,12 +1041,13 @@ export function buildGround(placed, doc, look, cover) {
       const off = laneW / 2 - 0.3;
       for (const s of [-1, 1]) {
         if (alongX) {
-          paint.rect(white, 0, it.z + s * off, len, 0.12, 0, 0.01);
+          paint.rect(white, cx, it.z + s * off, len, 0.12, 0, 0.01);
         } else {
-          paint.rect(white, it.x + s * off, 0, 0.12, len, 0, 0.01);
+          paint.rect(white, it.x + s * off, cz, 0.12, len, 0, 0.01);
         }
       }
-      for (let a = -len / 2 + 1.5; a < len / 2 - 3; a += 6) {
+      const mid = alongX ? cx : cz;
+      for (let a = mid - len / 2 + 1.5; a < mid + len / 2 - 3; a += 6) {
         if (alongX) {
           paint.rect(white, a + 1.5, it.z, 3, 0.12, 0, 0.01);
         } else {
@@ -974,6 +1093,9 @@ export function buildGround(placed, doc, look, cover) {
 
   /* ---- the sponsors' marks, from the document's own logos ---- */
   const logos = [];
+  /* Stickers, by the sheet they are cut from: see stickerSheet. */
+  const sheets = new Map();
+  const stickers = [];
   for (const it of placed.items) {
     if (it.el.type !== 'groundLogo') {
       continue;
@@ -982,15 +1104,41 @@ export function buildGround(placed, doc, look, cover) {
     if (!mark || typeof mark.image !== 'string' || !mark.image.startsWith('data:image/')) {
       continue;
     }
-    logos.push(groundLogo(it, mark.image));
+    const target = surfaceFor(placed, it, groundId);
+    const crop = cropOf(it.el);
+    if (crop) {
+      let sheet = sheets.get(mark.image);
+      if (!sheet) {
+        sheet = { image: null, pieces: [] };
+        sheets.set(mark.image, sheet);
+      }
+      const piece = stickerPiece(it, crop, target);
+      sheet.pieces.push(piece);
+      const achievement = achievementOf(it.el);
+      if (achievement) {
+        stickers.push({
+          id: it.el.id, name: String(it.el.name || '').trim(), achievement,
+          p: piece.c, n: piece.n, up: piece.u, w: piece.w, h: piece.h, sheet, crop,
+        });
+      }
+      painted.stickers = (painted.stickers || 0) + 1;
+      continue;
+    }
+    logos.push(groundLogo(it, mark.image, target));
     painted.logos += 1;
   }
+  for (const [dataUrl, sheet] of sheets) {
+    logos.push(stickerSheet(dataUrl, sheet));
+  }
   for (const l of logos) {
-    group.add(l.mesh);
+    for (const m of l.meshes || [l.mesh]) {
+      group.add(m);
+    }
   }
   return {
     group,
     painted,
+    stickers,
     cancelLogos() {
       for (const l of logos) {
         l.cancel();
@@ -1000,20 +1148,177 @@ export function buildGround(placed, doc, look, cover) {
 }
 
 /*
- * ONE GROUND LOGO: a plane the size of the decal's footprint, carrying a
- * canvas the mark is fitted into once it has decoded.
+ * STICKERS: many marks cut from one picture (cropOf in
+ * src/trackbuilder/model.js). A map carries at most five logos, so a
+ * sticker bomb is one sheet and each sticker a decal that names its piece
+ * of it.
  *
- * The canvas is the footprint's own shape, and it is laid on the plane the
- * way src/render/scene.js lays its pitch: a PlaneGeometry turned down about
- * X puts canvas right along the decal's local x and canvas down along its
- * local z, and the element's heading then turns the plane exactly as it
- * turns the element. Painted with paintGroundLogo at the same ink the race
- * field uses, so a sponsor's mark on a yard reads as paint, not a sticker.
+ * WHY ONE MESH. Each sponsor's mark is a mesh and a canvas of its own, which
+ * is right for five of them and wrong for a hundred: a hundred draw calls
+ * and a hundred half megapixel canvases is the frame time and the memory a
+ * weak laptop does not have. So every sticker cut from one sheet is a quad
+ * in one geometry, on the sheet itself as the texture, decoded once and
+ * never painted into a canvas: ONE draw call for the stickers on the ground
+ * and one for those on walls (they want different polygon offsets), and one
+ * texture the size of the sheet, whatever the count. The board holds a
+ * logo to 256 kB, so the sheet is at most a couple of megapixels.
+ *
+ * Where a sticker goes is where the mark would (logosurface.js): flat on
+ * the ground, or on the billboard, building or bando beside it. It is a
+ * sticker and not a sponsor's paint, so it wears no look of the surface: it
+ * is the picture, as cut. On a billboard it is fitted inside the face
+ * keeping its own proportions, where a sponsor's mark is framed across it.
+ *
+ * DRAWN AFTER THE OTHER PAINT (renderOrder 1), because both are transparent
+ * and write no depth, and a sticker laid on a painted logo has to land on
+ * top of it whichever is nearer the camera. Within the mesh the document's
+ * order is the order drawn, so a later sticker overlaps an earlier one, as
+ * on a real wall.
+ *
+ * Until the sheet decodes the quads wear a clear pixel, and the decoded
+ * sheet goes on as a new texture rather than into the old one: three.js
+ * sizes a texture's storage at its first upload and cannot grow it. The
+ * program does not change with it (a map either way), so no shader is
+ * compiled in flight.
  */
-function groundLogo(it, dataUrl) {
-  const w = Math.max(0.1, it.el.dims.width);
-  const d = Math.max(0.1, it.el.dims.depth);
-  const long = 512;
+const STICKER_LIFT = 0.016;
+
+/* One sticker's quad: centre c, unit right r and up u in the picture's
+ * own sense, the way it faces n, and its size, world metres. */
+function stickerPiece(it, crop, target) {
+  const S = { s: 0, c: 1 };
+  const dw = Math.max(0.1, it.el.dims.width);
+  const dh = Math.max(0.1, it.el.dims.depth);
+  const kind = target.kind;
+  if (kind === 'billboard' || kind === 'sign' || kind === 'graffiti') {
+    sincos(target.yaw, S);
+    const k = kind === 'billboard' ? Math.min(target.w / dw, target.h / dh) : 1;
+    return {
+      wall: true, crop,
+      c: [target.x, target.y, target.z], r: [S.c, 0, -S.s], u: [0, 1, 0], n: [S.s, 0, S.c],
+      w: kind === 'billboard' ? dw * k : target.w, h: kind === 'billboard' ? dh * k : target.h,
+    };
+  }
+  /* Flat: the ground decal's own frame (groundLogo below), the picture's
+   * top towards the decal's -z. */
+  sincos(it.yaw, S);
+  return {
+    wall: false, crop,
+    c: [it.x, STICKER_LIFT, it.z], r: [S.c, 0, -S.s], u: [-S.s, 0, -S.c], n: [0, 1, 0], w: dw, h: dh,
+  };
+}
+
+/* The quads, as one indexed geometry: four corners each, uv from the crop
+ * (a texture's v runs up from the picture's bottom edge). */
+function stickerGeometry(pieces) {
+  const n = pieces.length;
+  const pos = new Float32Array(n * 12);
+  const nor = new Float32Array(n * 12);
+  const uv = new Float32Array(n * 8);
+  const index = [];
+  pieces.forEach((q, k) => {
+    const hw = q.w / 2;
+    const hh = q.h / 2;
+    const u0 = q.crop.x;
+    const u1 = q.crop.x + q.crop.w;
+    const v1 = 1 - q.crop.y;
+    const v0 = 1 - q.crop.y - q.crop.h;
+    /* Top left, top right, bottom left, bottom right, as PlaneGeometry. */
+    const corners = [[-1, 1, u0, v1], [1, 1, u1, v1], [-1, -1, u0, v0], [1, -1, u1, v0]];
+    corners.forEach(([sx, sy, cu, cv], j) => {
+      for (let a = 0; a < 3; a += 1) {
+        pos[(k * 4 + j) * 3 + a] = q.c[a] + q.r[a] * sx * hw + q.u[a] * sy * hh;
+        nor[(k * 4 + j) * 3 + a] = q.n[a];
+      }
+      uv[(k * 4 + j) * 2] = cu;
+      uv[(k * 4 + j) * 2 + 1] = cv;
+    });
+    const b = k * 4;
+    index.push(b, b + 2, b + 1, b + 2, b + 3, b + 1);
+  });
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  geo.setIndex(index);
+  geo.computeBoundingBox();
+  geo.computeBoundingSphere();
+  return geo;
+}
+
+function stickerSheet(dataUrl, sheet) {
+  const clear = document.createElement('canvas');
+  clear.width = 1;
+  clear.height = 1;
+  const placeholder = new THREE.CanvasTexture(clear);
+  placeholder.colorSpace = THREE.SRGBColorSpace;
+  const meshes = [];
+  for (const wall of [false, true]) {
+    const list = sheet.pieces.filter((q) => q.wall === wall);
+    if (!list.length) {
+      continue;
+    }
+    const mat = cel({
+      color: 0xffffff, map: placeholder, bands: 3, tint: 0x6f6790, transparent: true, depthWrite: false, cache: false,
+    });
+    mat.polygonOffset = true;
+    mat.polygonOffsetFactor = wall ? -4 : -2;
+    mat.polygonOffsetUnits = wall ? -4 : -2;
+    const mesh = new THREE.Mesh(stickerGeometry(list), mat);
+    mesh.name = 'stickers';
+    mesh.renderOrder = 1;
+    mesh.receiveShadow = !wall;
+    mesh.userData.surface = wall ? 'wall' : 'ground';
+    meshes.push(mesh);
+  }
+  let live = true;
+  const img = new Image();
+  img.onload = () => {
+    if (!live) {
+      return;
+    }
+    const tex = new THREE.Texture(img);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 8;
+    tex.needsUpdate = true;
+    for (const m of meshes) {
+      m.material.map = tex;
+    }
+    placeholder.dispose();
+    sheet.image = img;
+  };
+  img.src = dataUrl;
+  return {
+    meshes,
+    cancel() {
+      live = false;
+      img.onload = null;
+    },
+  };
+}
+
+/*
+ * ONE SPONSOR'S MARK: a plane carrying a canvas the mark is fitted into once
+ * it has decoded. Where the plane lies and how the mark is painted on it
+ * come from logosurface.js: flat on the paving as before, sprayed on grass,
+ * or stood against a billboard, a building or a bando. Either way it is the
+ * one mesh it always was, painted once at load, so nothing here runs in a
+ * frame and the draw count is unchanged.
+ *
+ * On the ground the canvas is the footprint's own shape, and it is laid on
+ * the plane the way src/render/scene.js lays its pitch: a PlaneGeometry
+ * turned down about X puts canvas right along the decal's local x and
+ * canvas down along its local z, and the element's heading then turns the
+ * plane exactly as it turns the element. On a wall the plane stands
+ * upright: its +z is the wall's outward normal, canvas right is to the
+ * viewer's right and canvas down is down.
+ */
+function groundLogo(it, dataUrl, target) {
+  const kind = target.kind;
+  const onWall = kind === 'billboard' || kind === 'sign' || kind === 'graffiti';
+  const w = onWall ? target.w : Math.max(0.1, it.el.dims.width);
+  const d = onWall ? target.h : Math.max(0.1, it.el.dims.depth);
+  const long = kind === 'billboard' ? 1024 : 512;
   const cw = w >= d ? long : Math.max(8, Math.round((long * w) / d));
   const ch = w >= d ? Math.max(8, Math.round((long * d) / w)) : long;
   const cv = document.createElement('canvas');
@@ -1024,13 +1329,21 @@ function groundLogo(it, dataUrl) {
   tex.anisotropy = 8;
   const mat = cel({ color: 0xffffff, map: tex, bands: 3, tint: 0x6f6790, transparent: true, depthWrite: false, cache: false });
   mat.polygonOffset = true;
-  mat.polygonOffsetFactor = -2;
-  mat.polygonOffsetUnits = -2;
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d).rotateX(-Math.PI / 2), mat);
-  mesh.position.set(it.x, 0.014, it.z);
-  mesh.rotation.y = it.yaw;
-  mesh.receiveShadow = true;
+  mat.polygonOffsetFactor = onWall ? -4 : -2;
+  mat.polygonOffsetUnits = onWall ? -4 : -2;
+  let mesh;
+  if (onWall) {
+    mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat);
+    mesh.position.set(target.x, target.y, target.z);
+    mesh.rotation.y = target.yaw;
+  } else {
+    mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d).rotateX(-Math.PI / 2), mat);
+    mesh.position.set(it.x, 0.014, it.z);
+    mesh.rotation.y = it.yaw;
+    mesh.receiveShadow = true;
+  }
   mesh.name = 'groundLogo';
+  mesh.userData.surface = kind;
   let live = true;
   const img = new Image();
   img.onload = () => {
@@ -1039,7 +1352,11 @@ function groundLogo(it, dataUrl) {
     }
     const g = cv.getContext('2d');
     g.imageSmoothingQuality = 'high';
-    paintGroundLogo(g, cw, ch, { logo: img });
+    if (kind === 'ground') {
+      paintGroundLogo(g, cw, ch, { logo: img });
+    } else {
+      paintSponsor(kind, g, cw, ch, { logo: img, seed: hashString(it.el.id) });
+    }
     tex.needsUpdate = true;
   };
   img.src = dataUrl;
