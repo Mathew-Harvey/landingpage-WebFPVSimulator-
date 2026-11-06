@@ -195,6 +195,17 @@ each figure has a caption saying what it argues and a label for anyone who
 cannot see it, and that both halves of the reduced motion contract are
 still in place.
 
+`npm run check:pages` loads the real pages in headless Chromium (about four
+minutes on a software rasteriser) and prints pass or FAIL for each thing it
+asserts: index.html at a desktop and a phone size, under reduced motion,
+without the CDN or the board and without WebGL, the live wiki, a sample of
+the generated wiki pages, the patch notes and the slap pack. It is offline:
+three.js is fetched once by Node into a local cache and every other request
+off the local server is stubbed or refused. Set `WEBFPV_CHROME_BIN` if no
+Chromium is found, and `WEBFPV_COVERAGE` to a folder to collect precise
+coverage of the page's own scripts. Name a suite (`node scripts/page-check.js
+wiki`) to run only that one.
+
 ## The wiki
 
 The FPV wiki is a second page on this site, not a screen inside the
