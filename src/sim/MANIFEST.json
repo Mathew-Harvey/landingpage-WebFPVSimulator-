@@ -1,7 +1,7 @@
 {
   "note": "Copied from Mathew-Harvey/WebFPVSimulator by scripts/vendor.js. Regenerate, do not edit: scripts/page-lint.js checks every file here against its hash.",
   "from": "Mathew-Harvey/WebFPVSimulator",
-  "commit": "7c9688b6fbf10bf56a55235178d3c0c5c32784e0",
+  "commit": "7af35eceb3ae685fe23b20b0413e633f30cf40e7",
   "clean": true,
   "whole": [],
   "loose": [
@@ -100,7 +100,7 @@
     "trackbuilder/model.js": "453abd768082f715d0e2b477f5313dc145e5e06fc97688ac13cb8c13f04b1ad9",
     "trackbuilder/racegow.js": "370ee3ec2c230bc5c8c0b05fd7c12b9e5c75e1615853c9b0a735398d8e93811a",
     "trackbuilder/seat.js": "381b5c73768b0cd7932690925c662648b5ff9d2039ff1f479d57e334b599f0b7",
-    "ui/lettering.js": "4c4c9afb554aaa0cb6e663f5a89e1ba27a0ece39ecc35f3e459fcd738e211bc8",
+    "ui/lettering.js": "b4862fe91f25049e2f8e1b91527781a19ec20ee129076fff009d8b6b8284ffa7",
     "units.js": "a2e81e89b8e5e7c8e0d31ff67006636124d4de833e2ecce6907533071a68ed98"
   },
   "assets": {
