@@ -1134,12 +1134,19 @@ async function wikiLive(browser, server, slugs) {
     /* A figure computes, and its knob moves it. */
     await page.evaluate("location.hash = '#wiki/physics-yaw'");
     await page.until(`document.querySelector('#wiki h1')?.textContent.trim() === ${SEL(await staticH1('physics-yaw'))} && document.querySelector('#wiki .wiki-figure')?.dataset.fig === 'yawtorque'`, 5000);
-    await page.sleep(600);
+    /* A figure mounts on the frame after it is put in the document and
+     * paints on the frame after that, and a resize clears its canvas until
+     * the next one, so a clock says nothing about whether it has drawn: on a
+     * loaded machine 600 ms was not two frames and the canvas was read
+     * blank. So this waits on the drawing itself, the same measure the
+     * check then asserts, and a figure that never draws still fails it
+     * when the wait runs out. */
+    await page.until(`(${canvasInk('#wiki .wiki-fig-canvas')} || { inked: 0 }).inked > 100`, 10000);
     const before = await page.evaluate(canvasInk('#wiki .wiki-fig-canvas'));
     check(`${L}: the yaw figure is drawn`, before && before.inked > 100, before ? `${before.inked} of 1600 samples inked` : 'no canvas');
     const readout0 = await page.evaluate("document.querySelector('#wiki .wiki-ctl-value').textContent");
     await page.evaluate("(() => { const r = document.querySelector('#wiki .wiki-ctl-range'); r.value = '0.9'; r.dispatchEvent(new Event('input', { bubbles: true })); })()");
-    await page.sleep(600);
+    await page.until(`(${canvasInk('#wiki .wiki-fig-canvas')} || {}).sum !== ${before ? before.sum : -1}`, 10000);
     const readout1 = await page.evaluate("document.querySelector('#wiki .wiki-ctl-value').textContent");
     const after = await page.evaluate(canvasInk('#wiki .wiki-fig-canvas'));
     check(`${L}: moving the throttle knob changes its readout`, readout0 !== readout1 && /90/.test(readout1), `${readout0} to ${readout1}`);
@@ -1164,16 +1171,22 @@ async function wikiLive(browser, server, slugs) {
       const title = await staticH1(slug);
       await page.evaluate(`location.hash = ${SEL(`#wiki/${slug}`)}`);
       const has = await page.until(`(document.querySelector('#wiki h1')?.textContent || '').trim() === ${SEL(title)} && !!document.querySelector('#wiki .wiki-figure canvas')`, 5000);
-      await page.sleep(300);
+      /* Waited on the drawing, not on a clock, for the reason given at the
+       * yaw figure above: the first read below was taken 300 ms after the
+       * article opened and was blank whenever two frames took longer. */
       const r = has ? JSON.parse(await page.evaluate(`(async () => {
         const fig = document.querySelector('#wiki .wiki-figure');
         const c = fig.querySelector('canvas');
         const ink = () => { const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0, s = 0; for (let i = 0; i < d.length; i += 4 * 97) { if (d[i + 3]) n += 1; s = (s * 31 + d[i] + d[i + 1] * 7 + d[i + 2] * 13) % 1000000007; } return { n, s }; };
+        const frame = () => new Promise((res) => requestAnimationFrame(() => res()));
+        const waitFor = async (test, ms) => { const end = performance.now() + ms; for (;;) { const v = ink(); if (test(v) || performance.now() > end) return v; await frame(); } };
+        await waitFor((v) => v.n > 0, 10000);
         const ctl = fig.querySelector('.wiki-ctl');
         const state = () => ctl ? ctl.querySelector('.wiki-ctl-value').textContent + '|' + [...ctl.querySelectorAll('[aria-pressed]')].map((b) => b.getAttribute('aria-pressed')).join() + '|' + (ctl.querySelector('input[type=checkbox]') || {}).checked : null;
         const play = fig.querySelector('.wiki-fig-play[aria-pressed=true]');
         if (play) play.click();
-        await new Promise((res) => setTimeout(res, 100));
+        await frame();
+        await frame();
         const a = ink();
         const s0 = state();
         let kind = null;
@@ -1185,8 +1198,7 @@ async function wikiLive(browser, server, slugs) {
           else if (pick) { kind = 'pick'; pick.click(); }
           else if (box) { kind = 'toggle'; box.click(); }
         }
-        await new Promise((res) => setTimeout(res, 400));
-        const b = ink();
+        const b = kind ? await waitFor((v) => v.s !== a.s, 10000) : ink();
         return JSON.stringify({ inked: a.n, kind, moved: s0 !== null && state() !== s0, redrawn: a.s !== b.s });
       })()`)) : null;
       if (r && !r.kind) {
