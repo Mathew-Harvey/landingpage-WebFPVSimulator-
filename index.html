@@ -785,6 +785,16 @@
         color: rgba(243, 234, 212, 0.88);
       }
       
+      .thanks-card .mailbtn {
+        background: none;
+        border: 0;
+        padding: 0;
+        font: inherit;
+        color: var(--sakura);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        cursor: pointer;
+      }
       .thanks-close {
         display: inline-block;
         padding: 9px 18px;
@@ -2438,6 +2448,16 @@
         gap: 7px;
         margin-left: auto;
       }
+      button.pjoin {
+        background: none;
+        border: 0;
+        padding: 0;
+        font: inherit;
+        color: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+      button.pjoin span { text-decoration: underline; text-underline-offset: 3px; }
       .pjoin small {
         font-size: 9.5px;
         letter-spacing: var(--track-eyebrow);
@@ -3791,11 +3811,12 @@
             <span class="pdesc">Spanish FPV shop, courses and aerial filming, Barcelona</span>
           </a>
           <!-- Partner with WebFPV: the owner's own address, which they asked
-               for, as it is on the board's partners page. -->
-          <a class="pjoin" href="mailto:mathewharvey@gmail.com?subject=Partnering%20with%20WebFPV">
+               for. It is not in this file: a click assembles it (revealMail
+               below), so a scraper reading the source finds none. -->
+          <button class="pjoin" type="button" data-reveal-mail="Partnering with WebFPV">
             <small>Partner with WebFPV</small>
-            <span>mathewharvey@gmail.com</span>
-          </a>
+            <span>Click to view email</span>
+          </button>
         </div>
       </div>
 
@@ -4088,6 +4109,33 @@
       just shows, then dismisses on Close, Escape or the scrim.
     -->
     <script>
+      /* THE CONTACT ADDRESS is never written in this file. A visitor presses
+         "click to view email" and the address is assembled here, so a
+         scraper that reads the served source finds nothing to collect. The
+         button is replaced by a mailto link with the address showing. */
+      (function () {
+        function address() { return atob('bWF0aGV3aGFydmV5QGdtYWlsLmNvbQ=='); }
+        document.addEventListener('click', function (ev) {
+          var btn = ev.target && ev.target.closest ? ev.target.closest('[data-reveal-mail]') : null;
+          if (!btn) { return; }
+          ev.preventDefault();
+          var addr = address();
+          var subject = btn.getAttribute('data-reveal-mail');
+          var a = document.createElement('a');
+          a.href = 'mailto:' + addr + (subject ? '?subject=' + encodeURIComponent(subject) : '');
+          if (btn.classList.contains('pjoin')) {
+            a.className = 'pjoin';
+            var small = btn.querySelector('small');
+            if (small) { a.appendChild(small.cloneNode(true)); }
+            var span = document.createElement('span');
+            span.textContent = addr;
+            a.appendChild(span);
+          } else {
+            a.textContent = addr;
+          }
+          btn.replaceWith(a);
+        });
+      })();
       (function () {
         var root = document.getElementById('thanks');
         var heading = document.getElementById('thanks-h');
@@ -4149,14 +4197,15 @@
         
         /* Build paragraph with mailto link if needed */
         if (message.text.indexOf('{email}') !== -1) {
-          var email = 'mathewharvey@gmail.com';
           var parts = message.text.split('{email}');
           paragraph.textContent = '';
           paragraph.appendChild(document.createTextNode(parts[0]));
-          var emailLink = document.createElement('a');
-          emailLink.href = 'mailto:' + email + (message.emailSubject ? '?subject=' + encodeURIComponent(message.emailSubject) : '');
-          emailLink.textContent = email;
-          paragraph.appendChild(emailLink);
+          var emailBtn = document.createElement('button');
+          emailBtn.type = 'button';
+          emailBtn.className = 'mailbtn';
+          emailBtn.textContent = 'click to view email';
+          emailBtn.setAttribute('data-reveal-mail', message.emailSubject || '');
+          paragraph.appendChild(emailBtn);
           if (parts[1]) {
             paragraph.appendChild(document.createTextNode(parts[1]));
           }

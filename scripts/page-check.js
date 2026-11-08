@@ -1024,7 +1024,10 @@ async function degraded(browser, server) {
   try {
     check(`${L}: loads`, page.loaded);
     check(`${L}: the thank you card opens for ?thanks=track`, await page.until("document.getElementById('thanks').classList.contains('on')", 5000));
-    check(`${L}: it gives the buyer the address with the subject`, await page.evaluate("document.getElementById('thanks-h').textContent === 'Thanks for the order' && document.querySelector('#thanks-p a').href === 'mailto:mathewharvey@gmail.com?subject=Track%20order'"));
+    check(`${L}: the thank you card hides the address behind a button`, await page.evaluate("document.getElementById('thanks-h').textContent === 'Thanks for the order' && !!document.querySelector('#thanks-p button[data-reveal-mail]') && !document.getElementById('thanks-p').textContent.includes('@')"));
+    await page.evaluate("document.querySelector('#thanks-p button[data-reveal-mail]').click()");
+    check(`${L}: pressing it gives the buyer the address with the subject`, await page.evaluate("document.querySelector('#thanks-p a').href === 'mailto:mathewharvey@gmail.com?subject=Track%20order'"));
+    check(`${L}: the served source never holds the address`, await page.evaluate("fetch(location.pathname).then(r => r.text()).then(t => !/mathewharvey@|mailto:mathew/i.test(t))"));
     check(`${L}: ?thanks is stripped and the rest kept`, await page.evaluate("location.search === '?from=x'"), await page.evaluate('location.search'));
     await page.key('Escape', 'Escape', 27);
     check(`${L}: Escape closes the thank you card`, await page.until("document.getElementById('thanks').hidden", 3000));
