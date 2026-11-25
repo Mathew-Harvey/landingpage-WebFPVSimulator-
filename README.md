@@ -1,7 +1,11 @@
 # WebFPV landing page
 
 The front door for [WebFPVSimulator](https://github.com/Mathew-Harvey/WebFPVSimulator).
-One canvas, one scroll, six acts, a reason, four links out, and two pages
+Since 25 November 2026 the page at the root, `index.html`, is a front page:
+what the game is, a Play now button, the partners, and the Steam edition. It
+is described under [The front page](#the-front-page). The film it replaced is
+`film.html` and is unchanged, and the rest of this file up to that section is
+about the film: one canvas, one scroll, six acts, a reason, four links out, and two pages
 that are not part of the film: a wiki at `wiki/`, thirty five illustrated
 pages on how a quad actually flies plus every Betaflight setting, with
 figures you can drive, and a sticker pack at `stickers/`, twenty two of them
@@ -184,7 +188,8 @@ errs toward the offer.
 npm run serve
 ```
 
-Then open <http://127.0.0.1:8080/>. The wiki is <http://127.0.0.1:8080/wiki/>.
+Then open <http://127.0.0.1:8080/>, which is the front page. The film is
+<http://127.0.0.1:8080/film.html> and the wiki is <http://127.0.0.1:8080/wiki/>.
 Any static file server will do; the only requirement is that it serves over
 http, because ES modules will not load from `file://`.
 
@@ -197,14 +202,68 @@ still in place.
 
 `npm run check:pages` loads the real pages in headless Chromium (about four
 minutes on a software rasteriser) and prints pass or FAIL for each thing it
-asserts: index.html at a desktop and a phone size, under reduced motion,
-without the CDN or the board and without WebGL, the live wiki, a sample of
+asserts: the front page at a desktop and a phone size, after a payment and
+with the board down; the film at a desktop and a phone size, under reduced motion,
+without the CDN or the board and without WebGL; the live wiki, a sample of
 the generated wiki pages, the patch notes and the slap pack. It is offline:
 three.js is fetched once by Node into a local cache and every other request
-off the local server is stubbed or refused. Set `WEBFPV_CHROME_BIN` if no
+off the local server is stubbed or refused. The four `front` suites need no
+three.js, so `node scripts/page-check.js front` runs where the CDN cannot be
+reached, in about half a minute. Set `WEBFPV_CHROME_BIN` if no
 Chromium is found, and `WEBFPV_COVERAGE` to a folder to collect precise
 coverage of the page's own scripts. Name a suite (`node scripts/page-check.js
 wiki`) to run only that one.
+
+## The front page
+
+`index.html`, with `front/front.css`, `front/front.js`, the pictures and clips
+in `front/media/`, three typefaces in `front/fonts/` and a share card,
+`front/og.jpg`. Static markup: no three.js, no WebGL and nothing to build. To
+change it, edit the files.
+
+| Part | What it is |
+| --- | --- |
+| The bar | The wordmark, the page's sections, Play now and the Steam button. It stays at the top. |
+| The first screen | The partners' plate, the headline, Play now and Wishlist on Steam, and the countdown. |
+| Trailer | Loads nothing until play is pressed, then plays with sound and controls. |
+| Firmware, modes, mini games, patch notes | What is in the game, with short silent loops. |
+| Editions | The free browser edition beside the Steam edition, and what is only on Steam. |
+| The closing poster, the partners' row, the footer | The two buttons again, every partner with its role, and every link the film's footer had. |
+
+**The launch switch.** One line near the top of `front/front.js`:
+
+```js
+var LAUNCH = new Date(2026, 10, 27).getTime();
+```
+
+That is midnight on 27 November 2026 in the visitor's own time zone (months
+count from 0). Before it the page counts down and says "Wishlist on Steam";
+after it, "Out now" and "Buy on Steam". Nothing has to be published on the
+day. If Steam unlocks at another moment, change that line, and the same line
+in the `front desktop` suite of `scripts/page-check.js`. The words that
+change are the `TEXT` table just under it. The description in the `<head>`
+does not switch, so edit it after launch.
+
+**Motion.** The loops are silent, play only while they are on screen, and
+stop for anyone whose system asks for reduced motion or reduced data. "Pause
+motion" in the top strip stops them all and remembers it. A new clip is
+H.264 MP4 with a poster, written like the ones there:
+
+```html
+<video src="front/media/name.mp4" poster="front/media/name-poster.jpg" muted loop playsinline preload="none"></video>
+```
+
+**What it shares with the film.** `src/support-boot.js` counts the partners'
+marks and the support and offer clicks on both pages, and `src/front-links.js`
+does for the front page what `main.js` does for the film's links. The
+thank you card a payer comes back to is on both. `npm run lint:page`
+(section 15), `npm test` and the `front` suites of `npm run check:pages`
+hold those, and CLAUDE.md says what each is for.
+
+**After a change to `front/front.css` or `front/front.js`**, change the `?v=`
+on both in `index.html`, because the two reach a returning visitor four hours
+apart from the page (CLAUDE.md, "A deploy that changes a script changes its
+address").
 
 ## The wiki
 

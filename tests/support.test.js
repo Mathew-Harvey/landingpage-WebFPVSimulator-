@@ -343,11 +343,12 @@ await test('loadSupporters skips entries without optIn: true', async () => {
 
 /* The checkout links: every tip and offer anchor in the page is a fixed
    amount buy.stripe.com Payment Link, tagged, same tab, with the amount in
-   its visible text. */
+   its visible text. The film first, which is film.html since 2026-11-25,
+   then the front page that took its place at index.html, below. */
 import { readFileSync } from 'node:fs';
-import { TIP_URL, TIP_NOTE, bindTipLinks } from '../src/config.js';
+import { TIP_URL, TIP_NOTE, PATREON_URL, bindTipLinks } from '../src/config.js';
 
-const pageHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const pageHtml = readFileSync(new URL('../film.html', import.meta.url), 'utf8');
 const pageDom = new JSDOM(pageHtml);
 const pageDoc = pageDom.window.document;
 const checkoutLinks = [...pageDoc.querySelectorAll('[data-tip], [data-offer]')];
@@ -398,6 +399,57 @@ await test('footer and phone menu offers match the header offers', () => {
     assertEquals(v[0], v[1], k + ' copies differ');
     if (!/\$\d+/.test(v[0].split('|')[1])) throw new Error(k + ' shows no price');
   }
+});
+
+
+/* THE FRONT PAGE, index.html. It took the film's place as the front door,
+   so it owes a payer everything the film's footer did: the same Payment
+   Links at the same addresses, in the same tab, the price in the words, and
+   the card they come back to, hidden until it is wanted. */
+const frontHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const frontDoc = new JSDOM(frontHtml).window.document;
+const frontCheckout = [...frontDoc.querySelectorAll('[data-tip], [data-offer]')];
+
+await test('front page: every [data-tip] and [data-offer] href is a tagged buy.stripe.com link, same tab, noopener', () => {
+  assertEquals(frontCheckout.length, 5, 'expected the tip and four offers, found ' + frontCheckout.length);
+  for (const a of frontCheckout) {
+    const href = a.getAttribute('href');
+    if (!href.startsWith('https://buy.stripe.com/')) throw new Error('not a Payment Link: ' + href);
+    if (new URL(href).searchParams.get('utm_source') !== 'landing') throw new Error('no utm_source=landing: ' + href);
+    if (a.hasAttribute('target')) throw new Error('target set on ' + href);
+    assertContains(a.getAttribute('rel') || '', 'noopener', 'rel must keep noopener');
+    if (!/\$\d+/.test(a.textContent)) throw new Error('no price in: ' + a.textContent);
+  }
+});
+
+await test('front page: the tip is TIP_URL and every offer is the address the film sells it at', () => {
+  const tips = [...frontDoc.querySelectorAll('[data-tip]')];
+  assertEquals(tips.length, 1, 'one tip link, in the footer');
+  assertEquals(tips[0].getAttribute('href'), TIP_URL, 'hardcoded href must match src/config.js');
+  const film = {};
+  for (const a of pageDoc.querySelectorAll('[data-offer]')) {
+    film[a.dataset.offer] = a.getAttribute('href');
+  }
+  const offers = [...frontDoc.querySelectorAll('[data-offer]')];
+  assertEquals(offers.map((a) => a.dataset.offer).sort().join(','), Object.keys(film).sort().join(','), 'the same offers as the film');
+  for (const a of offers) {
+    assertEquals(a.getAttribute('href'), film[a.dataset.offer], a.dataset.offer + ' is sold at another address');
+  }
+});
+
+await test('front page: the support link, the thank you card and the patrons list are what support-boot.js and Stripe expect', () => {
+  const support = frontDoc.getElementById('support-link');
+  assertEquals(support && support.getAttribute('href'), PATREON_URL, '#support-link must be the Patreon page');
+  const thanks = frontDoc.getElementById('thanks');
+  assertEquals(Boolean(thanks && thanks.hasAttribute('hidden')), true, '#thanks ships hidden');
+  assertEquals(Boolean(frontDoc.getElementById('thanks-h') && frontDoc.getElementById('thanks-p')), true, 'the card has its heading and paragraph');
+  assertEquals(frontDoc.querySelectorAll('#thanks [data-thanks-close]').length >= 2, true, 'the scrim and the Close button dismiss it');
+  const supporters = frontDoc.getElementById('supporters');
+  assertEquals(Boolean(supporters && supporters.hasAttribute('hidden')), true, '#supporters ships hidden');
+  assertEquals(Boolean(supporters.querySelector('#supporters-list')), true, 'the list is inside the section it unhides');
+  /* The address is assembled on a click and is never in the source. */
+  if (/mailto:[\w.+-]+@|@gmail\.com/.test(frontHtml)) throw new Error('a contact address is written in index.html');
+  assertEquals(frontDoc.querySelectorAll('[data-reveal-mail]').length, 1, 'one click to view email button');
 });
 
 

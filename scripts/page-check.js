@@ -4,7 +4,7 @@
  * can fail.
  *
  * npm test reaches the attribution, support and velocity modules through
- * jsdom, and the lints read files. Nothing loaded index.html in a browser, so
+ * jsdom, and the lints read files. Nothing loaded the film in a browser, so
  * main.js, the stage, the yard, the room, the drone, the manga page, the
  * titles and the boot could all break with every check green. This loads
  * them, as `npm run check:pages`, and prints pass or FAIL for each thing it
@@ -717,12 +717,12 @@ function camMoved(a, b) {
 const DESTS = `import('/src/config.js?v=20261021b').then((m) => JSON.stringify(m.destinations()))`;
 
 /* ------------------------------------------------------------------ */
-/* index.html at a desktop size, as production                          */
+/* film.html at a desktop size, as production                           */
 /* ------------------------------------------------------------------ */
 
 async function desktop(browser, server) {
-  const L = 'index desktop';
-  const page = await openPage(browser, server, '/?debug&ref=YouTube', {
+  const L = 'film desktop';
+  const page = await openPage(browser, server, '/film.html?debug&ref=YouTube', {
     width: 1600, height: 900, host: 'prod', referrer: 'https://www.reddit.com/r/fpv/',
   });
   try {
@@ -899,7 +899,7 @@ async function desktop(browser, server) {
 }
 
 /* ------------------------------------------------------------------ */
-/* index.html at a phone size, served locally                           */
+/* film.html at a phone size, served locally                            */
 /* ------------------------------------------------------------------ */
 
 const SUPPORTERS = JSON.stringify([
@@ -911,8 +911,8 @@ const SUPPORTERS = JSON.stringify([
 ]);
 
 async function phone(browser, server) {
-  const L = 'index phone';
-  const page = await openPage(browser, server, '/', {
+  const L = 'film phone';
+  const page = await openPage(browser, server, '/film.html', {
     width: 430, height: 932, mobile: true, host: 'local',
     overrides: { '/supporters.json': SUPPORTERS },
     /* Global Privacy Control on: the page must send nothing at all. */
@@ -993,8 +993,8 @@ async function phone(browser, server) {
 /* ------------------------------------------------------------------ */
 
 async function reduced(browser, server) {
-  const L = 'index reduced motion';
-  const page = await openPage(browser, server, '/?debug', { width: 1280, height: 800, reducedMotion: true });
+  const L = 'film reduced motion';
+  const page = await openPage(browser, server, '/film.html?debug', { width: 1280, height: 800, reducedMotion: true });
   try {
     check(`${L}: the boot screen lifts`, await page.until("!document.getElementById('boot') && !!window.__wf", 30000));
     await page.until('window.__wf.live().T > 0', 10000);
@@ -1019,8 +1019,8 @@ async function reduced(browser, server) {
 /* ------------------------------------------------------------------ */
 
 async function degraded(browser, server) {
-  const L = 'index without the CDN or the board';
-  const page = await openPage(browser, server, '/?thanks=track&from=x', { width: 1280, height: 800, cdn: 'fail', board: 'fail' });
+  const L = 'film without the CDN or the board';
+  const page = await openPage(browser, server, '/film.html?thanks=track&from=x', { width: 1280, height: 800, cdn: 'fail', board: 'fail' });
   try {
     check(`${L}: loads`, page.loaded);
     check(`${L}: the thank you card opens for ?thanks=track`, await page.until("document.getElementById('thanks').classList.contains('on')", 5000));
@@ -1055,8 +1055,8 @@ async function degraded(browser, server) {
 /* ------------------------------------------------------------------ */
 
 async function noWebgl(browser, server) {
-  const L = 'index without WebGL';
-  const page = await openPage(browser, server, '/', {
+  const L = 'film without WebGL';
+  const page = await openPage(browser, server, '/film.html', {
     width: 1280, height: 800,
     seed: ["{ const o = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (t, ...a) { return /webgl/i.test(t) ? null : o.call(this, t, ...a); }; }"],
   });
@@ -1282,6 +1282,233 @@ async function stickers(browser, server) {
 }
 
 /* ------------------------------------------------------------------ */
+/* The front page, index.html                                           */
+/* ------------------------------------------------------------------ */
+
+/*
+ * The front page has no film, no three.js and no WebGL, so these three run
+ * anywhere a browser runs, including a container whose proxy refuses the
+ * CDN. What they hold is what the page took over from the film on
+ * 2026-11-25: the way into the simulator, the partners' counts, the support
+ * and checkout clicks, and the card a payer comes back to.
+ */
+
+/* Down the page a screen at a time, so the lazy pictures load and every
+ * mark gets its second in the window, which is what "seen" means. */
+async function walk(page) {
+  const h = await page.evaluate('document.documentElement.scrollHeight');
+  const step = Math.round((await page.evaluate('innerHeight')) * 0.7);
+  for (let y = 0; y < h; y += step) {
+    await page.evaluate(`window.scrollTo({ top: ${y}, behavior: 'instant' })`);
+    await page.sleep(450);
+  }
+}
+
+/* A picture the layout hides at this width is lazy and never fetched, so
+ * only the ones with a box are owed. */
+const SHOWN_PICTURES = "[...document.images].filter((i) => i.getClientRects().length).every((i) => i.complete && i.naturalWidth > 0)";
+const MISSING_PICTURES = "JSON.stringify([...document.images].filter((i) => i.getClientRects().length && !(i.complete && i.naturalWidth > 0)).map((i) => i.getAttribute('src')).slice(0, 4))";
+
+const ON_SCREEN = (sel) => `(() => { const e = document.querySelector(${JSON.stringify(sel)}); if (!e) return false; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; })()`;
+
+async function frontDesktop(browser, server) {
+  const L = 'front desktop';
+  const page = await openPage(browser, server, '/?ref=YouTube', {
+    width: 1600, height: 900, host: 'prod', referrer: 'https://www.reddit.com/r/fpv/',
+  });
+  try {
+    check(`${L}: loads`, page.loaded);
+    check(`${L}: the headline is on the first screen`, await page.until(ON_SCREEN('.hero h1'), 5000));
+    check(`${L}: Play now is on the first screen, twice`, await page.evaluate(`${ON_SCREEN('.bar .bar-play')} && ${ON_SCREEN('.hbt a[data-dest=sim]')}`));
+    check(`${L}: and so is the Steam button, twice`, await page.evaluate(`${ON_SCREEN('.bar .bar-st')} && ${ON_SCREEN('.hbt a[href*="store.steampowered.com"]')}`));
+    check(`${L}: the partners' strip is on the first screen, drawn`, await page.until(`${ON_SCREEN('.hp')} && document.querySelectorAll('.hp-r img').length === 5 && [...document.querySelectorAll('.hp-r img')].every((i) => i.complete && i.naturalWidth > 0)`, 5000));
+    const shot = await page.screenshot();
+    check(`${L}: the first screen is not blank`, inkFraction(shot) > 0.1, `${Math.round(inkFraction(shot) * 100)} per cent off the commonest colour`);
+
+    /* A mark is seen once it has had a second in the window, so the first
+     * screen is held for one before anything below scrolls it away. */
+    await page.sleep(1800);
+
+    /* The links: production, carrying the visitor's ref and referrer. */
+    await page.until("document.querySelector('.hbt a[data-dest=sim]').href.includes('ref=')", 5000);
+    const dests = JSON.parse(await page.evaluate(DESTS));
+    const links = JSON.parse(await page.evaluate("JSON.stringify([...document.querySelectorAll('[data-dest]')].map((a) => ({ d: a.dataset.dest, href: a.href })))"));
+    const byId = new Map(dests.map((d) => [d.id, d.href]));
+    const wrong = links.filter((l) => {
+      if (!byId.has(l.d)) {
+        return true;
+      }
+      const want = new URL(byId.get(l.d));
+      want.searchParams.set('ref', 'youtube');
+      want.searchParams.set('referrer', 'www.reddit.com');
+      return l.href !== want.href;
+    });
+    check(`${L}: every launch link is its production address with ref and referrer`, links.length >= 15 && wrong.length === 0,
+      wrong.length ? wrong.slice(0, 3).map((w) => `${w.d} ${w.href}`).join(' | ') : `${links.length} links`);
+    const play = await page.evaluate("document.querySelector('.hbt a[data-dest=sim]').href");
+    check(`${L}: Play now goes to the simulator`, play === 'https://webfpv.org/sim/?map=field&ref=youtube&referrer=www.reddit.com', play);
+    check(`${L}: Play now opens in the same tab`, await page.evaluate("[...document.querySelectorAll('a[data-dest=sim]')].every((a) => !a.target)"));
+    const steam = await page.evaluate("JSON.stringify([...document.querySelectorAll('a[href*=\"store.steampowered.com\"]')].map((a) => new URL(a.href).searchParams.get('utm_source') + ':' + new URL(a.href).searchParams.get('utm_campaign')).sort())");
+    check(`${L}: the Steam store link in its six places`, steam === JSON.stringify(['landing:close', 'landing:editions', 'landing:footer', 'landing:hero', 'landing:modes', 'landing:nav']), steam);
+
+    /* The launch switch. LAUNCH is front/front.js's own line, and this is
+     * the same moment written again, so a change there is a change here. */
+    const st = JSON.parse(await page.evaluate(`JSON.stringify({
+      out: Date.now() >= new Date(2026, 10, 27).getTime(),
+      label: document.querySelector('.hbt [data-t=steamLabel]').textContent,
+      before: !document.querySelector('.hero [data-when=before]').hidden,
+      after: !document.querySelector('.hero [data-when=after]').hidden,
+      cd: [...document.querySelectorAll('.hero [data-cd]')].map((e) => e.textContent).join(':'),
+    })`));
+    check(`${L}: the Steam wording and the countdown agree with the date`,
+      st.out ? st.label === 'Buy on Steam' && st.after && !st.before : st.label === 'Wishlist on Steam' && st.before && !st.after && /^\d\d:\d\d:\d\d$/.test(st.cd),
+      JSON.stringify(st));
+
+    check(`${L}: the patrons list ships hidden while supporters.json is empty`, await page.evaluate("document.getElementById('supporters').hidden && document.getElementById('supporters-list').children.length === 0"));
+    check(`${L}: the thank you card stays away`, await page.evaluate("document.getElementById('thanks').hidden"));
+    check(`${L}: Patreon and the tip carry their notes`, await page.until("(document.getElementById('support-link').getAttribute('aria-label') || '').includes('Patreon') && (document.getElementById('tip-link').getAttribute('aria-label') || '').includes('$5')", 5000));
+
+    /* The trailer loads nothing until it is asked, then plays with sound. */
+    await page.evaluate("document.getElementById('trailer').scrollIntoView({ block: 'center', behavior: 'instant' })");
+    await page.sleep(400);
+    check(`${L}: the trailer has loaded nothing before it is asked`, await page.evaluate("(() => { const v = document.querySelector('[data-trailer]'); return v.readyState === 0 && v.paused && !v.controls; })()"));
+    await page.clickOn('[data-act=trailer]');
+    check(`${L}: pressing play plays it, with sound and controls`, await page.until("(() => { const v = document.querySelector('[data-trailer]'); return !v.paused && !v.muted && v.controls && v.currentTime > 0; })()", 20000));
+    await page.evaluate("document.querySelector('[data-trailer]').pause()");
+
+    /* Pause motion stops the loops and is remembered. */
+    await page.evaluate("window.scrollTo({ top: 0, behavior: 'instant' })");
+    await page.sleep(300);
+    await page.clickOn('[data-act=motion]');
+    check(`${L}: Pause motion stills the page and is remembered`, await page.until("document.querySelector('[data-site]').classList.contains('still') && localStorage.getItem('webfpv.front.motion') === 'off' && [...document.querySelectorAll('video')].every((v) => v.paused)", 3000));
+    await page.clickOn('[data-act=motion]');
+    check(`${L}: and Play motion starts it again`, await page.until("!document.querySelector('[data-site]').classList.contains('still') && localStorage.getItem('webfpv.front.motion') === 'on'", 3000));
+
+    /* Down the page: every picture, and the partners' counts. */
+    await walk(page);
+    check(`${L}: every picture the page shows is drawn`, await page.until(SHOWN_PICTURES, 15000), await page.evaluate(MISSING_PICTURES));
+    check(`${L}: the page never scrolls sideways`, await page.evaluate('document.documentElement.scrollWidth <= innerWidth'));
+    await page.evaluate("document.getElementById('partners').scrollIntoView({ block: 'center', behavior: 'instant' })");
+    await page.sleep(1800);
+    const bodies = page.beacons.map((b) => { try { return { url: b.url, ...JSON.parse(b.body) }; } catch (e) { return { url: b.url, bad: b.body }; } });
+    const seenOf = (place) => bodies.filter((b) => b.kind === 'partner' && b.what === 'seen' && b.place === place).map((b) => b.partner).sort();
+    const four = JSON.stringify(['gds', 'mantisfpv', 'wcmrc', 'webleedfpv']);
+    check(`${L}: every beacon goes to the board's stats endpoint as v1 JSON`, bodies.length > 0 && bodies.every((b) => b.url === 'https://webfpv.org/board/api/stats/events' && b.v === 1), `${bodies.length} beacons`);
+    check(`${L}: the first screen's marks are counted seen`, JSON.stringify(seenOf('landing_hero')) === four, seenOf('landing_hero').join(','));
+    check(`${L}: the row's marks are counted seen`, JSON.stringify(seenOf('landing_row')) === four, seenOf('landing_row').join(','));
+    check(`${L}: nothing is counted for a place the board does not know`, bodies.filter((b) => b.kind === 'partner').every((b) => b.place === 'landing_hero' || b.place === 'landing_row'));
+
+    /* Clicks that are counted, kept on the page so the check stays on it. */
+    await page.evaluate("for (const s of ['.pt-r a[data-partner=gds]', '#support-link', '[data-offer=sign]']) { document.querySelector(s).addEventListener('click', (e) => e.preventDefault()); }");
+    const n0 = page.beacons.length;
+    await page.clickOn('.pt-r a[data-partner=gds]');
+    await page.evaluate("document.getElementById('support-link').scrollIntoView({ block: 'center', behavior: 'instant' })");
+    await page.sleep(300);
+    await page.clickOn('#support-link');
+    await page.clickOn('[data-offer=sign]');
+    await page.sleep(800);
+    const clicks = page.beacons.slice(n0).map((b) => JSON.parse(b.body));
+    check(`${L}: a partner mark click is counted`, clicks.some((c) => c.kind === 'partner' && c.what === 'click' && c.partner === 'gds' && c.place === 'landing_row'), JSON.stringify(clicks));
+    check(`${L}: a Support click is counted`, clicks.some((c) => c.kind === 'support_click' && c.source === 'landing'));
+    check(`${L}: an offer click is counted`, clicks.some((c) => c.kind === 'offer_click' && c.offer === 'sign'));
+
+    /* The way in for a new partner: the address appears on a press, and is
+     * in nothing the server sent. */
+    await page.clickOn('button.pjoin');
+    check(`${L}: Partner with WebFPV shows the address on a press`, await page.until("(() => { const a = document.querySelector('a.pjoin'); return !!a && a.href.startsWith('mailto:') && a.href.endsWith('?subject=Partnering%20with%20WebFPV') && a.textContent.includes('@'); })()", 3000));
+    check(`${L}: the served source never holds the address`, await page.evaluate("fetch(location.pathname).then((r) => r.text()).then((t) => !/mailto:[\\w.+-]+@|@gmail\\.com/i.test(t))"));
+
+    clean(page, L);
+  } finally {
+    await page.close();
+  }
+}
+
+async function frontPhone(browser, server) {
+  const L = 'front phone';
+  const page = await openPage(browser, server, '/', {
+    width: 430, height: 932, mobile: true, host: 'local',
+    overrides: { '/supporters.json': SUPPORTERS },
+    /* Global Privacy Control on: the page must send nothing at all. */
+    seed: ["Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', { get: () => true });"],
+  });
+  try {
+    check(`${L}: loads`, page.loaded);
+    await page.until("document.querySelector('a[data-dest=sim]').href.startsWith('http://127.0.0.1')", 5000);
+    const links = JSON.parse(await page.evaluate("JSON.stringify(Object.fromEntries([...document.querySelectorAll('[data-dest]')].map((a) => [a.dataset.dest, a.href])))"));
+    check(`${L}: Play now is retargeted to the local simulator`, links.sim === `${LOCAL_SIM}/?map=field`, links.sim);
+    check(`${L}: the whoop and the builder are the local simulator's`, links.whoop === `${LOCAL_SIM}/?map=custom&craft=whoop65` && links.builder === `${LOCAL_SIM}/src/trackbuilder/index.html`, `${links.whoop} ${links.builder}`);
+    check(`${L}: the board is retargeted to the local board`, links.board === `${LOCAL_BOARD}/`, links.board);
+    check(`${L}: the partners page is the local board's`, links.partners === `${LOCAL_BOARD}/partners` && links['partners-gds'] === `${LOCAL_BOARD}/partners#gds`, links.partners);
+
+    check(`${L}: Play now and the Steam button are in the bar`, await page.evaluate(`${ON_SCREEN('.bar .bar-play')} && ${ON_SCREEN('.bar .bar-st')}`));
+    check(`${L}: and under the headline, one above the other, on the first screen`, await page.evaluate(`(() => {
+      const a = document.querySelector('.hbt a[data-dest=sim]').getBoundingClientRect();
+      const b = document.querySelector('.hbt a[href*="store.steampowered.com"]').getBoundingClientRect();
+      return a.width > 300 && b.width > 300 && b.top >= a.bottom && b.bottom <= innerHeight && a.top > 0;
+    })()`));
+    check(`${L}: every button a thumb is offered is at least 44 px tall`, await page.evaluate("[...document.querySelectorAll('.bar .btn, .hbt .btn')].every((b) => b.getBoundingClientRect().height >= 44)"));
+    const shot = await page.screenshot();
+    check(`${L}: the first screen is not blank`, inkFraction(shot) > 0.1, `${Math.round(inkFraction(shot) * 100)} per cent off the commonest colour`);
+
+    await walk(page);
+    check(`${L}: the page never scrolls sideways`, await page.evaluate('document.documentElement.scrollWidth <= innerWidth'), `${await page.evaluate('document.documentElement.scrollWidth')} px wide`);
+    check(`${L}: every picture the page shows is drawn`, await page.until(SHOWN_PICTURES, 15000), await page.evaluate(MISSING_PICTURES));
+    await page.evaluate("document.getElementById('partners').scrollIntoView({ block: 'center', behavior: 'instant' })");
+    const names = await page.until("!document.getElementById('supporters').hidden", 5000);
+    check(`${L}: the patrons list shows opted in names only`, names && await page.evaluate("JSON.stringify([...document.querySelectorAll('#supporters-list .supporter-name')].map((s) => s.textContent)) === JSON.stringify(['Ada Pilot', 'B'.repeat(50) + '...'])"),
+      await page.evaluate("JSON.stringify([...document.querySelectorAll('#supporters-list .supporter-name')].map((s) => s.textContent.slice(0, 12)))"));
+    await page.sleep(2000);
+    check(`${L}: Global Privacy Control sends no beacon, marks seen or not`, page.beacons.length === 0, `${page.beacons.length} sent`);
+
+    clean(page, L);
+  } finally {
+    await page.close();
+  }
+}
+
+async function frontThanks(browser, server) {
+  const L = 'front after a payment, the board down';
+  const page = await openPage(browser, server, '/?thanks=track&from=x', { width: 1280, height: 800, cdn: 'fail', board: 'fail' });
+  try {
+    check(`${L}: loads`, page.loaded);
+    check(`${L}: the thank you card opens for ?thanks=track`, await page.until("!document.getElementById('thanks').hidden", 5000));
+    check(`${L}: the card is on top and on screen`, await page.evaluate(`(() => { const c = document.querySelector('.thanks-card'); const r = c.getBoundingClientRect(); const top = document.elementFromPoint(r.left + r.width / 2, r.top + 20); return r.top >= 0 && r.bottom <= innerHeight && !!top && c.contains(top); })()`));
+    check(`${L}: the thank you card hides the address behind a button`, await page.evaluate("document.getElementById('thanks-h').textContent === 'Thanks for the order' && !!document.querySelector('#thanks-p button[data-reveal-mail]') && !document.getElementById('thanks-p').textContent.includes('@')"));
+    await page.evaluate("document.querySelector('#thanks-p button[data-reveal-mail]').click()");
+    check(`${L}: pressing it gives the buyer the address with the subject`, await page.evaluate("(() => { const a = document.querySelector('#thanks-p a'); return !!a && a.href.startsWith('mailto:') && a.href.endsWith('?subject=Track%20order') && a.textContent.includes('@'); })()"));
+    check(`${L}: the served source never holds the address`, await page.evaluate("fetch(location.pathname).then((r) => r.text()).then((t) => !/mailto:[\\w.+-]+@|@gmail\\.com/i.test(t))"));
+    check(`${L}: ?thanks is stripped and the rest kept`, await page.evaluate("location.search === '?from=x'"), await page.evaluate('location.search'));
+    await page.key('Escape', 'Escape', 27);
+    check(`${L}: Escape closes the thank you card`, await page.until("document.getElementById('thanks').hidden", 3000));
+    check(`${L}: support-boot still labels the Support link`, await page.until("(document.getElementById('support-link').getAttribute('aria-label') || '').includes('Patreon')", 5000));
+    check(`${L}: Play now is still a link`, await page.evaluate("document.querySelector('.hbt a[data-dest=sim]').href.includes('/?map=field')"));
+    await page.evaluate("document.getElementById('support-link').addEventListener('click', (e) => e.preventDefault())");
+    await page.evaluate("document.getElementById('support-link').click()");
+    await page.sleep(500);
+    check(`${L}: a Support click still tries the board`, page.beacons.length >= 1, `${page.beacons.length} tried`);
+    check(`${L}: the board is the only network failure`, page.networkFailures.every((f) => f.includes(LOCAL_BOARD)), page.networkFailures.join(' | '));
+    clean(page, L);
+  } finally {
+    await page.close();
+  }
+}
+
+/* A word a payer could not have been sent with shows no card. */
+async function frontNoThanks(browser, server) {
+  const L = 'front with a word Stripe never sends';
+  const page = await openPage(browser, server, '/?thanks=constructor', { width: 1280, height: 800 });
+  try {
+    check(`${L}: loads`, page.loaded);
+    await page.sleep(600);
+    check(`${L}: no card`, await page.evaluate("document.getElementById('thanks').hidden"));
+    clean(page, L);
+  } finally {
+    await page.close();
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* The run                                                              */
 /* ------------------------------------------------------------------ */
 
@@ -1291,11 +1518,15 @@ async function main() {
   const browser = await launch();
   const slugs = wikiSample(10);
   const suites = [
-    ['index desktop', () => desktop(browser, server)],
-    ['index phone', () => phone(browser, server)],
-    ['index reduced motion', () => reduced(browser, server)],
-    ['index without the CDN or the board', () => degraded(browser, server)],
-    ['index without WebGL', () => noWebgl(browser, server)],
+    ['front desktop', () => frontDesktop(browser, server)],
+    ['front phone', () => frontPhone(browser, server)],
+    ['front after a payment', () => frontThanks(browser, server)],
+    ['front with a word Stripe never sends', () => frontNoThanks(browser, server)],
+    ['film desktop', () => desktop(browser, server)],
+    ['film phone', () => phone(browser, server)],
+    ['film reduced motion', () => reduced(browser, server)],
+    ['film without the CDN or the board', () => degraded(browser, server)],
+    ['film without WebGL', () => noWebgl(browser, server)],
     ['wiki', () => wikiLive(browser, server, slugs)],
     ['wiki static pages', () => wikiStatic(browser, server, slugs)],
     ['notes', () => notes(browser, server)],

@@ -42,6 +42,10 @@ const TYPES = {
   '.webp': 'image/webp',
   '.ico': 'image/x-icon',
   '.txt': 'text/plain; charset=utf-8',
+  /* The front page's clips and faces (front/). A browser will not play a
+   * video or use a font it is handed as octet-stream. */
+  '.mp4': 'video/mp4',
+  '.woff2': 'font/woff2',
 };
 
 /*
