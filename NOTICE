@@ -120,6 +120,41 @@ their own names because they are used only as embedded web fonts, which is
 the use the OFL's naming clause and the Google Fonts distribution of these
 faces both contemplate. Nothing here is relicensed.
 
+## Anton, Barlow and Barlow Condensed
+
+    Anton                 Copyright 2020 The Anton Project Authors
+                          https://github.com/googlefonts/AntonFont
+    Barlow and            Copyright 2017 The Barlow Project Authors
+    Barlow Condensed      https://github.com/jpt/barlow
+    Licence               SIL Open Font License 1.1, all three
+    Held at               front/fonts/, seven WOFF2 files, with the licence
+                          text beside them at front/fonts/OFL.txt
+
+The faces the front page, index.html, is set in: Anton for the headlines and
+buttons, Barlow for reading, Barlow Condensed for labels. They are the Latin
+subsets as Fontsource packages them, unmodified, and are served from this
+site so the page asks no outside host for a font. They are used only as web
+fonts for that page, under their own names, which is the use the OFL
+permits. Nothing here is relicensed, and the font files carry no GPLv3
+header.
+
+## The front page's pictures, clips and marks
+
+    Held at     front/media/ and front/og.jpg
+
+Captures of the simulator and of its Steam edition, the trailer cut from the
+Steam edition's own, the WEBFPV wordmark, and art from the patch notes
+manga. They are the project owner's, made from this project, and are not
+third party.
+
+The Steam logo drawn on the Steam buttons is Valve Corporation's trade mark.
+The path is the one the film has carried since 2026-10-30, as Simple Icons
+trace it (CC0 for the path); it is shown unaltered, in black or white, beside
+words saying the game is on Steam, and the GPLv3 grant does not extend to
+it. The partners' and supporters' marks on the front page are the files
+under assets/partners/, on the terms the section on the simulator's own code
+gives above: each is its owner's trade mark, shown with their permission.
+
 ## three.js
 
     Upstream    https://github.com/mrdoob/three.js

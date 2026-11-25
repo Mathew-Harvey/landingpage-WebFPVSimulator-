@@ -38,6 +38,8 @@ function shouldIndex(articleId) {
 
 const baseUrls = [
   { loc: 'https://webfpv.org/', changefreq: 'weekly', priority: '1.0' },
+  /* The film, which was the page at / until 2026-11-25. */
+  { loc: 'https://webfpv.org/film.html', changefreq: 'monthly', priority: '0.5' },
   { loc: 'https://webfpv.org/sim/', changefreq: 'weekly', priority: '0.9' },
   { loc: 'https://webfpv.org/wiki/', changefreq: 'monthly', priority: '0.8' },
   { loc: 'https://webfpv.org/notes/', changefreq: 'monthly', priority: '0.8' },

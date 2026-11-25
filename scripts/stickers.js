@@ -17,7 +17,8 @@
  * Inline, the type is set from one copy of each face, the set is a fifth of
  * that, and the pack stays the only place a sticker is drawn.
  *
- * WHICH ONES. The film says. This reads index.html for every data-slap on
+ * WHICH ONES. The film says. This reads film.html (the film was index.html
+ * until 2026-11-25, when the front page took that name) for every data-slap on
  * the page and writes exactly those, so adding a sticker to the page is the
  * markup and a rerun, and a sticker nothing wears is never shipped.
  * scripts/page-lint.js calls bake() and compares the result with what is on
@@ -112,7 +113,7 @@ function inline(svg, name) {
  */
 export async function bake() {
   const { fontcss, meta, cards } = await readPack();
-  const index = await readFile(join(root, 'index.html'), 'utf8');
+  const index = await readFile(join(root, 'film.html'), 'utf8');
   const wanted = [...new Set([...index.matchAll(/data-slap="([a-z0-9_]+)"/g)].map((m) => m[1]))];
   const byName = new Map(Object.entries(meta).map(([key, m]) => [slug(m.name), key]));
 
@@ -120,7 +121,7 @@ export async function bake() {
   for (const name of wanted) {
     const key = byName.get(name);
     if (!key) {
-      throw new Error(`index.html slaps on "${name}" and the pack has no sticker by that name`);
+      throw new Error(`film.html slaps on "${name}" and the pack has no sticker by that name`);
     }
     const m = meta[key];
     rows.push(`  /* ${m.name}, ${m.size}. */\n  ${name}: ${JSON.stringify(inline(cards.get(key), name))},`);

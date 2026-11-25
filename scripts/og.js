@@ -104,8 +104,10 @@ const QUALITY = 0.92;
 /* The import map's CDN, which the page cannot start without. */
 const CDN = 'https://cdn.jsdelivr.net/';
 
-/* Every file that names the card, the wiki's articles through the last. */
-const NAMED_IN = ['index.html', 'wiki/index.html', 'notes/index.html', 'stickers/index.html', 'scripts/generate-wiki-pages.js'];
+/* Every file that names the card, the wiki's articles through the last.
+ * The film is film.html since 2026-11-25. The front page, index.html, is not
+ * here: its card is front/og.jpg, which this script does not draw. */
+const NAMED_IN = ['film.html', 'wiki/index.html', 'notes/index.html', 'stickers/index.html', 'scripts/generate-wiki-pages.js'];
 const DEBUGGER = 'https://developers.facebook.com/tools/debug/?q=https%3A%2F%2Fwebfpv.org%2F';
 
 /* The simulator's harness looks in the same places, and reads the same
@@ -129,7 +131,7 @@ const CHROME = [
 
 /*
  * Run before the first line of the page, in every document it opens. The
- * key is the invitation's own, from its script in index.html.
+ * key is the invitation's own, from its script in film.html.
  */
 const SEED = `
 try { localStorage.setItem('webfpv.invite.seen', String(Date.now())); } catch (e) {}
@@ -345,7 +347,7 @@ try {
     ],
   });
   await tab('Page.addScriptToEvaluateOnNewDocument', { source: SEED });
-  await tab('Page.navigate', { url: `${origin}/` });
+  await tab('Page.navigate', { url: `${origin}/film.html` });
 
   const evaluate = async (expression) => {
     const r = await tab('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });

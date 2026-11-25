@@ -60,7 +60,16 @@ async function exists(rel) {
   }
 }
 
-const index = await readFile(join(root, 'index.html'), 'utf8');
+/* The film is film.html since 2026-11-25, when the owner had the front door
+ * replaced by the page that is index.html now. `index` is still the film:
+ * every numbered check below was written about it and holds it as before.
+ * `front` is the new front page, and section 15 is the one about it. */
+const index = await readFile(join(root, 'film.html'), 'utf8');
+const front = await readFile(join(root, 'index.html'), 'utf8');
+const frontCss = await readFile(join(root, 'front/front.css'), 'utf8');
+const frontJs = await readFile(join(root, 'front/front.js'), 'utf8');
+const frontLinks = await readFile(join(root, 'src/front-links.js'), 'utf8');
+const supportBoot = await readFile(join(root, 'src/support-boot.js'), 'utf8');
 const wiki = await readFile(join(root, 'wiki/index.html'), 'utf8');
 const notes = await readFile(join(root, 'notes/index.html'), 'utf8');
 const wikiJs = await readFile(join(root, 'src/wiki/wiki.js'), 'utf8');
@@ -80,7 +89,7 @@ const velocityTests = await readFile(join(root, 'tests/velocity.test.js'), 'utf8
  */
 {
   const n = (index.match(/<h1[\s>]/g) || []).length;
-  check('index.html: exactly one h1', n === 1, `${n} in the markup`);
+  check('film.html: exactly one h1', n === 1, `${n} in the markup`);
   /* The wiki's heading is the open article's title, so it is built rather
    * than written. The static markup must therefore have none, and wiki.js
    * must build exactly one. The page used to have neither: the article
@@ -108,7 +117,7 @@ const velocityTests = await readFile(join(root, 'tests/velocity.test.js'), 'utf8
   const padded = /padding:\s*max\(clamp\([^)]*\),\s*calc\(var\(--nav-h\)/.test(index);
   const safe = /justify-content:\s*safe center/.test(index);
   check(
-    'index.html: the close clears the fixed nav',
+    'film.html: the close clears the fixed nav',
     hasVar && padded && safe,
     `--nav-h ${hasVar ? 'set' : 'MISSING'}, padding ${padded ? 'reserves it' : 'DOES NOT'}, centring ${safe ? 'safe' : 'unsafe, so overflow goes upward'}`,
   );
@@ -138,7 +147,7 @@ const velocityTests = await readFile(join(root, 'tests/velocity.test.js'), 'utf8
  * path read M18 18h5v5H9z, closing back to x=9, so it drew a wedge fused to
  * its neighbour. A generated file cannot be wrong in that way.
  */
-for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['stickers/index.html', pack]]) {
+for (const [name, src] of [['index.html', front], ['film.html', index], ['wiki/index.html', wiki], ['stickers/index.html', pack]]) {
   const inlined = /rel="icon"[^>]*href="data:/.test(src);
   check(`${name}: icon is a file, not an inline drawing`, !inlined, inlined ? 'a data URI icon is hand drawn and can be, and was, malformed' : 'points at the generated icon');
 }
@@ -146,7 +155,7 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
 /*
  * 5. EVERY PAGE RENDERS A CARD WHEN IT IS PASTED SOMEWHERE.
  */
-for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['stickers/index.html', pack]]) {
+for (const [name, src] of [['index.html', front], ['film.html', index], ['wiki/index.html', wiki], ['stickers/index.html', pack]]) {
   const need = ['rel="canonical"', 'og:title', 'og:description', 'og:image', 'twitter:card', 'name="description"'];
   const missing = need.filter((t) => !src.includes(t));
   check(`${name}: has a share card`, missing.length === 0, missing.length ? `missing ${missing.join(', ')}` : 'canonical, og and twitter all present');
@@ -163,8 +172,10 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
  * stickers were carrying when the card became the manga page, each
  * describing a card older than the one it showed; and a file of one size or
  * kind behind tags that promise
- * another. index.html is the reference and the rest agree with it. The
+ * another. film.html is the reference and the rest agree with it. The
  * wiki's articles are generated, so they are read as generated, all of them.
+ * The front page, index.html, is not in this list: it has a card of its own,
+ * front/og.jpg, which section 15 holds to the same rules.
  */
 {
   /* A JPEG's size is in its start of frame, which follows whatever tables
@@ -190,7 +201,7 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
    * its SHA-256 as the ?v=, so a card replaced any other way, or redrawn and
    * committed without its pages, is an address that names another picture. */
   const own = jpg ? `https://webfpv.org/og.jpg?v=${createHash('sha256').update(jpg).digest('hex').slice(0, 8)}` : null;
-  const pages = [['index.html', index], ['wiki/index.html', wiki], ['notes/index.html', notes], ['stickers/index.html', pack]];
+  const pages = [['film.html', index], ['wiki/index.html', wiki], ['notes/index.html', notes], ['stickers/index.html', pack]];
   for (const e of await readdir(join(root, 'wiki'), { withFileTypes: true })) {
     if (e.isDirectory() && await exists(`wiki/${e.name}/index.html`)) {
       pages.push([`wiki/${e.name}/index.html`, await readFile(join(root, 'wiki', e.name, 'index.html'), 'utf8')]);
@@ -222,7 +233,7 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
       : size !== '1200x630'
         ? `og.jpg is ${size}, and a card is 1200x630`
         : !address
-          ? `index.html names ${want.image} and the card is ${own}: run node scripts/og.js`
+          ? `film.html names ${want.image} and the card is ${own}: run node scripts/og.js`
           : odd.length
             ? `${odd.length} of ${pages.length}: ${odd.slice(0, 3).join('; ')}`
             : `${size}, ${want.image.replace('https://webfpv.org/', '')} on all ${pages.length} pages`,
@@ -276,7 +287,7 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
  * service.
  */
 {
-  const files = { 'index.html': index, 'wiki/index.html': wiki, 'src/main.js': mainJs };
+  const files = { 'index.html': front, 'film.html': index, 'wiki/index.html': wiki, 'src/main.js': mainJs, 'src/front-links.js': frontLinks, 'front/front.js': frontJs };
   const bad = [];
   for (const [name, src] of Object.entries(files)) {
     if (/onrender\.com/.test(src)) {
@@ -294,7 +305,7 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
  */
 {
   const bad = [];
-  for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['notes/index.html', notes], ['stickers/index.html', pack], ['src/main.js', mainJs], ['src/wiki/wiki.js', wikiJs], [VELOCITY_DATA, velocityJson], ['notes/velocity.js', velocityShow], ['scripts/velocity.js', velocityMake], ['tests/velocity.test.js', velocityTests]]) {
+  for (const [name, src] of [['index.html', front], ['front/front.css', frontCss], ['front/front.js', frontJs], ['src/front-links.js', frontLinks], ['film.html', index], ['wiki/index.html', wiki], ['notes/index.html', notes], ['stickers/index.html', pack], ['src/main.js', mainJs], ['src/wiki/wiki.js', wikiJs], [VELOCITY_DATA, velocityJson], ['notes/velocity.js', velocityShow], ['scripts/velocity.js', velocityMake], ['tests/velocity.test.js', velocityTests]]) {
     if (/[\u2013\u2014]/.test(src)) {
       bad.push(name);
     }
@@ -327,14 +338,14 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
   const importMaps = (index.match(/<script[^>]*type="importmap"/g) || []).length;
   const executableScripts = allScripts - jsonLd - importMaps;
   check(
-    'index.html: exactly 3 module scripts (the titles, support-boot and main)',
+    'film.html: exactly 3 module scripts (the titles, support-boot and main)',
     hasCard && hidden && targeted && modules === 3 && executableScripts === 5,
     hasCard
       ? `${hidden ? 'hidden' : 'NOT hidden, so it flashes'}, ${targeted ? 'data-dest set' : 'NO data-dest, so local serving points at production'}, ${modules} module (the titles, support-boot.js, main.js), ${executableScripts - modules} plain, ${jsonLd} JSON-LD`
       : 'MISSING, so the only way in is a 12 px label in the corner',
   );
   check(
-    'index.html: #supporters ships with hidden attribute',
+    'film.html: #supporters ships with hidden attribute',
     index.includes('id="supporters" hidden'),
     'supporters section must ship hidden, shown only after valid opted-in name',
   );
@@ -403,7 +414,7 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
     }
   }
   check(
-    'index.html: every sticker names one the pack has, with a window and a spot',
+    'film.html: every sticker names one the pack has, with a window and a spot',
     anchors.length > 0 && bad.length === 0,
     bad.length ? bad.join('; ') : `${anchors.length} stickers`,
   );
@@ -681,6 +692,172 @@ for (const [name, src] of [['index.html', index], ['wiki/index.html', wiki], ['s
           ? `graph to ${velocityLastDay(data)}, newest entry ${newest}`
           : `graph ends ${velocityLastDay(data)} and the newest entry is ${newest}: git fetch in each of the three repositories, then node scripts/velocity.js ../WebFPVSimulator ../WebFPVSimulator-LeaderBoard`,
     );
+  }
+}
+
+/*
+ * 15. THE FRONT PAGE.
+ *
+ * index.html is static markup, a stylesheet and a small script in front/,
+ * and two modules: the film's src/support-boot.js and src/front-links.js.
+ * It replaced the film as the front door on 2026-11-25 and took over what
+ * the film's first screen and footer were holding: the way into the
+ * simulator, the partners' marks and their counts, the checkout links and
+ * the card a payer comes back to. Each of those is a thing somebody is owed,
+ * and each can be broken by an edit that looks like tidying, so each is held
+ * here. What the page looks like is still `npm run serve` and a pair of eyes.
+ */
+{
+  const tagOf = (src, key) => (new RegExp(`(?:property|name)="${key}" content="([^"]*)"`).exec(src) || [])[1];
+  const anchors = [...front.matchAll(/<a\b[^>]*>/g)].map((m) => m[0]);
+  const attr = (tag, name) => (new RegExp(`\\s${name}="([^"]*)"`).exec(tag) || [])[1];
+
+  const h1 = (front.match(/<h1[\s>]/g) || []).length;
+  check('index.html: exactly one h1', h1 === 1, `${h1} in the markup`);
+
+  /* One address for the front door, and the film does not claim it. */
+  const canon = (src) => (/<link rel="canonical" href="([^"]*)"/.exec(src) || [])[1];
+  check(
+    'the front door is index.html, and the film says it is film.html',
+    canon(front) === 'https://webfpv.org/' && tagOf(front, 'og:url') === 'https://webfpv.org/'
+      && canon(index) === 'https://webfpv.org/film.html' && tagOf(index, 'og:url') === 'https://webfpv.org/film.html',
+    `index.html canonical ${canon(front)}, film.html canonical ${canon(index)}`,
+  );
+
+  /* The page's own card, by the rules of 5b: a 1200 by 630 JPEG, named at
+   * the address that is its own hash, on every tag that names it. */
+  {
+    const jpg = await readFile(join(root, 'front/og.jpg')).catch(() => null);
+    let size = null;
+    if (jpg && jpg[0] === 0xff && jpg[1] === 0xd8) {
+      for (let i = 2; i + 9 < jpg.length && jpg[i] === 0xff; i += 2 + jpg.readUInt16BE(i + 2)) {
+        const m = jpg[i + 1];
+        if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) {
+          size = `${jpg.readUInt16BE(i + 7)}x${jpg.readUInt16BE(i + 5)}`;
+          break;
+        }
+      }
+    }
+    const own = jpg ? `https://webfpv.org/front/og.jpg?v=${createHash('sha256').update(jpg).digest('hex').slice(0, 8)}` : null;
+    const named = [tagOf(front, 'og:image'), tagOf(front, 'twitter:image'), (/"screenshot": "([^"]*)"/.exec(front) || [])[1]];
+    const told = `${tagOf(front, 'og:image:width')}x${tagOf(front, 'og:image:height')}`;
+    const alts = tagOf(front, 'og:image:alt') && tagOf(front, 'og:image:alt') === tagOf(front, 'twitter:image:alt');
+    check(
+      'front/og.jpg is the front page\'s card, at its own address, the size the page says',
+      size === '1200x630' && told === size && named.every((n) => n === own) && tagOf(front, 'og:image:type') === 'image/jpeg' && Boolean(alts),
+      !size
+        ? 'front/og.jpg is missing or not a JPEG'
+        : named.some((n) => n !== own)
+          ? `the page names ${[...new Set(named)].join(' and ')} and the card is ${own}`
+          : `${size}, ${String(own).replace('https://webfpv.org/', '')}`,
+    );
+  }
+
+  /* Every file the page names is in the repository. A clip that 404s is a
+   * grey box in the middle of the pitch. */
+  {
+    const refs = new Set();
+    for (const m of front.matchAll(/\s(?:src|href|poster)="([^"#]+)"/g)) {
+      if (!/^(?:[a-z]+:|\/\/)/.test(m[1])) {
+        refs.add(m[1].split('?')[0]);
+      }
+    }
+    for (const m of frontCss.matchAll(/url\(([^)]+)\)/g)) {
+      refs.add(posix.join('front', m[1].replace(/['"]/g, '')));
+    }
+    const gone = [];
+    for (const r of refs) {
+      if (!(await exists(r.endsWith('/') ? `${r}index.html` : r))) {
+        gone.push(r);
+      }
+    }
+    check('index.html: every file it names exists', gone.length === 0, gone.length ? `MISSING ${gone.slice(0, 5).join(', ')}` : `${refs.size} files`);
+  }
+
+  /* The launch links are in the markup, pointing at production, and carry
+   * data-dest so a loopback page goes to the local simulator and board. */
+  {
+    const out = anchors.filter((a) => /href="https:\/\/webfpv\.org\/(?:sim|board)\b/.test(a));
+    const bare = out.filter((a) => !attr(a, 'data-dest'));
+    const play = anchors.filter((a) => attr(a, 'data-dest') === 'sim').length;
+    check(
+      'index.html: every link into the simulator or the board is in the markup, with data-dest',
+      out.length > 0 && bare.length === 0 && play >= 3,
+      bare.length ? `NO data-dest on ${bare.map((a) => attr(a, 'href')).join(', ')}` : `${out.length} links, ${play} of them Play now`,
+    );
+  }
+
+  /* The partners. The roster's are counted in both places, as the film's
+   * strip and row were; KoneX Drone is not in the roster and must carry no
+   * data-partner, because the board refuses a word it does not know; and
+   * Betaflight's logo is not on this page (CLAUDE.md). */
+  {
+    const roster = await import('../src/sim/partners/roster.js');
+    const marks = anchors.filter((a) => attr(a, 'data-partner'));
+    const why = [];
+    for (const slug of roster.PARTNER_SLUGS) {
+      for (const place of ['landing_hero', 'landing_row']) {
+        if (!marks.some((a) => attr(a, 'data-partner') === slug && attr(a, 'data-place') === place)) {
+          why.push(`${slug} has no mark counted as ${place}`);
+        }
+      }
+    }
+    const strange = marks.filter((a) => !roster.PARTNER_SLUGS.includes(attr(a, 'data-partner')) || !['landing_hero', 'landing_row'].includes(attr(a, 'data-place')));
+    if (strange.length) {
+      why.push(`${strange.length} mark(s) the board would refuse`);
+    }
+    if (anchors.some((a) => /konexdrone/.test(a) && attr(a, 'data-partner'))) {
+      why.push('KoneX Drone carries data-partner');
+    }
+    if (/<img[^>]*betaflight/i.test(front)) {
+      why.push('a Betaflight picture is on the page');
+    }
+    if (/Betaflight[^.<]{0,60}\b(?:partner|sponsor|supporter)/i.test(front)) {
+      why.push('Betaflight is called a partner');
+    }
+    check('index.html: the partners are the roster\'s, counted in the strip and the row', why.length === 0, why.join('; ') || `${marks.length} counted marks for ${roster.PARTNER_SLUGS.length} partners`);
+  }
+
+  /* Wishlist on Steam: the store page, tagged with the place, under Valve's
+   * mark as the film draws it. */
+  {
+    const steam = anchors.filter((a) => /store\.steampowered\.com/.test(a));
+    const untagged = steam.filter((a) => !/utm_source=landing&amp;utm_campaign=[a-z]+/.test(a));
+    const mark = (src) => (/<symbol id="steam-mark"[^>]*><path d="([^"]+)"/.exec(src) || [])[1];
+    check(
+      'index.html: every Steam link is tagged with its place, under the film\'s Steam mark',
+      steam.length >= 4 && untagged.length === 0 && Boolean(mark(front)) && mark(front) === mark(index),
+      untagged.length ? `${untagged.length} untagged` : mark(front) !== mark(index) ? 'the mark differs from film.html\'s' : `${steam.length} links`,
+    );
+  }
+
+  /* The scripts. Two plain and two modules, the cards ship hidden, and the
+   * two modules import src/config.js at one address, because one module
+   * under two addresses runs twice. */
+  {
+    const modules = [...front.matchAll(/<script[^>]*type="module"[^>]*>/g)].map((m) => attr(m[0], 'src'));
+    const all = (front.match(/<script[^>]*>/g) || []).length;
+    const jsonLd = (front.match(/<script[^>]*type="application\/ld\+json"/g) || []).length;
+    const filmBoot = (/<script type="module" src="(src\/support-boot\.js[^"]*)"/.exec(index) || [])[1];
+    const configAt = (src) => (/from '\.\/(config\.js[^']*)'/.exec(src) || [])[1];
+    const stamped = /href="front\/front\.css\?v=\w+"/.test(front) && /src="front\/front\.js\?v=\w+"/.test(front);
+    const why = [];
+    if (modules.length !== 2 || modules[0] !== filmBoot || modules[1] !== 'src/front-links.js') {
+      why.push(`modules are ${modules.join(', ')}, and the film loads ${filmBoot}`);
+    }
+    if (all - jsonLd - modules.length !== 2) {
+      why.push(`${all - jsonLd - modules.length} plain scripts`);
+    }
+    if (configAt(frontLinks) !== configAt(supportBoot)) {
+      why.push(`src/front-links.js imports ${configAt(frontLinks)} and src/support-boot.js ${configAt(supportBoot)}`);
+    }
+    if (!stamped) {
+      why.push('front.css or front.js has no ?v=');
+    }
+    if (!front.includes('id="supporters" hidden') || !/id="thanks" hidden/.test(front)) {
+      why.push('#supporters or #thanks does not ship hidden');
+    }
+    check('index.html: its scripts, their addresses and what ships hidden', why.length === 0, why.join('; ') || '2 plain, 2 modules, config.js at one address');
   }
 }
 
