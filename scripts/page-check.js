@@ -1286,11 +1286,14 @@ async function stickers(browser, server) {
 /* ------------------------------------------------------------------ */
 
 /*
- * The front page has no film, no three.js and no WebGL, so these three run
+ * The front page has no film, no three.js and no WebGL, so these run
  * anywhere a browser runs, including a container whose proxy refuses the
  * CDN. What they hold is what the page took over from the film on
  * 2026-11-25: the way into the simulator, the partners' counts, the support
- * and checkout clicks, and the card a payer comes back to.
+ * and checkout clicks, and the card a payer comes back to. And, since the
+ * blur test of 2026-11-26 (CLAUDE.md, "The front page is calm"), the first
+ * screen itself: the pair of buttons whole above the fold, on a small phone
+ * too, and one filled pair on a screen.
  */
 
 /* Down the page a screen at a time, so the lazy pictures load and every
@@ -1311,6 +1314,16 @@ const MISSING_PICTURES = "JSON.stringify([...document.images].filter((i) => i.ge
 
 const ON_SCREEN = (sel) => `(() => { const e = document.querySelector(${JSON.stringify(sel)}); if (!e) return false; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; })()`;
 
+/* One filled pair on a screen. While one of the page's own pairs (data-pair)
+ * is in the window the bar's two buttons are asleep, an outline with no
+ * fill; once it has scrolled away they are the pair's own white and yellow.
+ * The fill is read from the computed style, which is what a visitor sees,
+ * and waited for, because the stylesheet fades it over a fifth of a second. */
+const BAR_FILLS = "JSON.stringify(['.bar .bar-play', '.bar .bar-st'].map((s) => getComputedStyle(document.querySelector(s)).backgroundColor))";
+const BAR_ASLEEP = "document.querySelector('[data-site]').classList.contains('pair-on') && ['.bar .bar-play', '.bar .bar-st'].every((s) => getComputedStyle(document.querySelector(s)).backgroundColor === 'rgba(0, 0, 0, 0)')";
+const BAR_AWAKE = "!document.querySelector('[data-site]').classList.contains('pair-on') && getComputedStyle(document.querySelector('.bar .bar-play')).backgroundColor === 'rgb(255, 253, 245)' && getComputedStyle(document.querySelector('.bar .bar-st')).backgroundColor === 'rgb(255, 194, 26)'";
+const TO_FIRMWARE = "document.getElementById('firmware').scrollIntoView({ block: 'start', behavior: 'instant' })";
+
 async function frontDesktop(browser, server) {
   const L = 'front desktop';
   const page = await openPage(browser, server, '/?ref=YouTube', {
@@ -1321,6 +1334,14 @@ async function frontDesktop(browser, server) {
     check(`${L}: the headline is on the first screen`, await page.until(ON_SCREEN('.hero h1'), 5000));
     check(`${L}: Play now is on the first screen, twice`, await page.evaluate(`${ON_SCREEN('.bar .bar-play')} && ${ON_SCREEN('.hbt a[data-dest=sim]')}`));
     check(`${L}: and so is the Steam button, twice`, await page.evaluate(`${ON_SCREEN('.bar .bar-st')} && ${ON_SCREEN('.hbt a[href*="store.steampowered.com"]')}`));
+    const pairs = JSON.parse(await page.evaluate(`JSON.stringify([...document.querySelectorAll('.hbt, .btns[data-pair]')].map((p) => {
+      const a = p.querySelector('a[data-dest=sim]').getBoundingClientRect();
+      const b = p.querySelector('a[href*="store.steampowered.com"]').getBoundingClientRect();
+      return { same: Math.abs(a.width - b.width) < 1 && Math.abs(a.height - b.height) < 1 && Math.abs(a.top - b.top) < 1, w: [Math.round(a.width), Math.round(b.width)] };
+    }))`));
+    check(`${L}: wherever the two stand side by side they are the same size`, pairs.length === 3 && pairs.every((p) => p.same), JSON.stringify(pairs.map((p) => p.w)));
+    check(`${L}: and the only filled pair: the bar's two are outlines while they are in the window`, await page.until(BAR_ASLEEP, 3000), await page.evaluate(BAR_FILLS));
+    check(`${L}: the first screen ends at the fold, with no strip of the trailer under it`, await page.evaluate("document.querySelector('.tr-p').getBoundingClientRect().top >= innerHeight"));
     check(`${L}: the partners' strip is on the first screen, drawn`, await page.until(`${ON_SCREEN('.hp')} && document.querySelectorAll('.hp-r img').length === 5 && [...document.querySelectorAll('.hp-r img')].every((i) => i.complete && i.naturalWidth > 0)`, 5000));
     const shot = await page.screenshot();
     check(`${L}: the first screen is not blank`, inkFraction(shot) > 0.1, `${Math.round(inkFraction(shot) * 100)} per cent off the commonest colour`);
@@ -1384,6 +1405,10 @@ async function frontDesktop(browser, server) {
     await page.clickOn('[data-act=motion]');
     check(`${L}: and Play motion starts it again`, await page.until("!document.querySelector('[data-site]').classList.contains('still') && localStorage.getItem('webfpv.front.motion') === 'on'", 3000));
 
+    /* Past the first screen no pair is in the window, so the bar is the way in. */
+    await page.evaluate(TO_FIRMWARE);
+    check(`${L}: down the page the bar's two buttons are filled again`, await page.until(BAR_AWAKE, 3000), await page.evaluate(BAR_FILLS));
+
     /* Down the page: every picture, and the partners' counts. */
     await walk(page);
     check(`${L}: every picture the page shows is drawn`, await page.until(SHOWN_PICTURES, 15000), await page.evaluate(MISSING_PICTURES));
@@ -1441,15 +1466,29 @@ async function frontPhone(browser, server) {
     check(`${L}: the board is retargeted to the local board`, links.board === `${LOCAL_BOARD}/`, links.board);
     check(`${L}: the partners page is the local board's`, links.partners === `${LOCAL_BOARD}/partners` && links['partners-gds'] === `${LOCAL_BOARD}/partners#gds`, links.partners);
 
-    check(`${L}: Play now and the Steam button are in the bar`, await page.evaluate(`${ON_SCREEN('.bar .bar-play')} && ${ON_SCREEN('.bar .bar-st')}`));
-    check(`${L}: and under the headline, one above the other, on the first screen`, await page.evaluate(`(() => {
+    /* A phone's first screen comes before the bar: the pair under the
+     * headline is the only pair on it, and the bar starts at the fold. This
+     * check used to ask for Play now and the Steam button in the bar on the
+     * first screen as well, which was four bright blocks where the blur test
+     * of 2026-11-26 wanted two. The bar's two are asked for where they are
+     * the way in instead: stuck to the top once the first screen has gone. */
+    check(`${L}: Play now and the Steam button are under the headline, one above the other, the same size, on the first screen`, await page.evaluate(`(() => {
       const a = document.querySelector('.hbt a[data-dest=sim]').getBoundingClientRect();
       const b = document.querySelector('.hbt a[href*="store.steampowered.com"]').getBoundingClientRect();
-      return a.width > 300 && b.width > 300 && b.top >= a.bottom && b.bottom <= innerHeight && a.top > 0;
+      return a.width > 300 && Math.abs(a.width - b.width) < 1 && Math.abs(a.height - b.height) < 1 && b.top >= a.bottom && b.bottom <= innerHeight && a.top > 0;
     })()`));
+    check(`${L}: the headline is on the first screen`, await page.evaluate(ON_SCREEN('.hero h1')));
+    check(`${L}: the bar is not: it starts at the fold`, await page.evaluate("document.querySelector('.bar').getBoundingClientRect().top >= innerHeight - 1"), `${await page.evaluate("Math.round(document.querySelector('.bar').getBoundingClientRect().top)")} px down a ${await page.evaluate('innerHeight')} px window`);
     check(`${L}: every button a thumb is offered is at least 44 px tall`, await page.evaluate("[...document.querySelectorAll('.bar .btn, .hbt .btn')].every((b) => b.getBoundingClientRect().height >= 44)"));
+    check(`${L}: Pause motion is a 44 px control over the corner of the picture`, await page.evaluate(`(() => { const r = document.querySelector('[data-act=motion]').getBoundingClientRect(); return ${ON_SCREEN('[data-act=motion]')} && r.width >= 44 && r.height >= 44; })()`));
     const shot = await page.screenshot();
     check(`${L}: the first screen is not blank`, inkFraction(shot) > 0.1, `${Math.round(inkFraction(shot) * 100)} per cent off the commonest colour`);
+
+    await page.evaluate(TO_FIRMWARE);
+    check(`${L}: down the page the bar is stuck to the top, with Play now and the Steam button in it, filled`,
+      await page.until(`${ON_SCREEN('.bar .bar-play')} && ${ON_SCREEN('.bar .bar-st')} && Math.abs(document.querySelector('.bar').getBoundingClientRect().top) < 1 && ${BAR_AWAKE}`, 3000),
+      await page.evaluate(BAR_FILLS));
+    await page.evaluate("window.scrollTo({ top: 0, behavior: 'instant' })");
 
     await walk(page);
     check(`${L}: the page never scrolls sideways`, await page.evaluate('document.documentElement.scrollWidth <= innerWidth'), `${await page.evaluate('document.documentElement.scrollWidth')} px wide`);
@@ -1461,6 +1500,35 @@ async function frontPhone(browser, server) {
     await page.sleep(2000);
     check(`${L}: Global Privacy Control sends no beacon, marks seen or not`, page.beacons.length === 0, `${page.beacons.length} sent`);
 
+    clean(page, L);
+  } finally {
+    await page.close();
+  }
+}
+
+/*
+ * The smallest window a phone commonly gives a page: 375 by 548, an iPhone SE
+ * in Safari with its bars showing. A phone's screen is not its browser's
+ * window, and the suite above runs in a whole 430 by 932 screen, where a
+ * first screen 250 px too tall still passes. This one is the fold itself:
+ * the page as it stood on 2026-11-25 had both buttons under it here.
+ */
+async function frontSmallPhone(browser, server) {
+  const L = 'front small phone';
+  const page = await openPage(browser, server, '/', {
+    width: 375, height: 548, mobile: true, host: 'local',
+    seed: ["Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', { get: () => true });"],
+  });
+  try {
+    check(`${L}: loads`, page.loaded);
+    check(`${L}: the headline is on the first screen`, await page.until(ON_SCREEN('.hero h1'), 5000));
+    check(`${L}: and so are Play now and the Steam button, whole, one above the other`, await page.evaluate(`(() => {
+      const a = document.querySelector('.hbt a[data-dest=sim]').getBoundingClientRect();
+      const b = document.querySelector('.hbt a[href*="store.steampowered.com"]').getBoundingClientRect();
+      return ${ON_SCREEN('.hbt a[data-dest=sim]')} && ${ON_SCREEN('.hbt a[href*="store.steampowered.com"]')} && b.top >= a.bottom && a.height >= 44 && b.height >= 44;
+    })()`), `the pair ends ${await page.evaluate("Math.round(document.querySelector('.hbt').getBoundingClientRect().bottom)")} px down a ${await page.evaluate('innerHeight')} px window`);
+    check(`${L}: the bar starts below the fold`, await page.evaluate("document.querySelector('.bar').getBoundingClientRect().top >= innerHeight - 1"));
+    check(`${L}: the page never scrolls sideways`, await page.evaluate('document.documentElement.scrollWidth <= innerWidth'), `${await page.evaluate('document.documentElement.scrollWidth')} px wide`);
     clean(page, L);
   } finally {
     await page.close();
@@ -1520,6 +1588,7 @@ async function main() {
   const suites = [
     ['front desktop', () => frontDesktop(browser, server)],
     ['front phone', () => frontPhone(browser, server)],
+    ['front small phone', () => frontSmallPhone(browser, server)],
     ['front after a payment', () => frontThanks(browser, server)],
     ['front with a word Stripe never sends', () => frontNoThanks(browser, server)],
     ['film desktop', () => desktop(browser, server)],
