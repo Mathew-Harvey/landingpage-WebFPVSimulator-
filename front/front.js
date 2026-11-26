@@ -1,12 +1,14 @@
 /*
  * front.js: the front page's one script. Plain JavaScript, no imports.
  *
- * It does five small jobs, each driven by a data attribute in index.html:
+ * It does six small jobs, each driven by a data attribute in index.html:
  *   data-t="key"       text that changes when WebFPV launches on Steam (see TEXT)
  *   data-cd="dd|hh|mm" the countdown digits
  *   data-when="..."    a block shown in one state only (before, after, playing, pausedNow, trailerIdle)
  *   data-act="..."     a button: motion (pause and play the loops), trailer, req (system requirements)
  *   data-trailer       the trailer, which loads nothing until asked and then plays with sound
+ *   data-pair          Play now and the Steam button, side by side or stacked: while one is in
+ *                      the window the bar's own two are drawn as outlines (see pairs)
  *
  * The page reads correctly with this script off: it shows the wording from
  * before launch and the loops stay on their poster frames. It is a plain
@@ -99,6 +101,22 @@
     loops.forEach(function (v) { io.observe(v); });
   } else {
     loops.forEach(function (v) { v.__seen = true; });
+  }
+
+  /* One filled pair of buttons on a screen. The bar repeats Play now and the
+   * Steam button, which makes four bright blocks on a screen that should have
+   * two. So while one of the page's own pairs (data-pair) is in the window
+   * the root says so, and the stylesheet draws the bar's two as outlines
+   * until it has scrolled away. The 70 px off the top is the bar itself: a
+   * pair that has slid under it is not on screen. With this script off, or in
+   * a browser without the observer, the bar's buttons simply stay filled. */
+  var pairs = all('[data-pair]');
+  if (pairs.length && typeof IntersectionObserver === 'function') {
+    var po = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) { en.target.__on = en.isIntersecting; });
+      root.classList.toggle('pair-on', pairs.some(function (el) { return el.__on; }));
+    }, { rootMargin: '-70px 0px 0px 0px' });
+    pairs.forEach(function (el) { po.observe(el); });
   }
 
   /* The launch switch and the countdown. */

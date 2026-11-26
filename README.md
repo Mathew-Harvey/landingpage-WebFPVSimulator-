@@ -202,12 +202,12 @@ still in place.
 
 `npm run check:pages` loads the real pages in headless Chromium (about four
 minutes on a software rasteriser) and prints pass or FAIL for each thing it
-asserts: the front page at a desktop and a phone size, after a payment and
-with the board down; the film at a desktop and a phone size, under reduced motion,
+asserts: the front page at a desktop size, a phone size and the smallest
+window a phone gives a page, after a payment and with the board down; the film at a desktop and a phone size, under reduced motion,
 without the CDN or the board and without WebGL; the live wiki, a sample of
 the generated wiki pages, the patch notes and the slap pack. It is offline:
 three.js is fetched once by Node into a local cache and every other request
-off the local server is stubbed or refused. The four `front` suites need no
+off the local server is stubbed or refused. The five `front` suites need no
 three.js, so `node scripts/page-check.js front` runs where the CDN cannot be
 reached, in about half a minute. Set `WEBFPV_CHROME_BIN` if no
 Chromium is found, and `WEBFPV_COVERAGE` to a folder to collect precise
@@ -223,12 +223,20 @@ change it, edit the files.
 
 | Part | What it is |
 | --- | --- |
-| The bar | The wordmark, the page's sections, Play now and the Steam button. It stays at the top. |
-| The first screen | The partners' plate, the headline, Play now and Wishlist on Steam, and the countdown. |
+| The bar | The wordmark, the page's sections, Play now and the Steam button. It stays at the top; on a phone it follows the first screen and sticks from there. Its two buttons are outlines while a pair of the page's own is in the window. |
+| The first screen | The picture, the wordmark, the headline, one line, and Play now beside the Steam button, the same size. The partners and the Steam date, or the countdown, are one row along its foot. |
 | Trailer | Loads nothing until play is pressed, then plays with sound and controls. |
 | Firmware, modes, mini games, patch notes | What is in the game, with short silent loops. |
 | Editions | The free browser edition beside the Steam edition, and what is only on Steam. |
 | The closing poster, the partners' row, the footer | The two buttons again, every partner with its role, and every link the film's footer had. |
+
+**Calm.** The page is held to a blur test: blur the first screen and two
+blocks should be left, Play now and the Steam button, the same size, with the
+headline after them. White is the browser edition and yellow is Steam, and
+neither fill is spent on anything but those two, the edition cards and the
+compare table. Headlines are type, grounds are ink or paper, and only a
+picture gets a frame. CLAUDE.md, "The front page is calm", has the rules and
+the sizes the fold is measured at.
 
 **The launch switch.** One line near the top of `front/front.js`:
 
@@ -246,7 +254,8 @@ does not switch, so edit it after launch.
 
 **Motion.** The loops are silent, play only while they are on screen, and
 stop for anyone whose system asks for reduced motion or reduced data. "Pause
-motion" in the top strip stops them all and remembers it. A new clip is
+motion", in the top strip and on a phone a round button over the corner of
+the first picture, stops them all and remembers it. A new clip is
 H.264 MP4 with a poster, written like the ones there:
 
 ```html

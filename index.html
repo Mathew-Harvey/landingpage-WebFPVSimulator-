@@ -58,7 +58,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preload" href="front/fonts/anton-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="front/fonts/barlow-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="front/front.css?v=20261125a">
+<link rel="stylesheet" href="front/front.css?v=20261126a">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -119,7 +119,7 @@
     </p>
     <div class="thanks-actions">
       <a class="btn wh" href="https://webfpv.org/sim/?map=field" data-dest="sim" rel="noopener">Back to flying</a>
-      <button class="btn bk" type="button" data-thanks-close>Close</button>
+      <button class="btn gh" type="button" data-thanks-close>Close</button>
     </div>
   </div>
 </div>
@@ -157,31 +157,40 @@
   </div>
 </div>
 
+<!--
+  THE FIRST SCREEN is the picture, the wordmark, the headline, one line and
+  the two buttons, and it is built to pass a blur test: squint, and the two
+  buttons are the only two bright blocks on it. White is the free browser
+  edition and yellow is Steam, here and all the way down the page, and
+  nothing else on a screen with the pair wears either fill. So the headline
+  is type, not a plate, and the partners and the Steam date are a quiet row
+  at the foot, not cards. CLAUDE.md, "The front page is calm".
+-->
 <header class="hero">
   <img class="hero-v" src="front/media/wf-s17-hd.jpg" alt="">
   <div class="hero-sh" aria-hidden="true"></div>
   <div class="w hero-in">
-    <aside class="hp" aria-label="Official partners">
-      <span class="lab">Official partners</span>
-      <div class="hp-r">
-        <a href="https://webfpv.org/board/partners#gds" data-dest="partners-gds" data-partner="gds" data-place="landing_hero"><img src="assets/partners/gds/mono.svg" width="208" height="72" alt="Global Drone Solutions, official training partner" decoding="async"></a>
-        <a href="https://webfpv.org/board/partners#mantisfpv" data-dest="partners-mantisfpv" data-partner="mantisfpv" data-place="landing_hero"><img class="wide" src="assets/partners/mantisfpv/mono.svg" width="567" height="100" alt="Mantis FPV, official retail partner" decoding="async"></a>
-        <a href="https://webfpv.org/board/partners#wcmrc" data-dest="partners-wcmrc" data-partner="wcmrc" data-place="landing_hero"><img src="assets/partners/wcmrc/mono.png" width="708" height="252" alt="West Coast Multirotor Club, official club partner" decoding="async"></a>
-        <a href="https://webleedfpv.com/?utm_source=webfpv&amp;utm_medium=partner&amp;utm_content=landing_hero" target="_blank" rel="noopener" data-partner="webleedfpv" data-place="landing_hero"><img class="wide" src="assets/partners/webleedfpv/mono.png" width="1200" height="190" alt="weBLEEDfpv, official USA micro drone partner" decoding="async"></a>
-        <a href="https://konexdrone.com/?utm_source=webfpv&amp;utm_medium=partner" target="_blank" rel="noopener"><img src="assets/partners/konexdrone/mono.png" width="640" height="226" alt="KoneX Drone, official Spanish partner" decoding="async"></a>
-      </div>
-    </aside>
     <div class="hero-t">
-      <div class="chips"><span class="chip y">A first person view drone simulator, drawn like a manga</span></div>
       <img class="hero-logo" src="front/media/wf-logo.png" alt="WebFPV">
-      <h1><span class="pl">Learn to fly FPV</span> <span class="pl y">on real firmware.</span></h1>
-      <p class="hero-p">FPV means you fly from the drone's own camera. 73&nbsp;lessons take you from a first hover to a five lap championship. Then come 16 race tracks, a town to fly tricks in, a track builder and six mini games.</p>
-      <div class="hbt">
+      <h1><span>Learn to fly FPV</span> <em>on real firmware.</em></h1>
+      <p class="hero-k">A first person view drone simulator, drawn like a manga.</p>
+      <div class="hbt" data-pair>
         <a class="btn xl wh" href="https://webfpv.org/sim/?map=field" data-dest="sim"><svg class="pi" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3l15 9-15 9z" fill="currentColor"></path></svg><span class="b2"><b>Play now</b><small>Free, in your browser</small></span></a>
         <a class="btn xl" href="https://store.steampowered.com/app/4944190/webFPV/?utm_source=landing&amp;utm_campaign=hero" target="_blank" rel="noopener"><svg class="si" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#steam-mark"></use></svg><span class="b2"><b data-t="steamLabel">Wishlist on Steam</b><small data-t="steamSub">USD&nbsp;9.99, out 27&nbsp;November</small></span></a>
       </div>
     </div>
-          <aside data-when="before" class="cdc" aria-label="WebFPV is on Steam on 27 November for USD 9.99">
+    <div class="hero-f">
+      <aside class="hp" aria-label="Official partners">
+        <span class="lab">Official partners</span>
+        <div class="hp-r">
+          <a href="https://webfpv.org/board/partners#gds" data-dest="partners-gds" data-partner="gds" data-place="landing_hero"><img src="assets/partners/gds/mono.svg" width="208" height="72" alt="Global Drone Solutions, official training partner" decoding="async"></a>
+          <a href="https://webfpv.org/board/partners#mantisfpv" data-dest="partners-mantisfpv" data-partner="mantisfpv" data-place="landing_hero"><img class="wide" src="assets/partners/mantisfpv/mono.svg" width="567" height="100" alt="Mantis FPV, official retail partner" decoding="async"></a>
+          <a href="https://webfpv.org/board/partners#wcmrc" data-dest="partners-wcmrc" data-partner="wcmrc" data-place="landing_hero"><img src="assets/partners/wcmrc/mono.png" width="708" height="252" alt="West Coast Multirotor Club, official club partner" decoding="async"></a>
+          <a href="https://webleedfpv.com/?utm_source=webfpv&amp;utm_medium=partner&amp;utm_content=landing_hero" target="_blank" rel="noopener" data-partner="webleedfpv" data-place="landing_hero"><img class="wide" src="assets/partners/webleedfpv/mono.png" width="1200" height="190" alt="weBLEEDfpv, official USA micro drone partner" decoding="async"></a>
+          <a href="https://konexdrone.com/?utm_source=webfpv&amp;utm_medium=partner" target="_blank" rel="noopener"><img src="assets/partners/konexdrone/mono.png" width="640" height="226" alt="KoneX Drone, official Spanish partner" decoding="async"></a>
+        </div>
+      </aside>
+      <aside data-when="before" class="cdc" aria-label="WebFPV is on Steam on 27 November for USD 9.99">
         <span class="lab">On Steam, for Windows</span>
         <b class="d">27 November</b>
         <span class="pr">USD 9.99</span>
@@ -191,29 +200,38 @@
           <span class="cd-b"><b data-cd="mm">00</b><i>Minutes</i></span>
         </div>
       </aside>
-    
-          <aside data-when="after" hidden class="cdc"><span class="lab">On Steam, for Windows</span><b class="d">Out now</b><span class="pr">USD 9.99</span></aside>
-    
+      <aside data-when="after" hidden class="cdc"><span class="lab">On Steam, for Windows</span><b class="d">Out now</b><span class="pr">USD 9.99</span></aside>
+    </div>
   </div>
 </header>
 
 <main id="main">
+<!--
+  The trailer is the next thing to look at, so it is the first picture under
+  the first screen and its control is a round one in the middle of it: a
+  disc reads as "watch" where a yellow bar read as a third button. The
+  paragraph that says what FPV is and what is in the game sits under it,
+  off the first screen.
+-->
 <section class="tr" id="trailer" aria-label="Trailer">
   <div class="w">
     <div class="tr-p frame fig">
       <video data-trailer src="front/media/wf-trailer.mp4" poster="front/media/wf-trailer-poster6.jpg" playsinline preload="none" aria-label="WebFPV trailer"></video>
-              <button data-when="trailerIdle" type="button" class="play" data-act="trailer" aria-label="Play the WebFPV trailer, 47 seconds, with sound">
-          <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3l15 9-15 9z" fill="currentColor"></path></svg>Play the trailer</span>
-        </button>
-      
+      <button data-when="trailerIdle" type="button" class="play" data-act="trailer" aria-label="Watch the trailer, 47 seconds, with sound">
+        <span class="play-d"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3l15 9-15 9z" fill="currentColor"></path></svg></span>
+        <span class="play-t">Watch the trailer</span>
+      </button>
     </div>
-    <div class="tr-n lab"><span>47 seconds. Plays with sound.</span></div>
+    <div class="tr-n">
+      <p class="tr-t">FPV means you fly from the drone's own camera. 73&nbsp;lessons take you from a first hover to a five lap championship. Then come 16 race tracks, a town to fly tricks in, a track builder and six mini games.</p>
+      <span class="lab">47 seconds. Plays with sound.</span>
+    </div>
   </div>
 </section>
 
-<section class="band yb" id="firmware" aria-labelledby="h-eng">
+<section class="band pp on-light" id="firmware" aria-labelledby="h-eng">
   <div class="w">
-    <h2 class="bh" id="h-eng">The firmware <span class="pl k">is real.</span></h2>
+    <h2 class="bh" id="h-eng">The firmware <em>is real.</em></h2>
     <div class="exh">
       <p class="lead">Firmware is the code inside a racing drone that turns your sticks into motor speeds. WebFPV runs the real thing. <small>It's Betaflight 4.5.1, the open source flight controller firmware that racing quads fly on, compiled to WebAssembly and wired to a physics model of each quad.</small></p>
       <figure class="xp"><img src="front/media/wf-quad5.jpg" alt="The five inch racing quad on the start pad" loading="lazy"><figcaption>The five&nbsp;inch, named for its props: 710&nbsp;g on a 6S&nbsp;battery.</figcaption></figure>
@@ -251,7 +269,7 @@
 
       <article class="md wide" id="race">
         <div class="md-m">
-          <div class="frame y fig ht full"><video src="front/media/wf-race3.mp4" poster="front/media/wf-race3-poster.jpg" muted loop playsinline preload="none" aria-label="A five inch quad dives through glowing race gates"></video></div>
+          <div class="frame fig ht full"><video src="front/media/wf-race3.mp4" poster="front/media/wf-race3-poster.jpg" muted loop playsinline preload="none" aria-label="A five inch quad dives through glowing race gates"></video></div>
           <figure class="ins"><video src="front/media/wf-whoop.mp4" poster="front/media/wf-whoop-poster.jpg" muted loop playsinline preload="none" aria-label="A tiny whoop flies through a gate in a living room"></video><figcaption>The whoop races indoors.</figcaption></figure>
         </div>
         <div class="md-pl">
@@ -261,7 +279,7 @@
         </div>
       </article>
 
-      <article class="md rev tw gp" id="freestyle">
+      <article class="md rev tw" id="freestyle">
         <div class="md-m">
           <div class="tw-g">
             <div class="pan cut-r"><span class="pan-c"><span class="pan-m"><video src="front/media/wf-town.mp4" poster="front/media/wf-town-poster.jpg" muted loop playsinline preload="none" aria-label="A quad flies through the freestyle town, past a level crossing and cherry blossom"></video></span>
@@ -278,11 +296,11 @@
         </div>
       </article>
 
-      <article class="md two gy" id="build">
+      <article class="md two" id="build">
         <div class="md-m">
           <div class="two-g">
-            <figure class="frame k fig"><img src="front/media/wf-builder-c.jpg" alt="The builder: a gate's settings beside a dotted flight path on a grid" loading="lazy"><figcaption class="cap"><b>Build it.</b></figcaption></figure>
-            <figure class="frame k fig"><video src="front/media/wf-build.mp4" poster="front/media/wf-build-poster.jpg" muted loop playsinline preload="none" aria-label="A map seen from above in the builder, then flown past shipping containers"></video><figcaption class="cap"><b>Fly it.</b></figcaption></figure>
+            <figure class="frame fig"><img src="front/media/wf-builder-c.jpg" alt="The builder: a gate's settings beside a dotted flight path on a grid" loading="lazy"><figcaption class="cap"><b>Build it.</b></figcaption></figure>
+            <figure class="frame fig"><video src="front/media/wf-build.mp4" poster="front/media/wf-build-poster.jpg" muted loop playsinline preload="none" aria-label="A map seen from above in the builder, then flown past shipping containers"></video><figcaption class="cap"><b>Fly it.</b></figcaption></figure>
           </div>
         </div>
         <div class="md-t">
@@ -298,7 +316,7 @@
     </div>
     <div class="cta">
       <p><span data-t="ctaWhen">On Steam 27&nbsp;November.</span> <em>USD&nbsp;9.99.</em></p>
-      <div class="btns">
+      <div class="btns" data-pair>
         <a class="btn wh" href="https://webfpv.org/sim/?map=field" data-dest="sim"><svg class="pi" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3l15 9-15 9z" fill="currentColor"></path></svg>Play now, free</a>
         <a class="btn" href="https://store.steampowered.com/app/4944190/webFPV/?utm_source=landing&amp;utm_campaign=modes" target="_blank" rel="noopener" data-t="steamLabel">Wishlist on Steam</a>
       </div>
@@ -306,14 +324,10 @@
   </div>
 </section>
 
-<section class="mgs" id="minigames" aria-labelledby="h-mg">
-  <div class="band pb rv mg-band">
-    <div class="w mg-h">
-      <h2 class="bh" id="h-mg">Mini <span class="pl k">games</span></h2>
-      <p>Six of them. Play against bots or with friends.</p>
-    </div>
-  </div>
-  <div class="w mg-w">
+<section class="sec mgs" id="minigames" aria-labelledby="h-mg">
+  <div class="w">
+    <h2 class="t" id="h-mg">Mini <em>games</em></h2>
+    <p class="deck">Six of them. Play against bots or with friends.</p>
     <div class="mg-g">
       <div class="pan mg-lead cut-r">
         <span class="pan-c"><span class="pan-m ht"><video src="front/media/wf-mg-drift.mp4" poster="front/media/wf-mg-drift-poster.jpg" muted loop playsinline preload="none" aria-hidden="true"></video></span>
@@ -343,13 +357,13 @@
   </div>
 </section>
 
-<section class="band pp on-light" id="patch-notes" aria-labelledby="h-pn">
+<section class="band pp rv on-light" id="patch-notes" aria-labelledby="h-pn">
   <div class="w">
     <div class="pn-h">
-      <h2 class="bh" id="h-pn" style="font-size: clamp(42px, 7.2cqw, 106px)">The patch notes <span class="pl y">are a manga.</span></h2>
+      <h2 class="bh" id="h-pn">The patch notes <em>are a manga.</em></h2>
       <div>
         <p>Each update is a new chapter, written by Mat, the pilot who built the game. Ten&nbsp;so&nbsp;far.</p>
-        <a class="btn bk" href="https://mathew-harvey.github.io/webFPVPatchNotes/" target="_blank" rel="noopener">Read the patch notes</a>
+        <a class="btn gh" href="https://mathew-harvey.github.io/webFPVPatchNotes/" target="_blank" rel="noopener">Read the patch notes</a>
       </div>
     </div>
     <div class="fan">
@@ -366,7 +380,7 @@
   <div class="w">
     <h2 class="t" id="h-ed">Start free. <em>Fly it on Steam.</em></h2>
     <p class="deck">Every lesson, track and mini game is in the free browser edition. The Steam edition is built for flying: lower latency, leaderboards and LAN race nights.</p>
-    <div class="ed-g on-light">
+    <div class="ed-g on-light" data-pair>
       <article class="pan ed fr cut-r">
         <div class="pan-c"><div class="pan-m">
           <div class="ed-img brz"><div class="brz-bar" aria-hidden="true"><i></i><i></i><i></i><span>webfpv.org</span></div><img src="front/media/wf-s14-hd.jpg" alt="WebFPV in a browser tab: a quad mid flip over a meadow" loading="lazy" style="object-position: 50% 58%"><span class="ed-step lab">Out now</span></div>
@@ -399,7 +413,7 @@
               <div><dt class="lab">Saves</dt><dd>To Steam Cloud, so progress and maps follow you</dd></div>
               <div><dt class="lab">Online</dt><dd>Rooms, LAN race nights and Steam leaderboards</dd></div>
             </dl>
-            <a class="btn bk" href="https://store.steampowered.com/app/4944190/webFPV/?utm_source=landing&amp;utm_campaign=editions" target="_blank" rel="noopener"><svg class="si" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#steam-mark"></use></svg><span data-t="steamLabel">Wishlist on Steam</span></a>
+            <a class="btn" href="https://store.steampowered.com/app/4944190/webFPV/?utm_source=landing&amp;utm_campaign=editions" target="_blank" rel="noopener"><svg class="si" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#steam-mark"></use></svg><span data-t="steamLabel">Wishlist on Steam</span></a>
           </div>
         </div></div>
       </article>
@@ -437,7 +451,7 @@
     <div>
       <h2 id="h-rq">System requirements</h2>
       <p class="rq-n">For the Steam edition, on Windows. Integrated graphics will run it.</p>
-      <button type="button" class="btn wh rq-tg" data-act="req" aria-expanded="false">Show the requirements</button>
+      <button type="button" class="btn gh rq-tg" data-act="req" aria-expanded="false">Show the requirements</button>
     </div>
     <div class="rq-body"><table>
       <thead><tr><th scope="col"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%)">Part</span></th><th scope="col">Minimum</th><th scope="col">Recommended</th></tr></thead>
@@ -456,15 +470,14 @@
   <img class="kb" src="front/media/wf-s04-hd.jpg" alt="" loading="lazy">
   <div class="w end-in">
     <img class="end-logo" src="front/media/wf-logo.png" alt="WebFPV">
-    <h2 id="h-end"><span class="pl" data-t="endWhen">27 November.</span><span class="pl y">USD 9.99.</span></h2>
-          <div data-when="before" class="cd" role="group" aria-label="Time until WebFPV is on Steam">
-        <span class="cd-b"><b data-cd="dd">00</b><i>Days</i></span>
-        <span class="cd-b"><b data-cd="hh">00</b><i>Hours</i></span>
-        <span class="cd-b"><b data-cd="mm">00</b><i>Minutes</i></span>
-      </div>
-    
+    <h2 id="h-end"><span data-t="endWhen">27 November.</span> <em>USD 9.99.</em></h2>
+    <div data-when="before" class="cd" role="group" aria-label="Time until WebFPV is on Steam">
+      <span class="cd-b"><b data-cd="dd">00</b><i>Days</i></span>
+      <span class="cd-b"><b data-cd="hh">00</b><i>Hours</i></span>
+      <span class="cd-b"><b data-cd="mm">00</b><i>Minutes</i></span>
+    </div>
     <p class="end-p">Start free in your browser. Buy it on Steam for lower latency, leaderboards and LAN race nights.</p>
-    <div class="btns">
+    <div class="btns" data-pair>
       <a class="btn xl" href="https://store.steampowered.com/app/4944190/webFPV/?utm_source=landing&amp;utm_campaign=close" target="_blank" rel="noopener"><svg class="si" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#steam-mark"></use></svg><span data-t="steamLabel">Wishlist on Steam</span></a>
       <a class="btn xl wh" href="https://webfpv.org/sim/?map=field" data-dest="sim"><svg class="pi" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3l15 9-15 9z" fill="currentColor"></path></svg>Play now, free</a>
     </div>
@@ -579,7 +592,7 @@
   came from, and points the launch links at a local simulator and board when
   the page is served from a loopback address.
 -->
-<script src="front/front.js?v=20261125a"></script>
+<script src="front/front.js?v=20261126a"></script>
 <script>
   /* THE CONTACT ADDRESS is never written in this file. A visitor presses
      "click to view email" and the address is assembled here, so a
