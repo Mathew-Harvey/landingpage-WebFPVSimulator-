@@ -200,6 +200,7 @@ ${sectionsHtml}
     <div class="wiki-cta">
       <p><strong>This article is part of the interactive FPV wiki.</strong></p>
       <p><a href="/wiki/#wiki/${slug}">Open this article in the interactive wiki</a> for its live figure, related articles, and full navigation.</p>
+      <p>Try it for yourself: <a href="https://webfpv.org/sim/?map=field&amp;ref=landing">fly WebFPV free in your browser</a>, or <a href="https://store.steampowered.com/app/4944190/webFPV/?utm_source=landing&amp;utm_campaign=wiki" rel="noopener">get it on Steam</a> to fly offline.</p>
     </div>
   </body>
 </html>
@@ -352,6 +353,7 @@ ${sectionsHtml}
     <div class="wiki-cta">
       <p><strong>This page is part of the interactive FPV wiki.</strong></p>
       <p><a href="/wiki/#wiki/${slug}">Open this page in the interactive wiki</a> for full navigation and related articles.</p>
+      <p>Try it for yourself: <a href="https://webfpv.org/sim/?map=field&amp;ref=landing">fly WebFPV free in your browser</a>, or <a href="https://store.steampowered.com/app/4944190/webFPV/?utm_source=landing&amp;utm_campaign=wiki" rel="noopener">get it on Steam</a> to fly offline.</p>
     </div>
   </body>
 </html>

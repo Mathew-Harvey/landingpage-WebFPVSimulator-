@@ -121,3 +121,17 @@ export function trackOfferClick(offer) {
     source: 'landing',
   });
 }
+
+/*
+ * Called when a link to the Steam store is pressed. `place` is one of the
+ * board's closed list (its src/validate.js, STEAM_PLACES): landing-nav,
+ * landing-hero, landing-modes, landing-editions, landing-close,
+ * landing-footer or landing-film. The board refuses any other word. Does
+ * not block the navigation.
+ */
+export function trackSteamClick(place) {
+  sendEvent({
+    kind: 'steam_click',
+    place,
+  });
+}

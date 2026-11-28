@@ -17,7 +17,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { trackPartner, trackSupportClick, trackOfferClick } from './stats.js?v=20261021c';
+import { trackPartner, trackSupportClick, trackOfferClick, trackSteamClick } from './stats.js?v=20261128a';
 import { loadSupporters } from './supporters.js';
 import { PATREON_NOTE } from './config.js?v=20261021b';
 
@@ -63,6 +63,38 @@ offerLinks.forEach((link) => {
  * Here and not in main.js because this module is up without three.js and
  * the film: the footer row is counted on a phone whose WebGL never came.
  */
+/*
+ * A press on a link to the Steam store, counted by the place it stands in.
+ * The owner's plan of 2026-11-28, the day after the Steam edition went on
+ * sale: Steam's own report says how many arrived from this site, and this
+ * says which button sent them, beside the simulator's and the board's own.
+ * Every store link already names its place in utm_campaign, so the place is
+ * read from the link and no markup changes. The front door's six are sent
+ * as landing-nav, -hero, -modes, -editions, -close and -footer; the film's
+ * four are all landing-film, because the film is one way in. One listener
+ * on the document, so it costs nothing until a press, and the link is
+ * never held up.
+ */
+const FRONT_STEAM = ['nav', 'hero', 'modes', 'editions', 'close', 'footer'];
+const onFilm = Boolean(document.getElementById('beats'));
+document.addEventListener('click', (e) => {
+  const a = e.target && e.target.closest ? e.target.closest('a[href*="store.steampowered.com"]') : null;
+  if (!a) {
+    return;
+  }
+  let where = '';
+  try {
+    where = new URL(a.href).searchParams.get('utm_campaign') || '';
+  } catch (err) {
+    return;
+  }
+  if (onFilm) {
+    trackSteamClick('landing-film');
+  } else if (FRONT_STEAM.includes(where)) {
+    trackSteamClick(`landing-${where}`);
+  }
+});
+
 const SEEN_MS = 1000;
 const SEEN_TICK = 250;
 const marks = [...document.querySelectorAll('[data-partner]')];
